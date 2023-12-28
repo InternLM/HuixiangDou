@@ -20,7 +20,7 @@ class SourceGraphProxy:
     def load_config(self):
         with open(self.config_path) as f:
             config = pytoml.load(f)
-            sg_config = config['sourcegraph_search']
+            sg_config = config['sg_search']
         
         bin_path = sg_config['binary_src_path']
         if bin_path is None or not os.path.exists(bin_path):
