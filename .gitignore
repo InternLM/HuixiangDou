@@ -4,3 +4,4 @@ workdir/
 write_toml.py
 config.ini
 logs/
+server.log

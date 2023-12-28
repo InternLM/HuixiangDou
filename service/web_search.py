@@ -11,7 +11,7 @@ import pytoml
 from loguru import logger
 import argparse
 
-class WebSearcher:
+class WebSearch:
     def __init__(self, config_path: dict, retry: int = 3) -> None:
         self.config_path = config_path
         self.retry = retry
@@ -158,7 +158,7 @@ class WebSearcher:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Web searcher.')
+    parser = argparse.ArgumentParser(description='Web search.')
     parser.add_argument('keywords', type=str, help='Keywords for search and parse.')
     parser.add_argument('--config_path', default='config.ini',
                         help='Feature store configuration path. Default value is config.ini')
@@ -177,7 +177,7 @@ def fetch_web_content(target_link: str):
 
 if __name__ == '__main__':
     parser = parse_args()
-    s = WebSearcher(config_path = parser.config_path)
+    s = WebSearch(config_path = parser.config_path)
 
     print(s.get_with_cache(args.keywords))
     print(fetch_web_content('https://zhuanlan.zhihu.com/p/359500899'))

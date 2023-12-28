@@ -39,7 +39,7 @@ class FeatureStore(object):
         with open(config_path) as f:
             config = pytoml.load(f)
             if 'feature_store_reject_throttle' in config:
-                self.reject_throttle = config['feature_store_reject_throttle']
+                self.reject_throttle = config['feature_store']['reject_throttle']
 
     def contains_chinese(self, text):
         if re.search('[\u4e00-\u9fff]', text):
@@ -337,7 +337,9 @@ class FeatureStore(object):
 
         with open(config_path, 'w+') as f:
             config = pytoml.load(f)
-            config['feature_store_reject_throttle'] = optimal_threshold
+            config['feature_store'] = {
+                'reject_throttle': optimal_threshold
+            }
             pytoml.dump(config, f)
         
         logger.info(f"The optimal threshold is: {optimal_threshold}, saved it to {config_path}")
