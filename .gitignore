@@ -5,3 +5,4 @@ write_toml.py
 config.ini
 logs/
 server.log
+service/__pycache__/

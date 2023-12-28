@@ -14,7 +14,7 @@ class ChatClient:
     def load_remote_url(self):
         with open(self.config_path) as f:
             config = pytoml.load(f)
-            return config['llm']['server_url']
+            return config['llm']['client_url']
         raise Exception('llm.server url not found')
 
     def load_scoring_template(self):
