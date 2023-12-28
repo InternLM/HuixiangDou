@@ -1,0 +1,12 @@
+git clone https://github.com/open-mmlab/mmpretrain --branch v1.0.1 --depth=1
+git clone https://github.com/open-mmlab/mmdetection --branch v3.1.0 --depth=1
+git clone https://github.com/open-mmlab/mmsegmentation --branch v1.1.1 --depth=1
+git clone https://github.com/open-mmlab/mmocr --branch v1.0.1 --depth=1
+git clone https://github.com/open-mmlab/mmagic --branch v1.0.1 --depth=1
+git clone https://github.com/open-mmlab/mmdetection3d  --branch v1.2.0 --depth=1
+git clone https://github.com/open-mmlab/mmpose --branch v1.1.0 --depth=1
+git clone https://github.com/open-mmlab/mmaction2 --branch v1.1.0 --depth=1
+git clone https://github.com/open-mmlab/mmrotate --branch v1.0.0rc1 --depth=1
+git clone https://github.com/open-mmlab/mmdeploy --branch v1.2.0 --depth=1
+git clone https://github.com/open-compass/opencompass --branch 0.1.3 --depth=1
+git clone https://github.com/internlm/lmdeploy --branch v0.0.6 --depth=1
