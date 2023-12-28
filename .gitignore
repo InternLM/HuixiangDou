@@ -1,3 +1,6 @@
 models/
 repodir/
 workdir/
+write_toml.py
+config.ini
+logs/

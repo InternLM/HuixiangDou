@@ -357,18 +357,9 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-if __name__ == '__main__':
-    args = parse_args()
-    # fs_init = FeatureStore(model_dir=args.model_dir, config_path=args.config_path)
-    # with open(args.good_questions) as f:
-    #     good_questions = json.load(f)
-    # with open(args.bad_questions) as f:
-    #     bad_questions = json.load(f)
-    
-    # fs_init.initialize(repo_dir=args.repo_dir, work_dir=args.work_dir, good_questions=good_questions, bad_questions=bad_questions)
-    # del fs_init
 
-    examples = [
+def test():
+    real_questions = [
         '请问找不到libmmdeploy.so怎么办',
         'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
         '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',
@@ -382,6 +373,19 @@ if __name__ == '__main__':
     ]
     fs_query = FeatureStore(model_dir=args.model_dir, config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
-    for example in examples:
+    for example in real_questions:
         reject = fs_query.is_reject(example)
         logger.debug(f'reject: {reject} query: {example}')
+
+if __name__ == '__main__':
+    args = parse_args()
+    fs_init = FeatureStore(model_dir=args.model_dir, config_path=args.config_path)
+    with open(args.good_questions) as f:
+        good_questions = json.load(f)
+    with open(args.bad_questions) as f:
+        bad_questions = json.load(f)
+    
+    fs_init.initialize(repo_dir=args.repo_dir, work_dir=args.work_dir, good_questions=good_questions, bad_questions=bad_questions)
+    del fs_init
+
+    test()
