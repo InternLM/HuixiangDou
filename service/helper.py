@@ -12,6 +12,9 @@ class ErrorCode(Enum):
     SECURITY = 7, "答复和违禁主题关联度太高"
     NOT_WORK_TIME = 8, "非工作时间。可修改 config.ini 调整。**在言论可能引发风险的场景，请让机器人保持在人类的监控下运行**"
 
+    PARAMETER_ERROR = 9, "http 接口参数错误。query 不能为空； history 格式是 list of list，如 [['问题1','答复1'], ['问题2'], ['答复2']] "
+    PARAMETER_MISS = 10, "http json 入参缺少 key"
+
     def __new__(cls, value, description):
         obj = object.__new__(cls)
         obj._value_ = value

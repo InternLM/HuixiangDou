@@ -1,4 +1,4 @@
-from llm_client import ChatClient
+from .llm_client import ChatClient
 import os
 import ast
 import json

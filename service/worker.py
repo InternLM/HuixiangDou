@@ -1,9 +1,9 @@
 from loguru import logger
-from llm_client import ChatClient
-from feature_store import FeatureStore
-from web_search import WebSearch
-from sg_search import SourceGraphProxy
-from helper import ErrorCode, QueryTracker
+from .llm_client import ChatClient
+from .feature_store import FeatureStore
+from .web_search import WebSearch
+from .sg_search import SourceGraphProxy
+from .helper import ErrorCode, QueryTracker
 import argparse
 import pytoml
 import datetime
@@ -14,12 +14,13 @@ import pdb
 
 class Worker:
 
-    def __init__(self, llm: ChatClient, fs: FeatureStore, config_path: str):
-        self.llm = llm
-        self.fs = fs
+    def __init__(self, work_dir:str, config_path: str):
+        self.llm = ChatClient(config_path=config_path)
+        self.fs = FeatureStore(config_path=config_path)
+        self.fs.load_feature(work_dir=work_dir)
         self.config_path = config_path
         self.config = None
-        with open(args.config_path) as f:
+        with open(config_path) as f:
             self.config = pytoml.load(f)
         if self.config is None:
             raise Exception(f'worker config can not be None')
@@ -58,7 +59,7 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
             return False
 
         score = default
-        relation = llm.generate_response(prompt=prompt, remote=False)
+        relation = self.llm.generate_response(prompt=prompt, remote=False)
         tracker.log('score', [relation, throttle, default])
         filtered_relation = ''.join([c for c in relation if c.isdigit()])
         try:
@@ -108,7 +109,7 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
                 default=3):
             return ErrorCode.NOT_A_QUESTION, response
 
-        topic = llm.generate_response(self.TOPIC_TEMPLATE.format(query))
+        topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query))
         tracker.log('topic', topic)
 
         if len(topic) <= 2:
@@ -124,11 +125,11 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
                              tracker=tracker,
                              throttle=5,
                              default=10):
-            prompt, history = llm.build_prompt(instruction=query,
+            prompt, history = self.llm.build_prompt(instruction=query,
                                                context=db_context,
                                                history_pair=history,
                                                template=self.GENERATE_TEMPLATE)
-            response = llm.generate_response(prompt=prompt,
+            response = self.llm.generate_response(prompt=prompt,
                                              history=history,
                                              remote=True)
             tracker.track('feature store doc', [db_context_part, response])
@@ -136,7 +137,7 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
 
         else:
             prompt = self.KEYWORDS_TEMPLATE.format(groupname, query)
-            web_keywords = llm.generate_response(prompt=prompt)
+            web_keywords = self.llm.generate_response(prompt=prompt)
             # format keywords
             for symbol in ['"', ',', '  ']:
                 web_keywords = web_keywords.replace(symbol, ' ')
@@ -181,12 +182,12 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
                 web_context = web_context.strip()
 
                 if len(web_context) > 0:
-                    prompt, history = llm.build_prompt(
+                    prompt, history = self.llm.build_prompt(
                         instruction=query,
                         context=web_context,
                         history_pair=history,
                         template=self.GENERATE_TEMPLATE)
-                    response = llm.generate_response(prompt=prompt,
+                    response = self.llm.generate_response(prompt=prompt,
                                                      history=history,
                                                      remote=False)
                 else:
@@ -213,13 +214,13 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
                                        question=query,
                                        groupname=groupname)
                 if sg_context != None and len(sg_context) > 0:
-                    prompt, history = llm.build_prompt(
+                    prompt, history = self.llm.build_prompt(
                         instruction=query,
                         context=sg_context,
                         history_pair=history,
                         template=self.GENERATE_TEMPLATE)
 
-                    response = llm.generate_response(prompt=prompt,
+                    response = self.llm.generate_response(prompt=prompt,
                                                      history=history,
                                                      remote=True)
                     tracker.log('source graph', [sg_context, response])
@@ -233,7 +234,7 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
 
         if response is not None and len(response) >= 600:
             # 回复内容太长，总结一下
-            response = llm.generate_response(
+            response = self.llm.generate_response(
                 prompt=self.SUMMARIZE_TEMPLATE.format(response))
 
         if len(response) > 0 and self.single_judge(
@@ -255,18 +256,14 @@ def parse_args():
     parser.add_argument(
         '--config_path',
         default='config.ini',
-        help='Feature store configuration path. Default value is config.ini')
+        help='Worker configuration path. Default value is config.ini')
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
     args = parse_args()
-    fs = FeatureStore(config_path=args.config_path)
-    fs.load_feature(work_dir=args.work_dir)
-
-    llm = ChatClient(config_path=args.config_path)
-    bot = Worker(llm=llm, fs=fs, config_path=args.config_path)
-    querys = ['如何安装 mmdeploy', '今天天气如何', '请问 how-to-optimize-gemm 作者是谁']
+    bot = Worker(work_dir=args.work_dir, config_path=args.config_path)
+    querys = ['茴香豆是怎么做的']
     for query in querys:
         print(bot.generate(query=query, history=[], groupname=''))

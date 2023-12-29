@@ -28,8 +28,7 @@ class FeatureStore(object):
         with open(config_path) as f:
             config = pytoml.load(f)['feature_store']
             model_path = config['model_path']
-            if 'feature_store_reject_throttle' in config:
-                self.reject_throttle = config['reject_throttle']
+            self.reject_throttle = config['reject_throttle']
 
         if model_path is None or len(model_path) == 0:
             raise Exception(f'model_path can not be empty')
@@ -269,7 +268,7 @@ class FeatureStore(object):
             for j, i in enumerate(indices[0]):
                 if i == -1:
                     continue
-                # print(question, scores[0][j])
+                # print(question, scores[0][j], throttle)
                 if throttle >= 0 and scores[0][j] >= throttle:
                     # print(question, scores[0][j])
                     continue
@@ -280,7 +279,7 @@ class FeatureStore(object):
             return docs
         except Exception as e:
             logger.error('{}'.format(__file__, str(e)))
-            pdb.set_trace()
+            # pdb.set_trace()
             return []
 
     def db_search(self, question):
@@ -380,15 +379,15 @@ class FeatureStore(object):
         precision, recall, thresholds = precision_recall_curve(
             labels, predictions)
 
-        pdb.set_trace()
         # get the best index for sum(precison, recall)
         sum_precision_recall = precision[:-1] + recall[:-1]
         index_max = np.argmax(sum_precision_recall)
         optimal_threshold = 1e6 - thresholds[index_max]
 
-        with open(config_path, 'w+') as f:
+        with open(config_path, 'r') as f:
             config = pytoml.load(f)
-            config['feature_store'] = {'reject_throttle': optimal_threshold}
+        config['feature_store']['reject_throttle'] = optimal_threshold
+        with open(config_path, 'w') as f:
             pytoml.dump(config, f)
 
         logger.info(
@@ -436,8 +435,10 @@ def test():
     fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
-        reject = fs_query.is_reject(example)
-        logger.debug(f'reject: {reject} query: {example}')
+        if fs_query.is_reject(example):
+            logger.error(f'reject query: {example}')
+        else:
+            logger.warning(f'process query: {example}')
 
 
 if __name__ == '__main__':
