@@ -11,7 +11,9 @@ import pytoml
 from loguru import logger
 import argparse
 
+
 class WebSearch:
+
     def __init__(self, config_path: dict, retry: int = 3) -> None:
         self.config_path = config_path
         self.retry = retry
@@ -29,9 +31,11 @@ class WebSearch:
         with open(self.config_path) as f:
             config = pytoml.load(f)
             api_key = config['web_search']['x_api_key']
-            if api_key is not None and len(api_key) > 0 and api_key != 'YOUR-API-KEY':
+            if api_key is not None and len(
+                    api_key) > 0 and api_key != 'YOUR-API-KEY':
                 return api_key
-        raise Exception('web_search X-API-KEY not found, please input your API key')
+        raise Exception(
+            'web_search X-API-KEY not found, please input your API key')
 
     def load_save_dir(self):
         try:
@@ -46,7 +50,10 @@ class WebSearch:
         url = "https://google.serper.dev/search"
 
         payload = json.dumps({"q": "{}".format(query), "hl": "zh-cn"})
-        headers = {'X-API-KEY': self.load_key(), 'Content-Type': 'application/json'}
+        headers = {
+            'X-API-KEY': self.load_key(),
+            'Content-Type': 'application/json'
+        }
         response = requests.request("POST", url, headers=headers, data=payload)
         jsonobj = json.loads(response.text)
 
@@ -108,23 +115,23 @@ class WebSearch:
 
                     break
                 except Exception as e:
-                    logger.error(('web_parse exception', query, e, target_link))
+                    logger.error(
+                        ('web_parse exception', query, e, target_link))
                     life += 1
 
                     randval = random.randint(1, int(pow(2, life)))
                     time.sleep(randval)
         return articles
 
-
     def save_search_result(self, query: str, articles: list):
         try:
             save_dir = self.load_save_dir()
             if save_dir is None:
                 return
-            
+
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
-            
+
             filepath = os.path.join(save_dir, query)
 
             text = ''
@@ -134,7 +141,6 @@ class WebSearch:
                 f.write(text)
         except Exception as e:
             logger.warning(f'error while saving search result {str(e)}')
-
 
     def get_with_cache(self, query: str, max_article=1):
         # with exponential rerun
@@ -157,11 +163,16 @@ class WebSearch:
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Web search.')
-    parser.add_argument('--keywords', type=str, help='Keywords for search and parse.')
-    parser.add_argument('--config_path', default='config.ini',
-                        help='Feature store configuration path. Default value is config.ini')
+    parser.add_argument('--keywords',
+                        type=str,
+                        help='Keywords for search and parse.')
+    parser.add_argument(
+        '--config_path',
+        default='config.ini',
+        help='Feature store configuration path. Default value is config.ini')
     args = parser.parse_args()
     return args
+
 
 def fetch_web_content(target_link: str):
     response = requests.get(target_link)
@@ -173,9 +184,12 @@ def fetch_web_content(target_link: str):
     ret = '{} {}'.format(title, soup.text)
     return ret
 
+
 if __name__ == '__main__':
     parser = parse_args()
-    s = WebSearch(config_path = parser.config_path)
+    s = WebSearch(config_path=parser.config_path)
 
     print(s.get_with_cache('mmdeploy 安装教程'))
-    print(fetch_web_content('https://mmdeploy.readthedocs.io/zh-cn/latest/get_started.html'))
+    print(
+        fetch_web_content(
+            'https://mmdeploy.readthedocs.io/zh-cn/latest/get_started.html'))

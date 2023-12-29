@@ -16,9 +16,12 @@ import numpy as np
 import argparse
 import pdb
 
+
 class FeatureStore(object):
 
-    def __init__(self, device: str = "cuda", config_path:str = "config.ini") -> None:
+    def __init__(self,
+                 device: str = "cuda",
+                 config_path: str = "config.ini") -> None:
 
         self.config_path = config_path
         self.reject_throttle = -1
@@ -30,13 +33,15 @@ class FeatureStore(object):
 
         if model_path is None or len(model_path) == 0:
             raise Exception(f'model_path can not be empty')
-        
+
         self.embeddings = HuggingFaceEmbeddings(model_name='')
-        self.embeddings.client = sentence_transformers.SentenceTransformer(model_path, device=device)
+        self.embeddings.client = sentence_transformers.SentenceTransformer(
+            model_path, device=device)
         self.vector_store_reject = None
         self.vector_store_db = None
 
-        self.md_splitter = MarkdownTextSplitter(chunk_size=768, chunk_overlap=32)
+        self.md_splitter = MarkdownTextSplitter(chunk_size=768,
+                                                chunk_overlap=32)
         self.text_splitter = CharacterTextSplitter(chunk_size=768)
 
         self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
@@ -91,13 +96,15 @@ class FeatureStore(object):
                 subdocs = self.md_splitter.create_documents([doc.page_content])
                 for subdoc in subdocs:
                     if len(subdoc.page_content) >= 10:
-                        final.append('{} {}'.format(header, subdoc.page_content.lower()))
+                        final.append('{} {}'.format(
+                            header, subdoc.page_content.lower()))
             elif len(doc.page_content) >= 10:
                 final.append('{} {}'.format(header, doc.page_content.lower()))
 
         for item in final:
             if len(item) >= 1024:
-                logger.debug('source {} split length {}'.format(source, len(item)))
+                logger.debug('source {} split length {}'.format(
+                    source, len(item)))
         return final
 
     def clean_md(self, text: str):
@@ -156,7 +163,9 @@ class FeatureStore(object):
             for split in splits:
                 metadatas.append({"source": sources[i], "data": split})
 
-        vs = Vectorstore.from_texts(shadows, self.embeddings, metadatas=metadatas)
+        vs = Vectorstore.from_texts(shadows,
+                                    self.embeddings,
+                                    metadatas=metadatas)
         vs.save_local(feature_dir)
 
     def ingress_reject(self, markdown_dir: str, work_dir: str):
@@ -185,13 +194,20 @@ class FeatureStore(object):
         vs = Vectorstore.from_texts(docs, self.embeddings, metadatas=metadatas)
         vs.save_local(feature_dir)
 
-    def load_feature(self, work_dir, feature_response: str = "db_response", feature_reject: str = 'db_reject'):
+    def load_feature(self,
+                     work_dir,
+                     feature_response: str = "db_response",
+                     feature_reject: str = 'db_reject'):
         # https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.faiss.FAISS.html#langchain.vectorstores.faiss.FAISS
-        self.vector_store_reject = Vectorstore.load_local(os.path.join(work_dir, feature_response), embeddings=self.embeddings)
-        self.vector_store_db = Vectorstore.load_local(os.path.join(work_dir, feature_reject), embeddings=self.embeddings)
+        self.vector_store_reject = Vectorstore.load_local(
+            os.path.join(work_dir, feature_response),
+            embeddings=self.embeddings)
+        self.vector_store_db = Vectorstore.load_local(
+            os.path.join(work_dir, feature_reject), embeddings=self.embeddings)
 
     def get_doc_by_id(self, _id, vector_store):
-        return vector_store.docstore.search(vector_store.index_to_docstore_id[_id])
+        return vector_store.docstore.search(
+            vector_store.index_to_docstore_id[_id])
 
     def process_strings(self, A, C, B):
         # find the longest common suffix of A and prefix of B
@@ -212,15 +228,19 @@ class FeatureStore(object):
         if step > 0:
             for i in range(1, step + 1):
                 try:
-                    doc_before = self.get_doc_by_id(id - i, vectore_store=vector_store)
+                    doc_before = self.get_doc_by_id(id - i,
+                                                    vectore_store=vector_store)
                     if doc_after.metadata['source'] == doc.metadata['source']:
-                        final_content = self.process_strings(doc_before.page_content, '\n', final_content)
+                        final_content = self.process_strings(
+                            doc_before.page_content, '\n', final_content)
                 except:
                     pass
                 try:
-                    doc_after = self.get_doc_by_id(id + i, vectore_store=vector_store)
+                    doc_after = self.get_doc_by_id(id + i,
+                                                   vectore_store=vector_store)
                     if doc_after.metadata['source'] == doc.metadata['source']:
-                        final_content = self.process_strings(final_content, '\n', doc_after.page_content)
+                        final_content = self.process_strings(
+                            final_content, '\n', doc_after.page_content)
                 except:
                     pass
         source = str(doc.metadata['source'])
@@ -233,12 +253,18 @@ class FeatureStore(object):
             path = f"[{doc.metadata['source']}](/txt/{doc.metadata['source']})"
         else:
             path = source
-        return {'path': path, 'content': re.sub(r'\n+', "\n", final_content), "score": int(score), "data": data}
+        return {
+            'path': path,
+            'content': re.sub(r'\n+', "\n", final_content),
+            "score": int(score),
+            "data": data
+        }
 
     def _search(self, question: str, vector_store, topk: int = 3, throttle=-1):
         try:
             embedding = vector_store.embedding_function(question)
-            scores, indices = vector_store.index.search(np.array([embedding], dtype=np.float32), topk)
+            scores, indices = vector_store.index.search(
+                np.array([embedding], dtype=np.float32), topk)
             docs = []
             for j, i in enumerate(indices[0]):
                 if i == -1:
@@ -247,7 +273,9 @@ class FeatureStore(object):
                 if throttle >= 0 and scores[0][j] >= throttle:
                     # print(question, scores[0][j])
                     continue
-                docs.append(self.get_doc(i, scores[0][j], 0, vector_store=vector_store))
+                docs.append(
+                    self.get_doc(i, scores[0][j], 0,
+                                 vector_store=vector_store))
 
             return docs
         except Exception as e:
@@ -256,11 +284,17 @@ class FeatureStore(object):
             return []
 
     def db_search(self, question):
-        docs = self._search(question=question, vector_store=self.vector_store_db, topk=1, throttle=-1)
+        docs = self._search(question=question,
+                            vector_store=self.vector_store_db,
+                            topk=1,
+                            throttle=-1)
         return docs, []
 
     def is_reject(self, question):
-        docs = self._search(question=question, vector_store=self.vector_store_reject, topk=1, throttle=self.reject_throttle)
+        docs = self._search(question=question,
+                            vector_store=self.vector_store_reject,
+                            topk=1,
+                            throttle=self.reject_throttle)
         if len(docs) < 1:
             return True
         return False
@@ -273,7 +307,8 @@ class FeatureStore(object):
         for doc in docs:
             logger.debug(('db', doc['score'], question))
         ret = [doc['data'] for doc in docs]
-        logger.debug('query:{} keyword_set:{} ret:{}'.format(question, keyword_set, ret))
+        logger.debug('query:{} keyword_set:{} ret:{}'.format(
+            question, keyword_set, ret))
         return ' '.join(ret)
 
     def query_source(self, question: str):
@@ -313,74 +348,97 @@ class FeatureStore(object):
         logger.debug(f'preprcessed {len(mds)} files.')
         return markdown_dir
 
-    def initialize(self, repo_dir: str, work_dir: str, config_path : str = 'config.ini', good_questions=[], bad_questions=[]):
-        logger.info('initialize response and reject feature store, you only need call this once.')
+    def initialize(self,
+                   repo_dir: str,
+                   work_dir: str,
+                   config_path: str = 'config.ini',
+                   good_questions=[],
+                   bad_questions=[]):
+        logger.info(
+            'initialize response and reject feature store, you only need call this once.'
+        )
         self.reject_throttle = -1
         markdown_dir = self.preprocess(repo_dir=repo_dir, work_dir=work_dir)
         self.ingress_response(markdown_dir=markdown_dir, work_dir=work_dir)
         self.ingress_reject(markdown_dir=markdown_dir, work_dir=work_dir)
 
         if len(good_questions) == 0 or len(bad_questions) == 0:
-            raise Exception(f'good and bad question examples cat not be empty.')
+            raise Exception(
+                f'good and bad question examples cat not be empty.')
         self.load_feature(work_dir=work_dir)
         questions = good_questions + bad_questions
         predictions = []
         for question in questions:
-            docs = self._search(question=question, vector_store=self.vector_store_reject, topk=1)
+            docs = self._search(question=question,
+                                vector_store=self.vector_store_reject,
+                                topk=1)
             score = docs[0]['score']
             predictions.append(1e6 - score)
 
-        labels = [1 for _ in range(len(good_questions))] + [0 for _ in range(len(bad_questions))]
-        precision, recall, thresholds = precision_recall_curve(labels, predictions)
+        labels = [1 for _ in range(len(good_questions))
+                  ] + [0 for _ in range(len(bad_questions))]
+        precision, recall, thresholds = precision_recall_curve(
+            labels, predictions)
 
         pdb.set_trace()
         # get the best index for sum(precison, recall)
         sum_precision_recall = precision[:-1] + recall[:-1]
         index_max = np.argmax(sum_precision_recall)
-        optimal_threshold = 1e6-thresholds[index_max]
+        optimal_threshold = 1e6 - thresholds[index_max]
 
         with open(config_path, 'w+') as f:
             config = pytoml.load(f)
-            config['feature_store'] = {
-                'reject_throttle': optimal_threshold
-            }
+            config['feature_store'] = {'reject_throttle': optimal_threshold}
             pytoml.dump(config, f)
-        
-        logger.info(f"The optimal threshold is: {optimal_threshold}, saved it to {config_path}")
+
+        logger.info(
+            f"The optimal threshold is: {optimal_threshold}, saved it to {config_path}"
+        )
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Feature store for processing directories.')
+    parser = argparse.ArgumentParser(
+        description='Feature store for processing directories.')
     parser.add_argument('work_dir', type=str, help='Working directory.')
-    parser.add_argument('repo_dir', type=str, help='Root directory where the repositories are located.')
-    parser.add_argument('--good_questions', default='resource/good_questions.json', 
-                        help='The json file path of positive examples in the dataset. Default value is resource/good_questions.json')
-    parser.add_argument('--bad_questions', default='resource/bad_questions.json',
-                        help='The json file path of negative examples. Default value is resource/bad_questions.json')
-    parser.add_argument('--config_path', default='config.ini',
-                        help='Feature store configuration path. Default value is config.ini')
+    parser.add_argument(
+        'repo_dir',
+        type=str,
+        help='Root directory where the repositories are located.')
+    parser.add_argument(
+        '--good_questions',
+        default='resource/good_questions.json',
+        help=
+        'The json file path of positive examples in the dataset. Default value is resource/good_questions.json'
+    )
+    parser.add_argument(
+        '--bad_questions',
+        default='resource/bad_questions.json',
+        help=
+        'The json file path of negative examples. Default value is resource/bad_questions.json'
+    )
+    parser.add_argument(
+        '--config_path',
+        default='config.ini',
+        help='Feature store configuration path. Default value is config.ini')
     args = parser.parse_args()
     return args
 
 
 def test():
     real_questions = [
-        '请问找不到libmmdeploy.so怎么办',
-        'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
+        '请问找不到libmmdeploy.so怎么办', 'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
         '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',
         'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
         '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
-        'mmdeploy 现在支持 mmtrack 模型转换了么',
-        '请问 ncnn 全称是什么',
-        '有啥中文的 text to speech 模型吗?',
-        '今天中午吃什么？',
-        '茴香豆是怎么做的'
+        'mmdeploy 现在支持 mmtrack 模型转换了么', '请问 ncnn 全称是什么',
+        '有啥中文的 text to speech 模型吗?', '今天中午吃什么？', '茴香豆是怎么做的'
     ]
     fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
         reject = fs_query.is_reject(example)
         logger.debug(f'reject: {reject} query: {example}')
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -389,8 +447,11 @@ if __name__ == '__main__':
         good_questions = json.load(f)
     with open(args.bad_questions) as f:
         bad_questions = json.load(f)
-    
-    fs_init.initialize(repo_dir=args.repo_dir, work_dir=args.work_dir, good_questions=good_questions, bad_questions=bad_questions)
+
+    fs_init.initialize(repo_dir=args.repo_dir,
+                       work_dir=args.work_dir,
+                       good_questions=good_questions,
+                       bad_questions=bad_questions)
     del fs_init
 
     test()

@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class ErrorCode(Enum):
     SUCCESS = 0, "成功"
     NOT_A_QUESTION = 1, "query 不是一个疑问句"
@@ -31,12 +32,14 @@ class ErrorCode(Enum):
         else:
             raise TypeError(f"Expected type {cls}, got {type(code)}")
 
+
 class QueryTracker:
+
     def __init__(self, log_file_path):
         self.log_file_path = log_file_path
         self.log_list = []
 
-    def log(self, key, value = ''):
+    def log(self, key, value=''):
         self.log_list.append((key, value))
 
     def __del__(self):

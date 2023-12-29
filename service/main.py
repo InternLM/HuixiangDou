@@ -25,8 +25,16 @@ from aiohttp import web
 
 # about LLM
 parser = argparse.ArgumentParser()
-parser.add_argument("--feature_dir", "-f", type=str, default="memory", help="path feature store feature dir")
-parser.add_argument("--device_id", "-d", type=int, default=7, help="GPU device id for sentence_transformer")
+parser.add_argument("--feature_dir",
+                    "-f",
+                    type=str,
+                    default="memory",
+                    help="path feature store feature dir")
+parser.add_argument("--device_id",
+                    "-d",
+                    type=int,
+                    default=7,
+                    help="GPU device id for sentence_transformer")
 
 args, _ = parser.parse_known_args()
 device = 'cuda:2'
@@ -51,7 +59,6 @@ sent_msg = dict()
 all_msgs = dict()
 
 
-
 def single_judge(prompt, throttle: int, default: int, repeat=1):
     scores = []
 
@@ -73,13 +80,12 @@ def single_judge(prompt, throttle: int, default: int, repeat=1):
     return False
 
 
-
 def generate(question_simple, question_full, history, groupname):
     log_tracker = dict()
     log_tracker['step1_is_question'] = [question_full, history, groupname]
 
     logger.info('question full:{}'.format(question_full))
-    
+
     response = ''
     send = False
     reason = ''
@@ -99,22 +105,32 @@ def generate(question_simple, question_full, history, groupname):
         reason = 'not a question'
         log_tracker['step1_not_question'] = 'true'
         return response, send, reason
-    
-    topic = llm.generate_response('告诉我这句话的主题，直接说主题不要解释：“{}”'.format(question_full))
+
+    topic = llm.generate_response(
+        '告诉我这句话的主题，直接说主题不要解释：“{}”'.format(question_full))
 
     log_tracker['step2_topic'] = topic
 
     if len(topic) <= 2:
         return response, send, reason
-    
+
     db_context_part, db_context = fs.query_source(topic)
 
     if db_context != '<reject>':
 
-        if single_judge('判断问题和材料的关联度，用1～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n问题：“{}”\n材料：“{}”'.format(question_full, db_context_part), throttle=5, default=10):
-            prompt, history = llm.build_prompt(instruction=question_full, context=db_context, history_pair=history)
-            response = llm.generate_response(prompt=prompt, history=history, remote=True)
-            logger.info('-question:{}\n-dbcontext:{}\n-resp:{}\n'.format(question_full, db_context, response))
+        if single_judge(
+                '判断问题和材料的关联度，用1～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n问题：“{}”\n材料：“{}”'
+                .format(question_full, db_context_part),
+                throttle=5,
+                default=10):
+            prompt, history = llm.build_prompt(instruction=question_full,
+                                               context=db_context,
+                                               history_pair=history)
+            response = llm.generate_response(prompt=prompt,
+                                             history=history,
+                                             remote=True)
+            logger.info('-question:{}\n-dbcontext:{}\n-resp:{}\n'.format(
+                question_full, db_context, response))
             log_tracker['step3_1_doc'] = [db_context_part, response]
 
         else:
@@ -126,7 +142,8 @@ lmdeploy 是涵盖了 LLM 任务的全套轻量化、部署和服务解决方案
 “硬件模型库” 是 openmmlab 部署的一个 web 服务，包含 2500 个已经转换好的视觉模型、nvidia 全套硬件。用户可以直接下载模型使用，也可以用硬件完成真实的模型测速。硬件模型库还提供嵌入式芯片测评服务，目前已发布 ax620a 测评报告。
 
 以下是任务描述：
-你现在是{}技术交流群里的技术助手，用户问“{}”，你打算通过谷歌搜索查询相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'''.format(groupname, question_full)
+你现在是{}技术交流群里的技术助手，用户问“{}”，你打算通过谷歌搜索查询相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'''.format(
+                groupname, question_full)
             web_keywords = llm.generate_response(prompt=prompt)
             # format keywords
             web_keywords = web_keywords.replace('"', ' ')
@@ -136,22 +153,30 @@ lmdeploy 是涵盖了 LLM 任务的全套轻量化、部署和服务解决方案
 
             log_tracker['step3_2_web_keywords'] = web_keywords
 
-
             if web_keywords is not None and len(web_keywords) > 0:
                 try:
                     web_context = ''
-                    articles = google.get_with_cache(query=web_keywords, max_article=3)
+                    articles = google.get_with_cache(query=web_keywords,
+                                                     max_article=3)
                     logger.debug('search with cache finished')
                     for article in articles:
                         if article is not None and len(article) > 0:
                             if len(article) > MAX_INPUT_LEN:
                                 article = article[0:MAX_INPUT_LEN]
 
-                            if single_judge('判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 1～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'.format(article), throttle=3, default=0):
+                            if single_judge(
+                                    '判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 1～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'
+                                    .format(article),
+                                    throttle=3,
+                                    default=0):
                                 logger.debug('**跳过不安全的内容** {}'.format(article))
                                 continue
 
-                            if single_judge('问题：“{}”\n材料：“{}\n请阅读以上内容，判断问题和材料的关联度，用1～10表示，不要解释直接给出得分。判断标准：非常相关得 10 分；完全没关联得 0 分。直接打分不要解释。\n'.format(question_full, article), throttle=6, default=10):
+                            if single_judge(
+                                    '问题：“{}”\n材料：“{}\n请阅读以上内容，判断问题和材料的关联度，用1～10表示，不要解释直接给出得分。判断标准：非常相关得 10 分；完全没关联得 0 分。直接打分不要解释。\n'
+                                    .format(question_full, article),
+                                    throttle=6,
+                                    default=10):
                                 web_context += '\n\n'
                                 web_context += article
 
@@ -161,12 +186,21 @@ lmdeploy 是涵盖了 LLM 任务的全套轻量化、部署和服务解决方案
                     web_context = web_context.strip()
 
                     if len(web_context) > 0:
-                        prompt, history = llm.build_prompt(instruction=question_full, context=web_context, history_pair=history)
-                        response = llm.generate_response(prompt=prompt, history=history, remote=False)
-                        log_tracker['step3_3_web_context'] = [web_context, response]
+                        prompt, history = llm.build_prompt(
+                            instruction=question_full,
+                            context=web_context,
+                            history_pair=history)
+                        response = llm.generate_response(prompt=prompt,
+                                                         history=history,
+                                                         remote=False)
+                        log_tracker['step3_3_web_context'] = [
+                            web_context, response
+                        ]
                     else:
                         reason = 'no web context'
-                    logger.info('-question:{}\n-webcontext:{}\n-resp:{}\n'.format(question_full, web_context, response))
+                    logger.info(
+                        '-question:{}\n-webcontext:{}\n-resp:{}\n'.format(
+                            question_full, web_context, response))
                 except Exception as e:
                     logger.error(e)
 
@@ -191,19 +225,32 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
             # 找不到答案，或者回答的不知道，尝试检索源码
             if groupname in ['lmdeploy', 'opencompass', 'xtuner']:
                 # use page indexing
-                sg_context = sg_search(llm=llm, question=question_full, groupname=groupname)
+                sg_context = sg_search(llm=llm,
+                                       question=question_full,
+                                       groupname=groupname)
                 if sg_context != None and len(sg_context) > 0:
                     if len(sg_context) > 60000:
                         sg_context = sg_context[0:60000]
-                    prompt, history = llm.build_prompt(instruction=question_full, context=sg_context, history_pair=history)
+                    prompt, history = llm.build_prompt(
+                        instruction=question_full,
+                        context=sg_context,
+                        history_pair=history)
 
                     if len(prompt) > MAX_INPUT_LEN:
-                        response = llm.generate_response(prompt=prompt, history=history, remote=True)
-                        log_tracker['step4_1_source_graph'] = [sg_context, response, 'remote']
+                        response = llm.generate_response(prompt=prompt,
+                                                         history=history,
+                                                         remote=True)
+                        log_tracker['step4_1_source_graph'] = [
+                            sg_context, response, 'remote'
+                        ]
 
                     else:
-                        response = llm.generate_response(prompt=prompt, history=history, remote=False)
-                        log_tracker['step4_1_source_graph'] = [sg_context, response, 'local']
+                        response = llm.generate_response(prompt=prompt,
+                                                         history=history,
+                                                         remote=False)
+                        log_tracker['step4_1_source_graph'] = [
+                            sg_context, response, 'local'
+                        ]
 
                     prompt = '''
 “question:{} answer:{}”
@@ -225,10 +272,16 @@ answer: “抱歉我不清楚 lmdeploy 是什么，请联系相关开发人员�
 
         if response is not None and len(response) >= 600:
             # 回复内容太长，总结一下
-            response = llm.generate_response(prompt='{} \n 仔细阅读以上内容，总结到 500 字以内'.format(response), history=[])
+            response = llm.generate_response(
+                prompt='{} \n 仔细阅读以上内容，总结到 500 字以内'.format(response),
+                history=[])
 
         if send:
-            if single_judge('判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 1～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'.format(response), throttle=3, default=0):
+            if single_judge(
+                    '判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 1～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'
+                    .format(response),
+                    throttle=3,
+                    default=0):
                 response = '“茴香豆”作为 LLM 助手，须遵循社会主义核心价值观。'
                 send = False
                 reason = 'security'
@@ -263,11 +316,17 @@ def count_history(history: list):
         count += len(item[1])
     return count
 
+
 def save_sent(groupId, question_full, answer, filepath):
     with open(filepath, 'a', encoding='utf-8') as f:
-        obj = {'groupId': groupId, 'question_full': question_full, 'answer': answer}
+        obj = {
+            'groupId': groupId,
+            'question_full': question_full,
+            'answer': answer
+        }
         f.write(json.dumps(obj, ensure_ascii=False, indent=2))
         f.write('\n')
+
 
 def send_message(groupId, answer: str):
     wId = me['wId']
@@ -338,7 +397,12 @@ def llm_response(wx_msg, treat_as_context=False):
         now = time.time()
         key = '{}|{}'.format(fromUser, groupId)
         if key not in all_msgs:
-            all_msgs[key] = {'history': [(question, '')], 'last_wx_msg_time': now, 'last_response_time': -1, 'group_id': groupId}
+            all_msgs[key] = {
+                'history': [(question, '')],
+                'last_wx_msg_time': now,
+                'last_response_time': -1,
+                'group_id': groupId
+            }
             return None
         user = all_msgs[key]
         user['last_wx_msg_time'] = now
@@ -406,7 +470,11 @@ def llm_response(wx_msg, treat_as_context=False):
                 reason = ''
                 # 简单词汇直接当成上下文塞进 context。响应的最简单的问题 “如何安装mmdet”
                 if len(question_simple) >= 9:
-                    answer, send, reason = generate(question_simple=question_simple, question_full=question_full, history=history[0:-1], groupname=groupname)
+                    answer, send, reason = generate(
+                        question_simple=question_simple,
+                        question_full=question_full,
+                        history=history[0:-1],
+                        groupname=groupname)
                 # answer = question
                 user['last_response_time'] = now
                 if answer is not None and len(answer) > 0:
@@ -422,27 +490,41 @@ def llm_response(wx_msg, treat_as_context=False):
                 if send and len(answer) > 1:
                     groupId = key.split('|')[-1]
                     if len(question_full) > 30:
-                        format_answer = '{}..\n---\n{}'.format(question_full[0:30], answer)
+                        format_answer = '{}..\n---\n{}'.format(
+                            question_full[0:30], answer)
                     else:
-                        format_answer = '{}\n---\n{}'.format(question_full, answer)
+                        format_answer = '{}\n---\n{}'.format(
+                            question_full, answer)
 
-                    black_list = ['45668581158@chatroom', '35003485913@chatroom']
+                    black_list = [
+                        '45668581158@chatroom', '35003485913@chatroom'
+                    ]
                     if groupId in black_list:
-                        save_sent(groupId=groupId, question_full=question_full, answer=answer, filepath='res/history_abandon.txt')
+                        save_sent(groupId=groupId,
+                                  question_full=question_full,
+                                  answer=answer,
+                                  filepath='res/history_abandon.txt')
                         return None
-                    save_sent(groupId=groupId, question_full=question_full, answer=answer, filepath='res/history_sent.txt')
+                    save_sent(groupId=groupId,
+                              question_full=question_full,
+                              answer=answer,
+                              filepath='res/history_sent.txt')
                     send_message(groupId=groupId, answer=format_answer)
 
     scan_all()
     logger.debug(all_msgs)
     return None
 
+
 def image_url_to_text(image_url):
     headers = {"Content-Type": "application/json"}
     text = ''
     try:
         data = {'url': image_url}
-        resp = requests.post('http://{}/antiseed_ocr'.format(remote_ip_port), data=json.dumps(data), headers=headers, timeout=3)
+        resp = requests.post('http://{}/antiseed_ocr'.format(remote_ip_port),
+                             data=json.dumps(data),
+                             headers=headers,
+                             timeout=3)
         text = json.loads(resp.text)['text']
     except Exception as e:
         print(str(e))
@@ -452,13 +534,13 @@ def image_url_to_text(image_url):
 def translate_doc(file_path, output_path):
     doc_en = Document(file_path)
     doc_zh = Document()
-    table = doc_zh.add_table(rows=1+len(doc_en.paragraphs), cols=2)
+    table = doc_zh.add_table(rows=1 + len(doc_en.paragraphs), cols=2)
     header_cells = table.rows[0].cells
     header_cells[0].text = '英文'
     header_cells[1].text = '中文'
 
-    for idx,para in enumerate(doc_en.paragraphs):
-        content_cells = table.rows[1+idx].cells
+    for idx, para in enumerate(doc_en.paragraphs):
+        content_cells = table.rows[1 + idx].cells
         content_cells[0].add_paragraph(para.text, style=para.style)
 
         en_text = para.text
@@ -502,13 +584,14 @@ nature>\n\t<tmp_node>\n\t\t<publisher-id></publisher-id>\n\t</tmp_node>\n</msgso
     # 群白名单
     # 测试群，测试二群，lmdeploy 2群, 贡献者群，硬件模型库，xtuner, lmdeploy 1群,
     grouplist = [
-        '20158567857@chatroom', '21375247392@chatroom', '20933744776@chatroom', '21295744750@chatroom', '34744063953@chatroom', '21177113665@chatroom'
+        '20158567857@chatroom', '21375247392@chatroom', '20933744776@chatroom',
+        '21295744750@chatroom', '34744063953@chatroom', '21177113665@chatroom'
     ]
 
     # xtuner
-    # '35003485913@chatroom', 
+    # '35003485913@chatroom',
     # mmhuman3d 群，
-    # '20814553575@chatroom', 
+    # '20814553575@chatroom',
     grouplist += ['20814553575@chatroom']
     if os.path.exists('res/group.json'):
         with open('res/group.json') as f:
@@ -530,7 +613,7 @@ nature>\n\t<tmp_node>\n\t\t<publisher-id></publisher-id>\n\t</tmp_node>\n</msgso
     if groupId not in grouplist:
         # 只处理某些群
         return None
-    
+
     # 5/9/'80001' 群消息
     # 6/'80002' 群图片
     if messageType == 6 or messageType == '80002':
@@ -543,13 +626,13 @@ nature>\n\t<tmp_node>\n\t\t<publisher-id></publisher-id>\n\t</tmp_node>\n</msgso
         text = image_url_to_text(image_url=image_url)
         if text is None or len(text) < 1:
             return None
-        
+
         wx_msg['data']['content'] = text
         return llm_response(wx_msg, treat_as_context=True)
 
     elif messageType == 5 or messageType == 9 or messageType == '80001':
         return llm_response(wx_msg)
-    
+
     elif messageType == '80009':
         file_group_list = ['20158567857@chatroom', '21375247392@chatroom']
 
@@ -561,13 +644,13 @@ nature>\n\t<tmp_node>\n\t\t<publisher-id></publisher-id>\n\t</tmp_node>\n</msgso
         code = wx_login.download_doc_file(wx_msg, file_path=LOCAL_EN_DOC)
         if code != 0:
             return None
-        
+
         translate_doc(LOCAL_EN_DOC, LOCAL_ZH_DOC)
         doc_url, error = aliyunoss.oss_upload(LOCAL_ZH_DOC)
         if error is not None:
             print('process 60009 {}'.format(error))
             return None
-        
+
         wx_login.send_file(wx_msg, file_url=doc_url)
 
     elif messageType == 14 or messageType == '80014':
@@ -589,7 +672,9 @@ def send_to_wx(response):
     else:
         data = response
     logger.debug('post {}'.format(data))
-    resp = requests.post('http://{}/send'.format(remote_ip_port), data=json.dumps(data), headers=headers)
+    resp = requests.post('http://{}/send'.format(remote_ip_port),
+                         data=json.dumps(data),
+                         headers=headers)
     logger.info((resp, resp.content))
 
 
@@ -597,11 +682,15 @@ def work_time():
     workTime = ['07:00:00', '22:00:00']
     dayOfWeek = datetime.datetime.now().weekday()
     #dayOfWeek = datetime.today().weekday()
-    beginWork = datetime.datetime.now().strftime("%Y-%m-%d") + ' ' + workTime[0]
+    beginWork = datetime.datetime.now().strftime(
+        "%Y-%m-%d") + ' ' + workTime[0]
     endWork = datetime.datetime.now().strftime("%Y-%m-%d") + ' ' + workTime[1]
-    beginWorkSeconds = time.time() - time.mktime(time.strptime(beginWork, '%Y-%m-%d %H:%M:%S'))
-    endWorkSeconds = time.time() - time.mktime(time.strptime(endWork, '%Y-%m-%d %H:%M:%S'))
-    if (int(dayOfWeek) in range(7)) and int(beginWorkSeconds) > 0 and int(endWorkSeconds) < 0:
+    beginWorkSeconds = time.time() - time.mktime(
+        time.strptime(beginWork, '%Y-%m-%d %H:%M:%S'))
+    endWorkSeconds = time.time() - time.mktime(
+        time.strptime(endWork, '%Y-%m-%d %H:%M:%S'))
+    if (int(dayOfWeek) in range(7)
+        ) and int(beginWorkSeconds) > 0 and int(endWorkSeconds) < 0:
         return True
     else:
         return False
@@ -634,4 +723,3 @@ if __name__ == "__main__":
 
         randval = random.randint(1, int(pow(2, 4)))
         #     time.sleep(randval)
-

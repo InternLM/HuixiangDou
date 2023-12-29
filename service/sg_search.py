@@ -7,7 +7,9 @@ import argparse
 from loguru import logger
 import pytoml
 
+
 class SourceGraphProxy:
+
     def __init__(self, config_path: dict, topk=1) -> None:
         self.config_path = config_path
         self.topk = topk
@@ -21,14 +23,18 @@ class SourceGraphProxy:
         with open(self.config_path) as f:
             config = pytoml.load(f)
             sg_config = config['sg_search']
-        
+
         bin_path = sg_config['binary_src_path']
         if bin_path is None or not os.path.exists(bin_path):
-            raise Exception(f'sg_search enabled while binary_src_path {bin_path} not exist')
+            raise Exception(
+                f'sg_search enabled while binary_src_path {bin_path} not exist'
+            )
 
         token = sg_config['src_access_token']
         if token is None or token == 'YOUR-ACCESS-TOKEN':
-            raise Exception(f'sg_search enabled while sr_access_token {bin_path} not exist')
+            raise Exception(
+                f'sg_search enabled while sr_access_token {bin_path} not exist'
+            )
         return sg_config
 
     def extract_sg_result(self, jsonstr):
@@ -42,12 +48,13 @@ class SourceGraphProxy:
 
                 content = result['file']['content']
                 path = result['file']['path']
-                ret.append({'filepath':path, 'content':content})
+                ret.append({'filepath': path, 'content': content})
 
                 if len(ret) >= self.topk:
                     break
         except Exception as e:
-            logger.warning('{} when source graph parse {}'.format(str(e), jsonstr))
+            logger.warning('{} when source graph parse {}'.format(
+                str(e), jsonstr))
         return ret
 
     def search(self, llm, question, groupname):
@@ -59,7 +66,8 @@ class SourceGraphProxy:
 * 不知道。
 请直接告诉我项目名称不要解释，如果都不是就回答不知道。'''.format(question, groupname)
 
-        choice = llm.generate_response(prompt=prompt, remote=False).lower().strip()
+        choice = llm.generate_response(prompt=prompt,
+                                       remote=False).lower().strip()
         REPO = ''
         if 'lmdeploy' in choice:
             REPO = 'internlm/lmdeploy'
@@ -71,10 +79,12 @@ class SourceGraphProxy:
             return ''
 
         sg_config = self.load_config()
-        ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(sg_config['src_access_token'])
+        ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(
+            sg_config['src_access_token'])
         BINARY = sg_config['binary_src_path']
 
-        prompt = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'.format(question)
+        prompt = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'.format(
+            question)
         entities = []
         try:
             entity_str = llm.generate_response(prompt=prompt)
@@ -86,23 +96,30 @@ class SourceGraphProxy:
         for entity in entities:
             # 根据实体词，搜文档和源码
             # search -json 'repo:open-compass/opencompass  summarizers'
-            cmd_doc = '''{} search -json 'repo:{} lang:MarkDown {}' '''.format(BINARY, REPO, entity)
+            cmd_doc = '''{} search -json 'repo:{} lang:MarkDown {}' '''.format(
+                BINARY, REPO, entity)
             cmd_return = self.command(ENV + cmd_doc)
             search_items += self.extract_sg_result(cmd_return)
 
-            cmd_python = '''{} search -json 'repo:{} lang:Python {}' '''.format(BINARY, REPO, entity)
+            cmd_python = '''{} search -json 'repo:{} lang:Python {}' '''.format(
+                BINARY, REPO, entity)
             cmd_return = self.command(ENV + cmd_python)
             search_items += self.extract_sg_result(cmd_return)
 
         search_text = json.dumps(search_items, ensure_ascii=False, indent=2)
         return search_text
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Source graph proxy search')
-    parser.add_argument('--config_path', default='config.ini',
-                        help='Source graph proxy configuration path. Default value is config.ini')
+    parser.add_argument(
+        '--config_path',
+        default='config.ini',
+        help=
+        'Source graph proxy configuration path. Default value is config.ini')
     args = parser.parse_args()
     return args
+
 
 if __name__ == '__main__':
     logger.add('logs/sg_search.log', rotation="4MB")
@@ -110,5 +127,7 @@ if __name__ == '__main__':
 
     llm = ChatClient(config_path=args.config_path)
     sg = SourceGraphProxy(config_path=args.config_path)
-    context = sg.search(llm, question='请问triviaqa 5shot结果怎么在summarizer里输出呢', groupname='opencompass')
+    context = sg.search(llm,
+                        question='请问triviaqa 5shot结果怎么在summarizer里输出呢',
+                        groupname='opencompass')
     print(context)
