@@ -2,3 +2,4 @@ from feature_store import FeatureStore
 from llm_client import ChatClient
 from llm_server_hybrid import HybridLLMServer
 from web_searh import WebSearch
+from work import Worker

@@ -18,11 +18,21 @@ import pdb
 
 class FeatureStore(object):
 
-    def __init__(self, model_dir: str, device: str = "cuda", config_path:str = "config.ini") -> None:
-        if model_dir is None or len(model_dir) == 0:
-            raise Exception(f'model_dir can not be empty')
+    def __init__(self, device: str = "cuda", config_path:str = "config.ini") -> None:
+
+        self.config_path = config_path
+        self.reject_throttle = -1
+        with open(config_path) as f:
+            config = pytoml.load(f)['feature_store']
+            model_path = config['model_path']
+            if 'feature_store_reject_throttle' in config:
+                self.reject_throttle = config['reject_throttle']
+
+        if model_path is None or len(model_path) == 0:
+            raise Exception(f'model_path can not be empty')
+        
         self.embeddings = HuggingFaceEmbeddings(model_name='')
-        self.embeddings.client = sentence_transformers.SentenceTransformer(model_dir, device=device)
+        self.embeddings.client = sentence_transformers.SentenceTransformer(model_path, device=device)
         self.vector_store_reject = None
         self.vector_store_db = None
 
@@ -34,12 +44,6 @@ class FeatureStore(object):
             ("##", "Header 2"),
             ("###", "Header 3"),
         ])
-        self.config_path = config_path
-        self.reject_throttle = -1
-        with open(config_path) as f:
-            config = pytoml.load(f)
-            if 'feature_store_reject_throttle' in config:
-                self.reject_throttle = config['feature_store']['reject_throttle']
 
     def contains_chinese(self, text):
         if re.search('[\u4e00-\u9fff]', text):
@@ -349,7 +353,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Feature store for processing directories.')
     parser.add_argument('work_dir', type=str, help='Working directory.')
     parser.add_argument('repo_dir', type=str, help='Root directory where the repositories are located.')
-    parser.add_argument('--model_dir', default='../models/text2vec-large-chinese', help='The local path or hugging face repo name of txt2vec model, Default value is ../models/text2vec-large-chinese')
     parser.add_argument('--good_questions', default='resource/good_questions.json', 
                         help='The json file path of positive examples in the dataset. Default value is resource/good_questions.json')
     parser.add_argument('--bad_questions', default='resource/bad_questions.json',
@@ -373,7 +376,7 @@ def test():
         '今天中午吃什么？',
         '茴香豆是怎么做的'
     ]
-    fs_query = FeatureStore(model_dir=args.model_dir, config_path=args.config_path)
+    fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
         reject = fs_query.is_reject(example)
@@ -381,7 +384,7 @@ def test():
 
 if __name__ == '__main__':
     args = parse_args()
-    fs_init = FeatureStore(model_dir=args.model_dir, config_path=args.config_path)
+    fs_init = FeatureStore(config_path=args.config_path)
     with open(args.good_questions) as f:
         good_questions = json.load(f)
     with open(args.bad_questions) as f:

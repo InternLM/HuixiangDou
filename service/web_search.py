@@ -20,7 +20,7 @@ class WebSearch:
         try:
             with open(self.config_path) as f:
                 config = pytoml.load(f)
-                return config['web_search']['url_partial_order']
+                return config['web_search']['domain_partial_order']
         except Exception as e:
             logger.error(str(e))
         return []
@@ -28,7 +28,7 @@ class WebSearch:
     def load_key(self):
         with open(self.config_path) as f:
             config = pytoml.load(f)
-            api_key = config['web_search']['X-API-KEY']
+            api_key = config['web_search']['x_api_key']
             if api_key is not None and len(api_key) > 0 and api_key != 'YOUR-API-KEY':
                 return api_key
         raise Exception('web_search X-API-KEY not found, please input your API key')
@@ -56,7 +56,7 @@ class WebSearch:
 
         for organic in jsonobj['organic']:
             link = ''
-            print(organic)
+            logger.debug(organic)
 
             if 'link' in organic:
                 link = organic['link']
@@ -104,9 +104,8 @@ class WebSearch:
                     article = article.replace('\n\n', '\n')
                     article = article.replace('\n\n', '\n')
                     article = article.replace('  ', ' ')
+                    articles.append(article)
 
-                    if len(article) > len(query):
-                        articles.append(article)
                     break
                 except Exception as e:
                     logger.error(('web_parse exception', query, e, target_link))
@@ -146,8 +145,7 @@ class WebSearch:
             try:
                 articles = self.google(query=query, max_article=max_article)
                 self.save_search_result(query=query, articles=articles)
-
-                return []
+                return articles
             except Exception as e:
                 logger.error(('web_search exception', query, str(e)))
                 life += 1
@@ -159,7 +157,7 @@ class WebSearch:
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Web search.')
-    parser.add_argument('keywords', type=str, help='Keywords for search and parse.')
+    parser.add_argument('--keywords', type=str, help='Keywords for search and parse.')
     parser.add_argument('--config_path', default='config.ini',
                         help='Feature store configuration path. Default value is config.ini')
     args = parser.parse_args()
@@ -179,5 +177,5 @@ if __name__ == '__main__':
     parser = parse_args()
     s = WebSearch(config_path = parser.config_path)
 
-    print(s.get_with_cache(args.keywords))
-    print(fetch_web_content('https://zhuanlan.zhihu.com/p/359500899'))
+    print(s.get_with_cache('mmdeploy 安装教程'))
+    print(fetch_web_content('https://mmdeploy.readthedocs.io/zh-cn/latest/get_started.html'))
