@@ -16,7 +16,7 @@ cd HuixiangDou && mkdir workdir # 创建工作目录
 python3 -m pip install -r requirements.txt # 安装依赖
 python3 service/feature_store.py repodir workdir # 把 repodir 的特征保存到 workdir
 ```
-运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请尝试自己的领域知识（医疗，金融，电力等）
+运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）
 ```bash
 # 接受技术话题
 process query: mmdeploy 现在支持 mmtrack 模型转换了么
@@ -97,7 +97,7 @@ python3 main.py workdir
 1. 使用更高精度 local LLM
 
     调整 config.ini 中的`llm.local` 模型路径。
-    此选项需要更大的 GPU 显存。
+    此选项效果显著，但需要更大的 GPU 显存。
 
 2. Hybrid LLM Service
 
@@ -114,17 +114,17 @@ python3 main.py workdir
     remote_llm_max_text_length = 128000
     remote_llm_model = "moonshot-v1-128k"
     ```
-    我们同样支持 gpt。注意此特性需要长文本特性，同时会增加运行成本。
+    我们同样支持 gpt API。注意此特性会增加响应耗时和运行成本。
 
 3. repo 搜索增强
 
-    此特性需要开发能力，手动调整 prompt。
+    此特性适合处理疑难问题，需要基础开发能力调整 prompt。
 
 
 ## FAQ 
 
 1. 如何接入其他 IM ？
-    * 微信。企业微信请查看[企业微信应用开发指南](https://developer.work.weixin.qq.com/document/path/90594)；对于个人微信，我们已向微信团队确认暂无正式 API，须自行搜索学习
+    * 微信。企业微信请查看[企业微信应用开发指南](https://developer.work.weixin.qq.com/document/path/90594)；对于个人微信，我们已向微信团队确认暂无 API，须自行搜索学习
     * 钉钉。参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 2. 机器人太高冷/太嘴碎怎么办？
