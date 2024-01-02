@@ -61,9 +61,9 @@ class ChatClient:
                 f'diable local LLM while `remote=False`, auto fixed')
 
         if remote:
-            max_length = llm_config['server']['remote_kimi_max_text_length']
+            max_length = llm_config['server']['remote_llm_max_text_length']
         else:
-            max_length = llm_config['server']['local_internlm_max_text_length']
+            max_length = llm_config['server']['local_llm_max_text_length']
 
         if len(prompt) > max_length:
             logger.warning(
@@ -82,9 +82,12 @@ class ChatClient:
                 "remote": remote
             }
             resp = requests.post(url, headers=header, data=json.dumps(data))
+            pdb.set_trace()
+            if resp.status_code != 200:
+                raise Exception(str((resp.status_code, resp.reason)))
             return resp.json()['text']
         except Exception as e:
-            print(str(e))
+            logger.error(str(e))
             return ''
 
 

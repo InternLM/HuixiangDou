@@ -6,3 +6,4 @@ config.ini
 logs/
 server.log
 service/__pycache__/
+frontend/__pycache__/

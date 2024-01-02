@@ -1,6 +1,6 @@
 import argparse
 import os
-
+from multiprocessing import Process, Value
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from loguru import logger
 import time
@@ -9,7 +9,7 @@ import torch
 import random
 from aiohttp import web
 import pytoml
-
+from openai import OpenAI
 
 class HybridLLMServer(object):
 
@@ -20,12 +20,16 @@ class HybridLLMServer(object):
         self.device = device
         self.retry = retry
         self.llm_config = llm_config
-        self.local_max_length = llm_config[
-            'server_local_internlm_max_text_length']
-        self.remote_max_length = llm_config[
-            'server_remote_kimi_max_text_length']
+        self.server_config = llm_config['server']
+        self.enable_remote = llm_config['enable_remote']
 
-        model_path = llm_config['server_local_internlm_path']
+        self.local_max_length = self.server_config[
+            'local_llm_max_text_length']
+        self.remote_max_length = self.server_config[
+            'remote_llm_max_text_length']
+        self.remote_type = self.server_config['remote_type']
+
+        model_path = self.server_config['local_llm_path']
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -35,59 +39,80 @@ class HybridLLMServer(object):
             fp16=True,
         ).eval()
 
+
+    def call_kimi(self, prompt, history):
+        client = OpenAI(
+            api_key=self.server_config['remote_api_key'],
+            base_url="https://api.moonshot.cn/v1",
+        )
+
+        messages = [{
+            "role":
+            "system",
+            "content":
+            "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。"
+        }]
+        for item in history:
+            messages.append({"role": "user", "content": item[0]})
+            messages.append({"role": "system", "content": item[1]})
+        messages.append({"role": "user", "content": prompt})
+
+        life = 0
+        while life < self.retry:
+            try:
+                logger.debug('remote api sending: {}'.format(messages))
+                completion = client.chat.completions.create(
+                    model=self.server_config['remote_llm_model'],
+                    messages=messages,
+                    temperature=0.3,
+                )
+                return completion.choices[0].message.content
+            except Exception as e:
+                logger.error(str(e))
+                log_message = str(e).lower()
+                # retry
+                life += 1
+                randval = random.randint(1, int(pow(2, life)))
+                time.sleep(randval)
+            break
+        return ''
+    
+    def call_gpt(self, prompt, history):
+        messages = []
+        for item in history:
+            messages.append({"role": "user", "content": item[0]})
+            messages.append({"role": "system", "content": item[1]})
+        messages.append({"role": "user", "content": prompt})
+        completion = openai.ChatCompletion.create(model=self.server_config['remote_llm_model'],
+                                                messages=messages)
+        res = completion.choices[0].message.content
+        return res
+
     def generate_response(self, prompt, history=[], remote=False):
         output_text = ''
         time_tokenizer = time.time()
 
-        if not llm_config['server_remote_kimi_enable'] and remote:
+        if not self.enable_remote and remote:
             remote = False
             logger.error(
-                'llm.server_remote_kimi_enable off, auto set remote=False')
+                'llm.enable_remote off, auto set remote=False')
 
         if remote:
             prompt = prompt[0:self.remote_max_length]
             # call remote LLM
-            from openai import OpenAI
-            client = OpenAI(
-                api_key=llm_config['server_remote_kimi_api_key'],
-                base_url="https://api.moonshot.cn/v1",
-            )
+            llm_type = self.server_config['remote_type']
+            if llm_type == 'kimi':
+                output_text = self.call_kimi(prompt=prompt, history=history) 
+            else:
+                output_text = self.call_gpt(prompt=prompt, history=history)
 
-            messages = [{
-                "role":
-                "system",
-                "content":
-                "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。"
-            }]
-            for item in history:
-                messages.append({"role": "user", "content": item[0]})
-                messages.append({"role": "system", "content": item[1]})
-            messages.append({"role": "user", "content": prompt})
-
-            life = 0
-            while life < self.retry:
-                try:
-                    logger.debug('remote api sending: {}'.format(messages))
-                    completion = client.chat.completions.create(
-                        model="moonshot-v1-128k",
-                        messages=messages,
-                        temperature=0.3,
-                    )
-                    output_text = completion.choices[0].message.content
-                except Exception as e:
-                    logger.error(str(e))
-                    log_message = str(e).lower()
-                    # retry
-                    life += 1
-                    randval = random.randint(1, int(pow(2, life)))
-                    time.sleep(randval)
-                break
         else:
             prompt = prompt[0:self.local_max_length]
             output_text, _ = self.model.chat(self.tokenizer,
                                              prompt,
                                              history,
                                              top_k=1)
+            print((prompt, output_text))
         time_finish = time.time()
 
         logger.debug('Q:{} A:{} \t\t remote {} timecost {} '.format(
@@ -107,19 +132,19 @@ def parse_args():
     return args
 
 
-if __name__ == '__main__':
-    logger.add('logs/server.log', rotation="4MB")
-
-    args = parse_args()
-    with open(args.config_path) as f:
+def llm_serve(config_path: str, server_ready: Value):
+    # logger.add('logs/server.log', rotation="4MB")
+    with open(config_path) as f:
         llm_config = pytoml.load(f)['llm']
-        bind_port = int(llm_config['server_bind_port'])
-        model_path = llm_config['server_local_internlm_path']
+        bind_port = int(llm_config['server']['bind_port'])
 
     server = HybridLLMServer(llm_config=llm_config)
 
     async def inference(request):
+
         input_json = await request.json()
+        print(input_json)
+
         prompt = input_json['prompt']
         history = input_json['history']
         remote = False
@@ -132,4 +157,30 @@ if __name__ == '__main__':
 
     app = web.Application()
     app.add_routes([web.post('/inference', inference)])
+    server_ready.value = True
     web.run_app(app, host='0.0.0.0', port=bind_port)
+
+def main():
+    args = parse_args()
+    server_ready = Value('b', False)
+
+    server_process = Process(target=llm_serve, args=(args.config_path, server_ready))
+    server_process.daemon = True
+    server_process.start()
+
+    from llm_client import ChatClient
+    client = ChatClient(config_path=args.config_path)
+    while not server_ready.value:
+        logger.info('waiting for server to be ready..')
+        time.sleep(3)
+    print(client.generate_response(prompt='今天天气如何？', history=[], remote=False))
+
+def simple_bind():
+    args = parse_args()
+    server_ready = Value('b', False)
+
+    llm_serve(args.config_path, server_ready)
+
+
+if __name__ == '__main__':
+    main()

@@ -29,10 +29,10 @@ class Worker:
         llm_config = self.config['llm']
         if llm_config['enable_local']:
             self.context_max_length = llm_config['server'][
-                'local_internlm_max_text_length']
+                'local_llm_max_text_length']
         elif llm_config['enable_remote']:
             self.context_max_length = llm_config['server'][
-                'remote_kimi_max_text_length']
+                'remote_llm_max_text_length']
         else:
             raise Exception(f'no llm enabled')
 
