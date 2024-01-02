@@ -124,8 +124,8 @@ python3 main.py workdir
 ## FAQ 
 
 1. 如何接入其他 IM ？
-    * 微信。企业微信请查看[企业微信应用开发指南](https://developer.work.weixin.qq.com/document/path/90594)；对于个人微信，我们已向微信团队确认暂无正式 API，须自行搜索学习。
-    * 钉钉。参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)。
+    * 微信。企业微信请查看[企业微信应用开发指南](https://developer.work.weixin.qq.com/document/path/90594)；对于个人微信，我们已向微信团队确认暂无正式 API，须自行搜索学习
+    * 钉钉。参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 2. 机器人太高冷/太嘴碎怎么办？
 
@@ -134,9 +134,9 @@ python3 main.py workdir
 
     重新执行 `service/feature_store.py`，更新阈值和特征库
 
-3. 运行期间显存 OOM 怎么办？
+3. 启动正常，但运行期间显存 OOM 怎么办？
 
-    基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化。如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/en/kv_int8.md)。
+    基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/en/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
 
 <!-- 4. 没有 GPU怎么办？
 
