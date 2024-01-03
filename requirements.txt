@@ -6,3 +6,4 @@ sentence_transformers
 readability-lxml
 faiss-gpu
 aiohttp
+transformers==4.33.2

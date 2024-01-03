@@ -82,7 +82,6 @@ class ChatClient:
                 "remote": remote
             }
             resp = requests.post(url, headers=header, data=json.dumps(data))
-            pdb.set_trace()
             if resp.status_code != 200:
                 raise Exception(str((resp.status_code, resp.reason)))
             return resp.json()['text']

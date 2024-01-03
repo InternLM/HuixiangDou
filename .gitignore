@@ -7,3 +7,6 @@ logs/
 server.log
 service/__pycache__/
 frontend/__pycache__/
+pk/
+badcase.txt
+config-template.ini

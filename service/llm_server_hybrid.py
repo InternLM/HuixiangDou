@@ -36,7 +36,7 @@ class HybridLLMServer(object):
             model_path,
             trust_remote_code=True,
             device_map="auto",
-            fp16=True,
+            # fp16=True,
         ).eval()
 
 
@@ -181,6 +181,5 @@ def simple_bind():
 
     llm_serve(args.config_path, server_ready)
 
-
 if __name__ == '__main__':
-    main()
+    simple_bind()

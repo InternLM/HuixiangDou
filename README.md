@@ -59,7 +59,7 @@ x_api_key = "${YOUR-X-API-KEY}"
     # 启动服务
     python3 service/llm_server_hybride.py
     ```
-    把 host IP 配置进 `config.ini`
+    打开新终端，把 host IP 配置进 `config.ini`，运行
 
     ```bash
     # config.ini
@@ -67,7 +67,6 @@ x_api_key = "${YOUR-X-API-KEY}"
     ..
     client_url = "http://10.140.24.142:39999/inference" # 举例
 
-    # 打开新终端，运行 main
     python3 main.py workdir
     ```
 
@@ -137,6 +136,11 @@ python3 main.py workdir
 3. 启动正常，但运行期间显存 OOM 怎么办？
 
     基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/en/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
+
+4. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
+
+    * 打开 [hybrid llm service](./service/llm_server_hybrid.py)，增加新的 LLM 推理实现
+    * 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./service/worker.py)
 
 <!-- 4. 没有 GPU怎么办？
 
