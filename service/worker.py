@@ -43,7 +43,7 @@ class Worker:
         self.KEYWORDS_TEMPLATE = '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。搜索参数类型 string， 内容是短语或关键字，以空格分隔。\n你现在是{}技术交流群里的技术助手，用户问“{}”，你打算通过谷歌搜索查询相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'
         self.SECURITY_TEMAPLTE = '判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 0～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'
         self.PERPLESITY_TEMPLATE = '''“question:{} answer:{}”\n阅读以上对话，answer 是否在表达自己不知道，回答越全面得分越少，用0～10表示，不要解释直接给出得分。\n判断标准：准确回答问题得 0 分；答案详尽得 1 分；知道部分答案但有不确定信息得 8 分；知道小部分答案但推荐求助其他人得 9 分；不知道任何答案直接推荐求助别人得 10 分。直接打分不要解释。'''
-        self.SUMMARIZE_TEMPLATE = '{} \n 仔细阅读以上内容，总结到 500 字以内'
+        self.SUMMARIZE_TEMPLATE = '{} \n 仔细阅读以上内容，总结得简短有力点'
         # self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题，材料可能和问题无关。如果材料和问题无关，尝试用你自己的理解来回答问题。如果无法确定答案，直接回答不知道。'
         self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'
     def single_judge(self, prompt, tracker, throttle: int, default: int):
@@ -159,7 +159,6 @@ class Worker:
                             tracker.log('跳过不安全的内容', article)
                             continue
 
-                        pdb.set_trace()
                         if self.single_judge(
                                 self.SCORING_RELAVANCE_TEMPLATE.format(
                                     query, article),
@@ -225,8 +224,8 @@ class Worker:
                                          default=0):
                         return ErrorCode.BAD_ANSWER, response
 
-        if response is not None and len(response) >= 600:
-            # 回复内容太长，总结一下
+        if response is not None and len(response) >= 500:
+            # reply too long, summarize it
             response = self.llm.generate_response(
                 prompt=self.SUMMARIZE_TEMPLATE.format(response))
 

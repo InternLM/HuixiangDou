@@ -3,10 +3,11 @@ repodir/
 workdir/
 write_toml.py
 config.ini
+config-template.ini
 logs/
 server.log
 service/__pycache__/
 frontend/__pycache__/
 pk/
 badcase.txt
-config-template.ini
+config.bak

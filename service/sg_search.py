@@ -1,4 +1,4 @@
-from .llm_client import ChatClient
+from llm_client import ChatClient
 import os
 import ast
 import json
@@ -12,30 +12,17 @@ class SourceGraphProxy:
 
     def __init__(self, config_path: dict, topk=1) -> None:
         self.config_path = config_path
+        self.sg_config = None
+        with open(self.config_path) as f:
+            config = pytoml.load(f)
+            self.sg_config = config['sg_search']
+
         self.topk = topk
 
     def command(self, txt: str):
         logger.debug('cmd: {}'.format(txt))
         cmd = os.popen(txt)
         return cmd.read().rstrip().lstrip()
-
-    def load_config(self):
-        with open(self.config_path) as f:
-            config = pytoml.load(f)
-            sg_config = config['sg_search']
-
-        bin_path = sg_config['binary_src_path']
-        if bin_path is None or not os.path.exists(bin_path):
-            raise Exception(
-                f'sg_search enabled while binary_src_path {bin_path} not exist'
-            )
-
-        token = sg_config['src_access_token']
-        if token is None or token == 'YOUR-ACCESS-TOKEN':
-            raise Exception(
-                f'sg_search enabled while sr_access_token {bin_path} not exist'
-            )
-        return sg_config
 
     def extract_sg_result(self, jsonstr):
         ret = []
@@ -57,31 +44,38 @@ class SourceGraphProxy:
                 str(e), jsonstr))
         return ret
 
-    def search(self, llm, question, groupname):
-        # write your own open source repo here !
-        prompt = '''你是 {} 技术群的技术助手，目前收到了用户的问题：“{}”。请问这个问题应该查询以下哪个开源项目：
-* lmdeploy。lmdeploy 是一个用于压缩、部署和服务 LLM（Large Language Model）的工具包。是一个服务端场景下，transformer 结构 LLM 部署工具，支持 GPU 服务端部署，速度有保障，支持 Tensor Parallel，多并发优化，功能全面，包括模型转换、缓存历史会话的 cache feature 等. 它还提供了 WebUI、命令行和 gRPC 客户端接入。
-* xtuner。xtuner 是一个用于调优大型语言模型（LLM）的工具箱。
-* opencompass。用于评测大型语言模型（LLM）. 它提供了完整的开源可复现的评测框架，支持大语言模型、多模态模型的一站式评测，基于分布式技术，对大参数量模型亦能实现高效评测。评测方向汇总为知识、语言、理解、推理、考试五大能力维度，整合集纳了超过70个评测数据集，合计提供了超过40万个模型评测问题，并提供长文本、安全、代码3类大模型特色技术能力评测。
-* 不知道。
-请直接告诉我项目名称不要解释，如果都不是就回答不知道。'''.format(question, groupname)
 
-        choice = llm.generate_response(prompt=prompt,
-                                       remote=False).lower().strip()
-        REPO = ''
-        if 'lmdeploy' in choice:
-            REPO = 'internlm/lmdeploy'
-        elif 'opencompass' in choice:
-            REPO = 'open-compass/opencompass'
-        elif 'xtuner' in choice:
-            REPO = 'internlm/xtuner'
-        else:
+    def choose_repo(self, question, groupname):
+        prompt = "你是{}技术群的技术助手，目前收到了用户的问题：“{}”。请问这个问题应该查询以下哪个开源项目：\n".format(groupname, question)
+        keys = self.sg_config.keys()
+        skip = ['binary_src_path', 'src_access_token']
+        repos = dict()
+        for key in keys:
+            if key in skip:
+                continue
+            introduction = self.sg_config[key]['introduction']
+            prompt += f'* {key} {introduction}\n'
+            repos[key] = self.sg_config[key]
+        prompt += '* none 都不是'
+        choice = llm.generate_response(prompt=prompt, remote=True).strip()
+
+        target_repo_id = None
+        for key in repos.keys():
+            if key in choice:
+                target_repo_id = repos[key]['github_repo_id']
+                break
+        
+        return target_repo_id
+
+    def search(self, llm, question, groupname):
+
+        repo_id = self.choose_repo(question, groupname)
+        if repo_id is None:
+            logger.warning(f'cannot choose repo_id')
             return ''
 
-        sg_config = self.load_config()
-        ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(
-            sg_config['src_access_token'])
-        BINARY = sg_config['binary_src_path']
+        ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(self.sg_config['src_access_token'])
+        BINARY = self.sg_config['binary_src_path']
 
         prompt = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'.format(
             question)
@@ -92,17 +86,18 @@ class SourceGraphProxy:
         except Exception as e:
             logger.error('parse {} failed {}.'.format(entity_str, str(e)))
             return ''
+
         search_items = []
         for entity in entities:
-            # 根据实体词，搜文档和源码
+            # search doc and source code based on entities 
             # search -json 'repo:open-compass/opencompass  summarizers'
             cmd_doc = '''{} search -json 'repo:{} lang:MarkDown {}' '''.format(
-                BINARY, REPO, entity)
+                BINARY, repo_id, entity)
             cmd_return = self.command(ENV + cmd_doc)
             search_items += self.extract_sg_result(cmd_return)
 
             cmd_python = '''{} search -json 'repo:{} lang:Python {}' '''.format(
-                BINARY, REPO, entity)
+                BINARY, repo_id, entity)
             cmd_return = self.command(ENV + cmd_python)
             search_items += self.extract_sg_result(cmd_return)
 

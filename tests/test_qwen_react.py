@@ -71,7 +71,6 @@ def llm_with_plugin(prompt: str, history, list_of_plugin_info=()):
     planning_prompt = build_input_text(chat_history, list_of_plugin_info)
 
     text = ''
-    pdb.set_trace()
     while True:
         output = text_completion(planning_prompt + text, stop_words=['Observation:', 'Observation:\n'])
         action, action_input, output = parse_latest_plugin_call(output)

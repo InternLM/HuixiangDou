@@ -10,6 +10,7 @@ import random
 from aiohttp import web
 import pytoml
 from openai import OpenAI
+import pdb
 
 class HybridLLMServer(object):
 
@@ -22,6 +23,7 @@ class HybridLLMServer(object):
         self.llm_config = llm_config
         self.server_config = llm_config['server']
         self.enable_remote = llm_config['enable_remote']
+        self.enable_local = llm_config['enable_local']
 
         self.local_max_length = self.server_config[
             'local_llm_max_text_length']
@@ -30,14 +32,21 @@ class HybridLLMServer(object):
         self.remote_type = self.server_config['remote_type']
 
         model_path = self.server_config['local_llm_path']
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path,
-                                                       trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-            device_map="auto",
-            # fp16=True,
-        ).eval()
+
+        self.tokenizer = None
+        self.model = None
+        
+        if self.enable_local:
+            self.tokenizer = AutoTokenizer.from_pretrained(model_path,
+                                                        trust_remote_code=True)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                trust_remote_code=True,
+                device_map="auto",
+                # fp16=True,
+            ).eval()
+        else:
+            logger.warning(f'local LLM disabled.')
 
 
     def call_kimi(self, prompt, history):
@@ -74,7 +83,6 @@ class HybridLLMServer(object):
                 life += 1
                 randval = random.randint(1, int(pow(2, life)))
                 time.sleep(randval)
-            break
         return ''
     
     def call_gpt(self, prompt, history):
