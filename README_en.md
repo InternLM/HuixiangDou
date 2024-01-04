@@ -1,4 +1,4 @@
-# HuixiangDou
+# HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance
 <small> [简体中文](README.md) | English </small>
 
 [![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg)](./LICENSE)
