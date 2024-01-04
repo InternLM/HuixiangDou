@@ -100,7 +100,7 @@ Run the following command. After running, the technical assistant's reply will b
 python3 main.py workdir
 ```
 
-<img src="./resource/lark-example.png" width="400">
+<img src="./resource/figures/lark-example.png" width="400">
 
 If you need to read Feishu group messages, see [Feishu Developer Square - Add Application Capability - Robot](https://open.feishu.cn/app?lang=zh-CN).
 

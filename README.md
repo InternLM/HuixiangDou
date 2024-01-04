@@ -98,7 +98,7 @@ webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
 ```shell
 python3 main.py workdir
 ```
-<img src="./resource/lark-example.png" width="400">
+<img src="./resource/figures/lark-example.png" width="400">
 
 如果还需要读取飞书群消息，见[飞书开发者广场-添加应用能力-机器人](https://open.feishu.cn/app?lang=zh-CN)。
 
