@@ -132,7 +132,7 @@ python3 main.py workdir
 
     此特性适合处理疑难问题，需要基础开发能力调整 prompt。
 
-    * 点击 [sourcegraph-settings-access](https://sourcegraph.com/users/tpoisonooo/settings/tokens) 获取 token
+    * 点击 [sourcegraph-account-access](https://sourcegraph.com/users/tpoisonooo/settings/tokens) 获取 token
 
         ```bash
         # open https://github.com/sourcegraph/src-cli#installation
