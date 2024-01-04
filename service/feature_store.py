@@ -317,7 +317,7 @@ class FeatureStore(object):
         docs, _ = self.db_search(question=question.lower())
         doc = docs[0]
         path = doc['path']
-        part = doc['data']
+        part = doc['content']
         full = ''
         with open(path) as f:
             full = f.read()
@@ -423,7 +423,7 @@ def parse_args():
     return args
 
 
-def test():
+def test_reject():
     real_questions = [
         '请问找不到libmmdeploy.so怎么办', 'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
         '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',
@@ -439,7 +439,17 @@ def test():
             logger.error(f'reject query: {example}')
         else:
             logger.warning(f'process query: {example}')
+    del fs_query
 
+def test_query():
+    real_questions = [
+        '视频流检测'
+    ]
+    fs_query = FeatureStore(config_path=args.config_path)
+    fs_query.load_feature(work_dir=args.work_dir)
+    for example in real_questions:
+        print(fs_query.query_source(example))
+    del fs_query
 
 if __name__ == '__main__':
     args = parse_args()
@@ -455,4 +465,5 @@ if __name__ == '__main__':
                        bad_questions=bad_questions)
     del fs_init
 
-    test()
+    test_query()
+    test_reject()

@@ -112,7 +112,7 @@ class Worker:
             tracker.log('feature store reject')
             return ErrorCode.UNRELATED, response
 
-        if self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
+        if db_context_part is not None and self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
                 query, db_context_part),
                              tracker=tracker,
                              throttle=5,

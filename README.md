@@ -64,12 +64,15 @@ x_api_key = "${YOUR-X-API-KEY}"
     # standalone
     python3 main.py workdir --standalone
     ..
-    ErrorCode.SUCCESS, 要安装 MMDeploy，首先需要准备一个支持 Python 3.6+ 和 PyTorch 1.8+ 的环境。然后，可以通过以下步骤安装 MMDeploy..
+    ErrorCode.SUCCESS, 请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗
+    1. 帧率控制和跳帧策略是优化视频流检测性能的关键，但需要注意跳帧对检测结果的影响。
+    2. 多线程处理和缓存机制可以提高检测效率，但需要注意检测结果的稳定性。
+    3. 使用滑动窗口的方式可以减少跳帧和缓存对检测结果的影响。
     ```
 
-  * **docker 用户**。如果你正在使用 docker，`HuixiangDou` 的 Hybrid LLM Service 分离部署。
+  * **docker 用户**。如果你正在使用 docker，`HuixiangDou` 的 Hybrid LLM Service 需要分离部署。
     ```bash
-    # 启动服务
+    # 启动 LLM 服务
     python3 service/llm_server_hybride.py
     ```
     打开新终端，把 host IP 配置进 `config.ini`，运行
