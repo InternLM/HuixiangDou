@@ -1,7 +1,7 @@
 # HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance
 <small> [简体中文](README.md) | English </small>
 
-[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg)](./LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-GPL--3--Clause-brightgreen.svg)](./LICENSE)
 ![CI](https://img.shields.io/github/actions/workflow/status/internml/huixiangdou/lint.yml?branch=master)
 
 HuixiangDou is a domain-specific knowledge assistant based on Large Language Models (LLMs). It has the following key features:
@@ -199,4 +199,4 @@ In order to further improve the assistant's answering experience, the more of th
     In this case, you can't run local LLM, only remote LLM combined with text2vec to execute pipeline. Make sure `config.ini` only uses remote LLM, and turn off local LLM.
 
 # 📝 License
-The project uses the [BSD 3-Clause License](./LICENSE).
+The project uses the [GPL 3 License](./LICENSE).
