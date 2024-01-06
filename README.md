@@ -2,7 +2,7 @@
 
 <small> 简体中文 | [English](README_en.md) </small>
 
-[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg)](./LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-GPL--3--Clause-brightgreen.svg)](./LICENSE)
 ![CI](https://img.shields.io/github/actions/workflow/status/internml/huixiangdou/lint.yml?branch=master)
 
 “茴香豆”是一个基于 LLM 的领域特定知识助手。特点：
@@ -201,4 +201,4 @@ python3 main.py workdir
     此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 
 # 📝 License
-项目使用 [BSD 3-Clause License](./LICENSE)
+项目使用 [GPL 3-License](./LICENSE)
