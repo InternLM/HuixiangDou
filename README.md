@@ -202,7 +202,7 @@ python3 main.py workdir
 
 # 📝 引用
 ```bash
-@misc{2024HuixiangDou,
+@misc{2023HuixiangDou,
     title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
     author={HuixiangDou Contributors},
     howpublished = {\url{https://github.com/internlm/huixiangdou}},
