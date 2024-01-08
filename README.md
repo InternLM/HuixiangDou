@@ -45,7 +45,7 @@ reject query: 茴香豆是怎么做的
 
 茴香豆使用了搜索引擎，点击 [serper 官网](https://serper.dev/api-key)获取限额 WEB_SEARCH_TOKEN，填入 `config.ini`
 
-```shell
+```bash
 # config.ini
 ..
 [web_search]
@@ -90,7 +90,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 点击[创建飞书自定义机器人](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot)，获取回调 WEBHOOK_URL，填写到 config.ini
 
-```shell
+```bash
 # config.ini
 ..
 [frontend]
@@ -99,7 +99,7 @@ webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
 ```
 
 运行。结束后，技术助手的答复将发送到飞书群。
-```shell
+```bash
 python3 main.py workdir
 ```
 <img src="./resource/figures/lark-example.png" width="400">
@@ -200,5 +200,12 @@ python3 main.py workdir
 
     此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 
-# 📝 License
-项目使用 [GPL 3-License](./LICENSE)
+# 📝 引用
+```bash
+@misc{2024HuixiangDou,
+    title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
+    author={HuixiangDou Contributors},
+    howpublished = {\url{https://github.com/internlm/huixiangdou}},
+    year={2023}
+}
+```

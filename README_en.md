@@ -198,5 +198,12 @@ In order to further improve the assistant's answering experience, the more of th
 
     In this case, you can't run local LLM, only remote LLM combined with text2vec to execute pipeline. Make sure `config.ini` only uses remote LLM, and turn off local LLM.
 
-# 📝 License
-The project uses the [GPL 3 License](./LICENSE).
+# 📝 Reference
+```bash
+@misc{2024HuixiangDou,
+    title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
+    author={HuixiangDou Contributors},
+    howpublished = {\url{https://github.com/internlm/huixiangdou}},
+    year={2023}
+}
+```
