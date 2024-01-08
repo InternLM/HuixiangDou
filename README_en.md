@@ -200,7 +200,7 @@ In order to further improve the assistant's answering experience, the more of th
 
 # 📝 Reference
 ```bash
-@misc{2024HuixiangDou,
+@misc{2023HuixiangDou,
     title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
     author={HuixiangDou Contributors},
     howpublished = {\url{https://github.com/internlm/huixiangdou}},
