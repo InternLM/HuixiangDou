@@ -1,8 +1,12 @@
-# HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance
+<div align="center">
+  <img src="resource/logo_blue.svg" width="400px"/>
+
 <small> [简体中文](README_zh.md) | English </small>
 
 [![GitHub license](https://img.shields.io/badge/license-GPL--3--Clause-brightgreen.svg)](./LICENSE)
 ![CI](https://img.shields.io/github/actions/workflow/status/internml/huixiangdou/lint.yml?branch=master)
+
+</div>
 
 "HuixiangDou" is a domain-specific knowledge assistant based on the LLM. Features:
 1. Deal with complex scenarios like group chats, answer user questions without causing message flooding.

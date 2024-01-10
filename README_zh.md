@@ -1,9 +1,11 @@
-# HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance
+<div align="center">
+  <img src="resource/logo_blue.svg" width="400px"/>
 
 <small> 简体中文 | [English](README.md) </small>
 
 [![GitHub license](https://img.shields.io/badge/license-GPL--3--Clause-brightgreen.svg)](./LICENSE)
 ![CI](https://img.shields.io/github/actions/workflow/status/internml/huixiangdou/lint.yml?branch=master)
+</div>
 
 “茴香豆”是一个基于 LLM 的领域特定知识助手。特点：
 1. 应对群聊这类复杂场景，解答用户问题的同时，不会消息泛滥
