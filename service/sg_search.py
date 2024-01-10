@@ -10,7 +10,7 @@ import pytoml
 
 class SourceGraphProxy:
 
-    def __init__(self, config_path: dict, topk=1) -> None:
+    def __init__(self, config_path: dict, topk=1, language:str = 'zh') -> None:
         self.config_path = config_path
         self.sg_config = None
         with open(self.config_path) as f:
@@ -18,6 +18,13 @@ class SourceGraphProxy:
             self.sg_config = config['sg_search']
 
         self.topk = topk
+        self.language = language
+        if self.language == 'zh':
+            self.CHOICE_TEMPLATE = "你是{}技术群的技术助手，目前收到了用户的问题：“{}”。请问这个问题应该查询以下哪个开源项目：\n"
+            self.KEYWORDS_TEMPLATE = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'
+        else:
+            self.CHOICE_TEMPLATE = 'You are the technical assistant of the {} technology group, and currently have received a user\'s question: "{}". Which of the following open-source projects should this question refer to: \n'
+            self.KEYWORDS_TEMPLATE = '"{}"\nPlease read the above question carefully, extract the keywords that can be used for the search engine, list the keywords directly without explaining them.'
 
     def command(self, txt: str):
         logger.debug('cmd: {}'.format(txt))
@@ -46,7 +53,8 @@ class SourceGraphProxy:
 
 
     def choose_repo(self, question, groupname):
-        prompt = "你是{}技术群的技术助手，目前收到了用户的问题：“{}”。请问这个问题应该查询以下哪个开源项目：\n".format(groupname, question)
+        prompt = self.CHOICE_TEMPLATE.format(groupname, question)
+        
         keys = self.sg_config.keys()
         skip = ['binary_src_path', 'src_access_token']
         repos = dict()
@@ -56,7 +64,7 @@ class SourceGraphProxy:
             introduction = self.sg_config[key]['introduction']
             prompt += f'* {key} {introduction}\n'
             repos[key] = self.sg_config[key]
-        prompt += '* none 都不是'
+        prompt += '* none '
         choice = llm.generate_response(prompt=prompt, remote=True).strip()
 
         target_repo_id = None
@@ -77,8 +85,7 @@ class SourceGraphProxy:
         ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(self.sg_config['src_access_token'])
         BINARY = self.sg_config['binary_src_path']
 
-        prompt = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'.format(
-            question)
+        prompt = self.KEYWORDS_TEMPLATE.format(question)
         entities = []
         try:
             entity_str = llm.generate_response(prompt=prompt)
