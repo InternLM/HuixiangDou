@@ -15,6 +15,16 @@
 
 View [HuixiangDou inside](./huixiangdou-inside.md).
 
+# 📦 Hardware Requirements
+
+The following are the hardware requirements for running Fennel. It is suggested to follow the deployment process, starting with the basic version and gradually experiencing advanced features.
+
+| Version | Hardware Requirements | Remarks |
+| :-: | :-: | :-: |
+| Basic Version | 20GB GPU memory, such as 3090 or above | Able to answer basic domain knowledge questions, zero cost operation |
+| Advanced Version | 40GB GPU memory, such as A100 | Able to answer source code level questions, zero cost operation |
+| Modified Version | 4GB graphics memory, such as 3050/2080ti | Using openai API to replace local LLM, basic development capability required, operation involves cost |
+
 # 🔥 Run
 
 We will take lmdeploy & mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
@@ -111,7 +121,7 @@ python3 main.py workdir
 
 If you still need to read Feishu group messages, see [Feishu Developer Square - Add Application Capabilities - Robots](https://open.feishu.cn/app?lang=zh-CN).
 
-## STEP4. High Accuracy Method [Optional]
+## STEP4. Advanced Version [Optional]
 To further enhance the experience of the assistant's response, the more features you turn on, the better.
 
 1. Use higher accuracy local LLM
