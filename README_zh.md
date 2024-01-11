@@ -116,7 +116,7 @@ python3 main.py workdir
 ```
 <img src="./resource/figures/lark-example.png" width="400">
 
-如果还需要读取飞书群消息，见[飞书开发者广场-添加应用能力-机器人](https://open.feishu.cn/app?lang=zh-CN)。
+如果还需要从飞书群读取群聊消息，见[飞书开发者广场-添加应用能力-机器人](https://open.feishu.cn/app?lang=zh-CN)。
 
 ## STEP4.高级版[可选]
 
