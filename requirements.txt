@@ -5,5 +5,4 @@ langchain==0.0.275
 sentence_transformers
 readability-lxml
 faiss-gpu
-aiohttp
-transformers==4.33.2
+transformers>=4.33.2

@@ -39,7 +39,7 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # Establish feature repository
 cd HuixiangDou && mkdir workdir # Create working directory
-python3 -m pip install -r requirements.txt # Install dependencies
+python3 -m pip install -r requirements.txt # Install dependencies, python3.11 requires `conda install conda-forge::faiss-gpu`
 python3 service/feature_store.py repodir workdir # Save features from repodir to workdir
 ```
 

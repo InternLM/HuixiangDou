@@ -37,7 +37,7 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
 cd HuixiangDou && mkdir workdir # 创建工作目录
-python3 -m pip install -r requirements.txt # 安装依赖
+python3 -m pip install -r requirements.txt # 安装依赖，python3.11 需要 `conda install conda-forge::faiss-gpu`
 python3 service/feature_store.py repodir workdir # 把 repodir 的特征保存到 workdir
 ```
 运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
