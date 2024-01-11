@@ -199,7 +199,7 @@ python3 main.py workdir
     * 把真实场景中，把应该回答的问题填入`resource/good_questions.json`，应该拒绝的填入`resource/bad_questions.json`
     * 调整 `repodir` 中的主题内容，确保底库的 markdown 文档不包含场景无关内容
 
-    重新执行 `service/feature_store.py`，更新阈值和特征库
+    重新执行 `service/feature_store.py` 来更新阈值和特征库
 
 3. 启动正常，但运行期间显存 OOM 怎么办？
 
@@ -210,7 +210,7 @@ python3 main.py workdir
     * 打开 [hybrid llm service](./service/llm_server_hybrid.py)，增加新的 LLM 推理实现
     * 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./service/worker.py)
 
-5. 响应太慢/请求总是失败怎么办？
+5. 响应太慢/网络请求总是失败怎么办？
 
     * 参考 [hybrid llm service](./service/llm_server_hybrid.py) 增加指数退避重传
     * local LLM 替换为 [lmdeploy](https://github.com/internlm/lmdeploy) 等推理框架，而非原生的 huggingface/transformers
