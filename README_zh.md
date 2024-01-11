@@ -87,7 +87,7 @@ x_api_key = "${YOUR-X-API-KEY}"
     # 启动 LLM 服务
     python3 service/llm_server_hybride.py
     ```
-    打开新终端，把 host IP 配置进 `config.ini`，运行
+    打开新终端，把 host IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，运行
 
     ```shell
     # config.ini
