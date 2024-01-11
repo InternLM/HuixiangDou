@@ -3,8 +3,8 @@
 
 <small> [简体中文](README_zh.md) | English </small>
 
-[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg)](./LICENSE)
-![CI](https://img.shields.io/github/actions/workflow/status/internml/huixiangdou/lint.yml?branch=master)
+[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
+![CI](https://img.shields.io/github/actions/workflow/status/internml/huixiangdou/lint.yml?branch=master&style=plastic)
 
 </div>
 
@@ -17,13 +17,13 @@ View [HuixiangDou inside](./huixiangdou-inside.md).
 
 # 📦 Hardware Requirements
 
-The following are the hardware requirements for running Fennel. It is suggested to follow the deployment process, starting with the basic version and gradually experiencing advanced features.
+The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
-| Version | Hardware Requirements | Remarks |
-| :-: | :-: | :-: |
-| Basic Version | 20GB GPU memory, such as 3090 or above | Able to answer basic domain knowledge questions, zero cost operation |
-| Advanced Version | 40GB GPU memory, such as A100 | Able to answer source code level questions, zero cost operation |
-| Modified Version | 4GB graphics memory, such as 3050/2080ti | Using openai API to replace local LLM, basic development capability required, operation involves cost |
+| Version | GPU Memory Requirements | Remarks | Tested on |
+| :-: | :-: | :-: | :-: |
+| Basic Version | 20GB | Able to answer basic domain knowledge questions, zero cost operation | ![](https://img.shields.io/badge/linux%203090%2024G-passed-blue?style=for-the-badge) |
+| Advanced Version | 40GB | Able to answer source code level questions, zero cost operation | ![](https://img.shields.io/badge/linux%20A100%2080G-passed-blue?style=for-the-badge) |
+| Modified Version | 4GB | Using openai API to replace local LLM, basic development capability required, operation involves cost | ![](https://img.shields.io/badge/linux%201660ti%206GB-passed-blue?style=for-the-badge) |
 
 # 🔥 Run
 
@@ -34,14 +34,16 @@ We will take lmdeploy & mmpose as examples to explain how to deploy the knowledg
 ```shell
 # Download chat topics
 mkdir repodir
-git clone https://github.com/openmmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # Establish feature repository
 cd HuixiangDou && mkdir workdir # Create working directory
 python3 -m pip install -r requirements.txt # Install dependencies, python3.11 requires `conda install conda-forge::faiss-gpu`
-python3 service/feature_store.py repodir workdir # Save features from repodir to workdir
+python3 service/feature_store.py # Save features from repodir to workdir
 ```
+
+The first run will automatically download the configuration of [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese), you can also manually download it and update model path in `config.ini`.
 
 After running, HuixiangDou can distinguish which user topics should be dealt with and which chitchats should be rejected. Please edit [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, finance, electricity, etc.).
 
@@ -72,7 +74,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 Please ensure that the GPU memory is over 20GB (such as 3090 or above). If the memory is low, please modify it according to the FAQ.
 
-The first run will automatically download the configuration of internlm2-7B and text2vec-large-chinese, please ensure network connectivity.
+The first run will automatically download the configuration of internlm2-7B.
 
   * **Non-docker users**. If you **don't** use docker environment, you can start all services at once.
     ```shell

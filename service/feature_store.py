@@ -338,6 +338,8 @@ class FeatureStore(object):
                 if file.endswith('.md') and 'mdb' not in file:
                     mds.append(os.path.join(root, file))
 
+        if len(mds) < 1:
+            raise Exception(f'cannot search any markdown file, please check usage: python3 {__file__} workdir repodir')
         # copy each file to ./finetune-data/ with new name
         for _file in mds:
             tmp = _file.replace("/", "_")
@@ -398,10 +400,11 @@ class FeatureStore(object):
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Feature store for processing directories.')
-    parser.add_argument('work_dir', type=str, help='Working directory.')
+    parser.add_argument('--work_dir', type=str, default='workdir', help='Working directory.')
     parser.add_argument(
-        'repo_dir',
+        '--repo_dir',
         type=str,
+        default='repodir',
         help='Root directory where the repositories are located.')
     parser.add_argument(
         '--good_questions',

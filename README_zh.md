@@ -3,8 +3,8 @@
 
 <small> 简体中文 | [English](README.md) </small>
 
-[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg)](./LICENSE)
-![CI](https://img.shields.io/github/actions/workflow/status/internml/huixiangdou/lint.yml?branch=master)
+[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
+![CI](https://img.shields.io/github/actions/workflow/status/internml/huixiangdou/lint.yml?branch=master&style=plastic)
 </div>
 
 “茴香豆”是一个基于 LLM 的领域特定知识助手。特点：
@@ -18,11 +18,11 @@
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-| 版本 | 硬件需求 | 备注 |
-| :-: | :-: | :-: |
-| 基础版 | 20G GPU 显存，如 3090 及以上 | 能够回答领域知识的基础问题，零成本运行 |
-| 高级版 | 40G 显存，如 A100 | 能够回答源码级问题，零成本运行 |
-| 魔改版 | 4G 显存，如 3050/2080ti | 用 openai API 替代本地 LLM，需要基础开发能力，运行需要费用 |
+| 版本 | 硬件需求 | 备注 | 已验证设备 |
+| :-: | :-: | :-: | :-: |
+| 基础版 | 20GB | 能够回答领域知识的基础问题，零成本运行 | ![](https://img.shields.io/badge/linux%203090%2024G-passed-blue?style=for-the-badge) |
+| 高级版 | 40GB | 能够回答源码级问题，零成本运行 | ![](https://img.shields.io/badge/linux%20A100%2080G-passed-blue?style=for-the-badge) |
+| 魔改版 | 4GB| 用 openai API 替代本地 LLM，需要基础开发能力，运行需要费用 | ![](https://img.shields.io/badge/linux%201660ti%206GB-passed-blue?style=for-the-badge) |
 
 # 🔥 运行
 
@@ -32,15 +32,17 @@
 ```shell
 # 下载聊天话题
 mkdir repodir
-git clone https://github.com/openmmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
 cd HuixiangDou && mkdir workdir # 创建工作目录
 python3 -m pip install -r requirements.txt # 安装依赖，python3.11 需要 `conda install conda-forge::faiss-gpu`
-python3 service/feature_store.py repodir workdir # 把 repodir 的特征保存到 workdir
+python3 service/feature_store.py # 把 repodir 的特征保存到 workdir
 ```
-运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
+首次运行将自动下载配置中的 [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)，如果自动下载失败，可以手动下载到本地，然后在 `config.ini` 设置模型路径。
+
+结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
 ```shell
 # 接受技术话题
@@ -69,7 +71,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 请保证 GPU 显存超过 20GB（如 3090 及以上），若显存较低请按 FAQ 修改。
 
-首次运行将自动下载配置中的 internlm2-7B 和 text2vec-large-chinese，请保证网络畅通。
+首次运行将自动下载配置中的 internlm2-7B，请保证网络畅通。
 
   * **非 docker 用户**。如果你**不**使用 docker 环境，可以一次启动所有服务。
     ```shell
