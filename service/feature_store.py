@@ -326,10 +326,9 @@ class FeatureStore(object):
     def preprocess(self, repo_dir: str, work_dir: str):
         markdown_dir = os.path.join(work_dir, 'preprocess')
         if os.path.exists(markdown_dir):
-            logger.warning(f'{markdown_dir} already exists, skip')
-            return markdown_dir
-        else:
-            os.makedirs(markdown_dir)
+            logger.warning(f'{markdown_dir} already exists, remove and regenerate.')
+            shutil.rmtree(markdown_dir)
+        os.makedirs(markdown_dir)
 
         # find all .md files except those containing mdb
         mds = []
