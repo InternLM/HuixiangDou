@@ -145,7 +145,7 @@ python3 main.py
 
 ## STEP4.高级版\[可选\]
 
-基础版可能效果不佳，无法满足需求，可以开启这些特性来提升效果：
+基础版可能效果不佳，可开启以下特性来提升效果。配置模板请参照 [config-advanced.ini](./config-advanced.ini)
 
 1. 使用更高精度 local LLM
 
@@ -159,6 +159,10 @@ python3 main.py
 
    ```shell
    # config.ini
+   [llm]
+   enable_local = 1
+   enable_remote = 1
+   ..
    [llm.server]
    ..
    # open https://platform.moonshot.cn/
@@ -180,7 +184,10 @@ python3 main.py
      # open https://github.com/sourcegraph/src-cli#installation
      sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && chmod +x /usr/local/bin/src
 
-     # 把 token 填入 config.ini
+     # 开启 sg 搜索，并且把 token 填入 config.ini
+     [worker]
+     enable_sg_search = 1 # first enable sg search
+     ..
      [sg_search]
      ..
      src_access_token = "${YOUR_ACCESS_TOKEN}"

@@ -152,6 +152,10 @@ The basic version may not perform well. You can enable these features to enhance
 
    ```shell
    # config.ini
+   [llm]
+   enable_local = 1
+   enable_remote = 1
+   ..
    [llm.server]
    ..
    # open https://platform.moonshot.cn/
@@ -173,7 +177,10 @@ The basic version may not perform well. You can enable these features to enhance
      # open https://github.com/sourcegraph/src-cli#installation
      sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && chmod +x /usr/local/bin/src
 
-     # Fill the token into config.ini
+     # Enable search and fill the token
+     [worker]
+     enable_sg_search = 1
+     ..
      [sg_search]
      ..
      src_access_token = "${YOUR_ACCESS_TOKEN}"
