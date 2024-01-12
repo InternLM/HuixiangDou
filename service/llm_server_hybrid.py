@@ -43,7 +43,8 @@ class HybridLLMServer(object):
                 model_path,
                 trust_remote_code=True,
                 device_map="auto",
-                # fp16=True,
+#                torch_dtype="auto",
+#                fp16=True,
             ).eval()
         else:
             logger.warning(f'local LLM disabled.')

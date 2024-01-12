@@ -40,9 +40,16 @@ cd HuixiangDou && mkdir workdir # 创建工作目录
 python3 -m pip install -r requirements.txt # 安装依赖，python3.11 需要 `conda install conda-forge::faiss-gpu`
 python3 service/feature_store.py # 把 repodir 的特征保存到 workdir
 ```
-首次运行将自动下载配置中的 [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)，如果自动下载失败，可以手动下载到本地，然后在 `config.ini` 设置模型路径。
+首次运行将自动下载配置中的 [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)。考虑到不同地区 huggingface 连接问题，建议先手动下载到本地，然后在 `config.ini` 设置模型路径。例如：
 
-结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
+```shell
+# config.ini
+[feature_store]
+..
+model_path = "/path/to/text2vec-large-chinese"
+```
+
+运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
 ```shell
 # 接受技术话题
