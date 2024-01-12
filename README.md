@@ -103,7 +103,7 @@ The first run will automatically download the configuration of internlm2-7B.
   python3 service/llm_server_hybride.py
   ```
 
-  Open a new terminal, configure the host IP in `config.ini`, run
+  Open a new terminal, configure the host IP (**not** container IP) in `config.ini`, run
 
   ```shell
   # config.ini
