@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="resource/logo_black.svg" width="550px"/>
+  <img src="resource/logo_blue.svg" width="550px"/>
 
 <small> 简体中文 | [English](README.md) </small>
 
