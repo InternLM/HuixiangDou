@@ -23,7 +23,7 @@ The following are the hardware requirements for running. It is suggested to foll
 | :-: | :-: | :-: | :-: |
 | Basic Version | 20GB | Answer basic domain knowledge questions, zero cost | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge) |
 | Advanced Version | 40GB | Answer source code level questions, zero cost | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge) |
-| Modified Version | 4GB | Using openai API, operation involves cost | ![](https://img.shields.io/badge/1660ti%206GB-passed-blue?style=for-the-badge) |
+| Modified Version | 4GB | Using openai API, operation involves cost | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 
 # 🔥 Run
 
