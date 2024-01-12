@@ -19,11 +19,11 @@ View [HuixiangDou inside](./huixiangdou-inside.md).
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
-| Version | GPU Memory Requirements | Remarks | Tested on |
+| Version | GPU Memory Requirements | Features | Tested on Linux |
 | :-: | :-: | :-: | :-: |
-| Basic Version | 20GB | Able to answer basic domain knowledge questions, zero cost operation | ![](https://img.shields.io/badge/linux%203090%2024G-passed-blue?style=for-the-badge) |
-| Advanced Version | 40GB | Able to answer source code level questions, zero cost operation | ![](https://img.shields.io/badge/linux%20A100%2080G-passed-blue?style=for-the-badge) |
-| Modified Version | 4GB | Using openai API to replace local LLM, basic development capability required, operation involves cost | ![](https://img.shields.io/badge/linux%201660ti%206GB-passed-blue?style=for-the-badge) |
+| Basic Version | 20GB | Answer basic domain knowledge questions, zero cost | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge) |
+| Advanced Version | 40GB | Answer source code level questions, zero cost | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge) |
+| Modified Version | 4GB | Using openai API, operation involves cost | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 
 # 🔥 Run
 

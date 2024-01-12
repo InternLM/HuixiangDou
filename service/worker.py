@@ -136,7 +136,7 @@ class Worker:
             response = self.llm.generate_response(prompt=prompt,
                                              history=history,
                                              remote=True)
-            tracker.track('feature store doc', [db_context_part, response])
+            tracker.log('feature store doc', [db_context_part, response])
             return ErrorCode.SUCCESS, response
 
         else:

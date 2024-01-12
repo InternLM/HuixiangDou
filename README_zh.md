@@ -18,11 +18,11 @@
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-| 版本 | 硬件需求 | 备注 | 已验证设备 |
+| 版本 | 硬件需求 | 描述 | Linux 系统已验证设备 |
 | :-: | :-: | :-: | :-: |
-| 基础版 | 20GB | 能够回答领域知识的基础问题，零成本运行 | ![](https://img.shields.io/badge/linux%203090%2024G-passed-blue?style=for-the-badge) |
-| 高级版 | 40GB | 能够回答源码级问题，零成本运行 | ![](https://img.shields.io/badge/linux%20A100%2080G-passed-blue?style=for-the-badge) |
-| 魔改版 | 4GB| 用 openai API 替代本地 LLM，需要基础开发能力，运行需要费用 | ![](https://img.shields.io/badge/linux%201660ti%206GB-passed-blue?style=for-the-badge) |
+| 基础版 | 20GB | 能回答领域知识的基础问题，零成本运行 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge) |
+| 高级版 | 40GB | 能够回答源码级问题，零成本运行 | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge) |
+| 魔改版 | 4GB| 用 openai API 替代本地 LLM，需要基础开发能力，运行需要费用 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 
 # 🔥 运行
 
@@ -40,9 +40,16 @@ cd HuixiangDou && mkdir workdir # 创建工作目录
 python3 -m pip install -r requirements.txt # 安装依赖，python3.11 需要 `conda install conda-forge::faiss-gpu`
 python3 service/feature_store.py # 把 repodir 的特征保存到 workdir
 ```
-首次运行将自动下载配置中的 [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)，如果自动下载失败，可以手动下载到本地，然后在 `config.ini` 设置模型路径。
+首次运行将自动下载配置中的 [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)。考虑到不同地区 huggingface 连接问题，建议先手动下载到本地，然后在 `config.ini` 设置模型路径。例如：
 
-结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
+```shell
+# config.ini
+[feature_store]
+..
+model_path = "/path/to/text2vec-large-chinese"
+```
+
+运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
 ```shell
 # 接受技术话题
