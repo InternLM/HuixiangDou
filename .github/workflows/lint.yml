@@ -15,4 +15,3 @@ jobs:
         run: |
           python .github/scripts/doc_link_checker.py --target README_en.md
           python .github/scripts/doc_link_checker.py --target README.md
-

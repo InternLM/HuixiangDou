@@ -1,27 +1,28 @@
-import re
-from pathlib import Path
-import os
-from loguru import logger
-import numpy as np
-import sentence_transformers
-from loguru import logger
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.text_splitter import MarkdownTextSplitter, MarkdownHeaderTextSplitter, CharacterTextSplitter
-from langchain.vectorstores.faiss import FAISS as Vectorstore
-from sklearn.metrics import precision_recall_curve
-import pytoml
-import json
-import shutil
-import numpy as np
+# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
-import pdb
+import json
+import os
+import re
+import shutil
+from pathlib import Path
+
+import numpy as np
+import pytoml
+import sentence_transformers
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.text_splitter import (CharacterTextSplitter,
+                                     MarkdownHeaderTextSplitter,
+                                     MarkdownTextSplitter)
+from langchain.vectorstores.faiss import FAISS as Vectorstore
+from loguru import logger
+from sklearn.metrics import precision_recall_curve
 
 
 class FeatureStore(object):
 
     def __init__(self,
-                 device: str = "cuda",
-                 config_path: str = "config.ini") -> None:
+                 device: str = 'cuda',
+                 config_path: str = 'config.ini') -> None:
 
         self.config_path = config_path
         self.reject_throttle = -1
@@ -31,7 +32,7 @@ class FeatureStore(object):
             self.reject_throttle = config['reject_throttle']
 
         if model_path is None or len(model_path) == 0:
-            raise Exception(f'model_path can not be empty')
+            raise Exception('model_path can not be empty')
 
         self.embeddings = HuggingFaceEmbeddings(model_name='')
         self.embeddings.client = sentence_transformers.SentenceTransformer(
@@ -44,9 +45,9 @@ class FeatureStore(object):
         self.text_splitter = CharacterTextSplitter(chunk_size=768)
 
         self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
-            ("#", "Header 1"),
-            ("##", "Header 2"),
-            ("###", "Header 3"),
+            ('#', 'Header 1'),
+            ('##', 'Header 2'),
+            ('###', 'Header 3'),
         ])
 
     def contains_chinese(self, text):
@@ -98,7 +99,8 @@ class FeatureStore(object):
                         final.append('{} {}'.format(
                             header, subdoc.page_content.lower()))
             elif len(doc.page_content) >= 10:
-                final.append('{} {}'.format(header, doc.page_content.lower()))
+                final.append('{} {}'.format(
+                    header, doc.page_content.lower()))  # noqa E501
 
         for item in final:
             if len(item) >= 1024:
@@ -119,18 +121,18 @@ class FeatureStore(object):
         new_text = re.sub('_{5,}', '', new_text)
 
         # remove table
-        # new_text = re.sub('\|.*?\|\n\| *\:.*\: *\|.*\n(\|.*\|.*\n)*', '', new_text, flags=re.DOTALL)
+        # new_text = re.sub('\|.*?\|\n\| *\:.*\: *\|.*\n(\|.*\|.*\n)*', '', new_text, flags=re.DOTALL)   # noqa E501
 
         # use lower
         new_text = new_text.lower()
         return new_text
 
     def ingress_response(self, markdown_dir: str, work_dir: str):
-        feature_dir = os.path.join(work_dir, "db_response")
+        feature_dir = os.path.join(work_dir, 'db_response')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        ps = list(Path(markdown_dir).glob("**/*.md"))
+        ps = list(Path(markdown_dir).glob('**/*.md'))
 
         full_texts = []
         sources = []
@@ -160,7 +162,7 @@ class FeatureStore(object):
             shadows.extend(splits)
 
             for split in splits:
-                metadatas.append({"source": sources[i], "data": split})
+                metadatas.append({'source': sources[i], 'data': split})
 
         vs = Vectorstore.from_texts(shadows,
                                     self.embeddings,
@@ -168,11 +170,11 @@ class FeatureStore(object):
         vs.save_local(feature_dir)
 
     def ingress_reject(self, markdown_dir: str, work_dir: str):
-        feature_dir = os.path.join(work_dir, "db_reject")
+        feature_dir = os.path.join(work_dir, 'db_reject')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        ps = list(Path(markdown_dir).glob("**/*.md"))
+        ps = list(Path(markdown_dir).glob('**/*.md'))
         data = []
         sources = []
         for p in ps:
@@ -188,14 +190,14 @@ class FeatureStore(object):
 
             docs.extend(splits)
             if len(docs) > 0:
-                metadatas.extend([{"source": sources[i]}] * len(splits))
+                metadatas.extend([{'source': sources[i]}] * len(splits))
 
         vs = Vectorstore.from_texts(docs, self.embeddings, metadatas=metadatas)
         vs.save_local(feature_dir)
 
     def load_feature(self,
                      work_dir,
-                     feature_response: str = "db_response",
+                     feature_response: str = 'db_response',
                      feature_reject: str = 'db_reject'):
         # https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.faiss.FAISS.html#langchain.vectorstores.faiss.FAISS
         self.vector_store_reject = Vectorstore.load_local(
@@ -210,11 +212,11 @@ class FeatureStore(object):
 
     def process_strings(self, A, C, B):
         # find the longest common suffix of A and prefix of B
-        common = ""
+        common = ''
         for i in range(1, min(len(A), len(B)) + 1):
             if A[-i:] == B[:i]:
                 common = A[-i:]
-        # if there is a common substring, replace one of them with C and concatenate
+        # if there is a common substring, replace one of them with C and concatenate  # noqa E501
         if common:
             return A[:-len(common)] + C + B
         # otherwise, just return A + B
@@ -229,10 +231,11 @@ class FeatureStore(object):
                 try:
                     doc_before = self.get_doc_by_id(id - i,
                                                     vectore_store=vector_store)
-                    if doc_after.metadata['source'] == doc.metadata['source']:
+                    if doc_before.metadata['source'] == doc.metadata['source']:
                         final_content = self.process_strings(
                             doc_before.page_content, '\n', final_content)
-                except:
+                except Exception as e:
+                    logger.debug(str(e))
                     pass
                 try:
                     doc_after = self.get_doc_by_id(id + i,
@@ -240,7 +243,8 @@ class FeatureStore(object):
                     if doc_after.metadata['source'] == doc.metadata['source']:
                         final_content = self.process_strings(
                             final_content, '\n', doc_after.page_content)
-                except:
+                except Exception as e:
+                    logger.debug(str(e))
                     pass
         source = str(doc.metadata['source'])
 
@@ -248,15 +252,15 @@ class FeatureStore(object):
             data = str(doc.metadata['data'])
         else:
             data = None
-        if source.endswith(".pdf") or source.endswith(".txt"):
+        if source.endswith('.pdf') or source.endswith('.txt'):
             path = f"[{doc.metadata['source']}](/txt/{doc.metadata['source']})"
         else:
             path = source
         return {
             'path': path,
-            'content': re.sub(r'\n+', "\n", final_content),
-            "score": int(score),
-            "data": data
+            'content': re.sub(r'\n+', '\n', final_content),
+            'score': int(score),
+            'data': data
         }
 
     def _search(self, question: str, vector_store, topk: int = 3, throttle=-1):
@@ -278,7 +282,7 @@ class FeatureStore(object):
 
             return docs
         except Exception as e:
-            logger.error('{}'.format(__file__, str(e)))
+            logger.error('{}: {}'.format(__file__, str(e)))
             # pdb.set_trace()
             return []
 
@@ -326,7 +330,8 @@ class FeatureStore(object):
     def preprocess(self, repo_dir: str, work_dir: str):
         markdown_dir = os.path.join(work_dir, 'preprocess')
         if os.path.exists(markdown_dir):
-            logger.warning(f'{markdown_dir} already exists, remove and regenerate.')
+            logger.warning(
+                f'{markdown_dir} already exists, remove and regenerate.')
             shutil.rmtree(markdown_dir)
         os.makedirs(markdown_dir)
 
@@ -338,11 +343,13 @@ class FeatureStore(object):
                     mds.append(os.path.join(root, file))
 
         if len(mds) < 1:
-            raise Exception(f'cannot search any markdown file, please check usage: python3 {__file__} workdir repodir')
+            raise Exception(
+                f'cannot search any markdown file, please check usage: python3 {__file__} workdir repodir'  # noqa E501
+            )
         # copy each file to ./finetune-data/ with new name
         for _file in mds:
-            tmp = _file.replace("/", "_")
-            name = tmp[1:] if tmp.startswith(".") else tmp
+            tmp = _file.replace('/', '_')
+            name = tmp[1:] if tmp.startswith('.') else tmp
             logger.info(name)
             shutil.copy(_file, f'{markdown_dir}/{name}')
         logger.debug(f'preprcessed {len(mds)} files.')
@@ -355,7 +362,7 @@ class FeatureStore(object):
                    good_questions=[],
                    bad_questions=[]):
         logger.info(
-            'initialize response and reject feature store, you only need call this once.'
+            'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
         self.reject_throttle = -1
         markdown_dir = self.preprocess(repo_dir=repo_dir, work_dir=work_dir)
@@ -363,8 +370,7 @@ class FeatureStore(object):
         self.ingress_reject(markdown_dir=markdown_dir, work_dir=work_dir)
 
         if len(good_questions) == 0 or len(bad_questions) == 0:
-            raise Exception(
-                f'good and bad question examples cat not be empty.')
+            raise Exception('good and bad question examples cat not be empty.')
         self.load_feature(work_dir=work_dir)
         questions = good_questions + bad_questions
         predictions = []
@@ -380,7 +386,7 @@ class FeatureStore(object):
         precision, recall, thresholds = precision_recall_curve(
             labels, predictions)
 
-        # get the best index for sum(precison, recall)
+        # get the best index for sum(precision, recall)
         sum_precision_recall = precision[:-1] + recall[:-1]
         index_max = np.argmax(sum_precision_recall)
         optimal_threshold = 1e6 - thresholds[index_max]
@@ -392,14 +398,17 @@ class FeatureStore(object):
             pytoml.dump(config, f)
 
         logger.info(
-            f"The optimal threshold is: {optimal_threshold}, saved it to {config_path}"
+            f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Feature store for processing directories.')
-    parser.add_argument('--work_dir', type=str, default='workdir', help='Working directory.')
+    parser.add_argument('--work_dir',
+                        type=str,
+                        default='workdir',
+                        help='Working directory.')
     parser.add_argument(
         '--repo_dir',
         type=str,
@@ -408,14 +417,14 @@ def parse_args():
     parser.add_argument(
         '--good_questions',
         default='resource/good_questions.json',
-        help=
-        'The json file path of positive examples in the dataset. Default value is resource/good_questions.json'
+        help=  # noqa E251
+        'Positive examples in the dataset. Default value is resource/good_questions.json'  # noqa E501
     )
     parser.add_argument(
         '--bad_questions',
         default='resource/bad_questions.json',
-        help=
-        'The json file path of negative examples. Default value is resource/bad_questions.json'
+        help=  # noqa E251
+        'Negative examples json path. Default value is resource/bad_questions.json'  # noqa E501
     )
     parser.add_argument(
         '--config_path',
@@ -427,12 +436,16 @@ def parse_args():
 
 def test_reject():
     real_questions = [
-        '请问找不到libmmdeploy.so怎么办', 'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
-        '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',
+        '请问找不到libmmdeploy.so怎么办',
+        'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
+        '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
         'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
         '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
-        'mmdeploy 现在支持 mmtrack 模型转换了么', '请问 ncnn 全称是什么',
-        '有啥中文的 text to speech 模型吗?', '今天中午吃什么？', '茴香豆是怎么做的'
+        'mmdeploy 现在支持 mmtrack 模型转换了么',
+        '请问 ncnn 全称是什么',
+        '有啥中文的 text to speech 模型吗?',
+        '今天中午吃什么？',
+        '茴香豆是怎么做的'
     ]
     fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
@@ -443,15 +456,15 @@ def test_reject():
             logger.warning(f'process query: {example}')
     del fs_query
 
+
 def test_query():
-    real_questions = [
-        '视频流检测'
-    ]
+    real_questions = ['视频流检测']
     fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
         print(fs_query.query_source(example))
     del fs_query
+
 
 if __name__ == '__main__':
     args = parse_args()

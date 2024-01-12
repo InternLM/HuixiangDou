@@ -1,15 +1,15 @@
-import requests
-from readability import Document
-from bs4 import BeautifulSoup as BS
-import pdb
-import requests
+# Copyright (c) OpenMMLab. All rights reserved.
+import argparse
 import json
 import os
-import time
 import random
+import time
+
 import pytoml
+import requests
+from bs4 import BeautifulSoup as BS
 from loguru import logger
-import argparse
+from readability import Document
 
 
 class WebSearch:
@@ -47,14 +47,14 @@ class WebSearch:
         return None
 
     def google(self, query: str, max_article):
-        url = "https://google.serper.dev/search"
+        url = 'https://google.serper.dev/search'
 
-        payload = json.dumps({"q": "{}".format(query), "hl": "zh-cn"})
+        payload = json.dumps({'q': '{}'.format(query), 'hl': 'zh-cn'})
         headers = {
             'X-API-KEY': self.load_key(),
             'Content-Type': 'application/json'
         }
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request('POST', url, headers=headers, data=payload)
         jsonobj = json.loads(response.text)
 
         # 带偏序的 url 连接拾取

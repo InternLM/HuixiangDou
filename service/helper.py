@@ -1,19 +1,20 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from enum import Enum
 
 
 class ErrorCode(Enum):
-    SUCCESS = 0, "成功"
-    NOT_A_QUESTION = 1, "query 不是一个疑问句"
-    NO_TOPIC = 2, "问题找不到主题。可能是无意义的问句"
-    UNRELATED = 3, "和底库无关的话题。更新 good_questions 和 bad_questions 可以提升准确度"
-    NO_SEARCH_KEYWORDS = 4, "提取不出关键字"
-    NO_SEARCH_RESULT = 5, "检索不出结果"
-    BAD_ANSWER = 6, "答非所问"
-    SECURITY = 7, "答复和违禁主题关联度太高"
-    NOT_WORK_TIME = 8, "非工作时间。可修改 config.ini 调整。**在言论可能引发风险的场景，请让机器人保持在人类的监控下运行**"
+    SUCCESS = 0, 'success'
+    NOT_A_QUESTION = 1, 'query is not a question'
+    NO_TOPIC = 2, 'The question does not have a topic. It might be a meaningless sentence.'  # noqa E501
+    UNRELATED = 3, 'Topics unrelated to the knowledge base. Updating good_questions and bad_questions can improve accuracy.'  # noqa E501
+    NO_SEARCH_KEYWORDS = 4, 'Cannot extract keywords.'
+    NO_SEARCH_RESULT = 5, 'Cannot retrieve results.'
+    BAD_ANSWER = 6, 'Irrelevant answer.'
+    SECURITY = 7, 'Reply has a high relevance to prohibited topics.'
+    NOT_WORK_TIME = 8, 'Non-working hours. The config.ini file can be modified to adjust this. **In scenarios where speech may pose risks, let the robot operate under human supervision**'  # noqa E501
 
-    PARAMETER_ERROR = 9, "http 接口参数错误。query 不能为空； history 格式是 list of list，如 [['问题1','答复1'], ['问题2'], ['答复2']] "
-    PARAMETER_MISS = 10, "http json 入参缺少 key"
+    PARAMETER_ERROR = 9, "HTTP interface parameter error. Query cannot be empty; the format of history is list of lists, like [['question1', 'reply1'], ['question2'], ['reply2']]"  # noqa E501
+    PARAMETER_MISS = 10, 'Missing key in http json input parameters.'
 
     def __new__(cls, value, description):
         obj = object.__new__(cls)
@@ -33,7 +34,7 @@ class ErrorCode(Enum):
         if isinstance(code, cls):
             return {'code': int(code), 'message': code.describe()}
         else:
-            raise TypeError(f"Expected type {cls}, got {type(code)}")
+            raise TypeError(f'Expected type {cls}, got {type(code)}')
 
 
 class QueryTracker:

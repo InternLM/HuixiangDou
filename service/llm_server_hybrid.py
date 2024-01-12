@@ -1,22 +1,22 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
-import os
-from multiprocessing import Process, Value
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from loguru import logger
-import time
-import json
-import torch
 import random
-from aiohttp import web
+import time
+from multiprocessing import Process, Value
+
+import openai
 import pytoml
+from aiohttp import web
+from loguru import logger
 from openai import OpenAI
-import pdb
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
 
 class HybridLLMServer(object):
 
     def __init__(self,
                  llm_config: dict,
-                 device: str = "cuda",
+                 device: str = 'cuda',
                  retry=3) -> None:
         self.device = device
         self.retry = retry
@@ -25,8 +25,7 @@ class HybridLLMServer(object):
         self.enable_remote = llm_config['enable_remote']
         self.enable_local = llm_config['enable_local']
 
-        self.local_max_length = self.server_config[
-            'local_llm_max_text_length']
+        self.local_max_length = self.server_config['local_llm_max_text_length']
         self.remote_max_length = self.server_config[
             'remote_llm_max_text_length']
         self.remote_type = self.server_config['remote_type']
@@ -35,37 +34,36 @@ class HybridLLMServer(object):
 
         self.tokenizer = None
         self.model = None
-        
+
         if self.enable_local:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_path,
-                                                        trust_remote_code=True)
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_path, trust_remote_code=True)
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 trust_remote_code=True,
-                device_map="auto",
-#                torch_dtype="auto",
-#                fp16=True,
+                device_map='auto',
+                #                torch_dtype="auto",
+                #                fp16=True,
             ).eval()
         else:
-            logger.warning(f'local LLM disabled.')
-
+            logger.warning('local LLM disabled.')
 
     def call_kimi(self, prompt, history):
         client = OpenAI(
             api_key=self.server_config['remote_api_key'],
-            base_url="https://api.moonshot.cn/v1",
+            base_url='https://api.moonshot.cn/v1',
         )
 
         messages = [{
-            "role":
-            "system",
-            "content":
-            "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。"
+            'role':
+            'system',
+            'content':
+            '你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。'  # noqa E501
         }]
         for item in history:
-            messages.append({"role": "user", "content": item[0]})
-            messages.append({"role": "system", "content": item[1]})
-        messages.append({"role": "user", "content": prompt})
+            messages.append({'role': 'user', 'content': item[0]})
+            messages.append({'role': 'system', 'content': item[1]})
+        messages.append({'role': 'user', 'content': prompt})
 
         life = 0
         while life < self.retry:
@@ -79,21 +77,20 @@ class HybridLLMServer(object):
                 return completion.choices[0].message.content
             except Exception as e:
                 logger.error(str(e))
-                log_message = str(e).lower()
                 # retry
                 life += 1
                 randval = random.randint(1, int(pow(2, life)))
                 time.sleep(randval)
         return ''
-    
+
     def call_gpt(self, prompt, history):
         messages = []
         for item in history:
-            messages.append({"role": "user", "content": item[0]})
-            messages.append({"role": "system", "content": item[1]})
-        messages.append({"role": "user", "content": prompt})
-        completion = openai.ChatCompletion.create(model=self.server_config['remote_llm_model'],
-                                                messages=messages)
+            messages.append({'role': 'user', 'content': item[0]})
+            messages.append({'role': 'system', 'content': item[1]})
+        messages.append({'role': 'user', 'content': prompt})
+        completion = openai.ChatCompletion.create(
+            model=self.server_config['remote_llm_model'], messages=messages)
         res = completion.choices[0].message.content
         return res
 
@@ -103,15 +100,14 @@ class HybridLLMServer(object):
 
         if not self.enable_remote and remote:
             remote = False
-            logger.error(
-                'llm.enable_remote off, auto set remote=False')
+            logger.error('llm.enable_remote off, auto set remote=False')
 
         if remote:
             prompt = prompt[0:self.remote_max_length]
             # call remote LLM
             llm_type = self.server_config['remote_type']
             if llm_type == 'kimi':
-                output_text = self.call_kimi(prompt=prompt, history=history) 
+                output_text = self.call_kimi(prompt=prompt, history=history)
             else:
                 output_text = self.call_gpt(prompt=prompt, history=history)
 
@@ -135,7 +131,8 @@ def parse_args():
     parser.add_argument(
         '--config_path',
         default='config.ini',
-        help='Hybrid LLM Server configuration path. Default value is config.ini'
+        help=  # noqa E251
+        'Hybrid LLM Server configuration path. Default value is config.ini'  # noqa E501
     )
     args = parser.parse_args()
     return args
@@ -169,11 +166,13 @@ def llm_serve(config_path: str, server_ready: Value):
     server_ready.value = True
     web.run_app(app, host='0.0.0.0', port=bind_port)
 
+
 def main():
     args = parse_args()
     server_ready = Value('b', False)
 
-    server_process = Process(target=llm_serve, args=(args.config_path, server_ready))
+    server_process = Process(target=llm_serve,
+                             args=(args.config_path, server_ready))
     server_process.daemon = True
     server_process.start()
 
@@ -184,11 +183,13 @@ def main():
         time.sleep(3)
     print(client.generate_response(prompt='今天天气如何？', history=[], remote=False))
 
+
 def simple_bind():
     args = parse_args()
     server_ready = Value('b', False)
 
     llm_serve(args.config_path, server_ready)
+
 
 if __name__ == '__main__':
     simple_bind()

@@ -1,16 +1,21 @@
-from .llm_client import ChatClient
-import os
+# Copyright (c) OpenMMLab. All rights reserved.
+import argparse
 import ast
 import json
-import pdb
-import argparse
-from loguru import logger
+import os
+
 import pytoml
+from loguru import logger
+
+from .llm_client import ChatClient
 
 
 class SourceGraphProxy:
 
-    def __init__(self, config_path: dict, topk=1, language:str = 'zh') -> None:
+    def __init__(self,
+                 config_path: dict,
+                 topk=1,
+                 language: str = 'zh') -> None:
         self.config_path = config_path
         self.sg_config = None
         with open(self.config_path) as f:
@@ -20,11 +25,11 @@ class SourceGraphProxy:
         self.topk = topk
         self.language = language
         if self.language == 'zh':
-            self.CHOICE_TEMPLATE = "你是{}技术群的技术助手，目前收到了用户的问题：“{}”。请问这个问题应该查询以下哪个开源项目：\n"
-            self.KEYWORDS_TEMPLATE = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'
+            self.CHOICE_TEMPLATE = '你是{}技术群的技术助手，目前收到了用户的问题：“{}”。请问这个问题应该查询以下哪个开源项目：\n'  # noqa E501
+            self.KEYWORDS_TEMPLATE = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'  # noqa E501
         else:
-            self.CHOICE_TEMPLATE = 'You are the technical assistant of the {} technology group, and currently have received a user\'s question: "{}". Which of the following open-source projects should this question refer to: \n'
-            self.KEYWORDS_TEMPLATE = '"{}"\nPlease read the above question carefully, extract the keywords that can be used for the search engine, list the keywords directly without explaining them.'
+            self.CHOICE_TEMPLATE = 'You are the technical assistant of the {} technology group, and currently have received a user\'s question: "{}". Which of the following open-source projects should this question refer to: \n'  # noqa E501
+            self.KEYWORDS_TEMPLATE = '"{}"\nPlease read the above question carefully, extract the keywords that can be used for the search engine, list the keywords directly without explaining them.'  # noqa E501
 
     def command(self, txt: str):
         logger.debug('cmd: {}'.format(txt))
@@ -51,10 +56,9 @@ class SourceGraphProxy:
                 str(e), jsonstr))
         return ret
 
-
     def choose_repo(self, question, groupname):
         prompt = self.CHOICE_TEMPLATE.format(groupname, question)
-        
+
         keys = self.sg_config.keys()
         skip = ['binary_src_path', 'src_access_token']
         repos = dict()
@@ -72,17 +76,18 @@ class SourceGraphProxy:
             if key in choice:
                 target_repo_id = repos[key]['github_repo_id']
                 break
-        
+
         return target_repo_id
 
     def search(self, llm, question, groupname):
 
         repo_id = self.choose_repo(question, groupname)
         if repo_id is None:
-            logger.warning(f'cannot choose repo_id')
+            logger.warning('cannot choose repo_id')
             return ''
 
-        ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(self.sg_config['src_access_token'])
+        ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(
+            self.sg_config['src_access_token'])
         BINARY = self.sg_config['binary_src_path']
 
         prompt = self.KEYWORDS_TEMPLATE.format(question)
@@ -96,14 +101,14 @@ class SourceGraphProxy:
 
         search_items = []
         for entity in entities:
-            # search doc and source code based on entities 
+            # search doc and source code based on entities
             # search -json 'repo:open-compass/opencompass  summarizers'
             cmd_doc = '''{} search -json 'repo:{} lang:MarkDown {}' '''.format(
                 BINARY, repo_id, entity)
             cmd_return = self.command(ENV + cmd_doc)
             search_items += self.extract_sg_result(cmd_return)
 
-            cmd_python = '''{} search -json 'repo:{} lang:Python {}' '''.format(
+            cmd_python = '''{} search -json 'repo:{} lang:Python {}' '''.format(  # noqa E501
                 BINARY, repo_id, entity)
             cmd_return = self.command(ENV + cmd_python)
             search_items += self.extract_sg_result(cmd_return)
@@ -117,14 +122,14 @@ def parse_args():
     parser.add_argument(
         '--config_path',
         default='config.ini',
-        help=
+        help=  # noqa E251
         'Source graph proxy configuration path. Default value is config.ini')
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
-    logger.add('logs/sg_search.log', rotation="4MB")
+    logger.add('logs/sg_search.log', rotation='4MB')
     args = parse_args()
 
     llm = ChatClient(config_path=args.config_path)

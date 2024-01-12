@@ -1,20 +1,22 @@
-from loguru import logger
-from .llm_client import ChatClient
-from .feature_store import FeatureStore
-from .web_search import WebSearch
-from .sg_search import SourceGraphProxy
-from .helper import ErrorCode, QueryTracker
+# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
-import pytoml
 import datetime
-import time
 import re
-import pdb
+import time
+
+import pytoml
+from loguru import logger
+
+from .feature_store import FeatureStore
+from .helper import ErrorCode, QueryTracker
+from .llm_client import ChatClient
+from .sg_search import SourceGraphProxy
+from .web_search import WebSearch
 
 
 class Worker:
 
-    def __init__(self, work_dir:str, config_path: str, language: str = 'zh'):
+    def __init__(self, work_dir: str, config_path: str, language: str = 'zh'):
         self.llm = ChatClient(config_path=config_path)
         self.fs = FeatureStore(config_path=config_path)
         self.fs.load_feature(work_dir=work_dir)
@@ -24,7 +26,7 @@ class Worker:
         with open(config_path) as f:
             self.config = pytoml.load(f)
         if self.config is None:
-            raise Exception(f'worker config can not be None')
+            raise Exception('worker config can not be None')
 
         self.context_max_length = -1
         llm_config = self.config['llm']
@@ -35,28 +37,28 @@ class Worker:
             self.context_max_length = llm_config['server'][
                 'remote_llm_max_text_length']
         else:
-            raise Exception(f'no llm enabled')
+            raise Exception('no llm enabled')
 
         # Switch languages according to the scenario.
         if self.language == 'zh':
             self.TOPIC_TEMPLATE = '告诉我这句话的主题，直接说主题不要解释：“{}”'
-            self.SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'
-            self.SCORING_RELAVANCE_TEMPLATE = '问题：“{}”\n材料：“{}”\n请仔细阅读以上内容，判断问题和材料的关联度，用0～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n'
-            self.KEYWORDS_TEMPLATE = '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。搜索参数类型 string， 内容是短语或关键字，以空格分隔。\n你现在是{}技术交流群里的技术助手，用户问“{}”，你打算通过谷歌搜索查询相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'
-            self.SECURITY_TEMAPLTE = '判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 0～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'
-            self.PERPLESITY_TEMPLATE = '''“question:{} answer:{}”\n阅读以上对话，answer 是否在表达自己不知道，回答越全面得分越少，用0～10表示，不要解释直接给出得分。\n判断标准：准确回答问题得 0 分；答案详尽得 1 分；知道部分答案但有不确定信息得 8 分；知道小部分答案但推荐求助其他人得 9 分；不知道任何答案直接推荐求助别人得 10 分。直接打分不要解释。'''
-            self.SUMMARIZE_TEMPLATE = '{} \n 仔细阅读以上内容，总结得简短有力点'
-            # self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题，材料可能和问题无关。如果材料和问题无关，尝试用你自己的理解来回答问题。如果无法确定答案，直接回答不知道。'
-            self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'
+            self.SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'  # noqa E501
+            self.SCORING_RELAVANCE_TEMPLATE = '问题：“{}”\n材料：“{}”\n请仔细阅读以上内容，判断问题和材料的关联度，用0～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n'  # noqa E501
+            self.KEYWORDS_TEMPLATE = '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。搜索参数类型 string， 内容是短语或关键字，以空格分隔。\n你现在是{}技术交流群里的技术助手，用户问“{}”，你打算通过谷歌搜索查询相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'  # noqa E501
+            self.SECURITY_TEMAPLTE = '判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 0～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'  # noqa E501
+            self.PERPLESITY_TEMPLATE = '“question:{} answer:{}”\n阅读以上对话，answer 是否在表达自己不知道，回答越全面得分越少，用0～10表示，不要解释直接给出得分。\n判断标准：准确回答问题得 0 分；答案详尽得 1 分；知道部分答案但有不确定信息得 8 分；知道小部分答案但推荐求助其他人得 9 分；不知道任何答案直接推荐求助别人得 10 分。直接打分不要解释。'  # noqa E501
+            self.SUMMARIZE_TEMPLATE = '{} \n 仔细阅读以上内容，总结得简短有力点'  # noqa E501
+            # self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题，材料可能和问题无关。如果材料和问题无关，尝试用你自己的理解来回答问题。如果无法确定答案，直接回答不知道。'  # noqa E501
+            self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
         else:
-            self.TOPIC_TEMPLATE = 'Tell me the theme of this sentence, just state the theme without explanation: "{}"'
-            self.SCORING_QUESTION_TEMPLTE = '"{}"\nPlease read the content above carefully and judge whether the sentence is a thematic question. Rate it on a scale of 0-10. Only provide the score, no explanation.\nThe criteria are as follows: a sentence gets 10 points if it has a subject, predicate, object and is a question; points are deducted for missing subject, predicate or object; declarative sentences get 0 points; sentences that are not questions also get 0 points. Just give the score, no explanation.'
-            self.SCORING_RELAVANCE_TEMPLATE = 'Question: "{}"\Background Infomation: "{}"\nPlease read the content above carefully and assess the relevance between the question and the material on a scale of 0-10. The scoring standard is as follows: extremely relevant gets 10 points; completely irrelevant gets 0 points. Only provide the score, no explanation needed.'
-            self.KEYWORDS_TEMPLATE = 'Google search is a general-purpose search engine that can be used to access the internet, look up encyclopedic knowledge, keep abreast of current affairs and more. Search parameters type: string, content consists of phrases or keywords separated by spaces.\nYou are now the technical assistant in the "{}" tech communication group. A user asked "{}", you plan to use Google search to find related information, please provide the keywords or phrases for the search, no explanation, just give the keywords or phrases.'
-            self.SECURITY_TEMAPLTE = 'Evaluate whether the following sentence involves prohibited content such as politics, insult, pornography, terror, religion, cyber violence, racial discrimination, etc., rate it on a scale of 0-10, do not explain, just give the score. The scoring standard is as follows: any violation directly gets 10 points; completely unrelated gets 0 points. Give the score, no explanation: "{}"'
-            self.PERPLESITY_TEMPLATE = 'Question: {} Answer: {}\nRead the dialogue above, does the answer express that they don\'t know? The more comprehensive the answer, the lower the score. Rate it on a scale of 0-10, no explanation, just give the score.\nThe scoring standard is as follows: an accurate answer to the question gets 0 points; a detailed answer gets 1 point; knowing some answers but having uncertain information gets 8 points; knowing a small part of the answer but recommends seeking help from others gets 9 points; not knowing any of the answers and directly recommending asking others for help gets 10 points. Just give the score, no explanation.'
-            self.SUMMARIZE_TEMPLATE = '"{}" \n Read the content above carefully, summarize it in a short and powerful way.'
-            self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'
+            self.TOPIC_TEMPLATE = 'Tell me the theme of this sentence, just state the theme without explanation: "{}"'  # noqa E501
+            self.SCORING_QUESTION_TEMPLTE = '"{}"\nPlease read the content above carefully and judge whether the sentence is a thematic question. Rate it on a scale of 0-10. Only provide the score, no explanation.\nThe criteria are as follows: a sentence gets 10 points if it has a subject, predicate, object and is a question; points are deducted for missing subject, predicate or object; declarative sentences get 0 points; sentences that are not questions also get 0 points. Just give the score, no explanation.'  # noqa E501
+            self.SCORING_RELAVANCE_TEMPLATE = 'Question: "{}"\Background Information: "{}"\nPlease read the content above carefully and assess the relevance between the question and the material on a scale of 0-10. The scoring standard is as follows: extremely relevant gets 10 points; completely irrelevant gets 0 points. Only provide the score, no explanation needed.'  # noqa E501
+            self.KEYWORDS_TEMPLATE = 'Google search is a general-purpose search engine that can be used to access the internet, look up encyclopedic knowledge, keep abreast of current affairs and more. Search parameters type: string, content consists of phrases or keywords separated by spaces.\nYou are now the technical assistant in the "{}" tech communication group. A user asked "{}", you plan to use Google search to find related information, please provide the keywords or phrases for the search, no explanation, just give the keywords or phrases.'  # noqa E501
+            self.SECURITY_TEMAPLTE = 'Evaluate whether the following sentence involves prohibited content such as politics, insult, pornography, terror, religion, cyber violence, racial discrimination, etc., rate it on a scale of 0-10, do not explain, just give the score. The scoring standard is as follows: any violation directly gets 10 points; completely unrelated gets 0 points. Give the score, no explanation: "{}"'  # noqa E501
+            self.PERPLESITY_TEMPLATE = 'Question: {} Answer: {}\nRead the dialogue above, does the answer express that they don\'t know? The more comprehensive the answer, the lower the score. Rate it on a scale of 0-10, no explanation, just give the score.\nThe scoring standard is as follows: an accurate answer to the question gets 0 points; a detailed answer gets 1 point; knowing some answers but having uncertain information gets 8 points; knowing a small part of the answer but recommends seeking help from others gets 9 points; not knowing any of the answers and directly recommending asking others for help gets 10 points. Just give the score, no explanation.'  # noqa E501
+            self.SUMMARIZE_TEMPLATE = '"{}" \n Read the content above carefully, summarize it in a short and powerful way.'  # noqa E501
+            self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
     def single_judge(self, prompt, tracker, throttle: int, default: int):
         if prompt is None or len(prompt) == 0:
@@ -80,9 +82,9 @@ class Worker:
         time_config = self.config['worker']['time']
 
         beginWork = datetime.datetime.now().strftime(
-            "%Y-%m-%d") + ' ' + time_config['start']
+            '%Y-%m-%d') + ' ' + time_config['start']
         endWork = datetime.datetime.now().strftime(
-            "%Y-%m-%d") + ' ' + time_config['end']
+            '%Y-%m-%d') + ' ' + time_config['end']
         beginWorkSeconds = time.time() - time.mktime(
             time.strptime(beginWork, '%Y-%m-%d %H:%M:%S'))
         endWorkSeconds = time.time() - time.mktime(
@@ -124,18 +126,19 @@ class Worker:
             tracker.log('feature store reject')
             return ErrorCode.UNRELATED, response
 
-        if db_context_part is not None and self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
-                query, db_context_part),
-                             tracker=tracker,
-                             throttle=5,
-                             default=10):
-            prompt, history = self.llm.build_prompt(instruction=query,
-                                               context=db_context,
-                                               history_pair=history,
-                                               template=self.GENERATE_TEMPLATE)
+        if db_context_part is not None and self.single_judge(
+                self.SCORING_RELAVANCE_TEMPLATE.format(query, db_context_part),
+                tracker=tracker,
+                throttle=5,
+                default=10):
+            prompt, history = self.llm.build_prompt(
+                instruction=query,
+                context=db_context,
+                history_pair=history,
+                template=self.GENERATE_TEMPLATE)
             response = self.llm.generate_response(prompt=prompt,
-                                             history=history,
-                                             remote=True)
+                                                  history=history,
+                                                  remote=True)
             tracker.log('feature store doc', [db_context_part, response])
             return ErrorCode.SUCCESS, response
 
@@ -192,8 +195,8 @@ class Worker:
                         history_pair=history,
                         template=self.GENERATE_TEMPLATE)
                     response = self.llm.generate_response(prompt=prompt,
-                                                     history=history,
-                                                     remote=False)
+                                                          history=history,
+                                                          remote=False)
                 else:
                     reborn_code = ErrorCode.NO_SEARCH_RESULT
 
@@ -211,13 +214,14 @@ class Worker:
                 reborn_code = ErrorCode.BAD_ANSWER
 
         if self.config['worker']['enable_sg_search']:
-            if reborn_code == ErrorCode.BAD_ANSWER or reborn_code == ErrorCode.NO_SEARCH_RESULT:
+            if reborn_code == ErrorCode.BAD_ANSWER or reborn_code == ErrorCode.NO_SEARCH_RESULT:  # noqa E501
                 # reborn
-                sg = SourceGraphProxy(config_path=self.config_path, language=self.language)
-                sg_context = sg.search(llm=llm,
+                sg = SourceGraphProxy(config_path=self.config_path,
+                                      language=self.language)
+                sg_context = sg.search(llm=self.llm,
                                        question=query,
                                        groupname=groupname)
-                if sg_context != None and len(sg_context) > 0:
+                if sg_context is not None and len(sg_context) > 0:
                     prompt, history = self.llm.build_prompt(
                         instruction=query,
                         context=sg_context,
@@ -225,8 +229,8 @@ class Worker:
                         template=self.GENERATE_TEMPLATE)
 
                     response = self.llm.generate_response(prompt=prompt,
-                                                     history=history,
-                                                     remote=True)
+                                                          history=history,
+                                                          remote=True)
                     tracker.log('source graph', [sg_context, response])
 
                     prompt = self.PERPLESITY_TEMPLATE.format(query, response)
@@ -268,6 +272,6 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     bot = Worker(work_dir=args.work_dir, config_path=args.config_path)
-    querys = ['茴香豆是怎么做的']
-    for query in querys:
+    queries = ['茴香豆是怎么做的']
+    for query in queries:
         print(bot.generate(query=query, history=[], groupname=''))

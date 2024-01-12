@@ -10,18 +10,19 @@
 
 import json
 import os
-import pdb
 
 import json5
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.generation import GenerationConfig
 
-tokenizer = AutoTokenizer.from_pretrained("/models/Qwen-7B-Chat", trust_remote_code=True)
-generation_config = GenerationConfig.from_pretrained("/models/Qwen-7B-Chat", trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(
-    "/models/Qwen-7B-Chat", device_map="auto", trust_remote_code=True
-).eval()
+tokenizer = AutoTokenizer.from_pretrained('/models/Qwen-7B-Chat',
+                                          trust_remote_code=True)
+generation_config = GenerationConfig.from_pretrained('/models/Qwen-7B-Chat',
+                                                     trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained('/models/Qwen-7B-Chat',
+                                             device_map='auto',
+                                             trust_remote_code=True).eval()
 model.generation_config = generation_config
 model.generation_config.do_sample = False
 
@@ -72,7 +73,8 @@ def llm_with_plugin(prompt: str, history, list_of_plugin_info=()):
 
     text = ''
     while True:
-        output = text_completion(planning_prompt + text, stop_words=['Observation:', 'Observation:\n'])
+        output = text_completion(planning_prompt + text,
+                                 stop_words=['Observation:', 'Observation:\n'])
         action, action_input, output = parse_latest_plugin_call(output)
         if action:  # 需要调用插件
             # action、action_input 分别为需要调用的插件代号、输入参数
@@ -96,13 +98,14 @@ def build_input_text(chat_history, list_of_plugin_info) -> str:
     tools_text = []
     for plugin_info in list_of_plugin_info:
         tool = TOOL_DESC.format(
-            name_for_model=plugin_info["name_for_model"],
-            name_for_human=plugin_info["name_for_human"],
-            description_for_model=plugin_info["description_for_model"],
-            parameters=json.dumps(plugin_info["parameters"], ensure_ascii=False),
+            name_for_model=plugin_info['name_for_model'],
+            name_for_human=plugin_info['name_for_human'],
+            description_for_model=plugin_info['description_for_model'],
+            parameters=json.dumps(plugin_info['parameters'],
+                                  ensure_ascii=False),
         )
         if plugin_info.get('args_format', 'json') == 'json':
-            tool += " Format the arguments as a JSON object."
+            tool += ' Format the arguments as a JSON object.'
         elif plugin_info['args_format'] == 'code':
             tool += ' Enclose the code within triple backticks (`) at the beginning and end of the code.'
         else:
@@ -111,7 +114,8 @@ def build_input_text(chat_history, list_of_plugin_info) -> str:
     tools_text = '\n\n'.join(tools_text)
 
     # 候选插件的代号
-    tools_name_text = ', '.join([plugin_info["name_for_model"] for plugin_info in list_of_plugin_info])
+    tools_name_text = ', '.join(
+        [plugin_info['name_for_model'] for plugin_info in list_of_plugin_info])
 
     im_start = '<|im_start|>'
     im_end = '<|im_end|>'
@@ -126,13 +130,14 @@ def build_input_text(chat_history, list_of_plugin_info) -> str:
                     query=query,
                 )
         query = query.lstrip('\n').rstrip()  # 重要！若不 strip 会与训练时数据的构造方式产生差异。
-        response = response.lstrip('\n').rstrip()  # 重要！若不 strip 会与训练时数据的构造方式产生差异。
+        response = response.lstrip(
+            '\n').rstrip()  # 重要！若不 strip 会与训练时数据的构造方式产生差异。
         # 使用续写模式（text completion）时，需要用如下格式区分用户和AI：
-        prompt += f"\n{im_start}user\n{query}{im_end}"
-        prompt += f"\n{im_start}assistant\n{response}{im_end}"
+        prompt += f'\n{im_start}user\n{query}{im_end}'
+        prompt += f'\n{im_start}assistant\n{response}{im_end}'
 
-    assert prompt.endswith(f"\n{im_start}assistant\n{im_end}")
-    prompt = prompt[: -len(f'{im_end}')]
+    assert prompt.endswith(f'\n{im_start}assistant\n{im_end}')
+    prompt = prompt[:-len(f'{im_end}')]
     return prompt
 
 
@@ -146,14 +151,15 @@ def text_completion(input_text: str, stop_words) -> str:  # 作为一个文本�
     input_ids = torch.tensor([tokenizer.encode(input_text)]).to(model.device)
     output = model.generate(input_ids, stop_words_ids=stop_words_ids)
     output = output.tolist()[0]
-    output = tokenizer.decode(output, errors="ignore")
+    output = tokenizer.decode(output, errors='ignore')
     assert output.startswith(input_text)
-    output = output[len(input_text) :].replace('<|endoftext|>', '').replace(im_end, '')
+    output = output[len(input_text):].replace('<|endoftext|>',
+                                              '').replace(im_end, '')
 
     for stop_str in stop_words:
         idx = output.find(stop_str)
         if idx != -1:
-            output = output[: idx + len(stop_str)]
+            output = output[:idx + len(stop_str)]
     return output  # 续写 input_text 的结果，不包含 input_text 的内容
 
 
@@ -164,12 +170,12 @@ def parse_latest_plugin_call(text):
     k = text.rfind('\nObservation:')
     if 0 <= i < j:  # If the text has `Action` and `Action input`,
         if k < j:  # but does not contain `Observation`,
-            # then it is likely that `Observation` is ommited by the LLM,
+            # then it is likely that `Observation` is omitted by the LLM,
             # because the output text may have discarded the stop word.
             text = text.rstrip() + '\nObservation:'  # Add it back.
         k = text.rfind('\nObservation:')
-        plugin_name = text[i + len('\nAction:') : j].strip()
-        plugin_args = text[j + len('\nAction Input:') : k].strip()
+        plugin_name = text[i + len('\nAction:'):j].strip()
+        plugin_args = text[j + len('\nAction Input:'):k].strip()
         text = text[:k]
     return plugin_name, plugin_args, text
 
@@ -188,42 +194,52 @@ def call_plugin(plugin_name: str, plugin_args: str) -> str:
     #
     if plugin_name == 'google_search':
         # 使用 SerpAPI 需要在这里填入您的 SERPAPI_API_KEY！
-        os.environ["SERPAPI_API_KEY"] = os.getenv("SERPAPI_API_KEY", default='')
+        os.environ['SERPAPI_API_KEY'] = os.getenv('SERPAPI_API_KEY',
+                                                  default='')
         from langchain import SerpAPIWrapper
 
         return SerpAPIWrapper().run(json5.loads(plugin_args)['search_query'])
     elif plugin_name == 'image_gen':
         import urllib.parse
 
-        prompt = json5.loads(plugin_args)["prompt"]
+        prompt = json5.loads(plugin_args)['prompt']
         prompt = urllib.parse.quote(prompt)
-        return json.dumps({'image_url': f'https://image.pollinations.ai/prompt/{prompt}'}, ensure_ascii=False)
+        return json.dumps(
+            {'image_url': f'https://image.pollinations.ai/prompt/{prompt}'},
+            ensure_ascii=False)
     else:
         raise NotImplementedError
 
 
 def test():
-    tools = [
-        {
-            'name_for_human': '谷歌搜索',
-            'name_for_model': 'google_search',
-            'description_for_model': '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。',
-            'parameters': [
-                {
-                    'name': 'search_query',
-                    'description': '搜索关键词或短语',
-                    'required': True,
-                    'schema': {'type': 'string'},
-                }
-            ],
-        }
-    ]
+    tools = [{
+        'name_for_human':
+        '谷歌搜索',
+        'name_for_model':
+        'google_search',
+        'description_for_model':
+        '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。',
+        'parameters': [{
+            'name': 'search_query',
+            'description': '搜索关键词或短语',
+            'required': True,
+            'schema': {
+                'type': 'string'
+            },
+        }],
+    }]
     history = []
-    for query in ['请问mmdet3.0依赖mmcv哪个版本', 'openmmlab和上海 AI Lab 是什么关系', '如何安装 mmdeploy', 'ncnn 全称是啥', '如果我要从高空检测安全帽，我应该用 mmdet 还是 mmrotate ']:
+    for query in [
+            '请问mmdet3.0依赖mmcv哪个版本', 'openmmlab和上海 AI Lab 是什么关系',
+            '如何安装 mmdeploy', 'ncnn 全称是啥',
+            '如果我要从高空检测安全帽，我应该用 mmdet 还是 mmrotate '
+    ]:
         print(f"User's Query:\n{query}\n")
-        response, history = llm_with_plugin(prompt=query, history=history, list_of_plugin_info=tools)
+        response, history = llm_with_plugin(prompt=query,
+                                            history=history,
+                                            list_of_plugin_info=tools)
         print(f"Qwen's Response:\n{response}\n")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     test()

@@ -1,1 +1,1 @@
-from .lark import Lark
+from .lark import Lark  # noqa E401

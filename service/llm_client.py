@@ -1,12 +1,10 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
-import os
-import time
 import json
-import random
+
+import pytoml
 import requests
 from loguru import logger
-import pytoml
-import pdb
 
 
 class ChatClient:
@@ -54,11 +52,10 @@ class ChatClient:
         if remote and not enable_remote:
             remote = False
             logger.warning(
-                f'disable remote LLM while set `remote=True`, auto fixed')
+                'disable remote LLM while set `remote=True`, auto fixed')
         elif not enable_local and not remote:
             remote = True
-            logger.warning(
-                f'diable local LLM while `remote=False`, auto fixed')
+            logger.warning('diable local LLM while `remote=False`, auto fixed')
 
         if remote:
             max_length = llm_config['server']['remote_llm_max_text_length']
@@ -67,7 +64,7 @@ class ChatClient:
 
         if len(prompt) > max_length:
             logger.warning(
-                f'prompt length {len(prompt)}  > max_length {max_length}, truncated'
+                f'prompt length {len(prompt)}  > max_length {max_length}, truncated'  # noqa E501
             )
             prompt = prompt[0:max_length]
 
@@ -77,9 +74,9 @@ class ChatClient:
             for item in history:
                 data_history.append([item[0], item[1]])
             data = {
-                "prompt": prompt,
-                "history": data_history,
-                "remote": remote
+                'prompt': prompt,
+                'history': data_history,
+                'remote': remote
             }
             resp = requests.post(url, headers=header, data=json.dumps(data))
             if resp.status_code != 200:
@@ -96,7 +93,7 @@ def parse_args():
     parser.add_argument(
         '--config_path',
         default='config.ini',
-        help='Hybrid LLM Server configuration path. Default value is config.ini'
+        help='Configuration path. Default value is config.ini'  # noqa E501
     )
     args = parser.parse_args()
     return args
