@@ -33,14 +33,20 @@ if __name__ == '__main__':
 
     if args.standalone:
         # hybrid llm serve
-        server_ready = Value('b', False)
+        server_ready = Value('i', 0)
         server_process = Process(target=llm_serve,
                                  args=(args.config_path, server_ready))
         server_process.daemon = True
         server_process.start()
-        while not server_ready.value:
-            logger.info('waiting for server to be ready..')
-            time.sleep(3)
+        while True:
+            if server_ready.value == 0:
+                logger.info('waiting for server to be ready..')
+                time.sleep(3)
+            elif server_ready.value == 1:
+                break
+            else:
+                logger.error('start local LLM server failed, quit.')
+                raise Exception('local LLM path error')
         logger.info('Hybrid LLM Server start.')
 
     # query by worker

@@ -142,9 +142,14 @@ def llm_serve(config_path: str, server_ready: Value):
     # logger.add('logs/server.log', rotation="4MB")
     with open(config_path) as f:
         llm_config = pytoml.load(f)['llm']
-        bind_port = int(llm_config['server']['bind_port'])
+        bind_port = int(llm_config['server']['local_llm_bind_port'])
 
-    server = HybridLLMServer(llm_config=llm_config)
+    try:
+        server = HybridLLMServer(llm_config=llm_config)
+        server_ready.value = 1
+    except Exception as e:
+        server_ready.value = -1
+        raise (e)
 
     async def inference(request):
 
@@ -163,13 +168,12 @@ def llm_serve(config_path: str, server_ready: Value):
 
     app = web.Application()
     app.add_routes([web.post('/inference', inference)])
-    server_ready.value = True
     web.run_app(app, host='0.0.0.0', port=bind_port)
 
 
 def main():
     args = parse_args()
-    server_ready = Value('b', False)
+    server_ready = Value('i', 0)
 
     server_process = Process(target=llm_serve,
                              args=(args.config_path, server_ready))
@@ -178,7 +182,7 @@ def main():
 
     from llm_client import ChatClient
     client = ChatClient(config_path=args.config_path)
-    while not server_ready.value:
+    while server_ready.value == 0:
         logger.info('waiting for server to be ready..')
         time.sleep(3)
     print(client.generate_response(prompt='今天天气如何？', history=[], remote=False))
@@ -186,7 +190,7 @@ def main():
 
 def simple_bind():
     args = parse_args()
-    server_ready = Value('b', False)
+    server_ready = Value('i', 0)
 
     llm_serve(args.config_path, server_ready)
 
