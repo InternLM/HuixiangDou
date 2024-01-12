@@ -98,7 +98,7 @@ The first run will automatically download the configuration of internlm2-7B.
     # config.ini
     [llm]
     ..
-    client_url = "http://10.140.24.142:39999/inference" # example
+    client_url = "http://10.140.24.142:8888/inference" # example
 
     python3 main.py workdir
     ```
@@ -124,7 +124,8 @@ python3 main.py workdir
 If you still need to read Feishu group messages, see [Feishu Developer Square - Add Application Capabilities - Robots](https://open.feishu.cn/app?lang=zh-CN).
 
 ## STEP4. Advanced Version [Optional]
-To further enhance the experience of the assistant's response, the more features you turn on, the better.
+
+The basic version may not perform well. You can enable these features to enhance performance. The more features you turn on, the better.
 
 1. Use higher accuracy local LLM
 
@@ -134,7 +135,7 @@ To further enhance the experience of the assistant's response, the more features
 2. Hybrid LLM Service
 
     For LLM services that support the openai interface, HuixiangDou can utilize its Long Context ability.
-    Using Kimi as an example, below is an example of `config.ini` configuration:
+    Using [kimi](https://platform.moonshot.cn/) as an example, below is an example of `config.ini` configuration:
 
     ```shell
     # config.ini
@@ -146,7 +147,7 @@ To further enhance the experience of the assistant's response, the more features
     remote_llm_max_text_length = 128000
     remote_llm_model = "moonshot-v1-128k"
     ```
-    We also support the gpt API. Note that this feature will increase response time and operating costs.
+    We also support chatgpt API. Note that this feature will increase response time and operating costs.
 
 3. Repo search enhancement
 

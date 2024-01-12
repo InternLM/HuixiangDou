@@ -18,7 +18,7 @@
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-| 版本 | 硬件需求 | 描述 | Linux 系统已验证设备 |
+| 版本 | GPU显存需求 | 描述 | Linux 系统已验证设备 |
 | :-: | :-: | :-: | :-: |
 | 基础版 | 20GB | 能回答领域知识的基础问题，零成本运行 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge) |
 | 高级版 | 40GB | 能够回答源码级问题，零成本运行 | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge) |
@@ -139,7 +139,7 @@ python3 main.py workdir
 2. Hybrid LLM Service
 
     对于支持 openai 接口的 LLM 服务，茴香豆可以发挥它的 Long Context 能力。
-    以 kimi 为例，以下是 `config.ini` 配置示例：
+    以 [kimi](https://platform.moonshot.cn/) 为例，以下是 `config.ini` 配置示例：
 
     ```shell
     # config.ini
@@ -151,7 +151,7 @@ python3 main.py workdir
     remote_llm_max_text_length = 128000
     remote_llm_model = "moonshot-v1-128k"
     ```
-    我们同样支持 gpt API。注意此特性会增加响应耗时和运行成本。
+    我们同样支持 chatgpt API。注意此特性会增加响应耗时和运行成本。
 
 3. repo 搜索增强
 
