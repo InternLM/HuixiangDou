@@ -66,7 +66,7 @@ reject query: How to make HuixiangDou?
 
 **Configure free TOKEN**
 
-HuixiangDou uses a search engine. Click on the [serper official website](https://serper.dev/api-key) to obtain a quota-limited WEB_SEARCH_TOKEN and fill it in `config.ini`.
+HuixiangDou uses a search engine. Click [Serper](https://serper.dev/api-key) to obtain a quota-limited TOKEN and fill it in `config.ini`.
 
 ```shell
 # config.ini
@@ -88,7 +88,9 @@ The first run will automatically download the configuration of internlm2-7B.
   # standalone
   python3 main.py --standalone
   ..
-  ErrorCode.SUCCESS, Could you please advise if there is any good optimization method for video stream detection flickering caused by frame skipping?
+  ErrorCode.SUCCESS,
+  Query: Could you please advise if there is any good optimization method for video stream detection flickering caused by frame skipping?
+  Reply:
   1. Frame rate control and frame skipping strategy are key to optimizing video stream detection performance, but you need to pay attention to the impact of frame skipping on detection results.
   2. Multithreading processing and caching mechanism can improve detection efficiency, but you need to pay attention to the stability of detection results.
   3. The use of sliding window method can reduce the impact of frame skipping and caching on detection results.
