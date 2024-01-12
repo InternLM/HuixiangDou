@@ -213,15 +213,16 @@ class Worker:
                                  default=0):
                 reborn_code = ErrorCode.BAD_ANSWER
 
+        reborn_code = ErrorCode.BAD_ANSWER
         if self.config['worker']['enable_sg_search']:
             if reborn_code == ErrorCode.BAD_ANSWER or reborn_code == ErrorCode.NO_SEARCH_RESULT:  # noqa E501
                 # reborn
                 sg = SourceGraphProxy(config_path=self.config_path,
                                       language=self.language)
-                sg_context = sg.search(llm=self.llm,
+                sg_context = sg.search(llm_client=self.llm,
                                        question=query,
                                        groupname=groupname)
-                if sg_context is not None and len(sg_context) > 0:
+                if sg_context is not None and len(sg_context) > 2:
                     prompt, history = self.llm.build_prompt(
                         instruction=query,
                         context=sg_context,

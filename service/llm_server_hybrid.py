@@ -42,7 +42,7 @@ class HybridLLMServer(object):
                 model_path,
                 trust_remote_code=True,
                 device_map='auto',
-                #                torch_dtype="auto",
+                torch_dtype='auto',
                 #                fp16=True,
             ).eval()
         else:

@@ -171,7 +171,7 @@ The basic version may not perform well. You can enable these features to enhance
 
      ```shell
      # open https://github.com/sourcegraph/src-cli#installation
-     curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && chmod +x /usr/local/bin/src
+     sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && chmod +x /usr/local/bin/src
 
      # Fill the token into config.ini
      [sg_search]

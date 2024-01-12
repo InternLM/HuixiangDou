@@ -33,6 +33,7 @@
 ## STEP1. 建立话题特征库
 
 复制下面所有命令（包含 '#' 符号）执行。
+
 ```shell
 # 下载 repo
 git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
@@ -177,7 +178,7 @@ python3 main.py
 
      ```shell
      # open https://github.com/sourcegraph/src-cli#installation
-     curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && chmod +x /usr/local/bin/src
+     sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && chmod +x /usr/local/bin/src
 
      # 把 token 填入 config.ini
      [sg_search]

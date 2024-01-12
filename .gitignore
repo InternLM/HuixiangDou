@@ -5,6 +5,7 @@ write_toml.py
 config.ini
 config-template.ini
 logs/
+logs/work.txt
 server.log
 service/__pycache__/
 frontend/__pycache__/

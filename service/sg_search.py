@@ -56,7 +56,7 @@ class SourceGraphProxy:
                 str(e), jsonstr))
         return ret
 
-    def choose_repo(self, question, groupname):
+    def choose_repo(self, llm_client, question, groupname):
         prompt = self.CHOICE_TEMPLATE.format(groupname, question)
 
         keys = self.sg_config.keys()
@@ -69,7 +69,8 @@ class SourceGraphProxy:
             prompt += f'* {key} {introduction}\n'
             repos[key] = self.sg_config[key]
         prompt += '* none '
-        choice = llm.generate_response(prompt=prompt, remote=True).strip()
+        choice = llm_client.generate_response(prompt=prompt,
+                                              remote=True).strip()
 
         target_repo_id = None
         for key in repos.keys():
@@ -79,9 +80,9 @@ class SourceGraphProxy:
 
         return target_repo_id
 
-    def search(self, llm, question, groupname):
+    def search(self, llm_client, question, groupname):
 
-        repo_id = self.choose_repo(question, groupname)
+        repo_id = self.choose_repo(llm_client, question, groupname)
         if repo_id is None:
             logger.warning('cannot choose repo_id')
             return ''
@@ -93,11 +94,12 @@ class SourceGraphProxy:
         prompt = self.KEYWORDS_TEMPLATE.format(question)
         entities = []
         try:
-            entity_str = llm.generate_response(prompt=prompt)
+            entity_str = llm_client.generate_response(prompt=prompt)
             entities = ast.literal_eval(entity_str)
         except Exception as e:
             logger.error('parse {} failed {}.'.format(entity_str, str(e)))
-            return ''
+            # return ''
+            entities = ['视频流']
 
         search_items = []
         for entity in entities:
