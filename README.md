@@ -32,16 +32,21 @@ We will take lmdeploy & mmpose as examples to explain how to deploy the knowledg
 
 ## STEP1. Establish Topic Feature Repository
 
+Execute all the commands below (including the '#' symbol).
+
 ```shell
-# Download chat topics
+# Download the repo
+git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
+
+# Download chatting topics
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
-# Establish feature repository
-git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou && mkdir workdir # Create working directory
-python3 -m pip install -r requirements.txt # Install dependencies, python3.11 requires `conda install conda-forge::faiss-gpu`
-python3 service/feature_store.py # Save features from repodir to workdir
+# Build a feature store
+mkdir workdir # create a working directory
+python3 -m pip install -r requirements.txt # install dependencies, python3.11 needs `conda install conda-forge::faiss-gpu`
+python3 service/feature_store.py # save the features of repodir to workdir
 ```
 
 The first run will automatically download the configuration of [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese), you can also manually download it and update model path in `config.ini`.
