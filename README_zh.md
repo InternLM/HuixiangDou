@@ -18,9 +18,9 @@
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-| 版本 | 硬件需求 | 备注 | 已验证设备 |
+| 版本 | 硬件需求 | 描述 | 已验证设备 |
 | :-: | :-: | :-: | :-: |
-| 基础版 | 20GB | 能够回答领域知识的基础问题，零成本运行 | ![](https://img.shields.io/badge/linux%203090%2024G-passed-blue?style=for-the-badge) |
+| 基础版 | 20GB | 能回答领域知识的基础问题，零成本运行 | ![](https://img.shields.io/badge/linux%203090%2024G-passed-blue?style=for-the-badge) |
 | 高级版 | 40GB | 能够回答源码级问题，零成本运行 | ![](https://img.shields.io/badge/linux%20A100%2080G-passed-blue?style=for-the-badge) |
 | 魔改版 | 4GB| 用 openai API 替代本地 LLM，需要基础开发能力，运行需要费用 | ![](https://img.shields.io/badge/linux%201660ti%206GB-passed-blue?style=for-the-badge) |
 
