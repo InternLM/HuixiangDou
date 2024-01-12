@@ -72,7 +72,7 @@ reject query: 茴香豆是怎么做的
 
 **配置免费 TOKEN**
 
-茴香豆使用了搜索引擎，点击 [serper 官网](https://serper.dev/api-key)获取限额 WEB_SEARCH_TOKEN，填入 `config.ini`
+茴香豆使用了搜索引擎，点击 [Serper 官网](https://serper.dev/api-key)获取限额 TOKEN，填入 `config.ini`
 
 ```shell
 # config.ini
@@ -94,7 +94,9 @@ x_api_key = "${YOUR-X-API-KEY}"
   # standalone
   python3 main.py --standalone
   ..
-  ErrorCode.SUCCESS, 请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗
+  ErrorCode.SUCCESS,
+  Query: 请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗
+  Reply:
   1. 帧率控制和跳帧策略是优化视频流检测性能的关键，但需要注意跳帧对检测结果的影响。
   2. 多线程处理和缓存机制可以提高检测效率，但需要注意检测结果的稳定性。
   3. 使用滑动窗口的方式可以减少跳帧和缓存对检测结果的影响。
@@ -104,7 +106,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
   ```shell
   # 启动 LLM 服务
-  python3 service/llm_server_hybride.py
+  python3 service/llm_server_hybrid.py
   ```
 
   打开新终端，把 host IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，运行
@@ -113,7 +115,7 @@ x_api_key = "${YOUR-X-API-KEY}"
   # config.ini
   [llm]
   ..
-  client_url = "http://10.140.24.142:39999/inference" # 举例
+  client_url = "http://10.140.24.142:9999/inference" # 举例
 
   python3 main.py
   ```
