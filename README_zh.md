@@ -37,7 +37,7 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
 git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou && mkdir workdir # 创建工作目录
-python3 -m pip install -r requirements.txt # 安装依赖，python3.11 需要 `conda install conda-forge::faiss-gpu`
+python3 -m pip install -r requirements.txt # 安装依赖，若 python>=3.11 则需要 `conda install conda-forge::faiss-gpu`
 python3 service/feature_store.py # 把 repodir 的特征保存到 workdir
 ```
 首次运行将自动下载配置中的 [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)。考虑到不同地区 huggingface 连接问题，建议先手动下载到本地，然后在 `config.ini` 设置模型路径。例如：
@@ -94,7 +94,7 @@ x_api_key = "${YOUR-X-API-KEY}"
   * **docker 用户**。如果你正在使用 docker，`HuixiangDou` 的 Hybrid LLM Service 需要分离部署。
     ```shell
     # 启动 LLM 服务
-    python3 service/llm_server_hybride.py
+    python3 service/llm_server_hybrid.py
     ```
     打开新终端，把 host IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，运行
 
