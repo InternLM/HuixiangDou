@@ -36,7 +36,7 @@ git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
-cd HuixiangDou && mkdir workdir # 创建工作目录
+git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou && mkdir workdir # 创建工作目录
 python3 -m pip install -r requirements.txt # 安装依赖，python3.11 需要 `conda install conda-forge::faiss-gpu`
 python3 service/feature_store.py # 把 repodir 的特征保存到 workdir
 ```

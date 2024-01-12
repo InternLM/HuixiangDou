@@ -38,7 +38,7 @@ git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # Establish feature repository
-cd HuixiangDou && mkdir workdir # Create working directory
+git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou && mkdir workdir # Create working directory
 python3 -m pip install -r requirements.txt # Install dependencies, python3.11 requires `conda install conda-forge::faiss-gpu`
 python3 service/feature_store.py # Save features from repodir to workdir
 ```
