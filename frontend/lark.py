@@ -10,12 +10,14 @@ urllib3.disable_warnings()
 
 # copy from https://github.com/tpoisonooo/cpp-syntactic-sugar/blob/master/github-lark-notifier/main.py  # noqa E501
 class Lark:
+    """Lark bot http proxy."""
 
     def __init__(self,
                  webhook,
                  secret=None,
                  pc_slide=False,
                  fail_notice=False):
+        """Init with hook url."""
         self.headers = {'Content-Type': 'application/json; charset=utf-8'}
         print('webhook {}'.format(webhook))
         self.webhook = webhook
@@ -24,12 +26,14 @@ class Lark:
         self.fail_notice = fail_notice
 
     def is_not_null_and_blank_str(self, content: str):
+        """Is content empty."""
         if content and content.strip():
             return True
         else:
             return False
 
     def send_text(self, msg, open_id=[]):
+        """Send text to hook url."""
         data = {'msg_type': 'text', 'at': {}}
         if self.is_not_null_and_blank_str(msg):  # 传入msg非空
             data['content'] = {'text': msg}
@@ -41,6 +45,7 @@ class Lark:
         return self.post(data)
 
     def post(self, data):
+        """Post data to hook url."""
         try:
             post_data = json.dumps(data)
             response = requests.post(self.webhook,

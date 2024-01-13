@@ -14,6 +14,7 @@ model = AutoModelForCausalLM.from_pretrained(DIR,
 
 
 def task1_intention():
+    """Test prompt."""
     ret = []
     with open('data.json') as f:
         items = json.load(f)

@@ -13,12 +13,32 @@ from readability import Document
 
 
 class WebSearch:
+    """This class provides functionality to perform web search operations.
+
+    Attributes:
+        config_path (str): Path to the configuration file.
+        retry (int): Number of times to retry a request before giving up.
+
+    Methods:
+        load_urls(): Loads URLs from config file.
+        load_key(): Retrieves API key from the config file.
+        load_save_dir(): Gets the directory path for saving results.
+        google(query: str, max_article:int): Performs Google search for the given query and returns top max_article results.  # noqa E501
+        save_search_result(query:str, articles: list): Saves the search result into a text file.  # noqa E501
+        get(query: str, max_article=1): Searches with cache. If the query already exists in the cache, return the cached result.  # noqa E501
+    """
 
     def __init__(self, config_path: dict, retry: int = 3) -> None:
+        """Initializes the WebSearch object with the given config path and
+        retry count."""
         self.config_path = config_path
         self.retry = retry
 
     def load_urls(self):
+        """Reads the configuration file and fetches the ordered URLs.
+
+        In case of an error, logs the exception and returns an empty list.
+        """
         try:
             with open(self.config_path) as f:
                 config = pytoml.load(f)
@@ -28,6 +48,10 @@ class WebSearch:
         return []
 
     def load_key(self):
+        """Attempts to load the API key from the configuration file.
+
+        Raises an Exception if it fails to find a valid API key.
+        """
         with open(self.config_path) as f:
             config = pytoml.load(f)
             api_key = config['web_search']['x_api_key']
@@ -38,6 +62,11 @@ class WebSearch:
             'web_search X-API-KEY not found, please input your API key')
 
     def load_save_dir(self):
+        """Attempts to read the directory where the search results are stored
+        from the configuration file.
+
+        Returns None if it fails.
+        """
         try:
             with open(self.config_path) as f:
                 config = pytoml.load(f)
@@ -47,6 +76,13 @@ class WebSearch:
         return None
 
     def google(self, query: str, max_article):
+        """Executes a google search based on the provided query.
+
+        Parses the response and extracts the relevant URLs based on the
+        priority defined in the configuration file. Performs a GET request on
+        these URLs and extracts the title and content of the page. The content
+        is cleaned and added to the articles list. Returns a list of articles.
+        """
         url = 'https://google.serper.dev/search'
 
         payload = json.dumps({'q': '{}'.format(query), 'hl': 'zh-cn'})
@@ -124,6 +160,12 @@ class WebSearch:
         return articles
 
     def save_search_result(self, query: str, articles: list):
+        """Writes the search results (articles) for the provided query into a
+        text file.
+
+        If the directory does not exist, it creates one. In case of an error,
+        logs a warning message.
+        """
         try:
             save_dir = self.load_save_dir()
             if save_dir is None:
@@ -142,8 +184,13 @@ class WebSearch:
         except Exception as e:
             logger.warning(f'error while saving search result {str(e)}')
 
-    def get_with_cache(self, query: str, max_article=1):
-        # with exponential rerun
+    def get(self, query: str, max_article=1):
+        """Executes a google search with cache.
+
+        If the query already exists in the cache, returns the cached result. If
+        an exception occurs during the process, retries the request based on
+        the retry count. Sleeps for a random time interval between retries.
+        """
         query = query.strip()
 
         life = 0
@@ -162,6 +209,7 @@ class WebSearch:
 
 
 def parse_args():
+    """Parses command-line arguments for web search."""
     parser = argparse.ArgumentParser(description='Web search.')
     parser.add_argument('--keywords',
                         type=str,
@@ -175,6 +223,11 @@ def parse_args():
 
 
 def fetch_web_content(target_link: str):
+    """Fetches and parses the content of the target URL.
+
+    Extracts the main content and title from the HTML of the page. Returns the
+    title and content as a single string.
+    """
     response = requests.get(target_link)
 
     doc = Document(response.text)
@@ -189,7 +242,7 @@ if __name__ == '__main__':
     parser = parse_args()
     s = WebSearch(config_path=parser.config_path)
 
-    print(s.get_with_cache('mmdeploy 安装教程'))
+    print(s.get('mmdeploy 安装教程'))
     print(
         fetch_web_content(
             'https://mmdeploy.readthedocs.io/zh-cn/latest/get_started.html'))

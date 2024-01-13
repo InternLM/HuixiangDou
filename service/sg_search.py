@@ -11,6 +11,21 @@ from .llm_client import ChatClient
 
 
 class SourceGraphProxy:
+    """A class to serve as a proxy for interacting with the Source Graph.
+
+    Args:
+        config_path (dict): Path to the configuration file.
+        topk (int, optional): Top K results to consider from the search. Defaults to 1.  # noqa E501
+        language (str, optional): Language for the system prompts - 'zh' for Chinese and 'en' for English. Defaults to 'zh'.  # noqa E501
+
+    Attributes:
+        config_path (str): The path of the configuration file.
+        sg_config (dict): Configuration settings for sourcegraph search.
+        topk (int): Top K results to consider from the search.
+        language (str): Language for the system prompts.
+        CHOICE_TEMPLATE (str): Template string for generating choice based on selected language.  # noqa E501
+        KEYWORDS_TEMPLATE (str): Template string for generating keywords based on selected language.  # noqa E501
+    """
 
     def __init__(self,
                  config_path: dict,
@@ -32,11 +47,27 @@ class SourceGraphProxy:
             self.KEYWORDS_TEMPLATE = '"{}"\nPlease read the above question carefully, extract the keywords that can be used for the search engine, list the keywords directly without explaining them.'  # noqa E501
 
     def command(self, txt: str):
+        """Executes a shell command and returns its output.
+
+        Args:
+            txt (str): Command to be executed in the shell.
+
+        Returns:
+            str: Output of the shell command execution.
+        """
         logger.debug('cmd: {}'.format(txt))
         cmd = os.popen(txt)
         return cmd.read().rstrip().lstrip()
 
     def extract_sg_result(self, jsonstr):
+        """Extracts the desired data from the source graph result.
+
+        Args:
+            jsonstr (str): JSON string containing source graph search result.
+
+        Returns:
+            list: List of dictionaries each contains 'filepath' and 'content' of the files returned by source graph.  # noqa E501
+        """
         ret = []
         try:
             root = json.loads(jsonstr)
@@ -57,6 +88,17 @@ class SourceGraphProxy:
         return ret
 
     def choose_repo(self, llm_client, question, groupname):
+        """Interactively assists user to select a repository for search based
+        on user's question.
+
+        Args:
+            llm_client: Client instance for LLM.
+            question (str): User's question.
+            groupname (str): Name of the user's group.
+
+        Returns:
+            str: The ID of selected repository.
+        """
         prompt = self.CHOICE_TEMPLATE.format(groupname, question)
 
         keys = self.sg_config.keys()
@@ -81,7 +123,17 @@ class SourceGraphProxy:
         return target_repo_id
 
     def search(self, llm_client, question, groupname):
+        """Performs a search operation in the selected repository based on the
+        user's question.
 
+        Args:
+            llm_client: Client instance for LLM.
+            question (str): User's question.
+            groupname (str): Name of the user's group.
+
+        Returns:
+            str: Search result from source graph in JSON format.
+        """
         repo_id = self.choose_repo(llm_client, question, groupname)
         if repo_id is None:
             logger.warning('cannot choose repo_id')
@@ -120,6 +172,7 @@ class SourceGraphProxy:
 
 
 def parse_args():
+    """Parses command line arguments."""
     parser = argparse.ArgumentParser(description='Source graph proxy search')
     parser.add_argument(
         '--config_path',

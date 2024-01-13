@@ -15,8 +15,30 @@ from .web_search import WebSearch
 
 
 class Worker:
+    """The Worker class orchestrates the logic of handling user queries,
+    generating responses and managing several aspects of a chat assistant. It
+    enables feature storage, language model client setup, time scheduling and
+    much more.
+
+    Attributes:
+        llm: A ChatClient instance that communicates with the language model.
+        fs: An instance of FeatureStore for loading and querying features.
+        config_path: A string indicating the path of the configuration file.
+        config: A dictionary holding the configuration settings.
+        language: A string indicating the language of the chat, default is 'zh' (Chinese).  # noqa E501
+        context_max_length: An integer representing the maximum length of the context used by the language model.  # noqa E501
+
+        Several template strings for various prompts are also defined.
+    """
 
     def __init__(self, work_dir: str, config_path: str, language: str = 'zh'):
+        """Constructs all the necessary attributes for the worker object.
+
+        Args:
+            work_dir (str): The working directory where feature files are located.
+            config_path (str): The location of the configuration file.
+            language (str, optional): Specifies the language to be used. Defaults to 'zh' (Chinese).  # noqa E501
+        """
         self.llm = ChatClient(config_path=config_path)
         self.fs = FeatureStore(config_path=config_path)
         self.fs.load_feature(work_dir=work_dir)
@@ -61,6 +83,18 @@ class Worker:
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
     def single_judge(self, prompt, tracker, throttle: int, default: int):
+        """Generates a score based on the prompt, and then compares it to
+        threshold.
+
+        Args:
+            prompt (str): The prompt for the language model.
+            tracker (obj): An instance of QueryTracker logs the operations.
+            throttle (int): Threshold value to compare the score against.
+            default (int): Default score to be assigned in case of failure in score calculation.  # noqa E501
+
+        Returns:
+            bool: True if the score surpasses the throttle, otherwise False.
+        """
         if prompt is None or len(prompt) == 0:
             return False
 
@@ -79,6 +113,12 @@ class Worker:
         return False
 
     def work_time(self):
+        """Determines if the current time falls within the scheduled working
+        hours of the chat assistant.
+
+        Returns:
+            bool: True if the current time is within working hours, otherwise False.  # noqa E501
+        """
         time_config = self.config['worker']['time']
 
         beginWork = datetime.datetime.now().strftime(
@@ -99,6 +139,20 @@ class Worker:
         return False
 
     def generate(self, query, history, groupname):
+        """Processes user queries and generates appropriate responses. It
+        involves several steps including checking for valid questions,
+        extracting topics, querying the feature store, searching the web, and
+        generating responses from the language model.
+
+        Args:
+            query (str): User's query.
+            history (str): Chat history.
+            groupname (str): The group name in which user asked the query.
+
+        Returns:
+            ErrorCode: An error code indicating the status of response generation.  # noqa E501
+            str: Generated response to the user query.
+        """
         response = ''
 
         if not self.work_time():
@@ -157,8 +211,7 @@ class Worker:
             try:
                 web_context = ''
                 web_search = WebSearch(config_path=self.config_path)
-                articles = web_search.get_with_cache(query=web_keywords,
-                                                     max_article=2)
+                articles = web_search.get(query=web_keywords, max_article=2)
 
                 tracker.log('search returned')
                 for article in articles:
@@ -260,6 +313,7 @@ class Worker:
 
 
 def parse_args():
+    """Parses command-line arguments."""
     parser = argparse.ArgumentParser(description='Worker.')
     parser.add_argument('work_dir', type=str, help='Working directory.')
     parser.add_argument(

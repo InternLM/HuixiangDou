@@ -25,6 +25,7 @@ def parse_config():
 
 
 def generate(prompt: str):
+    """Test generate."""
     messages = [{
         'role':
         'system',

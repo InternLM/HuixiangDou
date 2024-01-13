@@ -19,11 +19,13 @@ from sklearn.metrics import precision_recall_curve
 
 
 class FeatureStore(object):
+    """Tokenize and extract features from the project's markdown documents, for
+    use in the reject pipeline and response pipeline."""
 
     def __init__(self,
                  device: str = 'cuda',
                  config_path: str = 'config.ini') -> None:
-
+        """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
         with open(config_path) as f:
@@ -50,13 +52,9 @@ class FeatureStore(object):
             ('###', 'Header 3'),
         ])
 
-    def contains_chinese(self, text):
-        if re.search('[\u4e00-\u9fff]', text):
-            return True
-        else:
-            return False
-
     def is_chinese_doc(self, text):
+        """If the proportion of Chinese in a bilingual document exceeds 0.5%,
+        it is considered a Chinese document."""
         chinese_characters = re.findall(r'[\u4e00-\u9fff]', text)
         total_characters = len(text)
         ratio = 0
@@ -67,16 +65,24 @@ class FeatureStore(object):
         return False
 
     def cos_similarity(self, v1: list, v2: list):
+        """Compute cos distance."""
         num = float(np.dot(v1, v2))
         denom = np.linalg.norm(v1) * np.linalg.norm(v2)
         return 0.5 + 0.5 * (num / denom) if denom != 0 else 0
 
     def distance(self, text1: str, text2: str):
+        """Compute feature distance."""
         feature1 = self.embeddings.embed_query(text1)
         feature2 = self.embeddings.embed_query(text2)
         return self.cos_similarity(feature1, feature2)
 
     def split_md(self, text: str, source: None):
+        """Split the markdown document in a nested way, first extracting the
+        header.
+
+        If the extraction result exceeds 1024, split it again according to
+        length.
+        """
         docs = self.head_splitter.split_text(text)
 
         final = []
@@ -109,6 +115,8 @@ class FeatureStore(object):
         return final
 
     def clean_md(self, text: str):
+        """Remove parts of the markdown document that do not contain the key
+        question words, such as code blocks, URL links, etc."""
         # remove ref
         pattern_ref = r'\[(.*?)\]\(.*?\)'
         new_text = re.sub(pattern_ref, r'\1', text)
@@ -128,6 +136,8 @@ class FeatureStore(object):
         return new_text
 
     def ingress_response(self, markdown_dir: str, work_dir: str):
+        """Extract the features required for the response pipeline based on the
+        markdown document."""
         feature_dir = os.path.join(work_dir, 'db_response')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
@@ -170,6 +180,8 @@ class FeatureStore(object):
         vs.save_local(feature_dir)
 
     def ingress_reject(self, markdown_dir: str, work_dir: str):
+        """Extract the features required for the reject pipeline based on the
+        markdown document."""
         feature_dir = os.path.join(work_dir, 'db_reject')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
@@ -199,6 +211,7 @@ class FeatureStore(object):
                      work_dir,
                      feature_response: str = 'db_response',
                      feature_reject: str = 'db_reject'):
+        """Load extracted feature."""
         # https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.faiss.FAISS.html#langchain.vectorstores.faiss.FAISS
         self.vector_store_reject = Vectorstore.load_local(
             os.path.join(work_dir, feature_response),
@@ -210,20 +223,23 @@ class FeatureStore(object):
         return vector_store.docstore.search(
             vector_store.index_to_docstore_id[_id])
 
-    def process_strings(self, A, C, B):
-        # find the longest common suffix of A and prefix of B
-        common = ''
-        for i in range(1, min(len(A), len(B)) + 1):
-            if A[-i:] == B[:i]:
-                common = A[-i:]
-        # if there is a common substring, replace one of them with C and concatenate  # noqa E501
-        if common:
-            return A[:-len(common)] + C + B
-        # otherwise, just return A + B
+    def process_strings(self, str1, replacement, str2):
+        """Find the longest common suffix of str1 and prefix of str2."""
+        shared_substring = ''
+        for i in range(1, min(len(str1), len(str2)) + 1):
+            if str1[-i:] == str2[:i]:
+                shared_substring = str1[-i:]
+
+        # If there is a common substring, replace one of them with the replacement string and concatenate  # noqa E501
+        if shared_substring:
+            return str1[:-len(shared_substring)] + replacement + str2
+
+        # Otherwise, just return str1 + str2
         else:
-            return A + B
+            return str1 + str2
 
     def get_doc(self, id, score, step, vector_store):
+        """Extract text content by id."""
         doc = self.get_doc_by_id(id, vector_store=vector_store)
         final_content = doc.page_content
         if step > 0:
@@ -264,6 +280,29 @@ class FeatureStore(object):
         }
 
     def _search(self, question: str, vector_store, topk: int = 3, throttle=-1):
+        """This function performs a search query on a given `vector_store`,
+        using a provided `question`. It returns the `topk` closest matches to
+        the question's embedding.
+
+        Args:
+            question (str): The query that needs to be searched in the vector store.  # noqa E501
+            vector_store: An object representing the vector store.
+                It must have an 'embedding_function' method to embed the question,
+                and an 'index.search' method to perform the search operation.
+            topk (int, optional): The number of closest matches to find.
+                Defaults to 3.
+            throttle (int, optional): A threshold value for the scores of the returned documents.  # noqa E501
+                If a document has a score higher than or equal to 'throttle', it will not be included in the result.  # noqa E501
+                If 'throttle' is negative, it will be ignored. Defaults to -1.
+
+        Returns:
+            list: A list of closest match documents from the vector store.
+                Each document is fetched via the `get_doc` method and contains its corresponding score and index.  # noqa E501
+                If an exception occurs during the search process, an empty list is returned.  # noqa E501
+
+        Raises:
+            Logs any exceptions encountered during the search process.
+        """
         try:
             embedding = vector_store.embedding_function(question)
             scores, indices = vector_store.index.search(
@@ -286,14 +325,9 @@ class FeatureStore(object):
             # pdb.set_trace()
             return []
 
-    def db_search(self, question):
-        docs = self._search(question=question,
-                            vector_store=self.vector_store_db,
-                            topk=1,
-                            throttle=-1)
-        return docs, []
-
     def is_reject(self, question):
+        """If no search results below the threshold can be found from the
+        database, reject this query."""
         docs = self._search(question=question,
                             vector_store=self.vector_store_reject,
                             topk=1,
@@ -303,22 +337,47 @@ class FeatureStore(object):
         return False
 
     def query(self, question: str):
+        """Processes a query and returns the best match from the vector store
+        database. If the question is rejected, returns '<reject>'.
+
+        Args:
+            question (str): The question asked by the user.
+
+        Returns:
+            str: The best matching document data joined as a string, or '<reject>'.  # noqa E501
+        """
         if len(question) < 1 or self.is_reject(question=question):
             return '<reject>'
 
-        docs, keyword_set = self.db_search(question=question.lower())
+        docs = self._search(question=question.lower(),
+                            vector_store=self.vector_store_db,
+                            topk=1,
+                            throttle=-1)
         for doc in docs:
             logger.debug(('db', doc['score'], question))
         ret = [doc['data'] for doc in docs]
-        logger.debug('query:{} keyword_set:{} ret:{}'.format(
-            question, keyword_set, ret))
+        logger.debug('query:{} ret:{}'.format(question, ret))
         return ' '.join(ret)
 
     def query_source(self, question: str):
+        """Similar to 'query' but also retrieves the source of the best
+        matched.
+
+        # noqa E501 document.
+
+        Args:
+            question (str): The question asked by the user.
+
+        Returns:
+            tuple(str, str): A tuple containing part of the document content and full text from the source file, or ('<reject>', '<reject>').  # noqa E501
+        """
         if len(question) < 1 or self.is_reject(question=question):
             return '<reject>', '<reject>'
 
-        docs, _ = self.db_search(question=question.lower())
+        docs = self._search(question=question.lower(),
+                            vector_store=self.vector_store_db,
+                            topk=1,
+                            throttle=-1)
         doc = docs[0]
         path = doc['path']
         part = doc['content']
@@ -328,6 +387,20 @@ class FeatureStore(object):
         return part, full
 
     def preprocess(self, repo_dir: str, work_dir: str):
+        """Preprocesses markdown files in a given directory excluding those
+        containing 'mdb'. Copies each file to 'preprocess' with new name formed
+        by joining all subdirectories with '_'.
+
+        Args:
+            repo_dir (str): Directory where the original markdown files reside.
+            work_dir (str): Working directory where preprocessed files will be stored.  # noqa E501
+
+        Returns:
+            str: Path to the directory where preprocessed markdown files are saved.
+
+        Raises:
+            Exception: Raise an exception if no markdown files are found in the provided repository directory.  # noqa E501
+        """
         markdown_dir = os.path.join(work_dir, 'preprocess')
         if os.path.exists(markdown_dir):
             logger.warning(
@@ -346,7 +419,6 @@ class FeatureStore(object):
             raise Exception(
                 f'cannot search any markdown file, please check usage: python3 {__file__} workdir repodir'  # noqa E501
             )
-        # copy each file to ./finetune-data/ with new name
         for _file in mds:
             tmp = _file.replace('/', '_')
             name = tmp[1:] if tmp.startswith('.') else tmp
@@ -361,6 +433,12 @@ class FeatureStore(object):
                    config_path: str = 'config.ini',
                    good_questions=[],
                    bad_questions=[]):
+        """Initializes response and reject feature store.
+
+        Only needs to be called once. Also calculates the optimal threshold
+        based on provided good and bad question examples, and saves it in the
+        configuration file.
+        """
         logger.info(
             'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
@@ -403,6 +481,7 @@ class FeatureStore(object):
 
 
 def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description='Feature store for processing directories.')
     parser.add_argument('--work_dir',

@@ -8,16 +8,28 @@ from loguru import logger
 
 
 class ChatClient:
+    """A class to handle client-side interactions with a chat service.
+
+    This class is responsible for loading configurations from a given path,
+    building prompts, and generating responses by interacting with the chat
+    service.
+    """
 
     def __init__(self, config_path: str) -> None:
+        """Initialize the ChatClient with the path of the configuration
+        file."""
         self.config_path = config_path
 
     def load_config(self):
+        """Load the 'llm' section of the configuration from the provided
+        path."""
         with open(self.config_path) as f:
             config = pytoml.load(f)
             return config['llm']
 
     def load_llm_config(self):
+        """Load the 'server' section of the 'llm' configuration from the
+        provided path."""
         with open(self.config_path) as f:
             config = pytoml.load(f)
             return config['llm']['server']
@@ -28,6 +40,18 @@ class ChatClient:
                      template: str,
                      context: str = '',
                      reject: str = '<reject>'):
+        """Build a prompt for interaction.
+
+        Args:
+            history_pair (list): List of previous interactions.
+            instruction (str): Instruction for the current interaction.
+            template (str): Template for constructing the interaction.
+            context (str, optional): Context of the interaction. Defaults to ''.  # noqa E501
+            reject (str, optional): Text that indicates a rejected interaction. Defaults to '<reject>'.  # noqa E501
+
+        Returns:
+            tuple: A tuple containing the constructed instruction and real history.
+        """
         if context is not None and len(context) > 0:
             instruction = template.format(context, instruction)
 
@@ -44,6 +68,16 @@ class ChatClient:
         return instruction, real_history
 
     def generate_response(self, prompt, history=[], remote=False):
+        """Generate a response from the chat service.
+
+        Args:
+            prompt (str): The prompt to send to the chat service.
+            history (list, optional): List of previous interactions. Defaults to [].
+            remote (bool, optional): Flag to determine whether to use a remote server. Defaults to False.  # noqa E501
+
+        Returns:
+            str: Generated response from the chat service.
+        """
         llm_config = self.load_config()
         url, enable_local, enable_remote = (llm_config['client_url'],
                                             llm_config['enable_local'],
@@ -88,6 +122,7 @@ class ChatClient:
 
 
 def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description='Client for hybrid llm service.')
     parser.add_argument(

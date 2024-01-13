@@ -13,11 +13,20 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 class HybridLLMServer(object):
+    """A class to handle server-side interactions with a hybrid language
+    learning model (LLM) service.
+
+    This class is responsible for initializing the local and remote LLMs,
+    generating responses from these models as per the provided configuration,
+    and handling retries in case of failures.
+    """
 
     def __init__(self,
                  llm_config: dict,
                  device: str = 'cuda',
                  retry=3) -> None:
+        """Initialize the HybridLLMServer with the given configuration, device,
+        and number of retries."""
         self.device = device
         self.retry = retry
         self.llm_config = llm_config
@@ -49,6 +58,15 @@ class HybridLLMServer(object):
             logger.warning('local LLM disabled.')
 
     def call_kimi(self, prompt, history):
+        """Generate a response from Kimi (a remote LLM).
+
+        Args:
+            prompt (str): The prompt to send to Kimi.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response from Kimi.
+        """
         client = OpenAI(
             api_key=self.server_config['remote_api_key'],
             base_url='https://api.moonshot.cn/v1',
@@ -84,6 +102,15 @@ class HybridLLMServer(object):
         return ''
 
     def call_gpt(self, prompt, history):
+        """Generate a response from GPT (a remote LLM).
+
+        Args:
+            prompt (str): The prompt to send to GPT-3.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response from GPT-3.
+        """
         messages = []
         for item in history:
             messages.append({'role': 'user', 'content': item[0]})
@@ -95,6 +122,17 @@ class HybridLLMServer(object):
         return res
 
     def generate_response(self, prompt, history=[], remote=False):
+        """Generate a response from the appropriate LLM based on the
+        configuration.
+
+        Args:
+            prompt (str): The prompt to send to the LLM.
+            history (list, optional): List of previous interactions. Defaults to [].  # noqa E501
+            remote (bool, optional): Flag to determine whether to use a remote server. Defaults to False.  # noqa E501
+
+        Returns:
+            str: Generated response from the LLM.
+        """
         output_text = ''
         time_tokenizer = time.time()
 
@@ -127,6 +165,7 @@ class HybridLLMServer(object):
 
 
 def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description='Hybrid LLM Server.')
     parser.add_argument(
         '--config_path',
@@ -139,6 +178,12 @@ def parse_args():
 
 
 def llm_serve(config_path: str, server_ready: Value):
+    """Start the LLM server.
+
+    Args:
+        config_path (str): Path to the configuration file.
+        server_ready (multiprocessing.Value): Shared variable to indicate when the server is ready.  # noqa E501
+    """
     # logger.add('logs/server.log', rotation="4MB")
     with open(config_path) as f:
         llm_config = pytoml.load(f)['llm']
@@ -172,6 +217,8 @@ def llm_serve(config_path: str, server_ready: Value):
 
 
 def main():
+    """Main function to start the server process and run a sample client
+    request."""
     args = parse_args()
     server_ready = Value('i', 0)
 
@@ -189,6 +236,7 @@ def main():
 
 
 def simple_bind():
+    """Function to start the server without running a separate process."""
     args = parse_args()
     server_ready = Value('i', 0)
 
