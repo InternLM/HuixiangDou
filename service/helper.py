@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""Utils."""
 from enum import Enum
 
 

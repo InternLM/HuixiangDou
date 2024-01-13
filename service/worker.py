@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""Pipeline."""
 import argparse
 import datetime
 import re

@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""LLM service module."""
 from .feature_store import FeatureStore  # noqa E401
 from .helper import ErrorCode  # noqa E401
 from .llm_client import ChatClient  # noqa E401

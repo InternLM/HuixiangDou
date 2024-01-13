@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""LLM server proxy."""
 import argparse
 import random
 import time
@@ -197,6 +198,7 @@ def llm_serve(config_path: str, server_ready: Value):
         raise (e)
 
     async def inference(request):
+        """Call local llm inference."""
 
         input_json = await request.json()
         print(input_json)

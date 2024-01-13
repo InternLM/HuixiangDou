@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""Search enhancement proxy."""
 import argparse
 import ast
 import json
@@ -31,6 +32,7 @@ class SourceGraphProxy:
                  config_path: dict,
                  topk=1,
                  language: str = 'zh') -> None:
+        """Init searcher with config."""
         self.config_path = config_path
         self.sg_config = None
         with open(self.config_path, encoding='utf8') as f:
@@ -184,6 +186,7 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    """Test search."""
     logger.add('logs/sg_search.log', rotation='4MB')
     args = parse_args()
 

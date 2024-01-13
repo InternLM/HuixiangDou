@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""extract feature and search with user query."""
 import argparse
 import json
 import os
@@ -221,6 +222,7 @@ class FeatureStore:
             os.path.join(work_dir, feature_reject), embeddings=self.embeddings)
 
     def get_doc_by_id(self, _id, vector_store):
+        """Get doc by search id."""
         return vector_store.docstore.search(
             vector_store.index_to_docstore_id[_id])
 
@@ -512,6 +514,7 @@ def parse_args():
 
 
 def test_reject():
+    """Simple test reject pipeline."""
     real_questions = [
         '请问找不到libmmdeploy.so怎么办',
         'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
@@ -535,6 +538,7 @@ def test_reject():
 
 
 def test_query():
+    """Simple test response pipeline."""
     real_questions = ['视频流检测']
     fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)

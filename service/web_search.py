@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""Web search utils."""
 import argparse
 import json
 import os
