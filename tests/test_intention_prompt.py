@@ -16,7 +16,7 @@ model = AutoModelForCausalLM.from_pretrained(DIR,
 def task1_intention():
     """Test prompt."""
     ret = []
-    with open('data.json') as f:
+    with open('data.json', encoding='utf8') as f:
         items = json.load(f)
     for idx, item in enumerate(items):
         question = item['question']
@@ -28,7 +28,8 @@ def task1_intention():
 
         ret.append({'question': prompt, 'answer': answer})
 
-        with open('task1_intention_internlm_prompt.json', 'w') as f:
+        with open('task1_intention_internlm_prompt.json', 'w',
+                  encoding='utf8') as f:
             json.dump(list(ret), f, ensure_ascii=False, indent=2)
         print('{}/{}'.format(idx, len(items)))
 

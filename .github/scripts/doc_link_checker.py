@@ -26,7 +26,7 @@ def analyze_doc(home, path):
     print('analyze {}'.format(path))
     problem_list = []
     code_block = 0
-    with open(path) as f:
+    with open(path, encoding='utf8') as f:
         lines = f.readlines()
         for line in lines:
             line = line.strip()

@@ -33,7 +33,7 @@ class SourceGraphProxy:
                  language: str = 'zh') -> None:
         self.config_path = config_path
         self.sg_config = None
-        with open(self.config_path) as f:
+        with open(self.config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             self.sg_config = config['sg_search']
 

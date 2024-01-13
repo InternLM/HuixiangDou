@@ -53,8 +53,7 @@ class ErrorCode(Enum):
         """
         if isinstance(code, cls):
             return {'code': int(code), 'message': code.describe()}
-        else:
-            raise TypeError(f'Expected type {cls}, got {type(code)}')
+        raise TypeError(f'Expected type {cls}, got {type(code)}')
 
 
 class QueryTracker:
@@ -89,7 +88,7 @@ class QueryTracker:
         process, it will be caught and printed to standard output.
         """
         try:
-            with open(self.log_file_path, 'a') as log_file:
+            with open(self.log_file_path, 'a', encoding='utf8') as log_file:
                 for key, value in self.log_list:
                     log_file.write(f'{key}: {value}\n')
                 log_file.write('\n')

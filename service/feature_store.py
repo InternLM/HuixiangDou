@@ -18,7 +18,7 @@ from loguru import logger
 from sklearn.metrics import precision_recall_curve
 
 
-class FeatureStore(object):
+class FeatureStore:
     """Tokenize and extract features from the project's markdown documents, for
     use in the reject pipeline and response pipeline."""
 
@@ -28,7 +28,7 @@ class FeatureStore(object):
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
-        with open(config_path) as f:
+        with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)['feature_store']
             model_path = config['model_path']
             self.reject_throttle = config['reject_throttle']
@@ -148,8 +148,9 @@ class FeatureStore(object):
         sources = []
         for p in ps:
 
-            with open(p) as f:
-                full_text = str(p).split('/_')[-1] + '\n' + f.read()
+            with open(p, encoding='utf8') as f:
+                full_text = str(p).rsplit('/_',
+                                          maxsplit=1)[-1] + '\n' + f.read()
                 if '.md' in str(p):
                     if not self.is_chinese_doc(full_text):
                         continue
@@ -190,7 +191,7 @@ class FeatureStore(object):
         data = []
         sources = []
         for p in ps:
-            with open(p) as f:
+            with open(p, encoding='utf8') as f:
                 data.append(f.read())
             sources.append(p)
 
@@ -235,8 +236,7 @@ class FeatureStore(object):
             return str1[:-len(shared_substring)] + replacement + str2
 
         # Otherwise, just return str1 + str2
-        else:
-            return str1 + str2
+        return str1 + str2
 
     def get_doc(self, id, score, step, vector_store):
         """Extract text content by id."""
@@ -246,22 +246,20 @@ class FeatureStore(object):
             for i in range(1, step + 1):
                 try:
                     doc_before = self.get_doc_by_id(id - i,
-                                                    vectore_store=vector_store)
+                                                    vector_store=vector_store)
                     if doc_before.metadata['source'] == doc.metadata['source']:
                         final_content = self.process_strings(
                             doc_before.page_content, '\n', final_content)
                 except Exception as e:
                     logger.debug(str(e))
-                    pass
                 try:
                     doc_after = self.get_doc_by_id(id + i,
-                                                   vectore_store=vector_store)
+                                                   vector_store=vector_store)
                     if doc_after.metadata['source'] == doc.metadata['source']:
                         final_content = self.process_strings(
                             final_content, '\n', doc_after.page_content)
                 except Exception as e:
                     logger.debug(str(e))
-                    pass
         source = str(doc.metadata['source'])
 
         if 'data' in doc.metadata:
@@ -382,7 +380,7 @@ class FeatureStore(object):
         path = doc['path']
         part = doc['content']
         full = ''
-        with open(path) as f:
+        with open(path, encoding='utf8') as f:
             full = f.read()
         return part, full
 
@@ -410,7 +408,7 @@ class FeatureStore(object):
 
         # find all .md files except those containing mdb
         mds = []
-        for root, dirs, files in os.walk(repo_dir):
+        for root, _, files in os.walk(repo_dir):
             for file in files:
                 if file.endswith('.md') and 'mdb' not in file:
                     mds.append(os.path.join(root, file))
@@ -469,10 +467,10 @@ class FeatureStore(object):
         index_max = np.argmax(sum_precision_recall)
         optimal_threshold = 1e6 - thresholds[index_max]
 
-        with open(config_path, 'r') as f:
+        with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)
         config['feature_store']['reject_throttle'] = optimal_threshold
-        with open(config_path, 'w') as f:
+        with open(config_path, 'w', encoding='utf8') as f:
             pytoml.dump(config, f)
 
         logger.info(
@@ -548,9 +546,9 @@ def test_query():
 if __name__ == '__main__':
     args = parse_args()
     fs_init = FeatureStore(config_path=args.config_path)
-    with open(args.good_questions) as f:
+    with open(args.good_questions, encoding='utf8') as f:
         good_questions = json.load(f)
-    with open(args.bad_questions) as f:
+    with open(args.bad_questions, encoding='utf8') as f:
         bad_questions = json.load(f)
 
     fs_init.initialize(repo_dir=args.repo_dir,

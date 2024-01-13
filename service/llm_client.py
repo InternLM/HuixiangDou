@@ -23,14 +23,14 @@ class ChatClient:
     def load_config(self):
         """Load the 'llm' section of the configuration from the provided
         path."""
-        with open(self.config_path) as f:
+        with open(self.config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             return config['llm']
 
     def load_llm_config(self):
         """Load the 'server' section of the 'llm' configuration from the
         provided path."""
-        with open(self.config_path) as f:
+        with open(self.config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             return config['llm']['server']
 

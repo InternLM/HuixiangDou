@@ -40,7 +40,7 @@ class WebSearch:
         In case of an error, logs the exception and returns an empty list.
         """
         try:
-            with open(self.config_path) as f:
+            with open(self.config_path, encoding='utf8') as f:
                 config = pytoml.load(f)
                 return config['web_search']['domain_partial_order']
         except Exception as e:
@@ -52,7 +52,7 @@ class WebSearch:
 
         Raises an Exception if it fails to find a valid API key.
         """
-        with open(self.config_path) as f:
+        with open(self.config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             api_key = config['web_search']['x_api_key']
             if api_key is not None and len(
@@ -68,7 +68,7 @@ class WebSearch:
         Returns None if it fails.
         """
         try:
-            with open(self.config_path) as f:
+            with open(self.config_path, encoding='utf8') as f:
                 config = pytoml.load(f)
                 return config['web_search']['save_dir']
         except Exception:
@@ -179,7 +179,7 @@ class WebSearch:
             text = ''
             if len(articles) > 0:
                 text = '\n\n'.join(articles)
-            with open(filepath, 'w') as f:
+            with open(filepath, 'w', encoding='utf8') as f:
                 f.write(text)
         except Exception as e:
             logger.warning(f'error while saving search result {str(e)}')

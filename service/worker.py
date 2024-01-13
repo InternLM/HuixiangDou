@@ -45,7 +45,7 @@ class Worker:
         self.config_path = config_path
         self.config = None
         self.language = language
-        with open(config_path) as f:
+        with open(config_path, encoding='utf8') as f:
             self.config = pytoml.load(f)
         if self.config is None:
             raise Exception('worker config can not be None')
@@ -75,7 +75,7 @@ class Worker:
         else:
             self.TOPIC_TEMPLATE = 'Tell me the theme of this sentence, just state the theme without explanation: "{}"'  # noqa E501
             self.SCORING_QUESTION_TEMPLTE = '"{}"\nPlease read the content above carefully and judge whether the sentence is a thematic question. Rate it on a scale of 0-10. Only provide the score, no explanation.\nThe criteria are as follows: a sentence gets 10 points if it has a subject, predicate, object and is a question; points are deducted for missing subject, predicate or object; declarative sentences get 0 points; sentences that are not questions also get 0 points. Just give the score, no explanation.'  # noqa E501
-            self.SCORING_RELAVANCE_TEMPLATE = 'Question: "{}"\Background Information: "{}"\nPlease read the content above carefully and assess the relevance between the question and the material on a scale of 0-10. The scoring standard is as follows: extremely relevant gets 10 points; completely irrelevant gets 0 points. Only provide the score, no explanation needed.'  # noqa E501
+            self.SCORING_RELAVANCE_TEMPLATE = 'Question: "{}", Background Information: "{}"\nPlease read the content above carefully and assess the relevance between the question and the material on a scale of 0-10. The scoring standard is as follows: extremely relevant gets 10 points; completely irrelevant gets 0 points. Only provide the score, no explanation needed.'  # noqa E501
             self.KEYWORDS_TEMPLATE = 'Google search is a general-purpose search engine that can be used to access the internet, look up encyclopedic knowledge, keep abreast of current affairs and more. Search parameters type: string, content consists of phrases or keywords separated by spaces.\nYou are now the technical assistant in the "{}" tech communication group. A user asked "{}", you plan to use Google search to find related information, please provide the keywords or phrases for the search, no explanation, just give the keywords or phrases.'  # noqa E501
             self.SECURITY_TEMAPLTE = 'Evaluate whether the following sentence involves prohibited content such as politics, insult, pornography, terror, religion, cyber violence, racial discrimination, etc., rate it on a scale of 0-10, do not explain, just give the score. The scoring standard is as follows: any violation directly gets 10 points; completely unrelated gets 0 points. Give the score, no explanation: "{}"'  # noqa E501
             self.PERPLESITY_TEMPLATE = 'Question: {} Answer: {}\nRead the dialogue above, does the answer express that they don\'t know? The more comprehensive the answer, the lower the score. Rate it on a scale of 0-10, no explanation, just give the score.\nThe scoring standard is as follows: an accurate answer to the question gets 0 points; a detailed answer gets 1 point; knowing some answers but having uncertain information gets 8 points; knowing a small part of the answer but recommends seeking help from others gets 9 points; not knowing any of the answers and directly recommending asking others for help gets 10 points. Just give the score, no explanation.'  # noqa E501
@@ -107,7 +107,6 @@ class Worker:
             score = int(score_str.split(' ')[0])
         except Exception as e:
             logger.error(str(e))
-            pass
         if score >= throttle:
             return True
         return False
@@ -196,67 +195,65 @@ class Worker:
             tracker.log('feature store doc', [db_context_part, response])
             return ErrorCode.SUCCESS, response
 
-        else:
-            prompt = self.KEYWORDS_TEMPLATE.format(groupname, query)
-            web_keywords = self.llm.generate_response(prompt=prompt)
-            # format keywords
-            for symbol in ['"', ',', '  ']:
-                web_keywords = web_keywords.replace(symbol, ' ')
-            web_keywords = web_keywords.strip()
-            tracker.log('web search keywords', web_keywords)
+        prompt = self.KEYWORDS_TEMPLATE.format(groupname, query)
+        web_keywords = self.llm.generate_response(prompt=prompt)
+        # format keywords
+        for symbol in ['"', ',', '  ']:
+            web_keywords = web_keywords.replace(symbol, ' ')
+        web_keywords = web_keywords.strip()
+        tracker.log('web search keywords', web_keywords)
 
-            if len(web_keywords) < 1:
-                return ErrorCode.NO_SEARCH_KEYWORDS, response
+        if len(web_keywords) < 1:
+            return ErrorCode.NO_SEARCH_KEYWORDS, response
 
-            try:
-                web_context = ''
-                web_search = WebSearch(config_path=self.config_path)
-                articles = web_search.get(query=web_keywords, max_article=2)
+        try:
+            web_context = ''
+            web_search = WebSearch(config_path=self.config_path)
+            articles = web_search.get(query=web_keywords, max_article=2)
 
-                tracker.log('search returned')
-                for article in articles:
-                    if article is not None and len(article) > 0:
-                        if len(article) > self.context_max_length:
-                            article = article[0:self.context_max_length]
+            tracker.log('search returned')
+            for article in articles:
+                if article is not None and len(article) > 0:
+                    if len(article) > self.context_max_length:
+                        article = article[0:self.context_max_length]
 
-                        if self.single_judge(
-                                self.SECURITY_TEMAPLTE.format(article),
-                                tracker=tracker,
-                                throttle=3,
-                                default=0):
-                            tracker.log('跳过不安全的内容', article)
-                            continue
+                    if self.single_judge(
+                            self.SECURITY_TEMAPLTE.format(article),
+                            tracker=tracker,
+                            throttle=3,
+                            default=0):
+                        tracker.log('跳过不安全的内容', article)
+                        continue
 
-                        if self.single_judge(
-                                self.SCORING_RELAVANCE_TEMPLATE.format(
-                                    query, article),
-                                tracker=tracker,
-                                throttle=5,
-                                default=10):
-                            web_context += '\n\n'
-                            web_context += article
+                    if self.single_judge(
+                            self.SCORING_RELAVANCE_TEMPLATE.format(
+                                query, article),
+                            tracker=tracker,
+                            throttle=5,
+                            default=10):
+                        web_context += '\n\n'
+                        web_context += article
 
-                if len(web_context) >= self.context_max_length:
-                    web_context = web_context[0:self.context_max_length]
+            if len(web_context) >= self.context_max_length:
+                web_context = web_context[0:self.context_max_length]
 
-                web_context = web_context.strip()
+            web_context = web_context.strip()
 
-                if len(web_context) > 0:
-                    prompt, history = self.llm.build_prompt(
-                        instruction=query,
-                        context=web_context,
-                        history_pair=history,
-                        template=self.GENERATE_TEMPLATE)
-                    response = self.llm.generate_response(prompt=prompt,
-                                                          history=history,
-                                                          remote=False)
-                else:
-                    reborn_code = ErrorCode.NO_SEARCH_RESULT
+            if len(web_context) > 0:
+                prompt, history = self.llm.build_prompt(
+                    instruction=query,
+                    context=web_context,
+                    history_pair=history,
+                    template=self.GENERATE_TEMPLATE)
+                response = self.llm.generate_response(prompt=prompt,
+                                                      history=history,
+                                                      remote=False)
+            else:
+                reborn_code = ErrorCode.NO_SEARCH_RESULT
 
-                tracker.log('web response',
-                            [web_context, response, reborn_code])
-            except Exception as e:
-                logger.error(e)
+            tracker.log('web response', [web_context, response, reborn_code])
+        except Exception as e:
+            logger.error(e)
 
         if response is not None and len(response) > 0:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
@@ -320,13 +317,12 @@ def parse_args():
         '--config_path',
         default='config.ini',
         help='Worker configuration path. Default value is config.ini')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
     bot = Worker(work_dir=args.work_dir, config_path=args.config_path)
     queries = ['茴香豆是怎么做的']
-    for query in queries:
-        print(bot.generate(query=query, history=[], groupname=''))
+    for example in queries:
+        print(bot.generate(query=example, history=[], groupname=''))

@@ -185,7 +185,7 @@ def llm_serve(config_path: str, server_ready: Value):
         server_ready (multiprocessing.Value): Shared variable to indicate when the server is ready.  # noqa E501
     """
     # logger.add('logs/server.log', rotation="4MB")
-    with open(config_path) as f:
+    with open(config_path, encoding='utf8') as f:
         llm_config = pytoml.load(f)['llm']
         bind_port = int(llm_config['server']['local_llm_bind_port'])
 

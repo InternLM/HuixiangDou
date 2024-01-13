@@ -46,11 +46,11 @@ if __name__ == '__main__':
                 break
             else:
                 logger.error('start local LLM server failed, quit.')
-                raise Exception('local LLM path error')
+                raise Exception('local LLM path')
         logger.info('Hybrid LLM Server start.')
 
     # query by worker
-    with open(args.config_path) as f:
+    with open(args.config_path, encoding='utf8') as f:
         fe_config = pytoml.load(f)['frontend']
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
     # queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗',
