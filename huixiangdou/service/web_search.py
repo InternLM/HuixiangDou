@@ -86,17 +86,21 @@ class WebSearch:
         """
         url = 'https://google.serper.dev/search'
 
-        payload = json.dumps({'q': '{}'.format(query), 'hl': 'zh-cn'})
+        payload = json.dumps({'q': f'{query}', 'hl': 'zh-cn'})
         headers = {
             'X-API-KEY': self.load_key(),
             'Content-Type': 'application/json'
         }
-        response = requests.request('POST', url, headers=headers, data=payload)
+        response = requests.request('POST',
+                                    url,
+                                    headers=headers,
+                                    data=payload,
+                                    timeout=3)  # noqa E501
         jsonobj = json.loads(response.text)
 
         # 带偏序的 url 连接拾取
         keys = self.load_urls()
-        urls = dict()
+        urls = {}
 
         for organic in jsonobj['organic']:
             link = ''
@@ -133,7 +137,7 @@ class WebSearch:
             while life < self.retry:
                 try:
                     logger.info(f'extract: {target_link}')
-                    response = requests.get(target_link)
+                    response = requests.get(target_link, timeout=5)
                     if len(response.text) < 1:
                         break
 
@@ -229,7 +233,7 @@ def fetch_web_content(target_link: str):
     Extracts the main content and title from the HTML of the page. Returns the
     title and content as a single string.
     """
-    response = requests.get(target_link)
+    response = requests.get(target_link, timeout=5)
 
     doc = Document(response.text)
     content_html = doc.summary()

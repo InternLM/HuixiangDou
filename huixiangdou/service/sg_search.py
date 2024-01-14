@@ -105,7 +105,7 @@ class SourceGraphProxy:
 
         keys = self.sg_config.keys()
         skip = ['binary_src_path', 'src_access_token']
-        repos = dict()
+        repos = {}
         for key in keys:
             if key in skip:
                 continue

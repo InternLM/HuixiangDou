@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) OpenMMLab. All rights reserved.
+"""HuixiangDou binary."""
 import argparse
 import os
 import time
@@ -14,6 +15,7 @@ from .service import ErrorCode, Worker, llm_serve
 
 
 def parse_args():
+    """Parse args."""
     parser = argparse.ArgumentParser(description='Worker.')
     parser.add_argument('--work_dir',
                         type=str,
@@ -43,16 +45,16 @@ def check_env():
             f'{CONFIG_NAME} not found, download a template from {CONFIG_URL}.')
 
         try:
-            response = requests.get(CONFIG_URL)
+            response = requests.get(CONFIG_URL, timeout=5)
             response.raise_for_status()
             with open(CONFIG_NAME, 'wb') as f:
                 f.write(response.content)
         except Exception as e:
             logger.error(f'Failed to download file due to {e}')
-            pass
 
 
 def run():
+    """Automatically download config, start llm server and run examples."""
     check_env()
     args = parse_args()
     if args.standalone:
