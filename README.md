@@ -46,7 +46,7 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 # Build a feature store
 mkdir workdir # create a working directory
 python3 -m pip install -r requirements.txt # install dependencies, python3.11 needs `conda install conda-forge::faiss-gpu`
-python3 service/feature_store.py # save the features of repodir to workdir
+python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
 ```
 
 The first run will automatically download the configuration of [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese), you can also manually download it and update model path in `config.ini`.
@@ -86,7 +86,7 @@ The first run will automatically download the configuration of internlm2-7B.
 
   ```shell
   # standalone
-  python3 main.py --standalone
+  python3 -m huixiangdou.main --standalone
   ..
   ErrorCode.SUCCESS,
   Query: Could you please advise if there is any good optimization method for video stream detection flickering caused by frame skipping?
@@ -100,7 +100,7 @@ The first run will automatically download the configuration of internlm2-7B.
 
   ```shell
   # Start LLM service
-  python3 service/llm_server_hybride.py
+  python3 -m huixiangdou.service.llm_server_hybrid
   ```
 
   Open a new terminal, configure the host IP (**not** container IP) in `config.ini`, run
@@ -111,7 +111,7 @@ The first run will automatically download the configuration of internlm2-7B.
   ..
   client_url = "http://10.140.24.142:8888/inference" # example
 
-  python3 main.py
+  python3 -m huixiangdou.main
   ```
 
 ## STEP3. Integrate into Feishu \[Optional\]
@@ -129,7 +129,8 @@ webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
 Run. After it ends, the technical assistant's reply will be sent to the Feishu group chat.
 
 ```shell
-python3 main.py
+python3 -m huixiangdou.main --standalone # for non-docker users
+python3 -m huixiangdou.main # for docker users
 ```
 
 <img src="./resource/figures/lark-example.png" width="400">
@@ -196,10 +197,10 @@ The basic version may not perform well. You can enable these features to enhance
      introduction = "Used for evaluating large language models (LLM) .."
      ```
 
-   - Use `python3 -m service.sg_search` for unit test, the returned content should include opencompass source code and documentation
+   - Use `python3 -m huixiangdou.service.sg_search` for unit test, the returned content should include opencompass source code and documentation
 
      ```shell
-     python3 service/sg_search.py
+     python3 -m huixiangdou.service.sg_search
      ..
      "filepath": "opencompass/datasets/longbench/longbench_trivia_qa.py",
      "content": "from datasets import Dataset..
@@ -211,8 +212,8 @@ The basic version may not perform well. You can enable these features to enhance
 
    It is often unavoidable to adjust parameters with respect to business scenarios.
 
-   - Refer to [data.json](./tests/data.json) to add real data, run [test_intention_prompt.py](./tests/test_intention_prompt.py) to get suitable prompts and thresholds, and update them into [worker](./service/worker.py).
-   - Adjust the [number of search results](./service/worker.py) based on the maximum length supported by the model.
+   - Refer to [data.json](./tests/data.json) to add real data, run [test_intention_prompt.py](./tests/test_intention_prompt.py) to get suitable prompts and thresholds, and update them into [worker](./huixiangdou/service/worker.py).
+   - Adjust the [number of search results](./huixiangdou/service/worker.py) based on the maximum length supported by the model.
 
 # 🛠️ FAQ
 
@@ -234,12 +235,12 @@ The basic version may not perform well. You can enable these features to enhance
 
 4. How to access other local LLM / After access, the effect is not ideal?
 
-   - Open [hybrid llm service](./service/llm_server_hybrid.py), add a new LLM inference implementation.
-   - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [worker.py](./service/worker.py).
+   - Open [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py), add a new LLM inference implementation.
+   - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [worker.py](./huixiangdou/service/worker.py).
 
 5. What if the response is too slow/request always fails?
 
-   - Refer to [hybrid llm service](./service/llm_server_hybrid.py) to add exponential backoff and retransmission.
+   - Refer to [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) to add exponential backoff and retransmission.
    - Replace local LLM with an inference framework such as [lmdeploy](https://github.com/internlm/lmdeploy), instead of the native huggingface/transformers.
 
 6. What if the GPU memory is too low?

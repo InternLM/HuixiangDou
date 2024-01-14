@@ -45,8 +45,8 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
 mkdir workdir # 创建工作目录
-python3 -m pip install -r requirements.txt # 安装依赖，python3.11 需要 `conda install conda-forge::faiss-gpu`
-python3 service/feature_store.py # 把 repodir 的特征保存到 workdir
+python3 -m pip install -r requirements.txt # 安装依赖，若 python3.11 则需要 `conda install conda-forge::faiss-gpu`
+python3 -m huixiangdou.service.feature_store # 把 repodir 的特征保存到 workdir
 ```
 
 首次运行将自动下载配置中的 [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)。考虑到不同地区 huggingface 连接问题，建议先手动下载到本地，然后在 `config.ini` 设置模型路径。例如：
@@ -93,7 +93,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
   ```shell
   # standalone
-  python3 main.py --standalone
+  python3 -m huixiangdou.main --standalone
   ..
   ErrorCode.SUCCESS,
   Query: 请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗
@@ -107,7 +107,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
   ```shell
   # 启动 LLM 服务
-  python3 service/llm_server_hybrid.py
+  python3 -m huixiangdou.service.llm_server_hybrid
   ```
 
   打开新终端，把 host IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，运行
@@ -118,7 +118,7 @@ x_api_key = "${YOUR-X-API-KEY}"
   ..
   client_url = "http://10.140.24.142:9999/inference" # 举例
 
-  python3 main.py
+  python3 -m huixiangdou.main
   ```
 
 ## STEP3.集成到飞书\[可选\]
@@ -136,7 +136,8 @@ webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
 运行。结束后，技术助手的答复将发送到飞书群。
 
 ```shell
-python3 main.py
+python3 -m huixiangdou.main --standalone # 非 docker 用户
+python3 -m huixiangdou.main # docker 用户
 ```
 
 <img src="./resource/figures/lark-example.png" width="400">
@@ -203,10 +204,10 @@ python3 main.py
      introduction = "用于评测大型语言模型（LLM）.."
      ```
 
-   - 使用 `python3 -m service.sg_search` 单测，返回内容应包含 opencompass 源码和文档
+   - 使用 `python3 -m huixiangdou.service.sg_search` 单测，返回内容应包含 opencompass 源码和文档
 
      ```shell
-     python3 service/sg_search.py
+     python3 -m huixiangdou.service.sg_search
      ..
      "filepath": "opencompass/datasets/longbench/longbench_trivia_qa.py",
      "content": "from datasets import Dataset..
@@ -218,8 +219,8 @@ python3 main.py
 
    针对业务场景调参往往不可避免。
 
-   - 参照 [data.json](./tests/data.json) 增加真实数据，运行 [test_intention_prompt.py](./tests/test_intention_prompt.py) 得到合适的 prompt 和阈值，更新进 [worker](./service/worker.py)
-   - 根据模型支持的最大长度，调整[搜索结果个数](./service/worker.py)
+   - 参照 [data.json](./tests/data.json) 增加真实数据，运行 [test_intention_prompt.py](./tests/test_intention_prompt.py) 得到合适的 prompt 和阈值，更新进 [worker](./huixiangdou/service/worker.py)
+   - 根据模型支持的最大长度，调整[搜索结果个数](./huixiangdou/service/worker.py)
 
 # 🛠️ FAQ
 
@@ -241,12 +242,12 @@ python3 main.py
 
 4. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
 
-   - 打开 [hybrid llm service](./service/llm_server_hybrid.py)，增加新的 LLM 推理实现
-   - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./service/worker.py)
+   - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
+   - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./huixiangdou/service/worker.py)
 
 5. 响应太慢/网络请求总是失败怎么办？
 
-   - 参考 [hybrid llm service](./service/llm_server_hybrid.py) 增加指数退避重传
+   - 参考 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) 增加指数退避重传
    - local LLM 替换为 [lmdeploy](https://github.com/internlm/lmdeploy) 等推理框架，而非原生的 huggingface/transformers
 
 6. GPU 显存太低怎么办？

@@ -57,4 +57,4 @@ repos:
     rev: v0.4.1
     hooks:
     -   id: check-copyright
-        args: ["service"]
+        args: ["huixiangdou"]

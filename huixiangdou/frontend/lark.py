@@ -1,3 +1,5 @@
+# Copyright (c) OpenMMLab. All rights reserved.
+# copy from https://github.com/tpoisonooo/cpp-syntactic-sugar/blob/master/github-lark-notifier/main.py  # noqa E501
 """Lark proxy."""
 import json
 import logging
@@ -9,7 +11,6 @@ import urllib3
 urllib3.disable_warnings()
 
 
-# copy from https://github.com/tpoisonooo/cpp-syntactic-sugar/blob/master/github-lark-notifier/main.py  # noqa E501
 class Lark:
     """Lark bot http proxy."""
 

@@ -14,3 +14,6 @@ badcase.txt
 config.bak
 config.ini
 resource/prompt.txt
+build/
+dist/
+huixiangdou.egg-info/

@@ -13,7 +13,7 @@ from openai import OpenAI
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-class HybridLLMServer(object):
+class HybridLLMServer:
     """A class to handle server-side interactions with a hybrid language
     learning model (LLM) service.
 
