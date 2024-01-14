@@ -39,7 +39,7 @@ def check_env():
     if not os.path.exists('logs'):
         os.makedirs('logs')
     CONFIG_NAME = 'config.ini'
-    CONFIG_URL = 'https://raw.githubusercontent.com/InternLM/HuixiangDou/main/config.ini?token=GHSAT0AAAAAACK2GCUVNSQXR373FEGSZSIIZNDZBMQ'  # noqa E501
+    CONFIG_URL = 'https://raw.githubusercontent.com/InternLM/HuixiangDou/main/config.ini'  # noqa E501
     if not os.path.exists(CONFIG_NAME):
         logger.warning(
             f'{CONFIG_NAME} not found, download a template from {CONFIG_URL}.')
