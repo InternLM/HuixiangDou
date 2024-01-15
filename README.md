@@ -15,7 +15,7 @@
 2. Propose an algorithm pipeline for answering technical questions.
 3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [technical report](./resource/HuixiangDou.pdf).
 
-View [HuixiangDou inside](./huixiangdou-inside.md).
+Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md), and join our [WeChat group](./resource/figures/wechat.jpg) to experience the latest version.
 
 # 📦 Hardware Requirements
 
@@ -220,7 +220,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 1. How to access other IMs?
 
-   - WeChat. For Enterprise WeChat, see [Enterprise WeChat Application Development Guide](https://developer.work.weixin.qq.com/document/path/90594) ; for personal WeChat, we have confirmed with the WeChat team that there is currently no API, you need to search and learn by yourself.
+   - WeChat. For Enterprise WeChat, see [Enterprise WeChat Application Development Guide](https://developer.work.weixin.qq.com/document/path/90594) ; for personal WeChat, you need to search and learn by yourself.
    - DingTalk. Refer to [DingTalk Open Platform-Custom Robot Access](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 2. What if the robot is too cold/too chatty?
