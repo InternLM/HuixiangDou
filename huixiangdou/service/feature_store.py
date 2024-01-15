@@ -25,10 +25,12 @@ class FeatureStore:
 
     def __init__(self,
                  device: str = 'cuda',
-                 config_path: str = 'config.ini') -> None:
+                 config_path: str = 'config.ini',
+                 language: str = 'zh') -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
+        self.language = language
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)['feature_store']
             model_path = config['model_path']
@@ -153,7 +155,8 @@ class FeatureStore:
                 full_text = str(p).rsplit('/_',
                                           maxsplit=1)[-1] + '\n' + f.read()
                 if '.md' in str(p):
-                    if not self.is_chinese_doc(full_text):
+                    if self.language == 'zh' and not self.is_chinese_doc(
+                            full_text):  # noqa E501
                         continue
 
                 full_texts.append(full_text)

@@ -41,7 +41,7 @@ class Worker:
             language (str, optional): Specifies the language to be used. Defaults to 'zh' (Chinese).  # noqa E501
         """
         self.llm = ChatClient(config_path=config_path)
-        self.fs = FeatureStore(config_path=config_path)
+        self.fs = FeatureStore(config_path=config_path, language=language)
         self.fs.load_feature(work_dir=work_dir)
         self.config_path = config_path
         self.config = None

@@ -2,6 +2,7 @@ models/
 repodir/
 workdir/
 write_toml.py
+modeling_internlm2.py
 config.ini
 config-template.ini
 logs/
