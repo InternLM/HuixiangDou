@@ -23,7 +23,7 @@
 
 |  版本  | GPU显存需求 |                            描述                            |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :--------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 基础版 |    20GB     |            能回答领域知识的基础问题，零成本运行            | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 基础版 |    22GB     |            能回答领域知识的基础问题，零成本运行            | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | 高级版 |    40GB     |               能够回答源码级问题，零成本运行               | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 | 魔改版 |     4GB     | 用 openai API 替代本地 LLM，需要基础开发能力，运行需要费用 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 
@@ -86,7 +86,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **测试问答效果**
 
-请保证 GPU 显存超过 20GB（如 3090 及以上），若显存较低请按 FAQ 修改。
+请保证 GPU 显存超过 22GB（如 3090 及以上），若显存较低请按 FAQ 修改。
 
 首次运行将自动下载配置中的 internlm2-7B，请保证网络畅通。
 

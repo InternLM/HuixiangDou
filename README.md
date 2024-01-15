@@ -23,7 +23,7 @@ The following are the hardware requirements for running. It is suggested to foll
 
 |     Version      | GPU Memory Requirements |                      Features                      |                                Tested on Linux                                |
 | :--------------: | :---------------------: | :------------------------------------------------: | :---------------------------------------------------------------------------: |
-|  Basic Version   |          20GB           | Answer basic domain knowledge questions, zero cost | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|  Basic Version   |          22GB           | Answer basic domain knowledge questions, zero cost | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | Advanced Version |          40GB           |   Answer source code level questions, zero cost    | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 | Modified Version |           4GB           |     Using openai API, operation involves cost      | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 
@@ -79,7 +79,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **Test Q&A Effect**
 
-Please ensure that the GPU memory is over 20GB (such as 3090 or above). If the memory is low, please modify it according to the FAQ.
+Please ensure that the GPU memory is over 22GB (such as 3090 or above). If the memory is low, please modify it according to the FAQ.
 
 The first run will automatically download the configuration of internlm2-7B.
 
