@@ -264,7 +264,6 @@ class Worker:
                                  default=0):
                 reborn_code = ErrorCode.BAD_ANSWER
 
-        reborn_code = ErrorCode.BAD_ANSWER
         if self.config['worker']['enable_sg_search']:
             if reborn_code == ErrorCode.BAD_ANSWER or reborn_code == ErrorCode.NO_SEARCH_RESULT:  # noqa E501
                 # reborn
@@ -292,7 +291,7 @@ class Worker:
                                          default=0):
                         return ErrorCode.BAD_ANSWER, response
 
-        if response is not None and len(response) >= 500:
+        if response is not None and len(response) >= 800:
             # reply too long, summarize it
             response = self.llm.generate_response(
                 prompt=self.SUMMARIZE_TEMPLATE.format(response))

@@ -116,7 +116,7 @@ class ChatClient:
             resp = requests.post(url,
                                  headers=header,
                                  data=json.dumps(data),
-                                 timeout=5)
+                                 timeout=300)
             if resp.status_code != 200:
                 raise Exception(str((resp.status_code, resp.reason)))
             return resp.json()['text']

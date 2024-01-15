@@ -53,7 +53,7 @@ class Lark:
                                      headers=self.headers,
                                      data=post_data,
                                      verify=False,
-                                     timeout=5)
+                                     timeout=60)
         except requests.exceptions.HTTPError as exc:
             code = exc.response.status_code
             reason = exc.response.reason
@@ -96,5 +96,5 @@ class Lark:
             requests.post(self.webhook,
                           headers=self.headers,
                           data=json.dumps(error_data),
-                          timeout=5)
+                          timeout=60)
         return result

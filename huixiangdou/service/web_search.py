@@ -95,7 +95,7 @@ class WebSearch:
                                     url,
                                     headers=headers,
                                     data=payload,
-                                    timeout=3)  # noqa E501
+                                    timeout=60)  # noqa E501
         jsonobj = json.loads(response.text)
 
         # 带偏序的 url 连接拾取
@@ -137,7 +137,7 @@ class WebSearch:
             while life < self.retry:
                 try:
                     logger.info(f'extract: {target_link}')
-                    response = requests.get(target_link, timeout=5)
+                    response = requests.get(target_link, timeout=60)
                     if len(response.text) < 1:
                         break
 
@@ -233,7 +233,7 @@ def fetch_web_content(target_link: str):
     Extracts the main content and title from the HTML of the page. Returns the
     title and content as a single string.
     """
-    response = requests.get(target_link, timeout=5)
+    response = requests.get(target_link, timeout=60)
 
     doc = Document(response.text)
     content_html = doc.summary()

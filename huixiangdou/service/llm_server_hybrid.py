@@ -152,10 +152,14 @@ class HybridLLMServer:
 
         else:
             prompt = prompt[0:self.local_max_length]
+            """# Caution: For the results of this software to be reliable and verifiable,  # noqa E501
+            it's essential to ensure reproducibility. Thus `GenerationMode.GREEDY_SEARCH`  # noqa E501
+            must enabled."""
             output_text, _ = self.model.chat(self.tokenizer,
                                              prompt,
                                              history,
-                                             top_k=1)
+                                             top_k=1,
+                                             do_sample=False)
             print((prompt, output_text))
         time_finish = time.time()
 

@@ -45,7 +45,7 @@ def check_env(args):
             f'{CONFIG_NAME} not found, download a template from {CONFIG_URL}.')
 
         try:
-            response = requests.get(CONFIG_URL, timeout=5)
+            response = requests.get(CONFIG_URL, timeout=60)
             response.raise_for_status()
             with open(CONFIG_NAME, 'wb') as f:
                 f.write(response.content)

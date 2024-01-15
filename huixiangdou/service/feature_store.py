@@ -215,11 +215,22 @@ class FeatureStore:
                      feature_reject: str = 'db_reject'):
         """Load extracted feature."""
         # https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.faiss.FAISS.html#langchain.vectorstores.faiss.FAISS
+
+        resp_dir = os.path.join(work_dir, feature_response)
+        reject_dir = os.path.join(work_dir, feature_reject)
+
+        if not os.path.exists(resp_dir) or not os.path.exists(reject_dir):
+            logger.error(
+                'Please check README.md first and `python3 -m huixiangdou.service.feature_store`'  # noqa E501
+            )
+            raise Exception(
+                f'{resp_dir} or {reject_dir} not exist, please initialize with feature_store.'  # noqa E501
+            )
+
         self.vector_store_reject = Vectorstore.load_local(
-            os.path.join(work_dir, feature_response),
-            embeddings=self.embeddings)
+            reject_dir, embeddings=self.embeddings)
         self.vector_store_db = Vectorstore.load_local(
-            os.path.join(work_dir, feature_reject), embeddings=self.embeddings)
+            resp_dir, embeddings=self.embeddings)
 
     def get_doc_by_id(self, _id, vector_store):
         """Get doc by search id."""
