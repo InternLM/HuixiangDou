@@ -29,12 +29,12 @@ def parse_args():
     parser.add_argument('--standalone',
                         action='store_true',
                         default=False,
-                        help='Atuo deploy required Hybrid LLM Service.')
+                        help='Auto deploy required Hybrid LLM Service.')
     args = parser.parse_args()
     return args
 
 
-def check_env():
+def check_env(args):
     """Check or create config.ini and logs dir."""
     if not os.path.exists('logs'):
         os.makedirs('logs')
@@ -51,12 +51,19 @@ def check_env():
                 f.write(response.content)
         except Exception as e:
             logger.error(f'Failed to download file due to {e}')
+            raise e
+
+    if not os.path.exists(args.work_dir):
+        logger.warning(
+            f'args.work_dir dir not exist, auto create {args.work_dir}.')
+        os.makedirs(args.work_dir)
 
 
 def run():
     """Automatically download config, start llm server and run examples."""
-    check_env()
     args = parse_args()
+    check_env(args)
+
     if args.standalone:
         # hybrid llm serve
         server_ready = Value('i', 0)

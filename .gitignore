@@ -7,8 +7,7 @@ config-template.ini
 logs/
 logs/work.txt
 server.log
-service/__pycache__/
-frontend/__pycache__/
+**/__pycache__
 pk/
 badcase.txt
 config.bak
