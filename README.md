@@ -113,7 +113,7 @@ The first run will automatically download the configuration of internlm2-7B.
   # config.ini
   [llm]
   ..
-  client_url = "http://10.140.24.142:8888/inference" # example
+  client_url = "http://10.140.24.142:8888/inference" # example, use your real host IP here
 
   # run  
   python3 -m huixiangdou.main
