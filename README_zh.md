@@ -236,7 +236,7 @@ python3 -m huixiangdou.main # docker 用户
 1. 如何接入其他 IM ？
 
    - 企业微信。请查看[企业微信应用开发指南](https://developer.work.weixin.qq.com/document/path/90594)
-   - 个人微信。我们已向微信团队确认暂无 API，[itchat](https://github.com/littlecodersh/ItChat) 或许有帮助（**请注意风险**）。
+   - 个人微信。我们已向微信团队确认暂无 API，[itchat](https://github.com/littlecodersh/ItChat) 或许有帮助（**注意风险**）
    - 钉钉。参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 2. 机器人太高冷/太嘴碎怎么办？
