@@ -227,7 +227,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 1. How to access other IMs?
 
-   - WeChat. For Enterprise WeChat, see [Enterprise WeChat Application Development Guide](https://developer.work.weixin.qq.com/document/path/90594) ; for personal WeChat, you need to search and learn by yourself.
+   - WeChat. For Enterprise WeChat, see [Enterprise WeChat Application Development Guide](https://developer.work.weixin.qq.com/document/path/90594) ; for personal WeChat, [itchat](https://github.com/littlecodersh/ItChat) may helps.
    - DingTalk. Refer to [DingTalk Open Platform-Custom Robot Access](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 2. What if the robot is too cold/too chatty?
