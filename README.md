@@ -155,7 +155,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 2. Hybrid LLM Service
 
-   For LLM services that support the openai interface, HuixiangDou can utilize its Long Context ability.
+   For LLM services that support the [openai](https://pypi.org/project/openai/) interface, HuixiangDou can utilize its Long Context ability.
    Using [kimi](https://platform.moonshot.cn/) as an example, below is an example of `config.ini` configuration:
 
    ```shell
