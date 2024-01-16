@@ -163,7 +163,7 @@ python3 -m huixiangdou.main # docker 用户
 
 2. Hybrid LLM Service
 
-   对于支持 openai 接口的 LLM 服务，茴香豆可以发挥它的 Long Context 能力。
+   对于支持 [openai](https://pypi.org/project/openai/) 接口的 LLM 服务，茴香豆可以发挥它的 Long Context 能力。
    以 [kimi](https://platform.moonshot.cn/) 为例，以下是 `config.ini` 配置示例：
 
    ```shell
