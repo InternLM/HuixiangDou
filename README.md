@@ -117,6 +117,8 @@ The first run will automatically download the configuration of internlm2-7B.
 
   # run  
   python3 -m huixiangdou.main
+  ..
+  ErrorCode.SUCCESS
   ```
 
 ## STEP3. Integrate into Feishu \[Optional\]
