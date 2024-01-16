@@ -221,6 +221,7 @@ The basic version may not perform well. You can enable these features to enhance
 
    - Refer to [data.json](./tests/data.json) to add real data, run [test_intention_prompt.py](./tests/test_intention_prompt.py) to get suitable prompts and thresholds, and update them into [worker](./huixiangdou/service/worker.py).
    - Adjust the [number of search results](./huixiangdou/service/worker.py) based on the maximum length supported by the model.
+   - Update `web_search.domain_partial_order` in `config.ini` according to your scenarios.
 
 # 🛠️ FAQ
 
