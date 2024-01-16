@@ -235,7 +235,7 @@ The basic version may not perform well. You can enable these features to enhance
    - Fill in the questions that should be answered in the real scenario into `resource/good_questions.json`, and fill the ones that should be rejected into `resource/bad_questions.json`.
    - Adjust the theme content in `repodir` to ensure that the markdown documents in the main library do not contain irrelevant content.
 
-   Re-run `service/feature_store.py` to update thresholds and feature libraries.
+   Re-run `feature_store` to update thresholds and feature libraries.
 
 3. Launch is normal, but out of memory during runtime?
 
