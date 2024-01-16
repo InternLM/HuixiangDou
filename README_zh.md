@@ -107,19 +107,25 @@ x_api_key = "${YOUR-X-API-KEY}"
 - **docker 用户**。如果你正在使用 docker，`HuixiangDou` 的 Hybrid LLM Service 需要分离部署。
 
   ```shell
-  # 启动 LLM 服务
+  # 首先启动 LLM 服务，监听 8888 端口
   python3 -m huixiangdou.service.llm_server_hybrid
+  ..
+  ======== Running on http://0.0.0.0:8888 ========
+  (Press CTRL+C to quit)
   ```
 
-  打开新终端，把 host IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，运行
+  然后运行新容器，把宿主机的 IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，执行 `python3 -m huixiangdou.main`
 
   ```shell
   # config.ini
   [llm]
   ..
-  client_url = "http://10.140.24.142:9999/inference" # 举例
+  client_url = "http://10.140.24.142:9999/inference" # 举例，这里需要你换成宿主机 IP
 
   python3 -m huixiangdou.main
+  ..
+  ErrorCode.SUCCESS,
+  Query: 请教下视频流检测..
   ```
 
 ## STEP3.集成到飞书\[可选\]
