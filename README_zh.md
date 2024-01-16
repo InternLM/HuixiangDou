@@ -240,10 +240,10 @@ python3 -m huixiangdou.main # docker 用户
 
 2. 机器人太高冷/太嘴碎怎么办？
 
-   - 把真实场景中，把应该回答的问题填入`resource/good_questions.json`，应该拒绝的填入`resource/bad_questions.json`
-   - 调整 `repodir` 中的主题内容，确保底库的 markdown 文档不包含场景无关内容
+   - 把真实场景中，应该回答的问题填入`resource/good_questions.json`，应该拒绝的填入`resource/bad_questions.json`
+   - 调整 `repodir` 中的文档，确保不包含场景无关内容
 
-   重新执行 `service/feature_store.py` 来更新阈值和特征库
+   重新执行 `feature_store` 来更新阈值和特征库
 
 3. 启动正常，但运行期间显存 OOM 怎么办？
 
@@ -259,7 +259,7 @@ python3 -m huixiangdou.main # docker 用户
    - 参考 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) 增加指数退避重传
    - local LLM 替换为 [lmdeploy](https://github.com/internlm/lmdeploy) 等推理框架，而非原生的 huggingface/transformers
 
-6. GPU 显存太低怎么办？
+6. 机器配置低，GPU 显存不足怎么办？
 
    此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 
