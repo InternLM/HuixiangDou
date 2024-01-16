@@ -83,7 +83,7 @@ Please ensure that the GPU memory is over 22GB (such as 3090 or above). If the m
 
 The first run will automatically download the configuration of internlm2-7B.
 
-- **Non-docker users**. If you **don't** use docker environment, you can start all services at once.
+- **Non-docker users**. If you **don't** use docker, you can start all services at once.
 
   ```shell
   # standalone
