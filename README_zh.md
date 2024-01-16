@@ -229,6 +229,7 @@ python3 -m huixiangdou.main # docker 用户
 
    - 参照 [data.json](./tests/data.json) 增加真实数据，运行 [test_intention_prompt.py](./tests/test_intention_prompt.py) 得到合适的 prompt 和阈值，更新进 [worker](./huixiangdou/service/worker.py)
    - 根据模型支持的最大长度，调整[搜索结果个数](./huixiangdou/service/worker.py)
+   - 按照场景偏好，修改 config.ini 中的 `web_search.domain_partial_order`，即搜索结果偏序
 
 # 🛠️ FAQ
 
