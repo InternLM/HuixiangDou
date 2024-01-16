@@ -114,7 +114,7 @@ x_api_key = "${YOUR-X-API-KEY}"
   (Press CTRL+C to quit)
   ```
 
-  然后运行新容器，把宿主机的 IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，执行 `python3 -m huixiangdou.main`
+  然后运行新容器，把宿主机的 IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，运行
 
   ```shell
   # config.ini
@@ -122,6 +122,7 @@ x_api_key = "${YOUR-X-API-KEY}"
   ..
   client_url = "http://10.140.24.142:9999/inference" # 举例，这里需要你换成宿主机 IP
 
+  # 执行 main
   python3 -m huixiangdou.main
   ..
   ErrorCode.SUCCESS,
