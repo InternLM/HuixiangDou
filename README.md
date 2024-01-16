@@ -100,11 +100,14 @@ The first run will automatically download the configuration of internlm2-7B.
 - **Docker users**. If you are using docker, HuixiangDou's Hybrid LLM Service needs to be deployed separately.
 
   ```shell
-  # Start LLM service
+  # First start LLM service listening the port 8888
   python3 -m huixiangdou.service.llm_server_hybrid
+  ..
+  ======== Running on http://0.0.0.0:8888 ========
+  (Press CTRL+C to quit)
   ```
 
-  Open a new terminal, configure the host IP (**not** container IP) in `config.ini`, run
+  Then open a new docker container, configure the host IP (**not** container IP) in `config.ini`, and run `python3 -m huixiangdou.main`
 
   ```shell
   # config.ini
@@ -112,6 +115,7 @@ The first run will automatically download the configuration of internlm2-7B.
   ..
   client_url = "http://10.140.24.142:8888/inference" # example
 
+  # run  
   python3 -m huixiangdou.main
   ```
 
@@ -167,7 +171,7 @@ The basic version may not perform well. You can enable these features to enhance
    remote_llm_model = "moonshot-v1-128k"
    ```
 
-   We also support chatgpt API. Note that this feature will increase response time and operating costs.
+   We also support chatgpt. Note that this feature will increase response time and operating costs.
 
 3. Repo search enhancement
 
