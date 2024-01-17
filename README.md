@@ -239,7 +239,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 3. Launch is normal, but out of memory during runtime?
 
-   LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/en/kv_int8.md). Then use docker to independently deploy Hybrid LLM Service.
+   LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md). Then use docker to independently deploy Hybrid LLM Service.
 
 4. How to access other local LLM / After access, the effect is not ideal?
 
