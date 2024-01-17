@@ -88,7 +88,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 请保证 GPU 显存超过 22GB（如 3090 及以上），若显存较低请按 FAQ 修改。
 
-首次运行将自动下载配置中的 internlm2-7B，请保证网络畅通。
+首次运行将自动下载配置中的 [internlm2-chat-7b](https://huggingface.co/internlm/internlm2-chat-7b)，请保证网络畅通。
 
 - **非 docker 用户**。如果你**不**使用 docker 环境，可以一次启动所有服务。
 
