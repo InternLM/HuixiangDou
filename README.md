@@ -81,7 +81,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 Please ensure that the GPU memory is over 22GB (such as 3090 or above). If the memory is low, please modify it according to the FAQ.
 
-The first run will automatically download the configuration of internlm2-7B.
+The first run will automatically download the configuration of [internlm2-chat-7b](https://huggingface.co/internlm/internlm2-chat-7b).
 
 - **Non-docker users**. If you **don't** use docker, you can start all services at once.
 
