@@ -150,7 +150,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 1. Use higher accuracy local LLM
 
-   Adjust the `llm.local` model in config.ini to `internlm2-20B`.
+   Adjust the `llm.local` model in config.ini to `internlm2-chat-20b`.
    This option has a significant effect, but requires more GPU memory.
 
 2. Hybrid LLM Service
