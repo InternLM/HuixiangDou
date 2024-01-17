@@ -158,7 +158,7 @@ python3 -m huixiangdou.main # docker 用户
 
 1. 使用更高精度 local LLM
 
-   把 config.ini 中的`llm.local` 模型调整为 `internlm2-20B`。
+   把 config.ini 中的`llm.local` 模型调整为 `internlm2-chat-20b`。
    此选项效果显著，但需要更大的 GPU 显存。
 
 2. Hybrid LLM Service
