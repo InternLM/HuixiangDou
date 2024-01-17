@@ -248,7 +248,7 @@ python3 -m huixiangdou.main # docker 用户
 
 3. 启动正常，但运行期间显存 OOM 怎么办？
 
-   基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/en/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
+   基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
 
 4. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
 
