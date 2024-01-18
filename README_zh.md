@@ -13,7 +13,7 @@
 
 1. 应对群聊这类复杂场景，解答用户问题的同时，不会消息泛滥
 2. 提出一套解答技术问题的算法 pipeline
-3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告](./resource/HuixiangDou.pdf)
+3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告 arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 
 查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)，加入[微信群](./resource/figures/wechat.jpg)体验最新版效果。
 

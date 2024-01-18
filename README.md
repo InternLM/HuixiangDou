@@ -13,7 +13,7 @@
 
 1. Deal with complex scenarios like group chats, answer user questions without causing message flooding.
 2. Propose an algorithm pipeline for answering technical questions.
-3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [technical report](./resource/HuixiangDou.pdf).
+3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see our [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md), and join our [WeChat group](./resource/figures/wechat.jpg) to experience the latest version.
 
