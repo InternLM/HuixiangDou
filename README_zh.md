@@ -267,10 +267,12 @@ python3 -m huixiangdou.main # docker 用户
 # 📝 引用
 
 ```shell
-@misc{2023HuixiangDou,
-    title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
-    author={HuixiangDou Contributors},
-    howpublished = {\url{https://github.com/internlm/huixiangdou}},
-    year={2023}
+@misc{kong2024huixiangdou,
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      author={Huanjun Kong and Songyang Zhang and Kai Chen},
+      year={2024},
+      eprint={2401.08772},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 ```
