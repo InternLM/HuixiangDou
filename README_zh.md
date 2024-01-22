@@ -21,10 +21,10 @@
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-|  版本  | GPU显存需求 |                            描述                            |                             Linux 系统已验证设备                              |
-| :----: | :---------: | :--------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 基础版 |    22GB     |            能回答领域知识的基础问题，零成本运行            | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| 高级版 |    40GB     |               能够回答源码级问题，零成本运行               | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+|  版本  | GPU显存需求 |                                  描述                                  |                             Linux 系统已验证设备                              |
+| :----: | :---------: | :--------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| 基础版 |    22GB     |                  能回答领域知识的基础问题，零成本运行                  | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 高级版 |    40GB     |                     能够回答源码级问题，零成本运行                     | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 | 魔改版 |     4GB     | 用 openai API 替代本地 LLM，处理源码级问题。需要开发能力，运行需要费用 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 
 # 🔥 运行
@@ -268,7 +268,7 @@ python3 -m huixiangdou.main # docker 用户
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Kai Chen},
       year={2024},
       eprint={2401.08772},

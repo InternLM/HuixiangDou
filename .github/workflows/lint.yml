@@ -1,4 +1,4 @@
-name: lint
+name: Check markdown local file link available
 
 on:
   push:
