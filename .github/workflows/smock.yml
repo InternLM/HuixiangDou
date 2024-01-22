@@ -1,0 +1,16 @@
+name: Check `huixiangdou.service.main` works
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run LLM test
+        run: |
+          python -m huixiangdou.service.llm_server_hybrid --config_path .github/workflows/config-ci.ini  --unittest
