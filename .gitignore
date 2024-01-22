@@ -17,3 +17,4 @@ resource/prompt.txt
 build/
 dist/
 huixiangdou.egg-info/
+commit.id

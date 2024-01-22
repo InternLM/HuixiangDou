@@ -115,7 +115,7 @@ The first run will automatically download the configuration of [internlm2-chat-7
   ..
   client_url = "http://10.140.24.142:8888/inference" # example, use your real host IP here
 
-  # run  
+  # run
   python3 -m huixiangdou.main
   ..
   ErrorCode.SUCCESS
@@ -259,7 +259,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Kai Chen},
       year={2024},
       eprint={2401.08772},

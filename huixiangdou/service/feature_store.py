@@ -40,6 +40,7 @@ class FeatureStore:
             raise Exception('model_path can not be empty')
 
         self.embeddings = HuggingFaceEmbeddings(model_name='')
+        logger.debug('loading text2vec model..')
         self.embeddings.client = sentence_transformers.SentenceTransformer(
             model_path, device=device)
         self.vector_store_reject = None

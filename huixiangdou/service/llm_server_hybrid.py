@@ -12,41 +12,42 @@ from loguru import logger
 from openai import OpenAI
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+
 class InferenceWrapper:
-    """A class to wrapper kinds of inference framework"""
+    """A class to wrapper kinds of inference framework."""
+
     def __init__(self, model_path: str, local_max_length: int = 8000):
         """Init model handler."""
         self.inference = 'huggingface'
 
         # try:
         #     import lmdeploy
-        #     from lmdeploy import pipeline, GenerationConfig, TurbomindEngineConfig
+        #     from lmdeploy import pipeline, GenerationConfig, TurbomindEngineConfig  # noqa E501
         #     self.inference = 'lmdeploy'
         # except ImportError:
         #     logger.warning(
         #         "Warning: auto enable lmdeploy for higher efficiency"  # noqa E501
         #         "https://github.com/internlm/lmdeploy"
         #     )
-        
+
         # if self.inference == 'huggingface':
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path,
+                                                       trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path,
             trust_remote_code=True,
             device_map='auto',
-            torch_dtype='auto'
-        ).eval()
+            torch_dtype='auto').eval()
 
         # else:
-            # backend_config = TurbomindEngineConfig(rope_scaling_factor=2.0, session_len=local_max_length)
-            # self.pipe = pipeline(model_path, backend_config=backend_config)
-            # self.gen_config = GenerationConfig(top_p=0.8,
-            #                             top_k=1,
-            #                             temperature=0.8,
-            #                             max_new_tokens=1024)
-    
-    def chat(self, prompt:str, history=[]):
+        # backend_config = TurbomindEngineConfig(rope_scaling_factor=2.0, session_len=local_max_length)  # noqa E501
+        # self.pipe = pipeline(model_path, backend_config=backend_config)
+        # self.gen_config = GenerationConfig(top_p=0.8,
+        #                             top_k=1,
+        #                             temperature=0.8,
+        #                             max_new_tokens=1024)
+
+    def chat(self, prompt: str, history=[]):
         """Generate a response from local LLM.
 
         Args:
@@ -59,10 +60,10 @@ class InferenceWrapper:
         output_text = ''
         # if self.inference == 'huggingface':
         output_text, _ = self.model.chat(self.tokenizer,
-                                            prompt,
-                                            history,
-                                            top_k=1,
-                                            do_sample=False)
+                                         prompt,
+                                         history,
+                                         top_k=1,
+                                         do_sample=False)
         # elif self.inference == 'lmdeploy':
         #     output_text = pipe(prompt, gen_config=self.gen_config)
         # else:
@@ -279,7 +280,7 @@ def main():
         llm_serve(args.config_path, server_ready)
     else:
         server_process = Process(target=llm_serve,
-                                args=(args.config_path, server_ready))
+                                 args=(args.config_path, server_ready))
         server_process.daemon = True
         server_process.start()
 
@@ -291,7 +292,10 @@ def main():
 
         queries = ['今天天气如何？']
         for query in queries:
-            print(client.generate_response(prompt=query, history=[], remote=False))
+            print(
+                client.generate_response(prompt=query,
+                                         history=[],
+                                         remote=False))
 
 
 if __name__ == '__main__':
