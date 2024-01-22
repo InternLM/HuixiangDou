@@ -67,6 +67,8 @@ def main():
             report_text = '\n'.join(reports)
             with open(HISOTRY, 'a') as f:
                 f.write(report_text)
+        else:
+            logger.info('no update, skip.')
         time.sleep(3600 * 24)
 
 
