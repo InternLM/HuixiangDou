@@ -267,3 +267,8 @@ The basic version may not perform well. You can enable these features to enhance
       primaryClass={cs.CL}
 }
 ```
+
+# 🌠 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=internlm/huixiangdou&type=Timeline)](https://star-history.com/#internlm/huixiangdou&Timeline)
+
