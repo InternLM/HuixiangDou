@@ -58,6 +58,32 @@ def check_env(args):
             f'args.work_dir dir not exist, auto create {args.work_dir}.')
         os.makedirs(args.work_dir)
 
+def lark_send_only(assistant, fe_config: dict):
+    queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗']
+    for query in queries:
+        code, reply = assistant.generate(query=query, history=[], groupname='')
+        logger.info(f'{code}, {query}, {reply}')
+        if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
+            # send message to lark group
+            lark = Lark(webhook=fe_config['webhook_url'])
+            logger.info(f'send {reply} to lark group.')
+            lark.send_text(msg=reply)
+
+def lark_group_recv_and_send(assistant, fe_config: dict):
+    msg_url = fe_config['webhook_url']
+    while True:
+        # fetch a user message
+        resp = requests.post(msg_url, timeout=10)
+        resp.raise_for_status()
+        json_obj = resp.json()
+        if len(json_obj) < 1:
+            # no user input, sleep
+            time.sleep(2)
+            continue
+
+        query = json_obj['content']
+
+        code, reply = assistant.generate(query=query, history=[], groupname='')
 
 def run():
     """Automatically download config, start llm server and run examples."""
@@ -87,19 +113,14 @@ def run():
         fe_config = pytoml.load(f)['frontend']
     logger.info('Config loaded.')
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
-    # queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗',
-    #    '请教各位佬一个问题，虽然说注意力的长度等于上下文的长度。但是，增大上下文推理长度难道只有加长注意力机制一种方法吗？比如Rope啥的，应该不是吧',   # noqa E501
-    #   '大佬们，现在要做一个轻量级的抬手放手检测，有什么好的模型吗？']
-    queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗']
 
-    for query in queries:
-        code, reply = assistant.generate(query=query, history=[], groupname='')
-        logger.info(f'{code}, {query}, {reply}')
-        if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
-            # send message to lark group
-            lark = Lark(webhook=fe_config['webhook_url'])
-            logger.info(f'send {reply} to lark group.')
-            lark.send_text(msg=reply)
+    fe_type = fe_config['type']
+    if fe_type == 'lark' or fe_type == 'none':
+        lark_send_only(assistant, fe_config)
+    elif fe_type == 'lark_group':
+        lark_group_recv_and_send(assistant, fe_config)
+    else:
+        logger.info(f'unsupported fe_config.type {fe_type}, please read `config.ini` description.')
 
     # server_process.join()
 
