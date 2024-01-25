@@ -98,4 +98,3 @@ class Lark:
                           data=json.dumps(error_data),
                           timeout=60)
         return result
-

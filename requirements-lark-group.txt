@@ -1,4 +1,4 @@
-redis
-pytoml
 flask
 lark_oapi
+pytoml
+redis

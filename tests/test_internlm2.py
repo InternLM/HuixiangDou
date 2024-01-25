@@ -1,5 +1,3 @@
-import pdb
-
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 model_path = '/internlm/ampere_7b_v1_7_0'
