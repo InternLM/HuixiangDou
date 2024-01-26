@@ -24,7 +24,6 @@
 
 **STEP1.** 在阿里云 ECS 上，安装 redis-server 和依赖，启动群聊消息监听
 
-````
 ```bash
 # 启动 redis-server
 sudo apt install redis-server
@@ -41,7 +40,6 @@ python3 -m huixiangdou.frontend.lark_group
 * Running on http://10.1.52.22:6666
 Press CTRL+C to quit
 ```
-````
 
 **STEP2.** 飞书开发者平台-添加应用能力-机器人
 
