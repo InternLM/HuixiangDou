@@ -69,7 +69,7 @@ reject query: How to make HuixiangDou?
 
 HuixiangDou uses a search engine. Click [Serper](https://serper.dev/api-key) to obtain a quota-limited TOKEN and fill it in `config.ini`.
 
-```shell
+```ini
 # config.ini
 ..
 [web_search]
@@ -109,7 +109,7 @@ The first run will automatically download the configuration of [internlm2-chat-7
 
   Then open a new docker container, configure the host IP (**not** container IP) in `config.ini`, and run `python3 -m huixiangdou.main`
 
-  ```shell
+  ```ini
   # config.ini
   [llm]
   ..
@@ -121,11 +121,11 @@ The first run will automatically download the configuration of [internlm2-chat-7
   ErrorCode.SUCCESS
   ```
 
-## STEP3. Integrate into Feishu \[Optional\]
+## STEP3. Send to Feishu Group \[Optional\]
 
 Click [Create a Feishu Custom Robot](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot) to get the WEBHOOK_URL callback, and fill it in the config.ini.
 
-```shell
+```ini
 # config.ini
 ..
 [frontend]
@@ -142,7 +142,7 @@ python3 -m huixiangdou.main # for docker users
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-If you still need to read Feishu group messages, see [Feishu Developer Square - Add Application Capabilities - Robots](https://open.feishu.cn/app?lang=zh-CN).
+Refer to the guide for [how to use the HuixiangDou Lark group chat to send and revert messages](./docs/add_lark_group_zh.md).
 
 ## STEP4. Advanced Version \[Optional\]
 
@@ -158,7 +158,7 @@ The basic version may not perform well. You can enable these features to enhance
    For LLM services that support the [openai](https://pypi.org/project/openai/) interface, HuixiangDou can utilize its Long Context ability.
    Using [kimi](https://platform.moonshot.cn/) as an example, below is an example of `config.ini` configuration:
 
-   ```shell
+   ```ini
    # config.ini
    [llm]
    enable_local = 1
@@ -196,7 +196,7 @@ The basic version may not perform well. You can enable these features to enhance
 
    - Edit the name and introduction of the repo, we take opencompass as an example
 
-     ```shell
+     ```ini
      # config.ini
      # add your repo here, we just take opencompass and lmdeploy as example
      [sg_search.opencompass]
@@ -271,4 +271,3 @@ The basic version may not perform well. You can enable these features to enhance
 # 🌠 Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=internlm/huixiangdou&type=Timeline)](https://star-history.com/#internlm/huixiangdou&Timeline)
-

@@ -10,7 +10,6 @@ import pytoml
 import requests
 from loguru import logger
 
-from .frontend import Lark
 from .service import ErrorCode, Worker, llm_serve
 
 
@@ -59,6 +58,67 @@ def check_env(args):
         os.makedirs(args.work_dir)
 
 
+def lark_send_only(assistant, fe_config: dict):
+    from .frontend import Lark
+    queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗']
+    for query in queries:
+        code, reply = assistant.generate(query=query, history=[], groupname='')
+        logger.info(f'{code}, {query}, {reply}')
+        if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
+            # send message to lark group
+            lark = Lark(webhook=fe_config['webhook_url'])
+            logger.info(f'send {reply} to lark group.')
+            lark.send_text(msg=reply)
+
+
+def lark_group_recv_and_send(assistant, fe_config: dict):
+    from .frontend import (is_revert_command, revert_from_lark_group,
+                           send_to_lark_group)
+    msg_url = fe_config['webhook_url']
+    lark_group_config = fe_config['lark_group']
+    sent_msg_ids = []
+
+    while True:
+        # fetch a user message
+        resp = requests.post(msg_url, timeout=10)
+        resp.raise_for_status()
+        json_obj = resp.json()
+        if len(json_obj) < 1:
+            # no user input, sleep
+            time.sleep(2)
+            continue
+
+        logger.debug(json_obj)
+        query = json_obj['content']
+
+        if is_revert_command(query):
+            for msg_id in sent_msg_ids:
+                error = revert_from_lark_group(msg_id,
+                                               lark_group_config['app_id'],
+                                               lark_group_config['app_secret'])
+                if error is not None:
+                    logger.error(
+                        f'revert msg_id {msg_id} fail, reason {error}')
+                else:
+                    logger.debug(f'revert msg_id {msg_id}')
+                time.sleep(0.5)
+            sent_msg_ids = []
+            continue
+
+        code, reply = assistant.generate(query=query, history=[], groupname='')
+        if code == ErrorCode.SUCCESS:
+            json_obj['reply'] = reply
+            error, msg_id = send_to_lark_group(
+                json_obj=json_obj,
+                app_id=lark_group_config['app_id'],
+                app_secret=lark_group_config['app_secret'])
+            if error is not None:
+                raise error
+            sent_msg_ids.append(msg_id)
+        else:
+            logger.debug(f'{code} for the query {query}')
+
+
 def run():
     """Automatically download config, start llm server and run examples."""
     args = parse_args()
@@ -87,19 +147,16 @@ def run():
         fe_config = pytoml.load(f)['frontend']
     logger.info('Config loaded.')
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
-    # queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗',
-    #    '请教各位佬一个问题，虽然说注意力的长度等于上下文的长度。但是，增大上下文推理长度难道只有加长注意力机制一种方法吗？比如Rope啥的，应该不是吧',   # noqa E501
-    #   '大佬们，现在要做一个轻量级的抬手放手检测，有什么好的模型吗？']
-    queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗']
 
-    for query in queries:
-        code, reply = assistant.generate(query=query, history=[], groupname='')
-        logger.info(f'{code}, {query}, {reply}')
-        if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
-            # send message to lark group
-            lark = Lark(webhook=fe_config['webhook_url'])
-            logger.info(f'send {reply} to lark group.')
-            lark.send_text(msg=reply)
+    fe_type = fe_config['type']
+    if fe_type == 'lark' or fe_type == 'none':
+        lark_send_only(assistant, fe_config)
+    elif fe_type == 'lark_group':
+        lark_group_recv_and_send(assistant, fe_config)
+    else:
+        logger.info(
+            f'unsupported fe_config.type {fe_type}, please read `config.ini` description.'  # noqa E501
+        )
 
     # server_process.join()
 
