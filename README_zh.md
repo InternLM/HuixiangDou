@@ -150,7 +150,7 @@ python3 -m huixiangdou.main # docker 用户
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-目前只能发送不能接收，参考指南，[运行茴香豆飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)。
+参考指南，[运行茴香豆飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)。
 
 ## STEP4.高级版\[可选\]
 
