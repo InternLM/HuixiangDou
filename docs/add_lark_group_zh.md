@@ -1,4 +1,4 @@
-# 集成飞书群聊收、发和撤回
+# 集成飞书群聊收发和撤回
 
 接入飞书完整功能需要公网 IP。假设使用[阿里云 ECS](https://www.aliyun.com/product/ecs)（学生免费版即可）、假设公网 IP 是 `101.133.161.20`。且已配置[安全组](https://help.aliyun.com/zh/ecs/user-guide/overview-44)，外部可访问 `6666` 端口号。
 
