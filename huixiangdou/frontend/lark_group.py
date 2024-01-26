@@ -133,8 +133,36 @@ def fetch():
     return jsonify({})
 
 
+def revert_from_lark_group(msg_id: str, app_id: str, app_secret: str):
+    # 创建client
+    client = lark.Client.builder() \
+        .app_id(app_id) \
+        .app_secret(app_secret) \
+        .log_level(lark.LogLevel.DEBUG) \
+        .build()
+
+    # 构造请求对象
+    request: DeleteMessageRequest = DeleteMessageRequest.builder(  # noqa E405
+    ).message_id(  # noqa E405
+        msg_id).build()
+
+    # 发起请求
+    response: DeleteMessageResponse = client.im.v1.message.delete(  # noqa E405
+        request)
+
+    # 处理失败返回
+    if not response.success():
+        lark.logger.error(
+            f'client.im.v1.message.delete failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}'  # noqa E501
+        )
+        return Exception(response.msg)
+
+    return None
+
+
 # SDK 使用说明: https://github.com/larksuite/oapi-sdk-python#readme
 def send_to_lark_group(json_obj: dict, app_id: str, app_secret: str):
+    msg_id = ''
     try:
         source = json_obj['source']
         if source != 'lark':
@@ -160,18 +188,19 @@ def send_to_lark_group(json_obj: dict, app_id: str, app_secret: str):
         response: ReplyMessageResponse = client.im.v1.message.reply(  # noqa E405
             request)  # noqa E405
 
+        msg_id = response.data.message_id
         # 处理失败返回
         if not response.success():
             lark.logger.error(
                 f'client.im.v1.message.reply failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}'  # noqa E501
             )
-            return
+            return None, ''
 
         # 处理业务结果
         lark.logger.info(lark.JSON.marshal(response.data, indent=2))
     except Exception as e:
-        return e
-    return None
+        return e, ''
+    return None, msg_id
 
 
 def parse_args():

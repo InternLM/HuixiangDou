@@ -10,6 +10,5 @@ model = AutoModelForCausalLM.from_pretrained(model_path,
 
 queries = ['how to install mmdeploy ?']
 for query in queries:
-    pdb.set_trace()
     output_text, _ = model.chat(tokenizer, query, top_k=1, do_sample=False)
     print(query, output_text)

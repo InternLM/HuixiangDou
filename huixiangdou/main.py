@@ -72,9 +72,12 @@ def lark_send_only(assistant, fe_config: dict):
 
 
 def lark_group_recv_and_send(assistant, fe_config: dict):
-    from .frontend import send_to_lark_group
+    from .frontend import (is_revert_command, revert_from_lark_group,
+                           send_to_lark_group)
     msg_url = fe_config['webhook_url']
     lark_group_config = fe_config['lark_group']
+    sent_msg_ids = []
+
     while True:
         # fetch a user message
         resp = requests.post(msg_url, timeout=10)
@@ -88,15 +91,30 @@ def lark_group_recv_and_send(assistant, fe_config: dict):
         logger.debug(json_obj)
         query = json_obj['content']
 
+        if is_revert_command(query):
+            for msg_id in sent_msg_ids:
+                error = revert_from_lark_group(msg_id,
+                                               lark_group_config['app_id'],
+                                               lark_group_config['app_secret'])
+                if error is not None:
+                    logger.error(
+                        f'revert msg_id {msg_id} fail, reason {error}')
+                else:
+                    logger.debug(f'revert msg_id {msg_id}')
+                time.sleep(0.5)
+            sent_msg_ids = []
+            continue
+
         code, reply = assistant.generate(query=query, history=[], groupname='')
         if code == ErrorCode.SUCCESS:
             json_obj['reply'] = reply
-            error = send_to_lark_group(
+            error, msg_id = send_to_lark_group(
                 json_obj=json_obj,
                 app_id=lark_group_config['app_id'],
                 app_secret=lark_group_config['app_secret'])
             if error is not None:
                 raise error
+            sent_msg_ids.append(msg_id)
         else:
             logger.debug(f'{code} for the query {query}')
 
