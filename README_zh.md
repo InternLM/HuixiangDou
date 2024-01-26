@@ -129,11 +129,11 @@ x_api_key = "${YOUR-X-API-KEY}"
   Query: 请教下视频流检测..
   ```
 
-## STEP3.集成到飞书\[可选\]
+## STEP3.发送到飞书\[可选\]
 
 点击[创建飞书自定义机器人](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot)，获取回调 WEBHOOK_URL，填写到 config.ini
 
-```shell
+```ini
 # config.ini
 ..
 [frontend]
@@ -150,7 +150,7 @@ python3 -m huixiangdou.main # docker 用户
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-如果还需要从飞书群读取群聊消息，见[飞书开发者广场-添加应用能力-机器人](https://open.feishu.cn/app?lang=zh-CN)。
+目前只能发送不能接收，参考指南，[运行茴香豆飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)。
 
 ## STEP4.高级版\[可选\]
 
@@ -166,7 +166,7 @@ python3 -m huixiangdou.main # docker 用户
    对于支持 [openai](https://pypi.org/project/openai/) 接口的 LLM 服务，茴香豆可以发挥它的 Long Context 能力。
    以 [kimi](https://platform.moonshot.cn/) 为例，以下是 `config.ini` 配置示例：
 
-   ```shell
+   ```ini
    # config.ini
    [llm]
    enable_local = 1
@@ -204,7 +204,7 @@ python3 -m huixiangdou.main # docker 用户
 
    - 编辑 repo 的名字和简介，我们以 opencompass 为例
 
-     ```shell
+     ```ini
      # config.ini
      # add your repo here, we just take opencompass and lmdeploy as example
      [sg_search.opencompass]
