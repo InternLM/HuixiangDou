@@ -142,7 +142,7 @@ python3 -m huixiangdou.main # for docker users
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-- Refer to the guide for [how to use the HuixiangDou Lark group chat to send and revert messages](./docs/add_lark_group_zh.md)
+- [How to use the HuixiangDou Lark group chat to send and revert messages](./docs/add_lark_group_zh.md)
 - Refer to the guide for [Personal Wechat Example](./docs/add_wechat_group_zh.md)
 - You can also check [DingTalk Open Platform-Custom Robot Access](https://open.dingtalk.com/document/robots/custom-robot-access)
 
