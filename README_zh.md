@@ -129,7 +129,7 @@ x_api_key = "${YOUR-X-API-KEY}"
   Query: 请教下视频流检测..
   ```
 
-## STEP3.发送到飞书\[可选\]
+## STEP3.集成飞书/个人微信\[可选\]
 
 点击[创建飞书自定义机器人](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot)，获取回调 WEBHOOK_URL，填写到 config.ini
 
@@ -150,7 +150,9 @@ python3 -m huixiangdou.main # docker 用户
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-参考指南，[运行茴香豆飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)。
+- [运行完整的飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)
+- [个人微信接入示例](./docs/add_wechat_group_zh.md)
+- 还可以参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 ## STEP4.高级版\[可选\]
 
@@ -233,34 +235,28 @@ python3 -m huixiangdou.main # docker 用户
 
 # 🛠️ FAQ
 
-1. 如何接入其他 IM ？
-
-   - 企业微信。请查看[企业微信应用开发指南](https://developer.work.weixin.qq.com/document/path/90594)
-   - 个人微信。我们已向微信团队确认暂无 API，[itchat](https://github.com/littlecodersh/ItChat) 或许有帮助（**注意风险**）
-   - 钉钉。参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)
-
-2. 机器人太高冷/太嘴碎怎么办？
+1. 机器人太高冷/太嘴碎怎么办？
 
    - 把真实场景中，应该回答的问题填入`resource/good_questions.json`，应该拒绝的填入`resource/bad_questions.json`
    - 调整 `repodir` 中的文档，确保不包含场景无关内容
 
    重新执行 `feature_store` 来更新阈值和特征库
 
-3. 启动正常，但运行期间显存 OOM 怎么办？
+2. 启动正常，但运行期间显存 OOM 怎么办？
 
    基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
 
-4. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
+3. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
 
    - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
    - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./huixiangdou/service/worker.py)
 
-5. 响应太慢/网络请求总是失败怎么办？
+4. 响应太慢/网络请求总是失败怎么办？
 
    - 参考 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) 增加指数退避重传
    - local LLM 替换为 [lmdeploy](https://github.com/internlm/lmdeploy) 等推理框架，而非原生的 huggingface/transformers
 
-6. 机器配置低，GPU 显存不足怎么办？
+5. 机器配置低，GPU 显存不足怎么办？
 
    此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 

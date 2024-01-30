@@ -121,7 +121,7 @@ The first run will automatically download the configuration of [internlm2-chat-7
   ErrorCode.SUCCESS
   ```
 
-## STEP3. Send to Feishu Group \[Optional\]
+## STEP3. Send to Feishu/Personal Wechat \[Optional\]
 
 Click [Create a Feishu Custom Robot](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot) to get the WEBHOOK_URL callback, and fill it in the config.ini.
 
@@ -142,7 +142,9 @@ python3 -m huixiangdou.main # for docker users
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-Refer to the guide for [how to use the HuixiangDou Lark group chat to send and revert messages](./docs/add_lark_group_zh.md).
+- Refer to the guide for [how to use the HuixiangDou Lark group chat to send and revert messages](./docs/add_lark_group_zh.md)
+- Refer to the guide for [Personal Wechat Example](./docs/add_wechat_group_zh.md)
+- You can also check [DingTalk Open Platform-Custom Robot Access](https://open.dingtalk.com/document/robots/custom-robot-access)
 
 ## STEP4. Advanced Version \[Optional\]
 
@@ -225,33 +227,28 @@ The basic version may not perform well. You can enable these features to enhance
 
 # 🛠️ FAQ
 
-1. How to access other IMs?
-
-   - WeChat. For Enterprise WeChat, see [Enterprise WeChat Application Development Guide](https://developer.work.weixin.qq.com/document/path/90594) ; for personal WeChat, [itchat](https://github.com/littlecodersh/ItChat) may helps.
-   - DingTalk. Refer to [DingTalk Open Platform-Custom Robot Access](https://open.dingtalk.com/document/robots/custom-robot-access)
-
-2. What if the robot is too cold/too chatty?
+1. What if the robot is too cold/too chatty?
 
    - Fill in the questions that should be answered in the real scenario into `resource/good_questions.json`, and fill the ones that should be rejected into `resource/bad_questions.json`.
    - Adjust the theme content in `repodir` to ensure that the markdown documents in the main library do not contain irrelevant content.
 
    Re-run `feature_store` to update thresholds and feature libraries.
 
-3. Launch is normal, but out of memory during runtime?
+2. Launch is normal, but out of memory during runtime?
 
    LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md). Then use docker to independently deploy Hybrid LLM Service.
 
-4. How to access other local LLM / After access, the effect is not ideal?
+3. How to access other local LLM / After access, the effect is not ideal?
 
    - Open [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py), add a new LLM inference implementation.
    - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [worker.py](./huixiangdou/service/worker.py).
 
-5. What if the response is too slow/request always fails?
+4. What if the response is too slow/request always fails?
 
    - Refer to [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) to add exponential backoff and retransmission.
    - Replace local LLM with an inference framework such as [lmdeploy](https://github.com/internlm/lmdeploy), instead of the native huggingface/transformers.
 
-6. What if the GPU memory is too low?
+5. What if the GPU memory is too low?
 
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
 
