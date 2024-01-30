@@ -12,6 +12,7 @@
 ```
 
 本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 魔改接入（ipadLogin 方式），限时免费，**自行承担风险**。
+⚠️本方法可能会导致微信封号等问题，建议新建账号尝试
 
 ## 一、准备工作
 
