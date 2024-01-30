@@ -44,8 +44,10 @@ def run():
     actions = {
         'llm_server_hybrid':
         'python3 -m huixiangdou.service.llm_server_hybrid --config_path .github/scripts/config-ci.ini  --unittest',  # noqa E501
-        'feature_store': 'python3 -m huixiangdou.service.feature_store',
-        'main': 'python3 -m huixiangdou.main --standalone'
+        'feature_store':
+        'python3 -m huixiangdou.service.feature_store --config_path .github/scripts/config-ci.ini',  # noqa E501
+        'main':
+        'python3 -m huixiangdou.main --standalone --config_path .github/scripts/config-ci.ini'  # noqa E501
     }
 
     reports = ['HuixiangDou daily smoke:']

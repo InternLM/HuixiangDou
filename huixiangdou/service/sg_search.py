@@ -42,10 +42,10 @@ class SourceGraphProxy:
         self.topk = topk
         self.language = language
         if self.language == 'zh':
-            self.CHOICE_TEMPLATE = '你是{}技术群的技术助手，目前收到了用户的问题：“{}”。请问这个问题应该查询以下哪个开源项目：\n'  # noqa E501
+            self.CHOICE_TEMPLATE = '“{}”\n请仔细阅读以上问题，请问应该查询以下哪个开源项目：\n'  # noqa E501
             self.KEYWORDS_TEMPLATE = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'  # noqa E501
         else:
-            self.CHOICE_TEMPLATE = 'You are the technical assistant of the {} technology group, and currently have received a user\'s question: "{}". Which of the following open-source projects should this question refer to: \n'  # noqa E501
+            self.CHOICE_TEMPLATE = '"{}"\nPlease read the above question carefully, which of the following open-source projects should this question refer to: \n'  # noqa E501
             self.KEYWORDS_TEMPLATE = '"{}"\nPlease read the above question carefully, extract the keywords that can be used for the search engine, list the keywords directly without explaining them.'  # noqa E501
 
     def command(self, txt: str):
@@ -101,7 +101,7 @@ class SourceGraphProxy:
         Returns:
             str: The ID of selected repository.
         """
-        prompt = self.CHOICE_TEMPLATE.format(groupname, question)
+        prompt = self.CHOICE_TEMPLATE.format(question)
 
         keys = self.sg_config.keys()
         skip = ['binary_src_path', 'src_access_token']
