@@ -103,3 +103,4 @@ make bot
 ## FAQ
 
 * `make bot` 报错 `multiple target patterns`。可能 `Makefile` 多删了一行空白
+* `make bot` 第二次执行，报错 `/bot is already in use`。恢复 `Makefile` 的修改即可。 第一次运行不存在 bot，所以要删掉那行； 第二次已经存在了。或者手工删除容器也可以。
