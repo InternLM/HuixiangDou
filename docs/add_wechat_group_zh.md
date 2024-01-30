@@ -48,7 +48,7 @@ Online QR Code Image: https://wechaty.js.org/qrcode/http%3A%2F%2..
 
 gateway 仅仅是持续监听 8080 端口的消息代理，并不执行业务逻辑。
 
-**STEP3.** 打开新终端，安装依赖，调整 3 处代码。
+**STEP3.** 打开新终端，安装依赖，调整 3 处代码。[这里](https://github.com/tpoisonooo/python-wechaty-template/pull/1) 有修改好的代码供对比。
 
 ```Shell
 cd python-wechaty-template
@@ -98,3 +98,8 @@ make bot
 <img src="./figures/wechat-dingdong.png" width="400">
 
 参照 [ding_dong.py on_message()](https://github.com/wechaty/python-wechaty-template/blob/main/src/plugins/ding_dong.py#L10)，接入茴香豆 pipeline 处理即可。
+
+
+## FAQ
+
+* `make bot` 报错 `multiple target patterns`。可能 `Makefile` 多删了一行空白
