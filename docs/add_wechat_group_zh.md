@@ -48,7 +48,7 @@ Online QR Code Image: https://wechaty.js.org/qrcode/http%3A%2F%2..
 
 gateway 仅仅是持续监听 8080 端口的消息代理，并不执行业务逻辑。
 
-**STEP3.** 打开新终端，安装依赖，调整 3 处代码。[这里](https://github.com/tpoisonooo/python-wechaty-template/pull/1) 有修改好的代码供对比。
+**STEP3.** 打开新终端，安装依赖，调整 3 处代码。[这里](https://github.com/tpoisonooo/python-wechaty-template/pull/1) 有修改好的 3 个文件供对比。
 
 ```Shell
 cd python-wechaty-template
