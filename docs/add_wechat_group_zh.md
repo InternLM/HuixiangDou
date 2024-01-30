@@ -104,3 +104,4 @@ make bot
 
 * `make bot` 报错 `multiple target patterns`。可能 `Makefile` 多删了一行空白
 * `make bot` 第二次执行，报错 `/bot is already in use`。恢复 `Makefile` 的修改即可。 第一次运行不存在 bot，所以要删掉那行； 第二次已经存在了。或者手工删除容器也可以。
+* 运行 `python3 bot.py` 时，报错 `cannot import name 'get_host' from 'urllib3' ` 为 urllib3 版本问题，根据 [python-wechaty-issue](https://github.com/wechaty/python-wechaty/issues/419#issuecomment-1859148951) 执行 `pip install "urllib3<2.0.0"` 得以解决。
