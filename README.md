@@ -2,7 +2,7 @@
 
 <img src="resource/logo_blue.svg" width="550px"/>
 
-[简体中文](README_zh.md) | English
+[简体中文](README_zh.md) | English | [Wechat Demo](./resource/figures/wechat.jpg)
 
 [![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
 [![pypi](https://img.shields.io/badge/install-PyPI-green.svg?style=plastic)](https://pypi.org/project/huixiangdou/)
