@@ -1,7 +1,7 @@
 <div align="center">
   <img src="resource/logo_blue.svg" width="550px"/>
 
-<small> 简体中文 | [English](README.md) </small>
+简体中文 | [English](README.md)
 
 [![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
 [![pypi](https://img.shields.io/badge/install-PyPI-green.svg?style=plastic)](https://pypi.org/project/huixiangdou/)
