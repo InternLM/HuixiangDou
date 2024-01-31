@@ -122,8 +122,18 @@ python3 -m huixiangdou.main # docker 用户
 (Press CTRL+C to quit)
 ```
 
+用 `curl -X POST -H "Content-Type: application/json" -d '{"query":"你好"}'  http://127.0.0.1:9527/api` 可以测试效果。
+
 调整 [ding_dong.py on_message()](https://github.com/wechaty/python-wechaty-template/blob/main/src/plugins/ding_dong.py#L10)，把消息发给 9527 端口，返回响应。
 [这里](https://github.com/tpoisonooo/python-wechaty-template/blob/main/src/plugins/ding_dong.py) 是修改好的代码。
+
+这是最终运行起来的 3 个终端：
+
+- 上面是 HuixiangDou 服务
+- 左下是 `app.py`
+- 右下是 python-wechaty gateway
+
+<img src="./figures/wechat-run-state.jpg" width="600">
 
 ## FAQ
 
