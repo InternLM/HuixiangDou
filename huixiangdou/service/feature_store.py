@@ -225,7 +225,7 @@ class FeatureStore:
 
         if not os.path.exists(resp_dir) or not os.path.exists(reject_dir):
             logger.error(
-                'Please check README.md first and `python3 -m huixiangdou.service.feature_store`'  # noqa E501
+                'Please check README.md first and `python3 -m huixiangdou.service.feature_store` to initialize feature database'  # noqa E501
             )
             raise Exception(
                 f'{resp_dir} or {reject_dir} not exist, please initialize with feature_store.'  # noqa E501

@@ -254,7 +254,7 @@ def llm_serve(config_path: str, server_ready: Value):
         """Call local llm inference."""
 
         input_json = await request.json()
-        print(input_json)
+        logger.debug(input_json)
 
         prompt = input_json['prompt']
         history = input_json['history']

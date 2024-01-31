@@ -8,6 +8,7 @@ from multiprocessing import Process, Value
 
 import pytoml
 import requests
+from aiohttp import web
 from loguru import logger
 
 from .service import ErrorCode, Worker, llm_serve
@@ -59,13 +60,13 @@ def check_env(args):
 
 
 def lark_send_only(assistant, fe_config: dict):
-    from .frontend import Lark
     queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗']
     for query in queries:
         code, reply = assistant.generate(query=query, history=[], groupname='')
         logger.info(f'{code}, {query}, {reply}')
         if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
             # send message to lark group
+            from .frontend import Lark
             lark = Lark(webhook=fe_config['webhook_url'])
             logger.info(f'send {reply} to lark group.')
             lark.send_text(msg=reply)
@@ -119,6 +120,23 @@ def lark_group_recv_and_send(assistant, fe_config: dict):
             logger.debug(f'{code} for the query {query}')
 
 
+def wechat_personal_run(assistant, fe_config: dict):
+    """Call assistant inference."""
+
+    async def api(request):
+        input_json = await request.json()
+        logger.debug(input_json)
+
+        query = input_json['query']
+        code, reply = assistant.generate(query=query, history=[], groupname='')
+        return web.json_response({'code': int(code), 'reply': reply})
+
+    bind_port = fe_config['wechat_personal']['bind_port']
+    app = web.Application()
+    app.add_routes([web.post('/api', api)])
+    web.run_app(app, host='0.0.0.0', port=bind_port)
+
+
 def run():
     """Automatically download config, start llm server and run examples."""
     args = parse_args()
@@ -153,6 +171,8 @@ def run():
         lark_send_only(assistant, fe_config)
     elif fe_type == 'lark_group':
         lark_group_recv_and_send(assistant, fe_config)
+    elif fe_type == 'wechat_personal':
+        wechat_personal_run(assistant, fe_config)
     else:
         logger.info(
             f'unsupported fe_config.type {fe_type}, please read `config.ini` description.'  # noqa E501

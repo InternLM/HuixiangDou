@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """import module."""
-from .frontend import Lark  # noqa E401
+# only import frontend when needed, not here
 from .service import ChatClient  # noqa E401
 from .service import ErrorCode  # noqa E401
 from .service import FeatureStore  # noqa E401

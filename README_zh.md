@@ -1,7 +1,7 @@
 <div align="center">
   <img src="resource/logo_blue.svg" width="550px"/>
 
-<small> 简体中文 | [English](README.md) </small>
+简体中文 | [English](README.md)
 
 [![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
 [![pypi](https://img.shields.io/badge/install-PyPI-green.svg?style=plastic)](https://pypi.org/project/huixiangdou/)
@@ -46,7 +46,8 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
 mkdir workdir # 创建工作目录
-python3 -m pip install -r requirements.txt # 安装依赖，若 python3.11 则需要 `conda install conda-forge::faiss-gpu`
+conda install conda-forge::faiss-gpu # 高版本的 python3.11 需要 `conda`才能安装`faiss`，低版本 python 可跳过这句
+python3 -m pip install -r requirements.txt # 安装依赖
 python3 -m huixiangdou.service.feature_store # 把 repodir 的特征保存到 workdir
 ```
 

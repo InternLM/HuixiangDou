@@ -1,7 +1,8 @@
 <div align="center">
-  <img src="resource/logo_blue.svg" width="550px"/>
 
-<small> [简体中文](README_zh.md) | English </small>
+<img src="resource/logo_blue.svg" width="550px"/>
+
+[简体中文](README_zh.md) | English
 
 [![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
 [![pypi](https://img.shields.io/badge/install-PyPI-green.svg?style=plastic)](https://pypi.org/project/huixiangdou/)
@@ -46,7 +47,8 @@ git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # Build a feature store
 mkdir workdir # create a working directory
-python3 -m pip install -r requirements.txt # install dependencies, python3.11 needs `conda install conda-forge::faiss-gpu`
+conda install conda-forge::faiss-gpu # python3.11 needs `conda` to install `faiss`
+python3 -m pip install -r requirements.txt # install dependencies
 python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
 ```
 
