@@ -11,7 +11,9 @@
 🤔 OCR。类似原神 AI 辅助工具，很难保证识别精度
 ```
 
-本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 魔改接入（ipadLogin 方式），限时免费，**自行承担风险**。
+⚠️ **所有非正式途径都有封号等风险，自行承担**。
+
+本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 接入（ipadLogin 方式），限时免费。
 
 ## 一、准备工作
 
@@ -52,6 +54,7 @@ gateway 仅仅是持续监听 8080 端口的消息代理，并不执行业务逻
 
 ```Shell
 cd python-wechaty-template
+python3 -m pip install "urllib3<2.0.0"  # 老项目需要老的 urllib3
 python3 -m pip install -r requirements.txt
 
 # 第一处, docker 首次启动没有 `bot`
@@ -91,6 +94,7 @@ cat bot.py
 
 ```bash
 make bot
+python3 bot.py  # 确保这两句没有崩溃
 ```
 
 内部实质在调用 `python3 bot.py`，成功后打开微信，发送 `ding` 可以收到 `dong`
@@ -103,3 +107,5 @@ make bot
 ## FAQ
 
 * `make bot` 报错 `multiple target patterns`。可能 `Makefile` 多删了一行空白
+* `make bot` 第二次执行，报错 `/bot is already in use`。恢复 `Makefile` 的修改即可。 第一次运行不存在 bot，所以要删掉那行； 第二次已经存在了。或者手工删除容器也可以。
+* 运行 `python3 bot.py` 时，报错 `cannot import name 'get_host' from 'urllib3' ` 为 urllib3 版本问题，根据 [python-wechaty-issue](https://github.com/wechaty/python-wechaty/issues/419#issuecomment-1859148951) 执行 `pip install "urllib3<2.0.0"` 得以解决。
