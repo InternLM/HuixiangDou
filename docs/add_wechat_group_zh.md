@@ -13,7 +13,7 @@
 
 ⚠️ **所有非正式途径都有封号等风险，自行承担**。
 
-本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 接入（ipadLogin 方式），限时免费。
+本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 魔法接入（ipadLogin 方式），限时免费。
 
 ## 一、准备工作
 
@@ -25,7 +25,7 @@
 $ cat /etc/timezone
 Asia/Shanghai
 $ ls -l /etc/localtime
-lrwxrwxrwx 1 root root 33 11月 17  2022 /etc/localtime -> /usr/share/zoneinfo/Asia/Shangha
+lrwxrwxrwx 1 root root 33 11月 17  2022 /etc/localtime -> /usr/share/zoneinfo/Asia/Shanghai
 ```
 
 ## 二、运行 [python-wechaty-template](https://github.com/wechaty/python-wechaty-template)
@@ -97,15 +97,36 @@ make bot
 python3 bot.py  # 确保这两句没有崩溃
 ```
 
-内部实质在调用 `python3 bot.py`，成功后打开微信，发送 `ding` 可以收到 `dong`
+`bot.py` 应能看到这些日志：
+
+<img src="./figures/wechat-puppet-log.png" width="400">
+
+成功后打开微信，发送 `ding` 可以收到 `dong`
 
 <img src="./figures/wechat-dingdong.png" width="400">
 
-参照 [ding_dong.py on_message()](https://github.com/wechaty/python-wechaty-template/blob/main/src/plugins/ding_dong.py#L10)，接入茴香豆 pipeline 处理即可。
+**STEP5.** 集成 HuixiangDou
 
+假设你已经读过 README，能够运行 `STEP2. 运行基础版技术助手`。那么修改 `config.ini`，服务类型改成 `wechat_personal`，运行 `main` 默认会监听 9527 端口。
+
+```Shell
+# config.ini
+..
+[frontend]
+type = "wechat_personal"
+
+python3 -m huixiangdou.main --standalone # 非 docker 用户
+python3 -m huixiangdou.main # docker 用户
+..
+======== Running on http://0.0.0.0:9527 ========
+(Press CTRL+C to quit)
+```
+
+调整 [ding_dong.py on_message()](https://github.com/wechaty/python-wechaty-template/blob/main/src/plugins/ding_dong.py#L10)，把消息发给 9527 端口，返回响应。
+[这里](https://github.com/tpoisonooo/python-wechaty-template/blob/main/src/plugins/ding_dong.py) 是修改好的代码。
 
 ## FAQ
 
-* `make bot` 报错 `multiple target patterns`。可能 `Makefile` 多删了一行空白
-* `make bot` 第二次执行，报错 `/bot is already in use`。恢复 `Makefile` 的修改即可。 第一次运行不存在 bot，所以要删掉那行； 第二次已经存在了。或者手工删除容器也可以。
-* 运行 `python3 bot.py` 时，报错 `cannot import name 'get_host' from 'urllib3' ` 为 urllib3 版本问题，根据 [python-wechaty-issue](https://github.com/wechaty/python-wechaty/issues/419#issuecomment-1859148951) 执行 `pip install "urllib3<2.0.0"` 得以解决。
+- `make bot` 报错 `multiple target patterns`。可能 `Makefile` 多删了一行空白
+- `make bot` 第二次执行，报错 `/bot is already in use`。恢复 `Makefile` 的修改即可。 第一次运行不存在 bot，所以要删掉那行； 第二次已经存在了。或者手工删除容器也可以。
+- 运行 `python3 bot.py` 时，报错 `cannot import name 'get_host' from 'urllib3' ` 为 urllib3 版本问题，根据 [python-wechaty-issue](https://github.com/wechaty/python-wechaty/issues/419#issuecomment-1859148951) 执行 `pip install "urllib3<2.0.0"` 得以解决。
