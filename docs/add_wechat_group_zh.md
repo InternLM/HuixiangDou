@@ -11,8 +11,9 @@
 🤔 OCR。类似原神 AI 辅助工具，很难保证识别精度
 ```
 
-本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 魔改接入（ipadLogin 方式），限时免费，**自行承担风险**。
-⚠️本方法可能会导致微信封号等问题，建议新建账号尝试
+⚠️ **所有非正式途径都有封号等风险，自行承担**。
+
+本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 接入（ipadLogin 方式），限时免费。
 
 ## 一、准备工作
 
@@ -53,6 +54,7 @@ gateway 仅仅是持续监听 8080 端口的消息代理，并不执行业务逻
 
 ```Shell
 cd python-wechaty-template
+python3 -m pip install "urllib3<2.0.0"  # 老项目需要老的 urllib3
 python3 -m pip install -r requirements.txt
 
 # 第一处, docker 首次启动没有 `bot`
@@ -92,6 +94,7 @@ cat bot.py
 
 ```bash
 make bot
+python3 bot.py  # 确保这两句没有崩溃
 ```
 
 内部实质在调用 `python3 bot.py`，成功后打开微信，发送 `ding` 可以收到 `dong`
