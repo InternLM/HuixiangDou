@@ -179,9 +179,23 @@ The basic version may not perform well. You can enable these features to enhance
 
    We also support chatgpt. Note that this feature will increase response time and operating costs.
 
-   If your memory is insufficient to run a local LLM, you can also enable [free 30,000,000 tokens](https://platform.deepseek.com/) on `deepseek`.
+   If your memory is insufficient to run a local LLM, you can also enable [free 30,000,000 tokens](https://platform.deepseek.com/) on `deepseek`, for example:
+   
+   ```ini
+    # config.ini
+    [llm]
+    enable_local = 0
+    enable_remote = 1
+    ..
+    [llm.server]
+    ..
+    remote_type = "deepseek"
+    remote_api_key = "YOUR-API-KEY"
+    remote_llm_max_text_length = 16000
+    remote_llm_model = "deepseek-chat"
+    ```
 
-3. Repo search enhancement
+4. Repo search enhancement
 
    This feature is suitable for handling difficult questions and requires basic development capabilities to adjust the prompt.
 
@@ -221,7 +235,7 @@ The basic version may not perform well. You can enable these features to enhance
 
    Run `main.py`, HuixiangDou will enable search enhancement when appropriate.
 
-4. Tune Parameters
+5. Tune Parameters
 
    It is often unavoidable to adjust parameters with respect to business scenarios.
 
