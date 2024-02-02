@@ -186,9 +186,23 @@ python3 -m huixiangdou.main # docker 用户
 
    我们同样支持 chatgpt API。注意此特性会增加响应耗时和运行成本。
 
-   如果你的机器显存不足以运行本地 LLM，也可以开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。
+   如果你的机器显存不足以运行本地 LLM，也可以开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)，例如：
 
-3. repo 搜索增强
+    ```ini
+    # config.ini
+    [llm]
+    enable_local = 0
+    enable_remote = 1
+    ..
+    [llm.server]
+    ..
+    remote_type = "deepseek"
+    remote_api_key = "YOUR-API-KEY"
+    remote_llm_max_text_length = 16000
+    remote_llm_model = "deepseek-chat"
+    ```
+
+4. repo 搜索增强
 
    此特性适合处理疑难问题，需要基础开发能力调整 prompt。
 
@@ -228,7 +242,7 @@ python3 -m huixiangdou.main # docker 用户
 
    运行 `main.py`，茴香豆将在合适的时机，启用搜索增强。
 
-4. 调参
+5. 调参
 
    针对业务场景调参往往不可避免。
 
