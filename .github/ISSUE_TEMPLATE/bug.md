@@ -1,5 +1,5 @@
 ---
-name: "\U0001F41B bug issue"
+name: 🐛 bug issue
 about: submit a bug report +_+
 ---
 
@@ -8,6 +8,7 @@ about: submit a bug report +_+
 ## context | 编译/运行环境 | バックグラウンド
 
 ## how to reproduce | 复现步骤 | 再現方法
+
 1.
 2.
 3.

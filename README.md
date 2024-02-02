@@ -179,6 +179,8 @@ The basic version may not perform well. You can enable these features to enhance
 
    We also support chatgpt. Note that this feature will increase response time and operating costs.
 
+   If your memory is insufficient to run a local LLM, you can also enable [free 30,000,000 tokens](https://platform.deepseek.com/) on `deepseek`.
+
 3. Repo search enhancement
 
    This feature is suitable for handling difficult questions and requires basic development capabilities to adjust the prompt.
