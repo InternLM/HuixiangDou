@@ -236,8 +236,9 @@ class HybridLLMServer:
             llm_type = self.server_config['remote_type']
             if llm_type == 'kimi':
                 output_text = self.call_kimi(prompt=prompt, history=history)
-            elif llm_type == 'deepseek'
-                output_text = self.call_deepseek(prompt=prompt, history=history)
+            elif llm_type == 'deepseek':
+                output_text = self.call_deepseek(prompt=prompt,
+                                                 history=history)
             else:
                 output_text = self.call_gpt(prompt=prompt, history=history)
 
