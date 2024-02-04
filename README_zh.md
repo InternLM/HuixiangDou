@@ -1,11 +1,20 @@
 <div align="center">
-  <img src="resource/logo_blue.svg" width="550px"/>
 
-简体中文 | [English](README.md) | [微信群 Demo](./resource/figures/wechat.jpg)
+<img src="resource/logo_blue.svg" width="550px"/>
 
-[![GitHub license](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen.svg?style=plastic)](./LICENSE)
-[![pypi](https://img.shields.io/badge/install-PyPI-green.svg?style=plastic)](https://pypi.org/project/huixiangdou/)
-![CI](https://img.shields.io/github/actions/workflow/status/internlm/huixiangdou/lint.yml?branch=master&style=plastic)
+<div align="center">
+  <a href="resource/figures/wechat.jpg" target="_blank">
+    <img alt="Wechat" src="https://img.shields.io/badge/wechat-assistant%20inside-brightgreen?logo=wechat&logoColor=white" />
+  </a>
+  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
+    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
+  </a>
+  <a href="https://pypi.org/project/huixiangdou/" target="_blank">
+    <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
+  </a>
+</div>
+
+[简体中文](README_zh.md) | English <p align="center">
 
 </div>
 
