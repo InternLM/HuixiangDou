@@ -14,7 +14,7 @@
   </a>
 </div>
 
-[简体中文](README_zh.md) | English <p align="center">
+简体中文 | [English](README.md)
 
 </div>
 
