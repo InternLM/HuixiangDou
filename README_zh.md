@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="resource/logo_blue.svg" width="550px"/>
+<img src="resource/logo_black.svg" width="550px"/>
 
 <div align="center">
   <a href="resource/figures/wechat.jpg" target="_blank">
