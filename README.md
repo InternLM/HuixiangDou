@@ -30,11 +30,11 @@ Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
-|      Version       | GPU Memory Requirements |                                                             Features                                                              |                                Tested on Linux                                |
-| :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| Experience Version |          2.3GB          | Use openai API (e.g., [deepseek](https://platform.deepseek.com/usage)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-|   Basic Version    |          20GB           |                                            Deploy local LLM can answer basic questions                                            | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|  Advanced Version  |          40GB           |                              Fully utilizing search + long-text, answer source code-level questions                               | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+|      Version       | GPU Memory Requirements |                                                          Features                                                           |                                Tested on Linux                                |
+| :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| Experience Version |          2.3GB          | Use openai API (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|   Basic Version    |          20GB           |                                         Deploy local LLM can answer basic questions                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|  Advanced Version  |          40GB           |                           Fully utilizing search + long-text, answer source code-level questions                            | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
 
@@ -60,7 +60,7 @@ python3 -m pip install -r requirements.txt # install dependencies
 python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
 ```
 
-The first run will automatically download the configuration of [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese), you can also manually download it and update model path in `config.ini`.
+The first run will automatically download [text2vec-base-chinese](https://huggingface.co/GanymedeNil/text2vec-base-chinese), you can also manually download it and update model path in `config.ini`.
 
 After running, HuixiangDou can distinguish which user topics should be dealt with and which chitchats should be rejected. Please edit [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, finance, electricity, etc.).
 
@@ -89,21 +89,24 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **Test Q&A Effect**
 
-\[Experience Version\] If your machine's video memory is insufficient to locally run the 7B LLM (less than 20G), you can enable the deepseek 3kw free trial token, for example:
+\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 20G), try deepseek for [30 million free token](https://platform.deepseek.com/), for example:
 
+```
 # config.ini
 
-\[llm\]
+[llm]
 enable_local = 0
 enable_remote = 1
 ..
-\[llm.server\]
+[llm.server]
 ..
 remote_type = "deepseek"
 remote_api_key = "YOUR-API-KEY"
 remote_llm_max_text_length = 16000
 remote_llm_model = "deepseek-chat"
-\[Basic Version\] The first run will automatically download different LLMs depending on the size of the video memory, please ensure a smooth network. It is recommended to firstly manually download to the local, then modify the model path in config.ini.
+```
+
+\[Basic Version\] The first run will automatically download LLM depending on your GPU.
 
 - **Non-docker users**. If you **don't** use docker, you can start all services at once.
 
