@@ -37,7 +37,7 @@ class InferenceWrapper:
                 'GPU mem < 20GB, try Experience Version or set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8" in `config.ini`'  # noqa E501
             )
             if not os.path.exists(model_path):
-                model_path = 'Qwen/Qwen-7B-Chat-Int4'
+                model_path = 'Qwen/Qwen-7B-Chat-Int8'
                 logger.warning(
                     'auto set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8"'  # noqa E501
                 )
