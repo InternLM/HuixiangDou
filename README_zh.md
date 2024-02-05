@@ -32,7 +32,7 @@
 
 |  版本  | GPU显存需求 |                                                      描述                                                      |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 体验版 |    2.3GB    | 用 openai API（如 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| 体验版 |    2.3GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | 基础版 |    15GB     |                                     本地部署 LLM，能回答领域知识的基础问题                                     | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | 高级版 |    40GB     |                                  充分利用检索+长文本能力，能够回答源码级问题                                   | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
@@ -95,7 +95,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **测试问答效果**
 
-\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 20G），可开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照[config-experience.ini](./config-experience.ini)
+\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 15G），可开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照[config-experience.ini](./config-experience.ini)
 
 ```ini
 # config.ini

@@ -88,7 +88,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **Test Q&A Effect**
 
-\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 20G), try deepseek for [30 million free token](https://platform.deepseek.com/). See [config-experience.ini](./config-experience.ini)
+\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 15GB), try deepseek for [30 million free token](https://platform.deepseek.com/). See [config-experience.ini](./config-experience.ini)
 
 ```
 # config.ini
