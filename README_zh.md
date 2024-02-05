@@ -38,7 +38,7 @@
 
 # 🔥 运行
 
-我们将以 lmdeploy & mmpose 为例，介绍如何把知识助手部署到飞书群
+我们将以 mmpose 为例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
 
@@ -51,7 +51,6 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # 下载聊天话题
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
 mkdir workdir # 创建工作目录
@@ -96,7 +95,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **测试问答效果**
 
-\[体验版\] 如果你的机器显存不足以本地运行 7B LLM（低于 20G），可开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)，例如：
+\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 20G），可开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照[config-experience.ini](./config-experience.ini)
 
 ```ini
 # config.ini
@@ -112,7 +111,7 @@ remote_llm_max_text_length = 16000
 remote_llm_model = "deepseek-chat"
 ```
 
-\[基础版\]首次运行将根据显存大小，自动下载不同的 LLM，请保证网络畅通。建议先手动下载到本地，再修改 `config.ini` 中模型路径。
+默认配置中 `enable_local=1`，首次运行将根据显存大小，自动下载不同的 LLM，请保证网络畅通。建议先手动下载到本地，再修改 `config.ini` 中模型路径。
 
 - **非 docker 用户**。如果你**不**使用 docker 环境，可以一次启动所有服务。
 

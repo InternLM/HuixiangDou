@@ -30,15 +30,15 @@ Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
-|      Version       | GPU Memory Requirements |                                                          Features                                                           |                                Tested on Linux                                |
-| :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| Experience Version |          2.3GB          | Use openai API (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-|   Basic Version    |          20GB           |                                         Deploy local LLM can answer basic questions                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|  Advanced Version  |          40GB           |                           Fully utilizing search + long-text, answer source code-level questions                            | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+|      Version       | GPU Memory Requirements |                                                                            Features                                                                             |                                Tested on Linux                                |
+| :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| Experience Version |          2.3GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|   Basic Version    |          20GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|  Advanced Version  |          40GB           |                                             Fully utilizing search + long-text, answer source code-level questions                                              | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
 
-We will take lmdeploy & mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
+We will take mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
 
@@ -51,7 +51,6 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # Download chatting topics
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # Build a feature store
 mkdir workdir # create a working directory
@@ -89,7 +88,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **Test Q&A Effect**
 
-\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 20G), try deepseek for [30 million free token](https://platform.deepseek.com/), for example:
+\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 20G), try deepseek for [30 million free token](https://platform.deepseek.com/). See [config-experience.ini](./config-experience.ini)
 
 ```
 # config.ini
@@ -106,7 +105,7 @@ remote_llm_max_text_length = 16000
 remote_llm_model = "deepseek-chat"
 ```
 
-\[Basic Version\] The first run will automatically download LLM depending on your GPU.
+By default, with `enable_local=1`, the LLM will be automatically downloaded on your first run depending on GPU.
 
 - **Non-docker users**. If you **don't** use docker, you can start all services at once.
 
