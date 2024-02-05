@@ -122,6 +122,9 @@ class ChatClient:
             return resp.json()['text']
         except Exception as e:
             logger.error(str(e))
+            logger.error(
+                'Do you forget `--standalone` when `python3 -m huixiangdou.main` ?'  # noqa E501
+            )
             return ''
 
 
