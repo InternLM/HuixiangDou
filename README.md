@@ -30,11 +30,11 @@ Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
-|     Version      | GPU Memory Requirements |                      Features                      |                                Tested on Linux                                |
-| :--------------: | :---------------------: | :------------------------------------------------: | :---------------------------------------------------------------------------: |
-|  Basic Version   |          22GB           | Answer basic domain knowledge questions, zero cost | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| Advanced Version |          40GB           |   Answer source code level questions, zero cost    | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
-| Modified Version |           4GB           |     Using openai API, operation involves cost      | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|      Version       | GPU Memory Requirements |                                                             Features                                                              |                                Tested on Linux                                |
+| :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| Experience Version |          2.3GB          | Use openai API (e.g., [deepseek](https://platform.deepseek.com/usage)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|   Basic Version    |          20GB           |                                            Deploy local LLM can answer basic questions                                            | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|  Advanced Version  |          40GB           |                              Fully utilizing search + long-text, answer source code-level questions                               | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
 
@@ -89,9 +89,21 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **Test Q&A Effect**
 
-Please ensure that the GPU memory is over 22GB (such as 3090 or above). If the memory is low, please modify it according to the FAQ.
+\[Experience Version\] If your machine's video memory is insufficient to locally run the 7B LLM (less than 20G), you can enable the deepseek 3kw free trial token, for example:
 
-The first run will automatically download the configuration of [internlm2-chat-7b](https://huggingface.co/internlm/internlm2-chat-7b).
+# config.ini
+
+\[llm\]
+enable_local = 0
+enable_remote = 1
+..
+\[llm.server\]
+..
+remote_type = "deepseek"
+remote_api_key = "YOUR-API-KEY"
+remote_llm_max_text_length = 16000
+remote_llm_model = "deepseek-chat"
+\[Basic Version\] The first run will automatically download different LLMs depending on the size of the video memory, please ensure a smooth network. It is recommended to firstly manually download to the local, then modify the model path in config.ini.
 
 - **Non-docker users**. If you **don't** use docker, you can start all services at once.
 
@@ -187,22 +199,6 @@ The basic version may not perform well. You can enable these features to enhance
 
    We also support chatgpt. Note that this feature will increase response time and operating costs.
 
-   If your memory is insufficient to run a local LLM, you can also enable [free 30,000,000 tokens](https://platform.deepseek.com/) on `deepseek`, for example:
-
-   ```ini
-    # config.ini
-    [llm]
-    enable_local = 0
-    enable_remote = 1
-    ..
-    [llm.server]
-    ..
-    remote_type = "deepseek"
-    remote_api_key = "YOUR-API-KEY"
-    remote_llm_max_text_length = 16000
-    remote_llm_model = "deepseek-chat"
-   ```
-
 3. Repo search enhancement
 
    This feature is suitable for handling difficult questions and requires basic development capabilities to adjust the prompt.
@@ -290,7 +286,3 @@ The basic version may not perform well. You can enable these features to enhance
       primaryClass={cs.CL}
 }
 ```
-
-# 🌠 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=internlm/huixiangdou&type=Timeline)](https://star-history.com/#internlm/huixiangdou&Timeline)
