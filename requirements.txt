@@ -1,5 +1,6 @@
 accelerate>=0.26.1
 aiohttp
+auto-gptq
 beautifulsoup4
 einops
 faiss-gpu
@@ -13,5 +14,6 @@ requests
 scikit-learn
 sentence_transformers
 tiktoken
+torch>=2.0.0
 transformers>=4.33.2
 transformers_stream_generator

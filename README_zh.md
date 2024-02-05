@@ -30,15 +30,15 @@
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-|  版本  | GPU显存需求 |                         描述                         |                             Linux 系统已验证设备                              |
-| :----: | :---------: | :--------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 基础版 |    22GB     |         能回答领域知识的基础问题，零成本运行         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| 高级版 |    40GB     |            能够回答源码级问题，零成本运行            | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
-| 魔改版 |     4GB     | 用 openai API 替代本地 LLM，处理源码级问题。限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|  版本  | GPU显存需求 |                                                      描述                                                      |                             Linux 系统已验证设备                              |
+| :----: | :---------: | :------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| 体验版 |    2.3GB    | 用 openai API（如 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| 基础版 |    15GB     |                                     本地部署 LLM，能回答领域知识的基础问题                                     | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 高级版 |    40GB     |                                  充分利用检索+长文本能力，能够回答源码级问题                                   | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 运行
 
-我们将以 lmdeploy & mmpose 为例，介绍如何把知识助手部署到飞书群
+我们将以 mmpose 为例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
 
@@ -51,7 +51,6 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # 下载聊天话题
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # 建立特征库
 mkdir workdir # 创建工作目录
@@ -96,9 +95,23 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **测试问答效果**
 
-请保证 GPU 显存超过 22GB（如 3090 及以上），若显存较低请按 FAQ 修改。
+\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 20G），可开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照[config-experience.ini](./config-experience.ini)
 
-首次运行将自动下载配置中的 [internlm2-chat-7b](https://huggingface.co/internlm/internlm2-chat-7b)，请保证网络畅通。
+```ini
+# config.ini
+[llm]
+enable_local = 0
+enable_remote = 1
+..
+[llm.server]
+..
+remote_type = "deepseek"
+remote_api_key = "YOUR-API-KEY"
+remote_llm_max_text_length = 16000
+remote_llm_model = "deepseek-chat"
+```
+
+默认配置中 `enable_local=1`，首次运行将根据显存大小，自动下载不同的 LLM，请保证网络畅通。建议先手动下载到本地，再修改 `config.ini` 中模型路径。
 
 - **非 docker 用户**。如果你**不**使用 docker 环境，可以一次启动所有服务。
 
@@ -195,22 +208,6 @@ python3 -m huixiangdou.main # docker 用户
 
    我们同样支持 chatgpt API。注意此特性会增加响应耗时和运行成本。
 
-   如果你的机器显存不足以运行本地 LLM，也可以开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)，例如：
-
-   ```ini
-   # config.ini
-   [llm]
-   enable_local = 0
-   enable_remote = 1
-   ..
-   [llm.server]
-   ..
-   remote_type = "deepseek"
-   remote_api_key = "YOUR-API-KEY"
-   remote_llm_max_text_length = 16000
-   remote_llm_model = "deepseek-chat"
-   ```
-
 3. repo 搜索增强
 
    此特性适合处理疑难问题，需要基础开发能力调整 prompt。
@@ -298,7 +295,3 @@ python3 -m huixiangdou.main # docker 用户
       primaryClass={cs.CL}
 }
 ```
-
-# 🌠 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=internlm/huixiangdou&type=Timeline)](https://star-history.com/#internlm/huixiangdou&Timeline)

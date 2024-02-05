@@ -30,15 +30,15 @@ Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
-|     Version      | GPU Memory Requirements |                      Features                      |                                Tested on Linux                                |
-| :--------------: | :---------------------: | :------------------------------------------------: | :---------------------------------------------------------------------------: |
-|  Basic Version   |          22GB           | Answer basic domain knowledge questions, zero cost | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| Advanced Version |          40GB           |   Answer source code level questions, zero cost    | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
-| Modified Version |           4GB           |     Using openai API, operation involves cost      | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|      Version       | GPU Memory Requirements |                                                                            Features                                                                             |                                Tested on Linux                                |
+| :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| Experience Version |          2.3GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|   Basic Version    |          15GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|  Advanced Version  |          40GB           |                                             Fully utilizing search + long-text, answer source code-level questions                                              | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
 
-We will take lmdeploy & mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
+We will take mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
 
@@ -51,7 +51,6 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # Download chatting topics
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/internlm/lmdeploy --depth=1 repodir/lmdeploy
 
 # Build a feature store
 mkdir workdir # create a working directory
@@ -60,7 +59,7 @@ python3 -m pip install -r requirements.txt # install dependencies
 python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
 ```
 
-The first run will automatically download the configuration of [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese), you can also manually download it and update model path in `config.ini`.
+The first run will automatically download [text2vec-base-chinese](https://huggingface.co/GanymedeNil/text2vec-base-chinese), you can also manually download it and update model path in `config.ini`.
 
 After running, HuixiangDou can distinguish which user topics should be dealt with and which chitchats should be rejected. Please edit [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, finance, electricity, etc.).
 
@@ -89,9 +88,24 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **Test Q&A Effect**
 
-Please ensure that the GPU memory is over 22GB (such as 3090 or above). If the memory is low, please modify it according to the FAQ.
+\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 20G), try deepseek for [30 million free token](https://platform.deepseek.com/). See [config-experience.ini](./config-experience.ini)
 
-The first run will automatically download the configuration of [internlm2-chat-7b](https://huggingface.co/internlm/internlm2-chat-7b).
+```
+# config.ini
+
+[llm]
+enable_local = 0
+enable_remote = 1
+..
+[llm.server]
+..
+remote_type = "deepseek"
+remote_api_key = "YOUR-API-KEY"
+remote_llm_max_text_length = 16000
+remote_llm_model = "deepseek-chat"
+```
+
+By default, with `enable_local=1`, the LLM will be automatically downloaded on your first run depending on GPU.
 
 - **Non-docker users**. If you **don't** use docker, you can start all services at once.
 
@@ -187,22 +201,6 @@ The basic version may not perform well. You can enable these features to enhance
 
    We also support chatgpt. Note that this feature will increase response time and operating costs.
 
-   If your memory is insufficient to run a local LLM, you can also enable [free 30,000,000 tokens](https://platform.deepseek.com/) on `deepseek`, for example:
-
-   ```ini
-    # config.ini
-    [llm]
-    enable_local = 0
-    enable_remote = 1
-    ..
-    [llm.server]
-    ..
-    remote_type = "deepseek"
-    remote_api_key = "YOUR-API-KEY"
-    remote_llm_max_text_length = 16000
-    remote_llm_model = "deepseek-chat"
-   ```
-
 3. Repo search enhancement
 
    This feature is suitable for handling difficult questions and requires basic development capabilities to adjust the prompt.
@@ -290,7 +288,3 @@ The basic version may not perform well. You can enable these features to enhance
       primaryClass={cs.CL}
 }
 ```
-
-# 🌠 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=internlm/huixiangdou&type=Timeline)](https://star-history.com/#internlm/huixiangdou&Timeline)

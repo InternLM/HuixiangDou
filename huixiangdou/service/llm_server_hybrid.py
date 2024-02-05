@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """LLM server proxy."""
 import argparse
+import os
 import random
 import time
 from multiprocessing import Process, Value
@@ -13,39 +14,52 @@ from openai import OpenAI
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
+def check_gpu_max_memory_gb():
+    try:
+        import torch
+        device = torch.device('cuda')
+        return torch.cuda.get_device_properties(
+            device).total_memory / (  # noqa E501
+                1 << 30)
+    except Exception as e:
+        logger.error(str(e))
+    return -1
+
+
 class InferenceWrapper:
     """A class to wrapper kinds of inference framework."""
 
-    def __init__(self, model_path: str, local_max_length: int = 8000):
+    def __init__(self, model_path: str, local_max_length: int = 12000):
         """Init model handler."""
-        self.inference = 'huggingface'
 
-        # try:
-        #     import lmdeploy
-        #     from lmdeploy import pipeline, GenerationConfig, TurbomindEngineConfig  # noqa E501
-        #     self.inference = 'lmdeploy'
-        # except ImportError:
-        #     logger.warning(
-        #         "Warning: auto enable lmdeploy for higher efficiency"  # noqa E501
-        #         "https://github.com/internlm/lmdeploy"
-        #     )
+        if check_gpu_max_memory_gb() < 20:
+            logger.warning(
+                'GPU mem < 20GB, try Experience Version or set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8" in `config.ini`'  # noqa E501
+            )
+            if not os.path.exists(model_path):
+                model_path = 'Qwen/Qwen-7B-Chat-Int8'
+                logger.warning(
+                    'auto set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8"'  # noqa E501
+                )
 
-        # if self.inference == 'huggingface':
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-            device_map='auto',
-            torch_dtype='auto').eval()
 
-        # else:
-        # backend_config = TurbomindEngineConfig(rope_scaling_factor=2.0, session_len=local_max_length)  # noqa E501
-        # self.pipe = pipeline(model_path, backend_config=backend_config)
-        # self.gen_config = GenerationConfig(top_p=0.8,
-        #                             top_k=1,
-        #                             temperature=0.8,
-        #                             max_new_tokens=1024)
+        if 'qwen' in model_path.lower():
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                device_map='auto',
+                trust_remote_code=True,
+                fp16=True,
+            ).eval()
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'Qwen/Qwen-7B-Chat-Int8',
+                device_map='auto',
+                trust_remote_code=True,
+                use_cache_quantization=True,
+                use_cache_kernel=True,
+                use_flash_attn=False).eval()
 
     def chat(self, prompt: str, history=[]):
         """Generate a response from local LLM.
