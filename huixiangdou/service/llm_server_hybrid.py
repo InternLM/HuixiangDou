@@ -26,6 +26,17 @@ def check_gpu_max_memory_gb():
     return -1
 
 
+def build_messages(prompt, history, system):
+    messages = [{
+        'role': 'system',
+        'content': system
+    }]
+    for item in history:
+        messages.append({'role': 'user', 'content': item[0]})
+        messages.append({'role': 'system', 'content': item[1]})
+    messages.append({'role': 'user', 'content': prompt})
+    return messages
+
 class InferenceWrapper:
     """A class to wrapper kinds of inference framework."""
 
@@ -45,7 +56,12 @@ class InferenceWrapper:
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
 
-        if 'qwen' in model_path.lower():
+        if 'qwen1.5' in model_path.lower():
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                device_map='auto',
+                trust_remote_code=True).eval()
+        elif 'qwen' in model_path.lower():
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 device_map='auto',
@@ -71,16 +87,27 @@ class InferenceWrapper:
             str: Generated response.
         """
         output_text = ''
-        # if self.inference == 'huggingface':
-        output_text, _ = self.model.chat(self.tokenizer,
-                                         prompt,
-                                         history,
-                                         top_k=1,
-                                         do_sample=False)
-        # elif self.inference == 'lmdeploy':
-        #     output_text = pipe(prompt, gen_config=self.gen_config)
-        # else:
-        #     raise Exception(f'unknown inference framework {self.inference}')
+
+        if type(self.model).__name__ == 'Qwen2ForCausalLM':
+            messages = build_messages(prompt=prompt, history=history, system='You are a helpful assistant')  # noqa E501
+            text = self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+            model_inputs = self.tokenizer([text], return_tensors="pt").to("cuda")
+            generated_ids = self.model.generate(model_inputs.input_ids, max_new_tokens=512, top_k=1)
+            generated_ids = [
+                output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+            ]
+
+            output_text = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        else:
+            output_text, _ = self.model.chat(self.tokenizer,
+                                            prompt,
+                                            history,
+                                            top_k=1,
+                                            do_sample=False)
         return output_text
 
 
@@ -118,6 +145,8 @@ class HybridLLMServer:
         else:
             logger.warning('local LLM disabled.')
 
+
+
     def call_kimi(self, prompt, history):
         """Generate a response from Kimi (a remote LLM).
 
@@ -133,16 +162,7 @@ class HybridLLMServer:
             base_url='https://api.moonshot.cn/v1',
         )
 
-        messages = [{
-            'role':
-            'system',
-            'content':
-            '你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。'  # noqa E501
-        }]
-        for item in history:
-            messages.append({'role': 'user', 'content': item[0]})
-            messages.append({'role': 'system', 'content': item[1]})
-        messages.append({'role': 'user', 'content': prompt})
+        messages = build_messages(prompt=prompt, history=history, system='你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。')  # noqa E501
 
         life = 0
         while life < self.retry:
@@ -197,14 +217,7 @@ class HybridLLMServer:
             base_url='https://api.deepseek.com/v1',
         )
 
-        messages = [{
-            'role': 'system',
-            'content': 'You are a helpful assistant'
-        }]
-        for item in history:
-            messages.append({'role': 'user', 'content': item[0]})
-            messages.append({'role': 'system', 'content': item[1]})
-        messages.append({'role': 'user', 'content': prompt})
+        messages = build_messages(prompt=prompt, history=history, system='You are a helpful assistant')  # noqa E501
 
         life = 0
         while life < self.retry:
@@ -316,6 +329,7 @@ def llm_serve(config_path: str, server_ready: Value):
 
         prompt = input_json['prompt']
         history = input_json['history']
+        logger.debug(f'history: {history}')
         remote = False
         if 'remote' in input_json:
             remote = input_json['remote']
