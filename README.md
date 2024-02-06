@@ -24,7 +24,13 @@
 2. Propose an algorithm pipeline for answering technical questions.
 3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
 
-Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md), and join our [wechat group](./resource/figures/wechat.jpg) to experience the latest version.
+Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
+
+# 🆕 What's new
+
+* [2024/02] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
+* [2024/02] [experimental] Integrated multimodal model for OCR functionality into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)
+* [2024/01] Support [personal wechat]((./docs/add_wechat_group_zh.md)) and [lark group](./docs/add_lark_group_zh.md)
 
 # 📦 Hardware Requirements
 
