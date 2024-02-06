@@ -28,9 +28,9 @@ Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
 
 # 🆕 What's new
 
-* [2024/02] Support deepseek and qwen1.5; automatically choose model depending on GPU
+* [2024/02] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
 * [2024/02] [experimental] Integrated multimodal model for OCR functionality into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)
-* [2024/01] Support personal wechat and lark group
+* [2024/01] Support [personal wechat]((./docs/add_wechat_group_zh.md)) and [lark group](./docs/add_lark_group_zh.md)
 
 # 📦 Hardware Requirements
 
