@@ -50,16 +50,15 @@ class InferenceWrapper:
                 model_path,
                 device_map='auto',
                 trust_remote_code=True,
-                fp16=True,
-            ).eval()
-        else:
-            self.model = AutoModelForCausalLM.from_pretrained(
-                'Qwen/Qwen-7B-Chat-Int8',
-                device_map='auto',
-                trust_remote_code=True,
                 use_cache_quantization=True,
                 use_cache_kernel=True,
                 use_flash_attn=False).eval()
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                trust_remote_code=True,
+                device_map='auto',
+                torch_dtype='auto').eval()
 
     def chat(self, prompt: str, history=[]):
         """Generate a response from local LLM.
