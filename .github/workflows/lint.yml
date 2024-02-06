@@ -17,7 +17,7 @@ jobs:
           python-version: 3.9
       - name: Check doc link
         run: |
-          python .github/scripts/doc_link_checker.py --target README_en.md
+          python .github/scripts/doc_link_checker.py --target README_zh.md
           python .github/scripts/doc_link_checker.py --target README.md
           python -m pip install pylint interrogate
           pylint huixiangdou || true
