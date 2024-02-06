@@ -15,5 +15,5 @@ scikit-learn
 sentence_transformers
 tiktoken
 torch>=2.0.0
-transformers>=4.33.2
+transformers>=4.37.0
 transformers_stream_generator
