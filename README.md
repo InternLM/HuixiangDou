@@ -38,7 +38,7 @@ The following are the hardware requirements for running. It is suggested to foll
 
 |      Version       | GPU Memory Requirements |                                                                            Features                                                                             |                                Tested on Linux                                |
 | :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| Experience Version |          2.3GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| Experience Version |          2.7GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 |   Basic Version    |          15GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |  Advanced Version  |          40GB           |                                             Fully utilizing search + long-text, answer source code-level questions                                              | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
@@ -47,6 +47,12 @@ The following are the hardware requirements for running. It is suggested to foll
 We will take mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
+
+Huggingface login
+
+```shell
+huggingface-cli login
+```
 
 Execute all the commands below (including the '#' symbol).
 
@@ -60,12 +66,11 @@ git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 
 # Build a feature store
 mkdir workdir # create a working directory
-conda install conda-forge::faiss-gpu # python3.11 needs `conda` to install `faiss`
 python3 -m pip install -r requirements.txt # install dependencies
 python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
 ```
 
-The first run will automatically download [text2vec-base-chinese](https://huggingface.co/GanymedeNil/text2vec-base-chinese), you can also manually download it and update model path in `config.ini`.
+The first run will automatically download [text2vec model](./config.ini), you can also manually download it and update model path in `config.ini`.
 
 After running, HuixiangDou can distinguish which user topics should be dealt with and which chitchats should be rejected. Please edit [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, finance, electricity, etc.).
 

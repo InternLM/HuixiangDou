@@ -38,7 +38,7 @@
 
 |  版本  | GPU显存需求 |                                                                        描述                                                                        |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 体验版 |    2.3GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| 体验版 |    2.7GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | 基础版 |    15GB     |                                                       本地部署 LLM，能回答领域知识的基础问题                                                       | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | 高级版 |    40GB     |                                                    充分利用检索+长文本能力，能够回答源码级问题                                                     | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
@@ -47,6 +47,10 @@
 我们将以 mmpose 为例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
+登录 huggingface
+```shell
+huggingface-cli login
+```
 
 复制下面所有命令（包含 '#' 符号）执行。
 
@@ -60,12 +64,11 @@ git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 
 # 建立特征库
 mkdir workdir # 创建工作目录
-conda install conda-forge::faiss-gpu # 高版本的 python3.11 需要 `conda`才能安装`faiss`，低版本 python 可跳过这句
 python3 -m pip install -r requirements.txt # 安装依赖
 python3 -m huixiangdou.service.feature_store # 把 repodir 的特征保存到 workdir
 ```
 
-首次运行将自动下载配置中的 [text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese)。考虑到不同地区 huggingface 连接问题，建议先手动下载到本地，然后在 `config.ini` 设置模型路径。例如：
+首次运行将自动下载配置中的 [text2vec 模型](./config.ini)。考虑到不同地区 huggingface 连接问题，建议先手动下载到本地，然后在 `config.ini` 设置模型路径。例如：
 
 ```shell
 # config.ini
