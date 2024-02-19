@@ -18,3 +18,5 @@ build/
 dist/
 huixiangdou.egg-info/
 commit.id
+resource/wechat_questions.json
+.eggs/

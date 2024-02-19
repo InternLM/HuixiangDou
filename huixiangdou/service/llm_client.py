@@ -147,3 +147,9 @@ if __name__ == '__main__':
     question = '“{}”\n请仔细阅读以上问题，提取其中的实体词，结果直接用 list 表示，不要解释。'.format(
         '请问triviaqa 5shot结果怎么在summarizer里输出呢')
     print(client.generate_response(prompt=question, remote=True))
+
+    print(
+        client.generate_response(prompt='请问 ncnn 的全称是什么',
+                                 history=[('ncnn 是什么',
+                                           'ncnn中的n代表nihui，cnn代表卷积神经网络。')],
+                                 remote=True))
