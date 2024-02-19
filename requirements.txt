@@ -3,7 +3,7 @@ aiohttp
 auto-gptq
 beautifulsoup4
 einops
-faiss-gpu
+faiss
 langchain>=0.1.5
 loguru
 openai>=1.0.0
@@ -18,3 +18,4 @@ tiktoken
 torch>=2.0.0
 transformers>=4.37.0
 transformers_stream_generator
+bcembedding
