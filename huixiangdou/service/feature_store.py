@@ -56,7 +56,7 @@ class FeatureStore:
             model_name=embedding_model_path,
             model_kwargs={'device': device},
             encode_kwargs={
-                'batch_size': 8,
+                'batch_size': 1,
                 'normalize_embeddings': True
             })
         self.embeddings.client = self.embeddings.client.half()
@@ -260,8 +260,7 @@ class FeatureStore:
             docs = self.rejecter.similarity_search_with_relevance_scores(
                 question, k=1)
         else:
-            docs = self.rejecter.similarity_search_with_relevance_scores(
-                question, k=k, score_threshold=self.reject_throttle)
+            docs = self.rejecter.similarity_search_with_relevance_scores(question, k=k, score_threshold=self.reject_throttle)
         if len(docs) < 1:
             return True, docs
         return False, docs
@@ -286,7 +285,7 @@ class FeatureStore:
         docs = self.compression_retriever.get_relevant_documents(question)
         files = []
         for doc in docs:
-            logger.debug(('db', doc.metadata, question))
+            # logger.debug(('db', doc.metadata, question))
             filepath = doc.metadata['source']
             if filepath not in files:
                 files.append(filepath)
@@ -295,7 +294,7 @@ class FeatureStore:
         for filepath in files:
             with open(filepath) as f:
                 ret.append(f.read())
-        logger.debug('query:{} files:{}'.format(question, files))
+        logger.debug('query:{} top1 file:{}'.format(question, files[0]))
         return '\n'.join(ret)
 
     def preprocess(self, repo_dir: str, work_dir: str):
@@ -420,60 +419,91 @@ def parse_args():
         '--config_path',
         default='config.ini',
         help='Feature store configuration path. Default value is config.ini')
+    parser.add_argument(
+        '--sample',
+        help='Input an json file, save reject and search output.')
     args = parser.parse_args()
     return args
 
 
-def test_reject():
+def test_reject(sample: str = None):
     """Simple test reject pipeline."""
-    real_questions = [
-        '请问找不到libmmdeploy.so怎么办',
-        'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
-        '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
-        'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
-        '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
-        'mmdeploy 现在支持 mmtrack 模型转换了么',
-        '请问 ncnn 全称是什么',
-        '有啥中文的 text to speech 模型吗?',
-        '今天中午吃什么？',
-        '茴香豆是怎么做的'
-    ]
+    if sample is None:
+        real_questions = [
+            '请问找不到libmmdeploy.so怎么办',
+            'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
+            '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
+            'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
+            '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
+            'mmdeploy 现在支持 mmtrack 模型转换了么',
+            '请问 ncnn 全称是什么',
+            '有啥中文的 text to speech 模型吗?',
+            '今天中午吃什么？',
+            '茴香豆是怎么做的'
+        ]
+    else:
+        with open(sample) as f:
+            real_questions = json.load(f)
     fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
         reject, _ = fs_query.is_reject(example)
+
         if reject:
             logger.error(f'reject query: {example}')
         else:
             logger.warning(f'process query: {example}')
+
+        if sample is not None:
+            if reject:
+                with open('workdir/negative.txt', 'a+') as f:
+                    f.write(example)
+                    f.write('\n')
+            else:
+                with open('workdir/positive.txt', 'a+') as f:
+                    f.write(example)
+                    f.write('\n')
+
     del fs_query
     empty_cache()
 
 
-def test_query():
+def test_query(sample: str = None):
     """Simple test response pipeline."""
-    real_questions = ['mmpose installation']
+    if sample is not None:
+        with open(sample) as f:
+            real_questions = json.load(f)
+        logger.add('logs/feature_store_query.log', rotation='4MB')
+    else:
+        real_questions = ['mmpose installation']
+    
     fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
+        example = example[0:400]
         fs_query.query(example)
+        empty_cache()
+
     del fs_query
     empty_cache()
 
 
 if __name__ == '__main__':
     args = parse_args()
-    fs_init = FeatureStore(config_path=args.config_path)
-    with open(args.good_questions, encoding='utf8') as f:
-        good_questions = json.load(f)
-    with open(args.bad_questions, encoding='utf8') as f:
-        bad_questions = json.load(f)
 
-    fs_init.initialize(repo_dir=args.repo_dir,
-                       work_dir=args.work_dir,
-                       good_questions=good_questions,
-                       bad_questions=bad_questions)
-    del fs_init
+    if args.sample is None:
+        # not test precision, build workdir
+        fs_init = FeatureStore(config_path=args.config_path)
+        with open(args.good_questions, encoding='utf8') as f:
+            good_questions = json.load(f)
+        with open(args.bad_questions, encoding='utf8') as f:
+            bad_questions = json.load(f)
 
-    test_query()
-    test_reject()
+        fs_init.initialize(repo_dir=args.repo_dir,
+                        work_dir=args.work_dir,
+                        good_questions=good_questions,
+                        bad_questions=bad_questions)
+        del fs_init
+
+    # test_reject(args.sample)
+    test_query(args.sample)
