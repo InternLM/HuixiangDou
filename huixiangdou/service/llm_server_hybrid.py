@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """LLM server proxy."""
 import argparse
-import os
 import random
 import time
 from multiprocessing import Process, Value
@@ -38,18 +37,13 @@ def build_messages(prompt, history, system):
 class InferenceWrapper:
     """A class to wrapper kinds of inference framework."""
 
-    def __init__(self, model_path: str, local_max_length: int = 12000):
+    def __init__(self, model_path: str):
         """Init model handler."""
 
         if check_gpu_max_memory_gb() < 20:
             logger.warning(
                 'GPU mem < 20GB, try Experience Version or set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8" in `config.ini`'  # noqa E501
             )
-            if not os.path.exists(model_path):
-                model_path = 'Qwen/Qwen-7B-Chat-Int8'
-                logger.warning(
-                    'auto set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8"'  # noqa E501
-                )
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)

@@ -1,9 +1,10 @@
 accelerate>=0.26.1
 aiohttp
 auto-gptq
+bcembedding
 beautifulsoup4
 einops
-faiss
+faiss-gpu
 langchain>=0.1.5
 loguru
 openai>=1.0.0
@@ -18,4 +19,3 @@ tiktoken
 torch>=2.0.0
 transformers>=4.37.0
 transformers_stream_generator
-bcembedding

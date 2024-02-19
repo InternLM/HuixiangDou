@@ -260,42 +260,68 @@ class FeatureStore:
             docs = self.rejecter.similarity_search_with_relevance_scores(
                 question, k=1)
         else:
-            docs = self.rejecter.similarity_search_with_relevance_scores(question, k=k, score_threshold=self.reject_throttle)
+            docs = self.rejecter.similarity_search_with_relevance_scores(
+                question, k=k, score_threshold=self.reject_throttle)
         if len(docs) < 1:
             return True, docs
         return False, docs
 
-    def query(self, question: str):
+    def query(self, question: str, context_max_length=16000):
         """Processes a query and returns the best match from the vector store
-        database. If the question is rejected, returns '<reject>'.
+        database. If the question is rejected, returns None.
 
         Args:
             question (str): The question asked by the user.
 
         Returns:
-            str: The best matching document data joined as a string, or '<reject>'.  # noqa E501
+            str: The best matching chunk, or None.
+            str: The best matching text, or None
         """
         if question is None or len(question) < 1:
-            return None
+            return None, None
 
         reject, docs = self.is_reject(question=question)
         if reject:
-            return None
+            return None, None
 
         docs = self.compression_retriever.get_relevant_documents(question)
+        chunks = []
+        context = ''
         files = []
         for doc in docs:
             # logger.debug(('db', doc.metadata, question))
+            chunks.append(doc.page_content)
             filepath = doc.metadata['source']
             if filepath not in files:
                 files.append(filepath)
 
-        ret = []
-        for filepath in files:
-            with open(filepath) as f:
-                ret.append(f.read())
+        # add file content to context, within `context_max_length`
+        for idx, doc in enumerate(docs):
+            chunk = doc.page_content
+            file_text = ''
+            with open(doc.metadata['source']) as f:
+                file_text = f.read()
+            if len(file_text) + len(context) > context_max_length:
+                # add and break
+                add_len = context_max_length - len(context)
+                if add_len <= 0:
+                    break
+                chunk_index = file_text.find(chunk)
+                if chunk_index == -1:
+                    # chunk not in file_text
+                    context += chunk
+                    context += '\n'
+                    context += file_text[0:add_len - len(chunk) - 1]
+                else:
+                    start_index = max(0, chunk_index - (add_len - len(chunk)))
+                    context += file_text[start_index:start_index + add_len]
+                break
+            context += '\n'
+            context += file_text
+
+        assert (len(context) <= context_max_length)
         logger.debug('query:{} top1 file:{}'.format(question, files[0]))
-        return '\n'.join(ret)
+        return '\n'.join(chunks), context
 
     def preprocess(self, repo_dir: str, work_dir: str):
         """Preprocesses markdown files in a given directory excluding those
@@ -420,8 +446,7 @@ def parse_args():
         default='config.ini',
         help='Feature store configuration path. Default value is config.ini')
     parser.add_argument(
-        '--sample',
-        help='Input an json file, save reject and search output.')
+        '--sample', help='Input an json file, save reject and search output.')
     args = parser.parse_args()
     return args
 
@@ -476,7 +501,7 @@ def test_query(sample: str = None):
         logger.add('logs/feature_store_query.log', rotation='4MB')
     else:
         real_questions = ['mmpose installation']
-    
+
     fs_query = FeatureStore(config_path=args.config_path)
     fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
@@ -500,9 +525,9 @@ if __name__ == '__main__':
             bad_questions = json.load(f)
 
         fs_init.initialize(repo_dir=args.repo_dir,
-                        work_dir=args.work_dir,
-                        good_questions=good_questions,
-                        bad_questions=bad_questions)
+                           work_dir=args.work_dir,
+                           good_questions=good_questions,
+                           bad_questions=bad_questions)
         del fs_init
 
     # test_reject(args.sample)

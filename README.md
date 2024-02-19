@@ -28,10 +28,10 @@ Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
 
 # 🆕 What's new
 
-* [2024/02] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank
-* [2024/02] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
-* [2024/02] [experimental] Integrated multimodal model for OCR functionality into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)
-* [2024/01] Support [personal wechat](./docs/add_wechat_group_zh.md) and [lark group](./docs/add_lark_group_zh.md)
+- \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank
+- \[2024/02\] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
+- \[2024/02\] \[experimental\] Integrated multimodal model for OCR functionality into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)
+- \[2024/01\] Support [personal wechat](./docs/add_wechat_group_zh.md) and [lark group](./docs/add_lark_group_zh.md)
 
 # 📦 Hardware Requirements
 
@@ -40,7 +40,7 @@ The following are the hardware requirements for running. It is suggested to foll
 |      Version       | GPU Memory Requirements |                                                                            Features                                                                             |                                Tested on Linux                                |
 | :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
 | Experience Version |          2.3GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-|   Basic Version    |          15GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|   Basic Version    |          19GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |  Advanced Version  |          40GB           |                                             Fully utilizing search + long-text, answer source code-level questions                                              | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
@@ -289,8 +289,9 @@ The basic version may not perform well. You can enable these features to enhance
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
 
 # 🍀 Acknowledgements
-* [kimi-chat](https://kimi.moonshot.cn/): long context LLM
-* [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): Bilingual and Crosslingual Embedding (BCEmbedding) in English and Chinese
+
+- [kimi-chat](https://kimi.moonshot.cn/): long context LLM
+- [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): Bilingual and Crosslingual Embedding (BCEmbedding) in English and Chinese
 
 # 📝 Citation
 

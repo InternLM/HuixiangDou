@@ -27,10 +27,11 @@
 查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)
 
 # 🆕 新功能
-* [2024/02] 用 [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank 提升检索精度
-* [2024/02] [支持 deepseek](https://github.com/InternLM/HuixiangDou/blob/main/README_zh.md#step2-%E8%BF%90%E8%A1%8C%E5%9F%BA%E7%A1%80%E7%89%88%E6%8A%80%E6%9C%AF%E5%8A%A9%E6%89%8B) 和 qwen1.5; 按 GPU 显存动态选模型
-* [2024/02] [实验功能] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
-* [2024/01] 实现[个人微信接入](./docs/add_wechat_group_zh.md); [飞书群收发和撤回](./docs/add_lark_group_zh.md)
+
+- \[2024/02\] 用 [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank 提升检索精度
+- \[2024/02\] [支持 deepseek](https://github.com/InternLM/HuixiangDou/blob/main/README_zh.md#step2-%E8%BF%90%E8%A1%8C%E5%9F%BA%E7%A1%80%E7%89%88%E6%8A%80%E6%9C%AF%E5%8A%A9%E6%89%8B) 和 qwen1.5; 按 GPU 显存动态选模型
+- \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
+- \[2024/01\] 实现[个人微信接入](./docs/add_wechat_group_zh.md); [飞书群收发和撤回](./docs/add_lark_group_zh.md)
 
 # 📦 硬件要求
 
@@ -39,7 +40,7 @@
 |  版本  | GPU显存需求 |                                                                        描述                                                                        |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
 | 体验版 |    2.3GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-| 基础版 |    15GB     |                                                       本地部署 LLM，能回答领域知识的基础问题                                                       | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 基础版 |    19GB     |                                                       本地部署 LLM，能回答领域知识的基础问题                                                       | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | 高级版 |    40GB     |                                                    充分利用检索+长文本能力，能够回答源码级问题                                                     | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 运行
@@ -47,7 +48,9 @@
 我们将以 mmpose 为例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
+
 登录 huggingface
+
 ```shell
 huggingface-cli login
 ```
@@ -293,9 +296,9 @@ python3 -m huixiangdou.main # docker 用户
    此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 
 # 🍀 致谢
-* [kimi-chat](https://kimi.moonshot.cn/): 长文本 LLM，支持直接上传文件
-* [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): 中英双语特征模型
 
+- [kimi-chat](https://kimi.moonshot.cn/): 长文本 LLM，支持直接上传文件
+- [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): 中英双语特征模型
 
 # 📝 引用
 

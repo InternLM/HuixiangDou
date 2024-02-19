@@ -175,16 +175,19 @@ class Worker:
         if len(topic) <= 2:
             return ErrorCode.NO_TOPIC, response
 
-        db_context_part, db_context = self.fs.query_source(topic)
-        if db_context == '<reject>':
+        chunk, db_context = self.fs.query(
+            topic,
+            context_max_length=self.context_max_length -
+            2 * len(self.GENERATE_TEMPLATE))
+        if db_context is None:
             tracker.log('feature store reject')
             return ErrorCode.UNRELATED, response
 
-        if db_context_part is not None and self.single_judge(
-                self.SCORING_RELAVANCE_TEMPLATE.format(query, db_context_part),
-                tracker=tracker,
-                throttle=5,
-                default=10):
+        if self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
+                query, chunk),
+                             tracker=tracker,
+                             throttle=5,
+                             default=10):
             prompt, history = self.llm.build_prompt(
                 instruction=query,
                 context=db_context,
@@ -193,7 +196,7 @@ class Worker:
             response = self.llm.generate_response(prompt=prompt,
                                                   history=history,
                                                   remote=True)
-            tracker.log('feature store doc', [db_context_part, response])
+            tracker.log('feature store doc', [chunk, response])
             return ErrorCode.SUCCESS, response
 
         prompt = self.KEYWORDS_TEMPLATE.format(groupname, query)
@@ -216,7 +219,9 @@ class Worker:
             for article in articles:
                 if article is not None and len(article) > 0:
                     if len(article) > self.context_max_length:
-                        article = article[0:self.context_max_length]
+                        article = article[0:(
+                            self.context_max_length -
+                            2 * len(self.SCORING_RELAVANCE_TEMPLATE))]
 
                     if self.single_judge(
                             self.SECURITY_TEMAPLTE.format(article),
