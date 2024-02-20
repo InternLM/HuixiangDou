@@ -14,7 +14,7 @@ pytoml
 readability-lxml
 requests
 scikit-learn
-sentence_transformers
+sentence_transformers==2.2.2
 tiktoken
 torch>=2.0.0
 transformers>=4.37.0
