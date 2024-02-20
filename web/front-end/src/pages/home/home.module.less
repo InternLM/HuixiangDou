@@ -6,6 +6,12 @@
     font-size: 14px;
     line-height: 16px;
     display: inline-block;
+    cursor: pointer;
+    &[aria-disabled="true"] {
+        background: #dcdcdc;
+        color: #9d9d9d;
+        cursor: not-allowed;
+    }
 }
 .home {
     padding: 0 100px;

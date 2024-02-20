@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useLocale } from '@hooks/useLocale';
-import { Input } from 'sea-lion-ui';
+import { Input, message } from 'sea-lion-ui';
 import { useState } from 'react';
 import logo from '@assets/imgs/logo.png';
 import styles from './home.module.less';
@@ -15,6 +15,22 @@ const Home = () => {
     const resetInput = () => {
         setBeanName('');
         setBeanPwd('');
+    };
+
+    const validateBean = (name, passward) => {
+        return true;
+    };
+
+    const handleConfirm = () => {
+        if (beanName && beanPwd) {
+            if (validateBean(beanName, beanPwd)) {
+                navigate('/demo');
+            } else if (!existed) {
+                setExisted(false);
+            } else {
+                message.error(locales.pwdError);
+            }
+        }
     };
 
     const Statistics = [
@@ -59,12 +75,12 @@ const Home = () => {
                     <Input
                         placeholder={locales.beanName}
                         value={beanName}
-                        onChange={(e) => setBeanName(e)}
+                        onChange={(e) => setBeanName(e.target.value)}
                     />
                     <Input
                         placeholder={locales.beanPwd}
                         value={beanPwd}
-                        onChange={(e) => setBeanPwd(e)}
+                        onChange={(e) => setBeanPwd(e.target.value)}
                     />
                 </div>
                 <div className={styles.btnWrapper}>
@@ -76,7 +92,8 @@ const Home = () => {
                     </div>
                     <div
                         className={styles.btn}
-                        onClick={() => navigate('/demo')}
+                        onClick={handleConfirm}
+                        aria-disabled={!beanName || !beanPwd}
                     >
                         {existed ? locales.create : locales.go}
                     </div>
