@@ -24,7 +24,7 @@
 
 ## 二、配置机器人权限
 
-**STEP1.** 在阿里云 ECS 上，安装 redis-server 和依赖，启动群聊消息监听
+**STEP1.** 在阿里云 ECS（101.133.161.20 机器）上，安装 redis-server 和依赖，启动群聊消息监听
 
 ```bash
 # 启动 redis-server
@@ -39,7 +39,7 @@ python3 -m huixiangdou.frontend.lark_group
 ..
 * Running on all addresses (0.0.0.0)
 * Running on http://127.0.0.1:6666
-* Running on http://10.1.52.22:6666
+* Running on http://101.133.161.20:6666
 Press CTRL+C to quit
 ```
 
@@ -49,7 +49,7 @@ Press CTRL+C to quit
 
 **STEP3.** 配置机器人的回调地址
 
-我们以`http://101.133.161.20:6666/event` 为例，点击右侧“验证”按钮，ECS 应能收到一条空消息。
+我们以`http://101.133.161.20:6666/event` 为例，点击右侧“验证”按钮，ECS 应能收到一条消息，此时还未配置 key 和 token 会报错。
 
 <img src="./figures/lark-bot-add-callback.png" width="400">
 
