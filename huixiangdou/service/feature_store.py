@@ -530,5 +530,5 @@ if __name__ == '__main__':
                            bad_questions=bad_questions)
         del fs_init
 
-    # test_reject(args.sample)
+    test_reject(args.sample)
     test_query(args.sample)
