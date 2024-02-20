@@ -266,7 +266,7 @@ class FeatureStore:
             return True, docs
         return False, docs
 
-    def query(self, question: str, context_max_length=16000):
+    def query(self, question: str, context_max_length: int = 16000):
         """Processes a query and returns the best match from the vector store
         database. If the question is rejected, returns None.
 
