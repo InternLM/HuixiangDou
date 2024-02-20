@@ -5,9 +5,6 @@ import styles from './header-container-layout.module.less';
 const HeaderContainerLayout = () => {
     return (
         <div className={styles.wrapper}>
-            <div className={styles.header}>
-                <Header />
-            </div>
             <div className={styles.body}>
                 <Outlet />
             </div>

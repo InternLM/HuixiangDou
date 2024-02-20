@@ -8,16 +8,16 @@
     "build:aliyun-dev": "tsc && vite build --mode development",
     "build:aliyun-staging": "tsc && vite build --mode staging",
     "build:aliyun-prod": "tsc && vite build --mode production",
-    "lint": "pwd && eslint src --ext .js,.jsx,.ts,.tsx --report-unused-disable-directives --max-warnings 999",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx --report-unused-disable-directives --max-warnings 999",
     "lint-fix": "eslint src --fix --ext .js,.jsx,.ts,.tsx",
-    "postinithook": "cd ../../ && husky add .husky/pre-commit \"npx lint-staged\"",
-    "inithook": "cd ../../ && husky install .husky",
+    "postinithook": "husky add .husky/pre-commit \"npx lint-staged\"",
+    "inithook": "husky install .husky",
     "preview": "npm run build:aliyun-prod && vite preview",
     "mock": "json-server --watch mock/db.json"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "cd web/front-end && npm run lint"
+      "npm run lint"
     ]
   },
   "dependencies": {
