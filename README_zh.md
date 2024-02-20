@@ -49,7 +49,7 @@
 
 ## STEP1. 建立话题特征库
 
-登录 huggingface
+登录 huggingface，或使用 [hf 国内镜像](https://hf-mirror.com/)。
 
 ```shell
 huggingface-cli login
