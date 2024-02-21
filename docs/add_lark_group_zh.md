@@ -24,26 +24,28 @@
 
 ## 二、配置机器人权限
 
-**STEP1.** 在阿里云 ECS（101.133.161.20 机器）上，安装 redis-server 和依赖，启动群聊消息监听
+**STEP1.** 在阿里云 ECS（101.133.161.20 机器）上，安装 redis-server 和依赖
 
 ```bash
-# Ubuntu启动 redis-server
+# Ubuntu 启动 redis-server
 sudo apt install redis-server
 redis-server
 ..
 
-# 在CentOS和Red Hat系统中，首先添加EPEL仓库，然后更新yum源
+# 在 CentOS 和 Red Hat 系统中，首先添加 EPEL 仓库，然后更新 yum 源
 sudo yum install epel-release
 sudo yum update
-# 然后安装Redis数据库
+# 然后安装 redis 数据库
 sudo yum -y install redis
-# 安装好后启动Redis服务即可：
+# 安装好后启动 redis 服务即可：
 sudo systemctl start redis
 ..
-
-# 确保redis在后台已经活跃
+```
+确保 redis 在后台已经活跃
 ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/84804532-c9fa-40b9-8605-6fd760a75f72)
 
+启动群聊消息监听
+```
 # ECS 上，开个新终端，启动消息监听 6666 端口号
 cd huixiangdou
 python3 -m pip install -r requirements-lark-group.txt
@@ -139,7 +141,7 @@ python3 -m huixiangdou.main  --standalone
 
 点击“版本管理与发布-创建版本”，等待管理员审核上线。
 
-## 五、Q&A
+## 五、FAQ
 1. 如果`curl -X POST -H "Content-Type: application/json" http://101.133.161.20:6666/fetch`执行超时如下图。
 ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/ba4ddb79-5b3d-4dae-8e9e-d958f42a35b7)
 解答：如果你的GPU机器有公网IP，修改webhook url地址为127.0.0.1
