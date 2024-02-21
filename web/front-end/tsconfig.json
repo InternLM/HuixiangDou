@@ -63,11 +63,13 @@
     "outDir": "./dist",
   },
   "include": [
+    "src/**/*",
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
-    "tests/**/*.tsx"
+    "tests/**/*.tsx",
+    "src/types.d.ts"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

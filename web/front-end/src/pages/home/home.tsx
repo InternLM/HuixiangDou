@@ -17,14 +17,14 @@ const Home = () => {
         setBeanPwd('');
     };
 
-    const validateBean = (name, passward) => {
+    const validateBean = (name, password) => {
         return true;
     };
 
     const handleConfirm = () => {
         if (beanName && beanPwd) {
             if (validateBean(beanName, beanPwd)) {
-                navigate('/demo');
+                navigate(`/bean-detail/${encodeURI(beanName)}`);
             } else if (!existed) {
                 setExisted(false);
             } else {

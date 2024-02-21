@@ -4,6 +4,7 @@ import {
 } from 'react-router-dom';
 import HeaderContainerLayout from '@layouts/header-container-layout/header-container-layout';
 import Home from '@pages/home/home';
+import BeanDetail from '@pages/bean-detail/bean-detail';
 
 const RouterRoot = () => {
     return (
@@ -17,6 +18,7 @@ const RouterRoot = () => {
                         element={<Navigate to="home" replace />}
                     />
                     <Route path="home" element={<Home />} />
+                    <Route path="bean-detail/:beanName" element={<BeanDetail />} />
                 </Route>
                 <Route
                     path="*"
