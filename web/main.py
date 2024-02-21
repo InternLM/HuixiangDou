@@ -1,9 +1,9 @@
 import uvicorn
-
 from web.util.log import log
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from web.api.access import api
+import web.api.access as access
+import web.api.qalib as qalib
 from web.config.logging import LOGGING_CONFIG
 
 # log
@@ -21,7 +21,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(router=api, prefix=f"/{API_VER}/access")
+app.include_router(router=access.access_api, prefix=f"/{API_VER}/access")
+app.include_router(router=qalib.qalib_api, prefix=f"/{API_VER}/qalib")
 
 
 def main():
