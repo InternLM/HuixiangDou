@@ -46,7 +46,7 @@ def _create_qa_lib(name, hashed_pass, feature_store_id) -> bool:
 
         if not add_access_info(name, AccessInfo(hashpass=hashed_pass, featureStoreId=feature_store_id).model_dump_json()):
             return False
-        if not add_qalib_info(feature_store_id, biz_const.HXD_QALIB_STATUS_INIT):
+        if not add_qalib_info(feature_store_id, biz_const.HXD_QALIB_STATUS_INIT, name):
             if not del_access_info(name):
                 logger.error(f"del access info by {name} failed")
             return False

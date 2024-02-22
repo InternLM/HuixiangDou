@@ -2,7 +2,7 @@ import json
 import os.path
 
 from web.model.base import BaseBody
-from web.model.qalib import QalibInfo
+from web.model.qalib import QalibInfo, QalibPositiveNegative, QalibSample, QalibStatistic
 from web.orm.redis import r
 from web.util.log import log
 import web.util.str as str_util
@@ -98,15 +98,38 @@ class QaLibService:
             data=None if not o else json.loads(o)
         )
 
+    async def update_sample_info(self, body: QalibPositiveNegative):
+        hxd_token = get_hxd_token_by_cookie(self.request.cookies)
+        if not hxd_token or not hxd_token.jti:
+            return BaseBody(
+                msg=biz_const.ERR_QALIB_API_NO_ACCESS.get("msg"),
+                msgCode=biz_const.ERR_QALIB_API_NO_ACCESS.get("code")
+            )
+        positives = body.positives
+        negatives = body.negatives
+        qalib_sample = QalibSample(name=hxd_token.qa_name, featureStoreId=hxd_token.jti, positives=positives,
+                                   negatives=negatives)
+        r.hset(name=biz_const.RDS_KEY_SAMPLE_INFO, key=hxd_token.jti, value=qalib_sample.model_dump_json())
+        return await self.get_sample_info()
 
-def add_qalib_info(fid: str, status: int) -> bool:
+    async def info_statistic(self):
+        qalib_total = r.hlen(biz_const.RDS_KEY_QALIB_INFO)
+        # todo more statistic data will be added
+        data = QalibStatistic(qalibTotal=qalib_total)
+        return BaseBody(
+            data=data
+        )
+
+
+def add_qalib_info(fid: str, status: int, name: str) -> bool:
     """
     add qalib info to qalib:info db
+    :param name:
     :param fid:
     :param status:
     :return:
     """
-    qalib_info = QalibInfo(featureStoreId=fid, status=status)
+    qalib_info = QalibInfo(featureStoreId=fid, status=status, name=name)
     if 1 != r.hset(name=biz_const.RDS_KEY_QALIB_INFO, key=fid, value=qalib_info.model_dump_json()):
         logger.error("init qalib info failed")
         r.hdel(biz_const.RDS_KEY_QALIB_INFO, fid)
