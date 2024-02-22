@@ -39,5 +39,6 @@ export const AuthPages: string[] = [
 
 // 有些接口不需要token
 export const NoTokenApiPaths: string[] = [
-    '/account/oauth'
+    '/account/oauth',
+    '/api/v1/access/v1/login'
 ];
