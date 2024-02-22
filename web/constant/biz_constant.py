@@ -4,8 +4,9 @@ from web.util.log import log
 logger = log(__name__)
 
 # redis
-RDS_KEY_LOGIN = "hxd::login::info"
-RDS_KEY_QALIB_INFO = "hxd::qalib:info"
+RDS_KEY_LOGIN = "hxd:login:info"
+RDS_KEY_QALIB_INFO = "hxd:qalib:info"
+RDS_KEY_SAMPLE_INFO = "hxd:qalib:sample"
 
 # jwt
 JWT_HEADER = {
@@ -19,7 +20,6 @@ JWT_SECRET = _jwt_secret
 
 # cookie
 HXD_COOKIE_KEY = "hxd_token"
-
 
 # error codes
 ERR_QALIB_API_NO_ACCESS = {
@@ -38,3 +38,7 @@ ERR_QALIB_INFO_NOT_FOUND = {
     "code": "A2002",
     "msg": "QA lib's info is not found"
 }
+
+# biz
+HXD_QALIB_STATUS_INIT = 0
+HXD_QALIB_STATUS_CREATED = 1

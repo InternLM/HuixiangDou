@@ -1,5 +1,7 @@
+from pydantic import BaseModel
 
-class HxdToken:
+
+class HxdToken(BaseModel):
     exp: int
     iat: float
     jti: str

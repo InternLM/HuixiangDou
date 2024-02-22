@@ -33,6 +33,6 @@ def gen_jwt(feature_store_id: str, qa_name: str, expire: int) -> str:
     return token
 
 
-def parse_jwt(token: str) -> HxdToken:
-    hxd_token = jwt.decode(token, JWT_SECRET)
+def parse_jwt(token: str) -> dict:
+    hxd_token = jwt.decode(token, JWT_SECRET, algorithms="HS256")
     return hxd_token
