@@ -1,0 +1,19 @@
+.chat {
+    border-radius: 8px;
+    border: 1px solid #dcdcdc;
+    .message-list {
+        width: 100%;
+        min-height: 400px;
+    }
+    .input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        :global {
+            .seal-input-group .seal-input-inner-container:focus-within {
+                outline: 1px solid #59a041;
+            }
+        }
+    }
+}
