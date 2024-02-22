@@ -68,7 +68,7 @@ class QaLibService:
         file_paths = []
         total_bytes = int(self.request.headers.get("content-length"))
         write_size = 0
-        # todo print can be removed considering the performance
+        # print can be removed if performance matters
         for file in files:
             write_path = os.path.join(store_dir, file.filename)
             with open(write_path, "wb") as f:
