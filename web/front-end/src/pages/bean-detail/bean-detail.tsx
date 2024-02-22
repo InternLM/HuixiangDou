@@ -3,13 +3,13 @@ import {
 } from 'react';
 import { useLocale } from '@hooks/useLocale';
 import { useParams } from 'react-router-dom';
-import { IconFont, Switch } from 'sea-lion-ui';
+import { IconFont } from 'sea-lion-ui';
 import logo from '@assets/imgs/logo.png';
 import bean from '@assets/imgs/bean.png';
 import Chat from '@pages/bean-detail/components/chat';
-import classNames from 'classnames';
 import { getInfo } from '@services/home';
 import ToggleSearch from '@pages/bean-detail/components/toggle-search';
+import Example from '@pages/bean-detail/components/example';
 import styles from './bean-detail.module.less';
 
 export interface BeanDetailProps {
@@ -51,12 +51,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
         },
         {
             title: locales.addExamples,
-            children: (
-                <div className={styles.btn}>
-                    {locales.viewAndEdit}
-                    <IconFont icon="icon-FeedbackOutlined" />
-                </div>
-            ),
+            children: <Example />,
             key: 'examples'
         },
         {
