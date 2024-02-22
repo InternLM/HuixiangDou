@@ -39,8 +39,6 @@ class Worker:
             language (str, optional): Specifies the language to be used. Defaults to 'zh' (Chinese).  # noqa E501
         """
         self.llm = ChatClient(config_path=config_path)
-        self.fs = FeatureStore(config_path=config_path, language=language)
-        self.fs.load_feature(work_dir=work_dir)
         self.config_path = config_path
         self.config = None
         self.language = language
@@ -110,33 +108,7 @@ class Worker:
             return True
         return False
 
-    def work_time(self):
-        """Determines if the current time falls within the scheduled working
-        hours of the chat assistant.
-
-        Returns:
-            bool: True if the current time is within working hours, otherwise False.  # noqa E501
-        """
-        time_config = self.config['worker']['time']
-
-        beginWork = datetime.datetime.now().strftime(
-            '%Y-%m-%d') + ' ' + time_config['start']
-        endWork = datetime.datetime.now().strftime(
-            '%Y-%m-%d') + ' ' + time_config['end']
-        beginWorkSeconds = time.time() - time.mktime(
-            time.strptime(beginWork, '%Y-%m-%d %H:%M:%S'))
-        endWorkSeconds = time.time() - time.mktime(
-            time.strptime(endWork, '%Y-%m-%d %H:%M:%S'))
-
-        if int(beginWorkSeconds) > 0 and int(endWorkSeconds) < 0:
-            if not time_config['has_weekday']:
-                return True
-
-            if int(datetime.datetime.now().weekday()) in range(7):
-                return True
-        return False
-
-    def generate(self, query, history, groupname):
+    def generate(self, query, history, retriever, groupname):
         """Processes user queries and generates appropriate responses. It
         involves several steps including checking for valid questions,
         extracting topics, querying the feature store, searching the web, and
@@ -144,7 +116,7 @@ class Worker:
 
         Args:
             query (str): User's query.
-            history (str): Chat history.
+            history (list): Chat history.
             groupname (str): The group name in which user asked the query.
 
         Returns:
@@ -152,10 +124,6 @@ class Worker:
             str: Generated response to the user query.
         """
         response = ''
-
-        if not self.work_time():
-            return ErrorCode.NOT_WORK_TIME, response
-
         reborn_code = ErrorCode.SUCCESS
         tracker = QueryTracker(self.config['worker']['save_path'])
         tracker.log('input', [query, history, groupname])
@@ -171,15 +139,16 @@ class Worker:
         tracker.log('topic', topic)
 
         if len(topic) <= 2:
-            return ErrorCode.NO_TOPIC, response
+            return ErrorCode.NO_TOPIC, response, []
 
-        chunk, db_context = self.fs.query(
+        chunk, db_context, retrieve_ref = retriever.query(
             topic,
             context_max_length=self.context_max_length -
             2 * len(self.GENERATE_TEMPLATE))
-        if db_context is None:
+
+        if db_context is None or len(db_context) < 1:
             tracker.log('feature store reject')
-            return ErrorCode.UNRELATED, response
+            return ErrorCode.UNRELATED, response, []
 
         if self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
                 query, chunk),
@@ -195,7 +164,12 @@ class Worker:
                                                   history=history,
                                                   remote=True)
             tracker.log('feature store doc', [chunk, response])
-            return ErrorCode.SUCCESS, response
+            return ErrorCode.SUCCESS, response, retrieve_ref
+
+        # start web search
+        web = WebSearch(config_path=self.config_path)
+        if len(web.load_key()) < 1:
+            return ErrorCode.BAD_ANSWER, response, []
 
         prompt = self.KEYWORDS_TEMPLATE.format(groupname, query)
         web_keywords = self.llm.generate_response(prompt=prompt)
@@ -206,20 +180,21 @@ class Worker:
         tracker.log('web search keywords', web_keywords)
 
         if len(web_keywords) < 1:
-            return ErrorCode.NO_SEARCH_KEYWORDS, response
+            return ErrorCode.NO_SEARCH_KEYWORDS, response, []
 
+        use_ref = []
         try:
             web_context = ''
-            web_search = WebSearch(config_path=self.config_path)
-            articles = web_search.get(query=web_keywords, max_article=2)
+            articles = web.get(query=web_keywords, max_article=2)
 
             tracker.log('search returned')
             for article in articles:
-                if article is not None and len(article) > 0:
+                if len(article) > 0 and len(
+                        web_context) < self.context_max_length:
                     if len(article) > self.context_max_length:
-                        article = article[0:(
-                            self.context_max_length -
-                            2 * len(self.SCORING_RELAVANCE_TEMPLATE))]
+                        article.cut(
+                            0, self.context_max_length -
+                            2 * len(self.SCORING_RELAVANCE_TEMPLATE))
 
                     if self.single_judge(
                             self.SECURITY_TEMAPLTE.format(article),
@@ -236,11 +211,10 @@ class Worker:
                             throttle=5,
                             default=10):
                         web_context += '\n\n'
-                        web_context += article
+                        web_context += article.content
+                        use_ref.append(article.source)
 
-            if len(web_context) >= self.context_max_length:
-                web_context = web_context[0:self.context_max_length]
-
+            web_context = web_context[0:self.context_max_length]
             web_context = web_context.strip()
 
             if len(web_context) > 0:
@@ -267,22 +241,22 @@ class Worker:
                                  default=0):
                 reborn_code = ErrorCode.BAD_ANSWER
 
-        if response is not None and len(response) >= 800:
-            # reply too long, summarize it
-            response = self.llm.generate_response(
-                prompt=self.SUMMARIZE_TEMPLATE.format(response))
+        # if response is not None and len(response) >= 800:
+        #     # reply too long, summarize it
+        #     response = self.llm.generate_response(
+        #         prompt=self.SUMMARIZE_TEMPLATE.format(response))
 
         if len(response) > 0 and self.single_judge(
                 self.SECURITY_TEMAPLTE.format(response),
                 tracker=tracker,
                 throttle=3,
                 default=0):
-            return ErrorCode.SECURITY, response
+            return ErrorCode.SECURITY, response, use_ref
 
         if reborn_code != ErrorCode.SUCCESS:
-            return reborn_code, response
+            return reborn_code, response, use_ref
 
-        return ErrorCode.SUCCESS, response
+        return ErrorCode.SUCCESS, response, use_ref
 
 
 def parse_args():

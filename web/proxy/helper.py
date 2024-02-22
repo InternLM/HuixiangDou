@@ -21,10 +21,22 @@ class ErrorCode(Enum):
     the description provides a human-readable explanation of the error.
     """
     SUCCESS = 0, 'success'
-    WORK_IN_PROGRESS = 1, 'not finish'
-    FAILED = 2, 'fail'
-    BAD_PARAMETER = 3, 'bad parameter'
-    INTERNAL_ERROR = 4, 'internal error'
+    NOT_A_QUESTION = 1, 'query is not a question'
+    NO_TOPIC = 2, 'The question does not have a topic. It might be a meaningless sentence.'  # noqa E501
+    UNRELATED = 3, 'Topics unrelated to the knowledge base. Updating good_questions and bad_questions can improve accuracy.'  # noqa E501
+    NO_SEARCH_KEYWORDS = 4, 'Cannot extract keywords.'
+    NO_SEARCH_RESULT = 5, 'Cannot retrieve results.'
+    BAD_ANSWER = 6, 'Irrelevant answer.'
+    SECURITY = 7, 'Reply has a high relevance to prohibited topics.'
+    NOT_WORK_TIME = 8, 'Non-working hours. The config.ini file can be modified to adjust this. **In scenarios where speech may pose risks, let the robot operate under human supervision**'  # noqa E501
+
+    PARAMETER_ERROR = 9, "HTTP interface parameter error. Query cannot be empty; the format of history is list of lists, like [['question1', 'reply1'], ['question2'], ['reply2']]"  # noqa E501
+    PARAMETER_MISS = 10, 'Missing key in http json input parameters.'
+
+    WORK_IN_PROGRESS = 11, 'not finish'
+    FAILED = 12, 'fail'
+    BAD_PARAMETER = 13, 'bad parameter'
+    INTERNAL_ERROR = 14, 'internal error'
 
     def __new__(cls, value, description):
         """Create new instance of ErrorCode."""

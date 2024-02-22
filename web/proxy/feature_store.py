@@ -175,13 +175,12 @@ class FeatureStore:
         new_text = new_text.lower()
         return new_text
 
-
     def get_md_documents(self, filepath):
         documents = []
         text = ''
         with open(filepath, encoding='utf8') as f:
             text = f.read()
-            text = self.clean_md(text)
+        text = os.path.basename(filepath) + '\n' + self.clean_md(text)
         if len(text) <= 1:
             continue
 
@@ -203,6 +202,7 @@ class FeatureStore:
 
         documents = []
         for i, p in enumerate(ps):
+            basename = os.path.basename(p)
             logger.debug('{}/{}..'.format(i, len(ps)))
 
             is_text = False
@@ -228,32 +228,36 @@ class FeatureStore:
 
             elif p.endswith(self.pdf_suffix):
                 pdf_document = PyPDFLoader(p).load()
+                pdf_document.page_content = basename + '\n' + pdf_document.page_content
                 documents += self.text_splitter.split_documents(pdf_document)
 
             elif is_text:
-                content = ''
+                content = basename + '\n'
                 with open(p) as f:
-                    content = f.read()
+                    content += f.read()
                 documents += self.text_splitter.create_documents([content])
 
             elif is_table:
                 if p.endswith('.csv'):
                     csv_document = CSVLoader(file_path=p).load()
+                    csv_document.page_content = basename + '\n' + csv_document.page_content
                     documents += self.text_splitter.create_documents(csv_document)
                 else:
                     # for .xsl and .xslx
                     xsl_document = UnstructuredExcelLoader(p, mode='elements').load()
+                    xsl_document.page_content = basename + '\n' + xsl_document.page_content
                     documents += self.text_splitter.create_documents(csv_document)
             elif is_docx:
                 docx_document = Docx2txtLoader(p).load()
+                docx_document.page_content = basename + '\n' + docx_document.page_content
                 documents += self.text_splitter.create_documents(docx_document)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
     def ingress_reject(self, file_dir: str, work_dir: str):
-        """Extract the features required for the reject pipeline based on the
-        markdown document."""
+        """Extract the features required for the reject pipeline based on
+        documents."""
         feature_dir = os.path.join(work_dir, 'db_reject')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
@@ -262,6 +266,7 @@ class FeatureStore:
         documents = []
         for i, p in enumerate(ps):
             logger.debug('{}/{}..'.format(i, len(ps)))
+            basename = os.path.basename(p)
 
             is_text = False
             for suffix in self.text_suffix:
@@ -283,9 +288,9 @@ class FeatureStore:
 
             if p.endswith(self.md_suffix):
                 # reject base not clean md
-                text = ''
+                text = basename + '\n'
                 with open(p, encoding='utf8') as f:
-                    text = f.read()
+                    text += f.read()
                 if len(text) <= 1:
                     continue
 
@@ -297,24 +302,28 @@ class FeatureStore:
 
             elif p.endswith(self.pdf_suffix):
                 pdf_document = PyPDFLoader(p).load()
+                pdf_document.page_content = basename + '\n' + pdf_document.page_content
                 documents += self.text_splitter.split_documents(pdf_document)
 
             elif is_text:
-                content = ''
+                content = basename + '\n'
                 with open(p) as f:
-                    content = f.read()
+                    content += f.read()
                 documents += self.text_splitter.create_documents([content])
 
             elif is_table:
                 if p.endswith('.csv'):
                     csv_document = CSVLoader(file_path=p).load()
+                    csv_document.page_content = basename + '\n' + csv_document.page_content
                     documents += self.text_splitter.create_documents(csv_document)
                 else:
                     # for .xsl and .xslx
                     xsl_document = UnstructuredExcelLoader(p, mode='elements').load()
+                    xsl_document.page_content = basename + '\n' + xsl_document.page_content
                     documents += self.text_splitter.create_documents(csv_document)
             elif is_docx:
                 docx_document = Docx2txtLoader(p).load()
+                docx_document.page_content = basename + '\n' + docx_document.page_content
                 documents += self.text_splitter.create_documents(docx_document)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
@@ -378,11 +387,11 @@ class FeatureStore:
             str: The best matching text, or None
         """
         if question is None or len(question) < 1:
-            return None, None
+            return None, None, []
 
         reject, docs = self.is_reject(question=question)
         if reject:
-            return None, None
+            return None, None, []
 
         docs = self.compression_retriever.get_relevant_documents(question)
         chunks = []
