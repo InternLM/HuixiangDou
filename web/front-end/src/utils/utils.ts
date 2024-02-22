@@ -98,8 +98,8 @@ export const formatQuery = (basename = '') => {
 };
 
 export const Token = {
-    tokenKey: 'x_token',
-    cookieTokenKey: 'uaa-token',
+    tokenKey: 'hxd_token',
+    cookieTokenKey: 'hxd_token',
     getFromCookie() {
         return jsCookie.get(this.cookieTokenKey);
     },

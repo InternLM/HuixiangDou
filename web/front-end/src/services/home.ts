@@ -1,6 +1,6 @@
 import { request } from '@/utils/ajax';
 
-const beanPrefix = '';
+const beanPrefix = 'test';
 
 export enum MsgCode {
     success = '10000',
@@ -16,6 +16,7 @@ export interface BeanRspDto {
 }
 export interface BeanInfoDto {
     'featureStoreId': string,
+    'name': string,
     'docs': string[],
     'status': number,
     'suffix': string,
@@ -62,7 +63,7 @@ export async function getInfo(featureStoreId: string) {
 }
 
 export async function addDocs(files: string[]) {
-    return request<>('/api/v1/qalib/v1/addDocs', {
+    return request('/api/v1/qalib/v1/addDocs', {
         method: 'POST',
         headers: {
             'Content-Type': 'multipart/form-data'
@@ -85,5 +86,15 @@ export async function updateSampleInfo(positives: string, negatives: string) {
 export async function getSampleInfo() {
     return request<SampleInfoDto>('/api/v1/qalib/v1/getSampleInfo', {
         method: 'POST',
+    }, beanPrefix);
+}
+
+export async function integrateWebSearch(featureStoreId: string, webSearchToken: string) {
+    return request('/api/v1/qalib/v1/integrateWebSearch', {
+        method: 'POST',
+        data: {
+            featureStoreId,
+            webSearchToken
+        }
     }, beanPrefix);
 }

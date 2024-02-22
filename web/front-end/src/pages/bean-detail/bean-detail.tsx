@@ -1,4 +1,6 @@
-import { FC, ReactNode, useState } from 'react';
+import {
+    FC, ReactNode, useEffect, useState
+} from 'react';
 import { useLocale } from '@hooks/useLocale';
 import { useParams } from 'react-router-dom';
 import { IconFont, Switch } from 'sea-lion-ui';
@@ -6,6 +8,8 @@ import logo from '@assets/imgs/logo.png';
 import bean from '@assets/imgs/bean.png';
 import Chat from '@pages/bean-detail/components/chat';
 import classNames from 'classnames';
+import { getInfo } from '@services/home';
+import ToggleSearch from '@pages/bean-detail/components/toggle-search';
 import styles from './bean-detail.module.less';
 
 export interface BeanDetailProps {
@@ -14,15 +18,37 @@ export interface BeanDetailProps {
 
 export enum BeanState {
     'failed' = -1,
-    'normal' = 0,
-    'exception' = 2,
+    'created' = 0,
+    'finished' = 2,
 }
 
 const BeanDetail: FC<BeanDetailProps> = () => {
     const locales = useLocale('beanDetail');
-    const beanName = decodeURI(useParams('beanName')?.beanName);
-    const [beanState, setBeanState] = useState(BeanState.failed);
+    const beanId = decodeURI(useParams()?.beanName);
+    const [beanState, setBeanState] = useState(BeanState.created);
+
+    const state = {
+        [BeanState.failed]: locales.createFailed,
+        [BeanState.created]: locales.created,
+        [BeanState.finished]: locales.createSuccess,
+    };
+    const color = {
+        [BeanState.failed]: '#f1bcbc',
+        [BeanState.created]: '#ffe2bf',
+        [BeanState.finished]: '#e3f9dd',
+    };
+
     const content = [
+        {
+            title: locales.addDocs,
+            children: (
+                <div className={styles.btn}>
+                    {locales.docs}
+                    <IconFont icon="icon-DocOutlined" />
+                </div>
+            ),
+            key: 'docs'
+        },
         {
             title: locales.addExamples,
             children: (
@@ -32,16 +58,6 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 </div>
             ),
             key: 'examples'
-        },
-        {
-            title: locales.addDocs,
-            children: (
-                <div className={styles.btn}>
-                    {locales.viewAndEdit}
-                    <IconFont icon="icon-FeedbackOutlined" />
-                </div>
-            ),
-            key: 'docs'
         },
         {
             title: locales.accessWeChat,
@@ -65,10 +81,20 @@ const BeanDetail: FC<BeanDetailProps> = () => {
         },
         {
             title: locales.switchSearch,
-            children: <Switch />,
+            children: <ToggleSearch />,
             key: 'switchSearch'
         },
     ];
+
+    useEffect(() => {
+        (async () => {
+            const res = await getInfo(beanId);
+            if (res) {
+                setBeanState(res.status);
+            }
+        })();
+    }, [beanId]);
+
     return (
         <div className={styles.beanDetail}>
             <div className={styles.logo}>
@@ -80,8 +106,13 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                     <img className={styles.titleImg} src={bean} />
                 </div>
                 <div>
-                    <strong>{beanName}</strong>
-                    <span className={classNames(styles.beanState, { [styles.failState]: beanState !== 0 })}>异常</span>
+                    <strong>{beanId}</strong>
+                    <span
+                        className={styles.beanState}
+                        style={{ background: color[beanState] }}
+                    >
+                        {state[beanState]}
+                    </span>
                 </div>
             </div>
             <div className={styles.statisticsWrapper}>

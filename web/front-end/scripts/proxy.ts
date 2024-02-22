@@ -11,13 +11,12 @@ const ProxyConfig = {
         target: 'http://staging.opengvlab.shlab.org.cn',
         changeOrigin: true,
     },
-    '/gw': {
-        target: 'http://dev.opencompass.org.cn',
+    '/test': {
+        target: 'http://10.1.52.13:23333',
         changeOrigin: true,
         secure: false,
         rewrite: path => {
-            console.log(path);
-            return path.replace('^', '');
+            return path.replace('^/test', '');
         },
     }
     // '/gw/app-center': {
