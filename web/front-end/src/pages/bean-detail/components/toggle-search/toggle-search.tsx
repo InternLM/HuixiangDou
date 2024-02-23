@@ -46,7 +46,13 @@ const ToggleSearch: FC<ToggleSearchProps> = ({ webSearchToken, children }) => {
                 onClose={() => setOpenModal(false)}
             >
                 <div>开启网络搜索，知识助手可以综合网络结果和本地文档给出答复</div>
-                <div>1. 注册 Serper  获取限量免费 token</div>
+                <div>
+                    1. 注册
+                    {' '}
+                    <a target="_blank" href="https://serper.dev/api-key" rel="noreferrer">Serper</a>
+                    {' '}
+                    获取限量免费 token
+                </div>
                 <div>2. 填入 token, 新 token 会覆盖旧 token </div>
                 <div className={styles.inputWrapper}>
                     <Input
