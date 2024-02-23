@@ -1,11 +1,13 @@
 import {
     FC, ReactNode, useEffect, useState
 } from 'react';
-import { IconFont, Modal } from 'sea-lion-ui';
+import {
+    CountInput, IconFont, Input, Modal
+} from 'sea-lion-ui';
 import { useLocale } from '@hooks/useLocale';
 import Button from '@components/button/button';
 import { useParams } from 'react-router-dom';
-import { getSampleInfo } from '@services/home';
+import { getSampleInfo, updateSampleInfo } from '@services/home';
 import styles from './example.module.less';
 
 export interface ExampleProps {
@@ -18,16 +20,26 @@ const Example: FC<ExampleProps> = () => {
     const [openModal, setOpenModal] = useState(false);
     const [negatives, setNegatives] = useState(['']);
     const [positives, setPositives] = useState(['']);
+    const [inputValue, setInputValue] = useState('');
 
     useEffect(() => {
-        (async () => {
-            const res = await getSampleInfo();
-            if (res) {
-                setPositives(res.positives);
-                setNegatives(res.negatives);
-            }
-        })();
-    }, [beanId]);
+        if (openModal) {
+            (async () => {
+                const res = await getSampleInfo();
+                if (res) {
+                    setPositives(res.positives);
+                    setNegatives(res.negatives);
+                    setInputValue(res.negatives.join('\n'));
+                }
+            })();
+        }
+    }, [beanId, openModal]);
+
+    const handleSave = async () => {
+        const newNegatives = inputValue.split('\n');
+        setNegatives(newNegatives);
+        const res = await updateSampleInfo([], newNegatives);
+    };
 
     return (
         <div className={styles.example}>
@@ -41,11 +53,15 @@ const Example: FC<ExampleProps> = () => {
                 footer={(<div />)}
                 onClose={() => setOpenModal(false)}
             >
-                <div>
-                    {positives.map((item) => (
-                        <div>{item || 'xxx'}</div>
-                    ))}
+                <div className={styles.editor}>
+                    <CountInput
+                        textarea
+                        rows={12}
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e)}
+                    />
                 </div>
+                <Button onClick={handleSave}>保存</Button>
             </Modal>
         </div>
     );
