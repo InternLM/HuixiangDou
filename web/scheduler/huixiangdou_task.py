@@ -7,25 +7,58 @@ from web.orm.redis import r
 import web.constant.biz_constant as biz_const
 from web.model.huixiangdou import HxdTaskResponse, HxdTaskType
 from redis.lock import Lock
+from web.model.qalib import QalibInfo, QalibSample
 
 logger = log(__name__)
 scheduler = AsyncIOScheduler()
 
 
-def do_task_add_doc():
+def do_task_add_doc(response: HxdTaskResponse):
+    """
+    update qalib's status from huixiangdou response's code
+    :param response:
+    :return:
+    """
     logger.info("do task: add doc")
-    pass
+    fid = response.feature_store_id
+    name = biz_const.RDS_KEY_QALIB_INFO
+    o = r.hget(name=name, key=fid)
+    if not o:
+        logger.error(f"can't find {name}:{fid} in redis.")
+        return
+    qalib_info = QalibInfo(**json.loads(o))
+    qalib_info.status = response.code
+    r.hset(name=name, key=fid, value=qalib_info.model_dump_json())
+    logger.info(f"do task={response.type} with fid={response.feature_store_id}'s result: {response.status}")
 
 
-def do_task_update_sample():
+def do_task_update_sample(response: HxdTaskResponse):
+    """
+    update sample's confirm status from response's code
+    :param response:
+    :return:
+    """
     logger.info("do task: update sample")
+    name = biz_const.RDS_KEY_SAMPLE_INFO
+    fid = response.feature_store_id
+    o = r.hget(name=name, key=fid)
+    if not o:
+        logger.error(f"can't find {name}:{fid} in redis")
+        return
+    sample = QalibSample(**json.loads(o))
+    sample.confirmed = True if response.code == 0 else False
+    r.hset(name=name, key=fid, value=sample.model_dump_json())
 
+
+def do_task_update_pipeline(response: HxdTaskResponse):
+    logger.info("do task: update pipeline")
+    # todo
     pass
 
 
-def do_task_update_pipeline():
+def do_task_update_chat(response: HxdTaskResponse):
     logger.info("do task: update pipeline")
-
+    # todo
     pass
 
 
@@ -44,11 +77,13 @@ async def sync_hxd_task_response() -> None:
         return
     task_type = hxd_task_response.type
     if task_type == HxdTaskType.ADD_DOC:
-        do_task_add_doc()
+        do_task_add_doc(hxd_task_response)
     elif task_type == HxdTaskType.UPDATE_SAMPLE:
-        do_task_update_sample()
+        do_task_update_sample(hxd_task_response)
     elif task_type == HxdTaskType.UPDATE_PIPELINE:
-        do_task_update_pipeline()
+        do_task_update_pipeline(hxd_task_response)
+    elif task_type == HxdTaskType.CHAT:
+        do_task_update_chat(hxd_task_response)
     else:
         logger.error(f"unrecognized task type: {task_type}")
     return

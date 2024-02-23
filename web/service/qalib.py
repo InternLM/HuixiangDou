@@ -180,7 +180,7 @@ class QaLibService:
         positives = body.positives
         negatives = body.negatives
         qalib_sample = QalibSample(name=hxd_token.qa_name, featureStoreId=hxd_token.jti, positives=positives,
-                                   negatives=negatives)
+                                   negatives=negatives, confirmed=False)
         # update sample to redis
         r.hset(name=biz_const.RDS_KEY_SAMPLE_INFO, key=hxd_token.jti, value=qalib_sample.model_dump_json())
         # update sample to huixiangdou task

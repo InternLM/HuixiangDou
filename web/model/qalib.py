@@ -39,3 +39,4 @@ class QalibPositiveNegative(BaseModel):
 class QalibSample(QalibPositiveNegative):
     name: str
     featureStoreId: str
+    confirmed: bool
