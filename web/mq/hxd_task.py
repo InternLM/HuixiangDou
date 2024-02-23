@@ -26,5 +26,3 @@ class HuixiangDouTask:
             return False
         return True
 
-    def listenTask(self):
-        pass
