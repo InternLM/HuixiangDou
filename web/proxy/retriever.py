@@ -8,8 +8,6 @@ import shutil
 from pathlib import Path
 
 import numpy as np
-import PyPDF2
-import pytoml
 from BCEmbedding.tools.langchain import BCERerank
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import ContextualCompressionRetriever
@@ -17,9 +15,6 @@ from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
                                      RecursiveCharacterTextSplitter)
 from langchain.vectorstores.faiss import FAISS as Vectorstore
-from langchain_community.document_loaders import (CSVLoader, Docx2txtLoader,
-                                                  PyPDFLoader,
-                                                  UnstructuredExcelLoader)
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_core.documents import Document
 from loguru import logger
@@ -31,14 +26,12 @@ class Retriever:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
 
-    def __init__(self,
-                 embeddings,
-                 reranker,
-                 work_dir: str,
+    def __init__(self, embeddings, reranker, work_dir: str,
                  reject_throttle: float) -> None:
         """Init with model device type and config."""
         self.reject_throttle = reject_throttle
-        self.rejecter = Vectorstore.load_local(os.path.join(work_dir, 'db_reject'),
+        self.rejecter = Vectorstore.load_local(os.path.join(
+            work_dir, 'db_reject'),
                                                embeddings=self.embeddings)
         self.retriever = Vectorstore.load_local(
             os.path.join(work_dir, 'db_response'),
@@ -101,11 +94,11 @@ class Retriever:
         context = ''
         references = []
         # for doc in docs:
-            # logger.debug(('db', doc.metadata, question))
-            # chunks.append(doc.page_content)
-            # filepath = doc.metadata['source']
-            # if filepath not in files:
-            #     files.append(filepath)
+        # logger.debug(('db', doc.metadata, question))
+        # chunks.append(doc.page_content)
+        # filepath = doc.metadata['source']
+        # if filepath not in files:
+        #     files.append(filepath)
 
         # add file content to context, within `context_max_length`
         for idx, doc in enumerate(docs):

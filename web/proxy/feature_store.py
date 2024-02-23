@@ -8,7 +8,6 @@ import shutil
 from pathlib import Path
 
 import numpy as np
-import PyPDF2
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -86,11 +85,13 @@ class FeatureStore:
         ])
         self.image_suffix = ['.jpg', '.jpeg', '.png', '.bmp']
         self.md_suffix = '.md'
-        self.text_suffix = ['.txt', '.go', '.py', '.c', '.h', '.js', '.ts', '.text']
-        self.table_suffix = ['.xslx', '.xsl', '.csv']
+        self.text_suffix = [
+            '.txt', '.go', '.py', '.c', '.h', '.js', '.ts', '.text'
+        ]
+        self.excel_suffix = ['.xslx', '.xsl', '.csv']
         self.pdf_suffix = '.pdf'
-        self.docx_suffix = ['.docx', '.doc']
-        self.normal_suffix = self.md_suffix + self.text_suffix + self.table_suffix + self.pdf_suffix + self.docx_suffix
+        self.word_suffix = ['.docx', '.doc']
+        self.normal_suffix = self.md_suffix + self.text_suffix + self.excel_suffix + self.pdf_suffix + self.word_suffix
 
     def is_chinese_doc(self, text):
         """If the proportion of Chinese in a bilingual document exceeds 0.5%,
@@ -182,14 +183,53 @@ class FeatureStore:
             text = f.read()
         text = os.path.basename(filepath) + '\n' + self.clean_md(text)
         if len(text) <= 1:
-            continue
+            return []
 
-        chunks = self.split_md(text=text, source=os.path.abspath(p))
+        chunks = self.split_md(text=text, source=os.path.abspath(filepath))
         for chunk in chunks:
             new_doc = Document(page_content=chunk,
-                                metadata={'source': os.path.abspath(p)})
+                               metadata={'source': os.path.abspath(filepath)})
             documents.append(new_doc)
         return documents
+
+    def get_file_type(self, filepath: str):
+        if filepath.endswith(self.pdf_suffix):
+            return 'pdf'
+
+        if filepath.endswith(self.md_suffix):
+            return 'md'
+
+        for suffix in self.text_suffix:
+            if filepath.endswith(suffix):
+                return 'text'
+
+        for suffix in self.word_suffix:
+            if filepath.endswith(suffix):
+                return 'word'
+
+        for suffix in self.excel_suffix:
+            if filepath.endswith(suffix):
+                return 'excel'
+        return None
+
+    def read_file_content(self, filepath: str):
+        file_type = self.get_file_type(filepath)
+        if file_type == 'md' or file_type == 'text':
+            with open(filepath) as f:
+                return f.read()
+
+        elif file_type == 'pdf':
+            return PyPDFLoader(filepath).load().page_content
+
+        elif file_type == 'excel':
+            if filepath.endswith('.csv'):
+                return CSVLoader(file_path=filepath).load().page_content
+            else:
+                return UnstructuredExcelLoader(
+                    filepath, mode='elements').load().page_content
+
+        elif file_type == 'word':
+            return Docx2txtLoader(filepath).load().page_content
 
     def ingress_response(self, file_dir: str, work_dir: str):
         """Extract the features required for the response pipeline based on the
@@ -205,49 +245,36 @@ class FeatureStore:
             basename = os.path.basename(p)
             logger.debug('{}/{}..'.format(i, len(ps)))
 
-            is_text = False
-            for suffix in self.text_suffix:
-                if p.endswith(suffix):
-                    is_text = True
-                    break
-
-            is_docx = False
-            for suffix in self.docx_suffix:
-                if p.endswith(suffix):
-                    is_docx = True
-                    break
-
-            is_table = False
-            for suffix in self.table_suffix:
-                if p.endswith(suffix):
-                    is_table = True
-                    break
-
-            if p.endswith(self.md_suffix):
+            file_type = self.get_file_type(p)
+            if file_type == 'md':
                 documents += self.get_md_documents(p)
 
-            elif p.endswith(self.pdf_suffix):
+            elif file_type == 'pdf':
                 pdf_document = PyPDFLoader(p).load()
                 pdf_document.page_content = basename + '\n' + pdf_document.page_content
                 documents += self.text_splitter.split_documents(pdf_document)
 
-            elif is_text:
+            elif file_type == 'text':
                 content = basename + '\n'
                 with open(p) as f:
                     content += f.read()
                 documents += self.text_splitter.create_documents([content])
 
-            elif is_table:
+            elif file_type == 'excel':
                 if p.endswith('.csv'):
                     csv_document = CSVLoader(file_path=p).load()
                     csv_document.page_content = basename + '\n' + csv_document.page_content
-                    documents += self.text_splitter.create_documents(csv_document)
+                    documents += self.text_splitter.create_documents(
+                        csv_document)
                 else:
                     # for .xsl and .xslx
-                    xsl_document = UnstructuredExcelLoader(p, mode='elements').load()
+                    xsl_document = UnstructuredExcelLoader(
+                        p, mode='elements').load()
                     xsl_document.page_content = basename + '\n' + xsl_document.page_content
-                    documents += self.text_splitter.create_documents(csv_document)
-            elif is_docx:
+                    documents += self.text_splitter.create_documents(
+                        csv_document)
+
+            elif file_type == 'word':
                 docx_document = Docx2txtLoader(p).load()
                 docx_document.page_content = basename + '\n' + docx_document.page_content
                 documents += self.text_splitter.create_documents(docx_document)
@@ -268,25 +295,8 @@ class FeatureStore:
             logger.debug('{}/{}..'.format(i, len(ps)))
             basename = os.path.basename(p)
 
-            is_text = False
-            for suffix in self.text_suffix:
-                if p.endswith(suffix):
-                    is_text = True
-                    break
-
-            is_docx = False
-            for suffix in self.docx_suffix:
-                if p.endswith(suffix):
-                    is_docx = True
-                    break
-
-            is_table = False
-            for suffix in self.table_suffix:
-                if p.endswith(suffix):
-                    is_table = True
-                    break
-
-            if p.endswith(self.md_suffix):
+            file_type = self.get_file_type(p)
+            if file_type == 'md':
                 # reject base not clean md
                 text = basename + '\n'
                 with open(p, encoding='utf8') as f:
@@ -297,31 +307,35 @@ class FeatureStore:
                 chunks = self.split_md(text=text, source=os.path.abspath(p))
                 for chunk in chunks:
                     new_doc = Document(page_content=chunk,
-                                    metadata={'source': os.path.abspath(p)})
+                                       metadata={'source': os.path.abspath(p)})
                     documents.append(new_doc)
 
-            elif p.endswith(self.pdf_suffix):
+            elif file_type == 'pdf':
                 pdf_document = PyPDFLoader(p).load()
                 pdf_document.page_content = basename + '\n' + pdf_document.page_content
                 documents += self.text_splitter.split_documents(pdf_document)
 
-            elif is_text:
+            elif file_type == 'text':
                 content = basename + '\n'
                 with open(p) as f:
                     content += f.read()
                 documents += self.text_splitter.create_documents([content])
 
-            elif is_table:
+            elif file_type == 'excel':
                 if p.endswith('.csv'):
                     csv_document = CSVLoader(file_path=p).load()
                     csv_document.page_content = basename + '\n' + csv_document.page_content
-                    documents += self.text_splitter.create_documents(csv_document)
+                    documents += self.text_splitter.create_documents(
+                        csv_document)
                 else:
                     # for .xsl and .xslx
-                    xsl_document = UnstructuredExcelLoader(p, mode='elements').load()
+                    xsl_document = UnstructuredExcelLoader(
+                        p, mode='elements').load()
                     xsl_document.page_content = basename + '\n' + xsl_document.page_content
-                    documents += self.text_splitter.create_documents(csv_document)
-            elif is_docx:
+                    documents += self.text_splitter.create_documents(
+                        csv_document)
+
+            elif file_type == 'word':
                 docx_document = Docx2txtLoader(p).load()
                 docx_document.page_content = basename + '\n' + docx_document.page_content
                 documents += self.text_splitter.create_documents(docx_document)
@@ -407,9 +421,9 @@ class FeatureStore:
         # add file content to context, within `context_max_length`
         for idx, doc in enumerate(docs):
             chunk = doc.page_content
-            file_text = ''
-            with open(doc.metadata['source']) as f:
-                file_text = f.read()
+            file_path = doc.metadata['source']
+            file_text = self.read_file_content(file_path)
+
             if len(file_text) + len(context) > context_max_length:
                 # add and break
                 add_len = context_max_length - len(context)
@@ -456,10 +470,10 @@ class FeatureStore:
 
         def copy_normal(filepath: str):
             basename = os.path.basename(filepath)
-            shutil.copy(_file, os.path.join(file_dir, basename))
+            shutil.copy(filepath, os.path.join(file_dir, basename))
 
         def copy_image(filepath: str):
-            // TODO use multimodal model
+            # TODO use multimodal model
             pass
 
         sucess_cnt = 0
@@ -484,14 +498,20 @@ class FeatureStore:
             else:
                 try:
                     handler(filepath)
-                    sucess_cnt +=1
+                    sucess_cnt += 1
                 except Exception as e:
                     fail_cnt += 1
                     logger.error(str(e))
-        logger.debug(f'preprocess input {len(filepaths)} files, {sucess_cnt} success, {fail_cnt} fail, {skip_cnt} skip. ')
+        logger.debug(
+            f'preprocess input {len(filepaths)} files, {sucess_cnt} success, {fail_cnt} fail, {skip_cnt} skip. '
+        )
         return file_dir, (sucess_cnt, fail_cnt, skip_cnt)
 
-    def update_throttle(self, config_path: str = 'config.ini', good_questions=[], bad_questions=[]):
+    def update_throttle(self,
+                        work_dir: str,
+                        config_path: str = 'config.ini',
+                        good_questions=[],
+                        bad_questions=[]):
         """Update reject throttle based on positive and negative examples."""
         if len(good_questions) == 0 or len(bad_questions) == 0:
             raise Exception('good and bad question examples cat not be empty.')
@@ -523,9 +543,7 @@ class FeatureStore:
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
 
-    def initialize(self,
-                   filepaths: list,
-                   work_dir: str):
+    def initialize(self, filepaths: list, work_dir: str):
         """Initializes response and reject feature store.
 
         Only needs to be called once. Also calculates the optimal threshold
@@ -535,11 +553,13 @@ class FeatureStore:
         logger.info(
             'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
-        file_dir, counter = self.preprocess(filepaths=filepaths, work_dir=work_dir)
+        file_dir, counter = self.preprocess(filepaths=filepaths,
+                                            work_dir=work_dir)
         self.ingress_response(file_dir=file_dir, work_dir=work_dir)
         self.ingress_reject(file_dir=file_dir, work_dir=work_dir)
         empty_cache()
         return counter
+
 
 def parse_args():
     """Parse command-line arguments."""
@@ -651,9 +671,9 @@ if __name__ == '__main__':
 
         filepaths = list(Path(args.repo_dir).glob('**/*'))
 
-        fs_init.initialize(filepaths=filepaths,
-                           work_dir=args.work_dir)
-        fs_init.update_throttle(good_questions=good_questions, bad_questions=bad_questions)
+        fs_init.initialize(filepaths=filepaths, work_dir=args.work_dir)
+        fs_init.update_throttle(good_questions=good_questions,
+                                bad_questions=bad_questions)
         del fs_init
 
     test_reject(args.sample)

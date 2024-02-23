@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from types import SimpleNamespace
 
@@ -73,7 +74,7 @@ class ErrorCode(Enum):
 
 class Queue:
 
-    def __init__(self, name, namespace='HuiXiangDou', **redis_kwargs):
+    def __init__(self, name, namespace='HuixiangDou', **redis_kwargs):
         self.__db = redis.Redis(**redis_kwargs)
         self.key = '%s:%s' % (namespace, name)
 
