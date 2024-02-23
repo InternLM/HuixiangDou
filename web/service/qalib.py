@@ -2,7 +2,8 @@ import json
 import os.path
 
 from web.model.base import BaseBody
-from web.model.qalib import QalibInfo, QalibPositiveNegative, QalibSample, QalibStatistic
+from web.model.qalib import QalibInfo, QalibPositiveNegative, QalibSample
+from web.model.statistic import StatisticTotal
 from web.orm.redis import r
 from web.util.log import log
 import web.util.str as str_util
@@ -10,7 +11,6 @@ import web.constant.biz_constant as biz_const
 from fastapi import Response, Request, File, UploadFile
 from web.model.hxd_token import HxdToken
 from typing import List, Union
-from tqdm import tqdm
 
 logger = log(__name__)
 
@@ -115,7 +115,7 @@ class QaLibService:
     async def info_statistic(self):
         qalib_total = r.hlen(biz_const.RDS_KEY_QALIB_INFO)
         # todo more statistic data will be added
-        data = QalibStatistic(qalibTotal=qalib_total)
+        data = StatisticTotal(qalibTotal=qalib_total)
         return BaseBody(
             data=data
         )

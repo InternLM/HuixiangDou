@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import web.api.access as access
 import web.api.qalib as qalib
+import web.api.statistic as statistic
 from web.config.logging import LOGGING_CONFIG
 
 # log
@@ -23,6 +24,7 @@ app.add_middleware(
 )
 app.include_router(router=access.access_api, prefix=f"/{API_VER}/access")
 app.include_router(router=qalib.qalib_api, prefix=f"/{API_VER}/qalib")
+app.include_router(router=statistic.statistic_api, prefix=f"/{API_VER}/statistic")
 
 
 def main():
