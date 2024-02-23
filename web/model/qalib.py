@@ -20,10 +20,11 @@ class WebSearch(BaseModel):
 
 
 class QalibInfo(BaseModel):
-    featureStoreId: str
-    name: str
-    docs: Optional[List] = None
-    status: int
+    featureStoreId: Optional[str] = None
+    name: Optional[str] = None
+    docs: Optional[List[str]] = []
+    docBase: Optional[str] = None
+    status: Optional[int] = None
     suffix: Optional[str] = None
     feishu: Optional[Feishu] = None
     wechat: Optional[Wechat] = None

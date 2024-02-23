@@ -4,9 +4,12 @@ from web.util.log import log
 logger = log(__name__)
 
 # redis
-RDS_KEY_LOGIN = "hxd:login:info"
-RDS_KEY_QALIB_INFO = "hxd:qalib:info"
-RDS_KEY_SAMPLE_INFO = "hxd:qalib:sample"
+RDS_KEY_LOGIN = "HuixiangDou:login:info"
+RDS_KEY_QALIB_INFO = "HuixiangDou:qalib:info"
+RDS_KEY_SAMPLE_INFO = "HuixiangDou:qalib:sample"
+RDS_KEY_HXD_TASK = "HuixiangDou:Task"
+RDS_KEY_HXD_TASK_RESPONSE = "HuixiangDou:TaskResponse"
+RDS_KEY_SCHEDULER = "HuixiangDou:sched"
 
 # jwt
 JWT_HEADER = {

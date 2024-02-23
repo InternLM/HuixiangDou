@@ -3,7 +3,7 @@ import string
 import time
 from web.constant.biz_constant import JWT_SECRET
 import jwt
-from web.model.hxd_token import HxdToken
+from web.model.huixiangdou import HxdToken
 
 
 def gen_random_string(length=4) -> str:
