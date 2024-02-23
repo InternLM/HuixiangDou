@@ -24,6 +24,7 @@ export interface BeanInfoDto {
     'featureStoreId': string,
     'name': string,
     'docs': string[],
+    'docsBase': string,
     'status': number,
     'suffix': string,
     'feishu': {
@@ -57,6 +58,10 @@ export interface StatisticDto {
     'servedTotal': number,
     'realServedTotal': number
 }
+export interface DocsRspDto {
+    docsBase: string;
+    docs: string[]
+}
 
 export async function getStatistic() {
     return request<StatisticDto>('/api/v1/statistic/v1/total', {
@@ -77,23 +82,19 @@ export async function loginBean(name: string, password: string) {
     }, beanPrefix);
 }
 
-export async function getInfo(featureStoreId: string) {
+export async function getInfo() {
     return request<BeanInfoDto>('/api/v1/qalib/v1/getInfo', {
         method: 'POST',
-        data: {
-            featureStoreId
-        }
     }, beanPrefix);
 }
 
-export async function addDocs(data: FormData) {
+export async function addDocs(file) {
+    const data = new FormData();
+    data.append('files', file);
     return request('/api/v1/qalib/v1/addDocs', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        },
         data
-    }, beanPrefix);
+    });
 }
 
 export async function updateSampleInfo(positives: string, negatives: string) {

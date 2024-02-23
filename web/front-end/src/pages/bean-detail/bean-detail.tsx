@@ -25,9 +25,7 @@ export enum BeanState {
 
 const BeanDetail: FC<BeanDetailProps> = () => {
     const locales = useLocale('beanDetail');
-    const beanId = decodeURI(useParams()?.beanName);
     const [name, setName] = useState('');
-    const [files, setFiles] = useState(['']);
     const [feishuInfo, setFeishuInfo] = useState(null);
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [searchToken, setSearchToken] = useState('');
@@ -46,22 +44,21 @@ const BeanDetail: FC<BeanDetailProps> = () => {
 
     useEffect(() => {
         (async () => {
-            const res = await getInfo(beanId);
+            const res = await getInfo();
             if (res) {
                 setName(res.name);
                 setBeanState(res.status);
-                setSearchToken(res.webSearch.token);
-                setFiles(res.docs);
+                setSearchToken(res.webSearch?.token);
             }
         })();
-    }, [beanId]);
+    }, []);
 
     const content = useMemo(() => {
         return (
             [
                 {
                     title: locales.addDocs,
-                    children: <ImportDocs files={files} />,
+                    children: <ImportDocs />,
                     key: 'docs'
                 },
                 {
@@ -96,7 +93,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 },
             ]
         );
-    }, [locales, files, searchToken]);
+    }, [locales, searchToken]);
 
     return (
         <div className={styles.beanDetail}>
