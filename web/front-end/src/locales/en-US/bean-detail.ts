@@ -15,5 +15,6 @@ export default {
         createFailed: '创建失败',
         created: '创建完成，尚未添加文档',
         createSuccess: '创建完成',
+        upload: '上传',
     }
 };

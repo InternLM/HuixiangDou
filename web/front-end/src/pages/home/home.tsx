@@ -1,8 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useLocale } from '@hooks/useLocale';
 import { Input, message } from 'sea-lion-ui';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import logo from '@assets/imgs/logo.png';
+import {
+    getStatistic, loginBean, MsgCode, StatisticDto
+} from '@services/home';
 import styles from './home.module.less';
 
 const Home = () => {
@@ -10,6 +13,7 @@ const Home = () => {
     const [beanName, setBeanName] = useState('');
     const [beanPwd, setBeanPwd] = useState('');
     const [existed, setExisted] = useState(false);
+    const [statistic, setStatistic] = useState<StatisticDto>(null);
     const locales = useLocale('home');
 
     const resetInput = () => {
@@ -17,54 +21,67 @@ const Home = () => {
         setBeanPwd('');
     };
 
-    const validateBean = (name, password) => {
-        return true;
+    const validateBean = async (name, password) => {
+        const res = await loginBean(name, password);
+        if (res.msgCode !== MsgCode.success) {
+            message.error(res.msg);
+        }
+        if (res.msgCode === MsgCode.success && res.data.featureStoreId) {
+            navigate(`/bean-detail/${res.data.featureStoreId}`);
+        }
     };
 
     const handleConfirm = () => {
         if (beanName && beanPwd) {
-            if (validateBean(beanName, beanPwd)) {
-                navigate(`/bean-detail/${encodeURI(beanName)}`);
-            } else if (!existed) {
-                setExisted(false);
-            } else {
-                message.error(locales.pwdError);
-            }
+            validateBean(beanName, beanPwd);
         }
     };
 
-    const Statistics = [
-        {
-            title: locales.bean,
-            key: 'bean',
-            number: 769
-        },
-        {
-            title: locales.WeChat,
-            key: 'WeChat',
-            number: '1,099'
-        },
-        {
-            title: locales.users,
-            key: 'users',
-            number: '29,648'
-        },
-        {
-            title: locales.activeBean,
-            key: 'activeBean',
-            number: 218
-        },
-        {
-            title: locales.feishu,
-            key: 'feishu',
-            number: 791
-        },
-        {
-            title: locales.uniqueUsers,
-            key: 'uniqueUsers',
-            number: '19,825'
-        }
-    ];
+    useEffect(() => {
+        (async () => {
+            const res = await getStatistic();
+            if (res) {
+                setStatistic(res);
+            }
+        })();
+    }, []);
+
+    const Statistics = useMemo(() => {
+        if (!statistic) return [];
+        return ([
+            {
+                title: locales.bean,
+                key: 'bean',
+                number: statistic.qalibTotal
+            },
+            {
+                title: locales.WeChat,
+                key: 'WeChat',
+                number: statistic.wechatTotal
+            },
+            {
+                title: locales.users,
+                key: 'users',
+                number: statistic.servedTotal
+            },
+            {
+                title: locales.activeBean,
+                key: 'activeBean',
+                number: statistic.lastMonthUsed
+            },
+            {
+                title: locales.feishu,
+                key: 'feishu',
+                number: statistic.feishuTotal
+            },
+            {
+                title: locales.uniqueUsers,
+                key: 'uniqueUsers',
+                number: statistic.realServedTotal
+            }
+        ]);
+    }, [locales, statistic]);
+
     return (
         <div className={styles.home}>
             <div className={styles.wrapper}>

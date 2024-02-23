@@ -5,12 +5,13 @@ import {
 import { AxiosError } from 'axios';
 import { Meta } from '@utils/ajax';
 import { openOSS } from '@config/auth';
+import { MsgCode } from '@services/home';
 
 export const handleUnauth = () => {
     if (!openOSS) return;
     // 处理一些用户权限验证
     Token.removeAll();
-    window.location.href = jumpLogin();
+    window.location.href = '/home';
 };
 
 const formatResponseData = response => {
@@ -36,7 +37,7 @@ const handleErrorAlert = response => {
 const validateAuth = response => {
     const resp = response.data;
     // 应用拦截到鉴权错误
-    if (resp && resp.msgCode === 'A0202') {
+    if (resp && [MsgCode.notAuthed, MsgCode.loginFail].includes(resp.msgCode)) {
         handleUnauth();
     }
     return response;

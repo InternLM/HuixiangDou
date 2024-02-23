@@ -1,6 +1,6 @@
 import { request } from '@/utils/ajax';
 
-const beanPrefix = 'test';
+const beanPrefix = '';
 
 export enum MsgCode {
     success = '10000',
@@ -9,10 +9,16 @@ export enum MsgCode {
     loginFail = 'A2001',
     notExist = 'A2002',
 }
-
-export interface BeanRspDto {
-    'exist': boolean,
-    'featureStoreId': string // 知识库id
+export interface BasicRespDto {
+    'msgCode': string
+    'msg': string,
+    success: boolean
+}
+export interface BeanRspDto extends BasicRespDto {
+    data: {
+        'exist': boolean,
+        'featureStoreId': string // 知识库id
+    }
 }
 export interface BeanInfoDto {
     'featureStoreId': string,
@@ -43,12 +49,30 @@ export interface SampleInfoDto {
     'negatives': string[]
 }
 
+export interface StatisticDto {
+    'qalibTotal': number,
+    'lastMonthUsed': number,
+    'wechatTotal': number,
+    'feishuTotal': number,
+    'servedTotal': number,
+    'realServedTotal': number
+}
+
+export async function getStatistic() {
+    return request<StatisticDto>('/api/v1/statistic/v1/total', {
+        method: 'GET',
+    }, beanPrefix);
+}
+
 export async function loginBean(name: string, password: string) {
     return request<BeanRspDto>('/api/v1/access/v1/login', {
         method: 'POST',
         data: {
             name,
             password
+        },
+        meta: {
+            isAllResponseBody: true
         }
     }, beanPrefix);
 }
@@ -62,14 +86,13 @@ export async function getInfo(featureStoreId: string) {
     }, beanPrefix);
 }
 
-export async function addDocs(files: string[]) {
+export async function addDocs(data: FormData) {
     return request('/api/v1/qalib/v1/addDocs', {
         method: 'POST',
         headers: {
             'Content-Type': 'multipart/form-data'
         },
-        // upload files by form-data
-        data: files
+        data
     }, beanPrefix);
 }
 

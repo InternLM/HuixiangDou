@@ -13,6 +13,7 @@ export default {
         users: '服务人次',
         uniqueUsers: '去重服务人次',
         pwdError: '密码错误',
+        noData: '暂无数据',
         welcome: 'Welcome, grateful',
         hello: 'Hi',
         hi: 'Hello',

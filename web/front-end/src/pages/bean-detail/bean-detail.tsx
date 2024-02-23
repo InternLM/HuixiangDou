@@ -1,5 +1,5 @@
 import {
-    FC, ReactNode, useEffect, useState
+    FC, ReactNode, useEffect, useMemo, useState
 } from 'react';
 import { useLocale } from '@hooks/useLocale';
 import { useParams } from 'react-router-dom';
@@ -10,6 +10,7 @@ import Chat from '@pages/bean-detail/components/chat';
 import { getInfo } from '@services/home';
 import ToggleSearch from '@pages/bean-detail/components/toggle-search';
 import Example from '@pages/bean-detail/components/example';
+import ImportDocs from '@pages/bean-detail/components/import-docs';
 import styles from './bean-detail.module.less';
 
 export interface BeanDetailProps {
@@ -25,7 +26,12 @@ export enum BeanState {
 const BeanDetail: FC<BeanDetailProps> = () => {
     const locales = useLocale('beanDetail');
     const beanId = decodeURI(useParams()?.beanName);
-    const [beanState, setBeanState] = useState(BeanState.created);
+    const [name, setName] = useState('');
+    const [files, setFiles] = useState(['']);
+    const [feishuInfo, setFeishuInfo] = useState(null);
+    const [weChatInfo, setWeChatInfo] = useState(null);
+    const [searchToken, setSearchToken] = useState('');
+    const [beanState, setBeanState] = useState(null);
 
     const state = {
         [BeanState.failed]: locales.createFailed,
@@ -38,57 +44,59 @@ const BeanDetail: FC<BeanDetailProps> = () => {
         [BeanState.finished]: '#e3f9dd',
     };
 
-    const content = [
-        {
-            title: locales.addDocs,
-            children: (
-                <div className={styles.btn}>
-                    {locales.docs}
-                    <IconFont icon="icon-DocOutlined" />
-                </div>
-            ),
-            key: 'docs'
-        },
-        {
-            title: locales.addExamples,
-            children: <Example />,
-            key: 'examples'
-        },
-        {
-            title: locales.accessWeChat,
-            children: (
-                <div className={styles.btn}>
-                    {locales.viewDetail}
-                    <IconFont icon="icon-GotoOutline" />
-                </div>
-            ),
-            key: 'accessWeChat'
-        },
-        {
-            title: locales.accessFeishu,
-            children: (
-                <div className={styles.btn}>
-                    {locales.viewDetail}
-                    <IconFont icon="icon-GotoOutline" />
-                </div>
-            ),
-            key: 'accessFeishu'
-        },
-        {
-            title: locales.switchSearch,
-            children: <ToggleSearch />,
-            key: 'switchSearch'
-        },
-    ];
-
     useEffect(() => {
         (async () => {
             const res = await getInfo(beanId);
             if (res) {
+                setName(res.name);
                 setBeanState(res.status);
+                setSearchToken(res.webSearch.token);
+                setFiles(res.docs);
             }
         })();
     }, [beanId]);
+
+    const content = useMemo(() => {
+        return (
+            [
+                {
+                    title: locales.addDocs,
+                    children: <ImportDocs files={files} />,
+                    key: 'docs'
+                },
+                {
+                    title: locales.addExamples,
+                    children: <Example />,
+                    key: 'examples'
+                },
+                {
+                    title: locales.accessWeChat,
+                    children: (
+                        <div className={styles.btn}>
+                            {locales.viewDetail}
+                            <IconFont icon="icon-GotoOutline" />
+                        </div>
+                    ),
+                    key: 'accessWeChat'
+                },
+                {
+                    title: locales.accessFeishu,
+                    children: (
+                        <div className={styles.btn}>
+                            {locales.viewDetail}
+                            <IconFont icon="icon-GotoOutline" />
+                        </div>
+                    ),
+                    key: 'accessFeishu'
+                },
+                {
+                    title: locales.switchSearch,
+                    children: <ToggleSearch webSearchToken={searchToken} />,
+                    key: 'switchSearch'
+                },
+            ]
+        );
+    }, [locales, files, searchToken]);
 
     return (
         <div className={styles.beanDetail}>
@@ -101,7 +109,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                     <img className={styles.titleImg} src={bean} />
                 </div>
                 <div>
-                    <strong>{beanId}</strong>
+                    <strong>{name}</strong>
                     <span
                         className={styles.beanState}
                         style={{ background: color[beanState] }}
