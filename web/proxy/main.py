@@ -1,6 +1,7 @@
 # 监听 HuiXiangDou:Task queue
 import json
 import os
+import pdb
 import shutil
 import time
 import types
@@ -17,7 +18,7 @@ from helper import ErrorCode, Queue, TaskCode, parse_json_str
 from langchain.embeddings import HuggingFaceEmbeddings
 from loguru import logger
 from retriever import Retriever
-from work import Worker
+from worker import Worker
 
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
@@ -26,13 +27,18 @@ def callback_task_state(feature_store_id: str, code: int, _type: str,
                      port=redis_port(),
                      charset='utf-8',
                      decode_responses=True)
-    db.hmset(
-        'HuixiangDou:TaskResponse', {
-            'feature_store_id': feature_store_id,
-            'code': code,
-            'type': _type,
-            'status': status
-        })
+    resp = Queue(name='TaskResponse',
+                 host=redis_host(),
+                 port=redis_port(),
+                 charset='utf-8',
+                 decode_responses=True)
+    target = {
+        'feature_store_id': feature_store_id,
+        'code': code,
+        'type': _type,
+        'status': status
+    }
+    resp.put(json.dumps(target))
 
 
 class CacheRetriever:
@@ -125,7 +131,7 @@ def callback_chat_state(feature_store_id: str, query_id: str, code: int,
             'references': ref
         }
     }
-    que.put(target)
+    que.put(json.dumps(target))
 
 
 def format_history(history):
@@ -193,7 +199,7 @@ def chat_with_featue_store(cache: CacheRetriever,
     retriever, error = cache.get(fs_id=fs_id)
 
     if error is not None:
-        chat_state(code=ErrorCode.INTERNAL_ERROR,
+        chat_state(code=ErrorCode.INTERNAL_ERROR.value,
                    status=ErrorCode.INTERNAL_ERROR.describe(),
                    text='',
                    ref=[])
@@ -209,18 +215,18 @@ def chat_with_featue_store(cache: CacheRetriever,
     history = format_history(payload.history)
     error, response, references = worker.generate(payload.content, history)
     if error != ErrorCode.SUCCESS:
-        chat_state(code=ErrorCode.INTERNAL_ERROR,
+        chat_state(code=ErrorCode.INTERNAL_ERROR.value,
                    status=ErrorCode.INTERNAL_ERROR.describe(),
                    text='',
                    ref=[])
         return
-    chat_state(code=ErrorCode.SUCCESS,
+    chat_state(code=ErrorCode.SUCCESS.value,
                status=ErrorCode.SUCCESS.describe(),
                text=response,
                ref=references)
 
 
-def build_feature_store(payload: types.SimpleNamespace):
+def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
     # "payload": {
     #     "name": "STRING",
     #     "feature_store_id": "STRING",
@@ -254,30 +260,32 @@ def build_feature_store(payload: types.SimpleNamespace):
     with open(os.path.join(BASE, fs_id, 'desc'), 'w', encoding='utf8') as f:
         f.write(payload.name)
 
-    fs = FeatureStore(config_path=configpath)
+    fs = FeatureStore(config_path=configpath,
+                      embeddings=cache.embeddings,
+                      reranker=cache.reranker)
     task_state = partial(callback_task_state,
                          feature_store_id=fs_id,
-                         _type=TaskCode.FS_ADD_DOC)
+                         _type=TaskCode.FS_ADD_DOC.value)
 
     try:
         success_cnt, fail_cnt, skip_cnt = fs.initialize(filepaths=path_list,
                                                         work_dir=workdir)
         if success_cnt == len(path_list):
             # success
-            task_state(code=ErrorCode.SUCCESS,
+            task_state(code=ErrorCode.SUCCESS.value,
                        status=ErrorCode.SUCCESS.describe())
         elif success_cnt == 0:
-            task_state(code=ErrorCode.FAILED, status='无文件被处理')
+            task_state(code=ErrorCode.FAILED.value, status='无文件被处理')
         else:
             status = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
-            task_state(code=ErrorCode.SUCCESS, status=status)
+            task_state(code=ErrorCode.SUCCESS.value, status=status)
 
     except Exception as e:
         logger.error(str(e))
-        task_state(code=ErrorCode.FAILED, status=str(e))
+        task_state(code=ErrorCode.FAILED.value, status=str(e))
 
 
-def update_sample(payload: types.SimpleNamespace):
+def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
     # "payload": {
     #     "name": "STRING",
     #     "feature_store_id": "STRING",
@@ -285,23 +293,17 @@ def update_sample(payload: types.SimpleNamespace):
     #     "negative_path": "STRING",
     # }
 
-    positive = []
-    negative = []
+    positive = payload.positive
+    negative = payload.negative
     fs_id = payload.feature_store_id
 
     # check
-    with open(payload.positve_path, encoding='utf8') as f:
-        positive = f.readlines()
-
-    with open(payload.negative_path, encoding='utf8') as f:
-        negative = f.readlines()
-
     task_state = partial(callback_task_state,
                          feature_store_id=fs_id,
-                         _type=TaskCode.FS_UPDATE_SAMPLE)
+                         _type=TaskCode.FS_UPDATE_SAMPLE.value)
 
     if len(positive) < 1 or len(negative) < 1:
-        task_state(code=ErrorCode.BAD_PARAMETER,
+        task_state(code=ErrorCode.BAD_PARAMETER.value,
                    status='正例为空。请根据真实用户问题，填写正例；同时填写几句场景无关闲聊作负例')
         return
 
@@ -313,21 +315,25 @@ def update_sample(payload: types.SimpleNamespace):
 
     if not os.path.exists(workdir) or not os.path.exists(
             repodir) or not os.path.exists(configpath):
-        task_state(code=ErrorCode.INTERNAL_ERROR,
+        task_state(code=ErrorCode.INTERNAL_ERROR.value,
                    status='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
         return
 
     try:
-        fs = FeatureStore(config_path=configpath)
-        fs.update_throttle(work_dir=workdir,
+        fs = FeatureStore(config_path=configpath,
+                          embeddings=cache.embeddings,
+                          reranker=cache.reranker)
+        fs.update_throttle(config_path=configpath,
+                           work_dir=workdir,
                            good_questions=positive,
                            bad_questions=negative)
         del fs
-        task_state(code=ErrorCode.SUCCESS, status=ErrorCode.SUCCESS.describe())
+        task_state(code=ErrorCode.SUCCESS.value,
+                   status=ErrorCode.SUCCESS.describe())
 
     except Exception as e:
         logger.error(str(e))
-        task_state(code=ErrorCode.FAILED, status=str(e))
+        task_state(code=ErrorCode.FAILED.value, status=str(e))
 
 
 def process():
@@ -339,34 +345,31 @@ def process():
     fs_cache = CacheRetriever('config-template.ini')
 
     while True:
-        try:
-            msg, error = parse_json_str(que.get())
-            if error is not None:
-                raise error
+        # try:
+        msg, error = parse_json_str(que.get())
+        if error is not None:
+            raise error
+        if msg.type == TaskCode.FS_ADD_DOC.value:
+            callback_task_state(feature_store_id=msg.payload.feature_store_id,
+                                code=ErrorCode.WORK_IN_PROGRESS.value,
+                                _type=msg.type,
+                                status=ErrorCode.WORK_IN_PROGRESS.describe())
+            fs_cache.pop(msg.payload.feature_store_id)
+            build_feature_store(fs_cache, msg.payload)
+        elif msg.type == TaskCode.FS_UPDATE_SAMPLE.value:
+            callback_task_state(feature_store_id=msg.payload.feature_store_id,
+                                code=ErrorCode.WORK_IN_PROGRESS.value,
+                                _type=msg.type,
+                                status=ErrorCode.WORK_IN_PROGRESS.describe())
+            fs_cache.pop(msg.payload.feature_store_id)
+            update_sample(fs_cache, msg.payload)
+        elif msg.type == TaskCode.CHAT.value:
+            chat_with_featue_store(fs_cache, msg.payload)
+        else:
+            logger.warning(f'unknown type {msg.type}')
 
-            if msg.type == TaskCode.FS_ADD_DOC:
-                callback_task_state(
-                    feature_store_id=msg.pyload.feature_store_id,
-                    code=ErrorCode.WORK_IN_PROGRESS,
-                    _type=msg.type,
-                    status=ErrorCode.WORK_IN_PROGRESS.describe())
-                fs_cache.pop(msg.payload.feature_store_id)
-                build_feature_store(msg.payload)
-            elif msg.type == TaskCode.FS_UPDATE_SAMPLE:
-                callback_task_state(
-                    feature_store_id=msg.pyload.feature_store_id,
-                    code=ErrorCode.WORK_IN_PROGRESS,
-                    _type=msg.type,
-                    status=ErrorCode.WORK_IN_PROGRESS.describe())
-                fs_cache.pop(msg.payload.feature_store_id)
-                update_sample(msg.payload)
-            elif msg.type == TaskCode.CHAT:
-                chat_with_featue_store(fs_cache, msg.payload)
-            else:
-                logger.warning(f'unknown type {msg.type}')
-
-        except Exception as e:
-            logger.error(str(e))
+        # except Exception as e:
+        #     logger.error(str(e))
 
 
 if __name__ == '__main__':

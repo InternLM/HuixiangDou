@@ -3,7 +3,7 @@ def redis_host():
 
 
 def redis_port():
-    return 6379
+    return 6380
 
 
 def feature_store_base_dir():
