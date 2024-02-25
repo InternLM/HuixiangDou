@@ -20,7 +20,7 @@
 
 "HuixiangDou" is a domain-specific knowledge assistant based on the LLM. Features:
 
-1. Deal with complex scenarios like group chats, answer user questions without causing message flooding.
+1. Deal with complex scenarios like **group chats**, answer user questions without message flooding.
 2. Propose an algorithm pipeline for answering technical questions.
 3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
 
