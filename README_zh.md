@@ -45,7 +45,7 @@
 
 # 🔥 运行
 
-我们将以 mmpose 为例，介绍如何把知识助手部署到飞书群
+我们将以 mmpose 和 rust-ncnn 为底库范例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
 
@@ -64,6 +64,7 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # 下载聊天话题
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/tpoisonooo/rust-ncnn  --depth=1 repodir/rust-ncnn
 
 # 建立特征库
 mkdir workdir # 创建工作目录
