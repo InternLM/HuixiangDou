@@ -20,7 +20,7 @@
 
 “茴香豆”是一个基于 LLM 的领域知识助手。特点：
 
-1. 应对群聊这类复杂场景，解答用户问题的同时，不会消息泛滥
+1. 应对**群聊**这类复杂场景，解答用户问题的同时，不会消息泛滥
 2. 提出一套解答技术问题的算法 pipeline
 3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告 arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 
@@ -45,7 +45,7 @@
 
 # 🔥 运行
 
-我们将以 mmpose 为例，介绍如何把知识助手部署到飞书群
+我们将以 mmpose 和 rust-ncnn 为底库范例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
 
@@ -64,6 +64,7 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # 下载聊天话题
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/tpoisonooo/rust-ncnn  --depth=1 repodir/rust-ncnn
 
 # 建立特征库
 mkdir workdir # 创建工作目录
