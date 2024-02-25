@@ -45,7 +45,7 @@ The following are the hardware requirements for running. It is suggested to foll
 
 # 🔥 Run
 
-We will take mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
+We will take mmpose and mmdeploy as examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
 
@@ -64,6 +64,7 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # Download chatting topics
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/open-mmlab/mmdeploy --depth=1 repodir/mmdeploy
 
 # Build a feature store
 mkdir workdir # create a working directory
