@@ -1,15 +1,20 @@
 import uvicorn
+from fastapi import FastAPI, Depends, HTTPException, Request
 from starlette.responses import HTMLResponse
 from fastapi.responses import FileResponse
 
 from web.util.log import log
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
+
 import web.api.access as access
 import web.api.qalib as qalib
 import web.api.statistic as statistic
+from web.api import chat, message
 from web.config.logging import LOGGING_CONFIG
+from web.middleware.token import check_hxd_token
 from web.scheduler.huixiangdou_task import start_scheduler, stop_scheduler
+from web.util.log import log
 from web.util.str import safe_join
 import os
 
@@ -34,8 +39,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router=access.access_api, prefix=f"/api/{API_VER}/access")
-app.include_router(router=qalib.qalib_api, prefix=f"/api/{API_VER}/qalib")
+app.include_router(router=qalib.qalib_api, prefix=f"/api/{API_VER}/qalib", dependencies=[Depends(check_hxd_token)])
 app.include_router(router=statistic.statistic_api, prefix=f"/api/{API_VER}/statistic")
+app.include_router(router=chat.chat_api, prefix=f"/api/{API_VER}/chat", dependencies=[Depends(check_hxd_token)])
+app.include_router(router=message.message_api, prefix=f"/api/{API_VER}/message")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -62,6 +69,14 @@ def on_startup():
 @app.on_event("shutdown")
 def on_shutdown():
     stop_scheduler()
+
+
+@app.exception_handler(HTTPException)
+async def global_exception_handler(_: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=exc.detail
+    )
 
 
 def main():

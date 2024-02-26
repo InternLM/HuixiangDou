@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Optional
 from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel
 
 
 class HxdToken(BaseModel):
@@ -25,6 +26,7 @@ class HxdTaskPayload(BaseModel):
     content: Optional[str] = None
     images: Optional[List[str]] = []
     history: Optional[List[HxdTaskChatHistory]] = []
+    web_search_token: Optional[str] = None
 
 
 class HxdTaskType(Enum):
@@ -44,3 +46,16 @@ class HxdTaskResponse(BaseModel):
     code: Optional[int] = None
     status: Optional[str] = None
     type: Optional[str] = None
+
+
+class ChatResponse(BaseModel):
+    code: Optional[int] = -1
+    state: Optional[str] = ""
+    text: Optional[str] = ""
+    references: Optional[list[str]] = []
+
+
+class HxdChatResponse(BaseModel):
+    feature_store_id: str
+    query_id: str
+    response: ChatResponse

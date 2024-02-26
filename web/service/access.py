@@ -1,15 +1,16 @@
 import json
 import time
 
+from fastapi import Response
+from passlib.hash import bcrypt
+
+import web.constant.biz_constant as biz_const
+import web.util.str as str
 from web.model.access import LoginBody, AccessInfo
 from web.model.base import BaseBody
 from web.orm.redis import r
+from web.service.qalib import QaLibCache, gen_suffix
 from web.util.log import log
-from passlib.hash import bcrypt
-import web.constant.biz_constant as biz_const
-import web.util.str as str
-from fastapi import Response
-from web.service.qalib import add_qalib_info, del_qalib_info
 
 logger = log(__name__)
 
@@ -43,22 +44,25 @@ def _create_qa_lib(name, hashed_pass, feature_store_id) -> bool:
     :return:
     """
     try:
-
-        if not add_access_info(name, AccessInfo(hashpass=hashed_pass, featureStoreId=feature_store_id).model_dump_json()):
+        if not add_access_info(name,
+                               AccessInfo(hashpass=hashed_pass, featureStoreId=feature_store_id).model_dump_json()):
             return False
-        if not add_qalib_info(feature_store_id, biz_const.HXD_QALIB_STATUS_INIT, name):
+        suffix = gen_suffix(feature_store_id)
+        if not QaLibCache().init_qalib_info(feature_store_id, biz_const.HXD_QALIB_STATUS_INIT, name, suffix):
             if not del_access_info(name):
                 logger.error(f"del access info by {name} failed")
             return False
+
+        # store suffix -> feature_store_id
+        QaLibCache().set_suffix_to_qalib(suffix, feature_store_id)
         return True
     except Exception as e:
         logger.error(f"{e}")
         if not del_access_info(name):
             logger.error(f"del access info by {name} failed")
-        if not del_qalib_info(feature_store_id):
+        if not QaLibCache().del_qalib_info(feature_store_id):
             logger.error(f"del qalib info by {name} failed")
         return False
-
 
 
 class LoginService:
