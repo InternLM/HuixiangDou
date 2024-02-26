@@ -3,7 +3,7 @@ import string
 import time
 from web.constant.biz_constant import JWT_SECRET
 import jwt
-from web.model.hxd_token import HxdToken
+from web.model.huixiangdou import HxdToken
 
 
 def gen_random_string(length=4) -> str:
@@ -33,6 +33,6 @@ def gen_jwt(feature_store_id: str, qa_name: str, expire: int) -> str:
     return token
 
 
-def parse_jwt(token: str) -> HxdToken:
-    hxd_token = jwt.decode(token, JWT_SECRET)
+def parse_jwt(token: str) -> dict:
+    hxd_token = jwt.decode(token, JWT_SECRET, algorithms="HS256")
     return hxd_token
