@@ -15,13 +15,13 @@ export interface IntegrateFeishuProps {
 }
 
 const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
-    feishu
+    children
 }) => {
     const [form] = Form.useForm();
     const locales = useLocale('beanDetail');
 
     const [openModal, setOpenModal] = useState(false);
-    const [feishuInfo, setFeishuInfo] = useState<Feishu>(feishu);
+    const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
 
     const handleOpen = () => {
         setOpenModal(true);

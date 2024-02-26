@@ -17,7 +17,7 @@ const Chat: FC<ChatProps> = () => {
                 ))}
             </div>
             <div className={styles.inputWrapper}>
-                <Input type="text" />
+                <Input />
                 <Button>发送</Button>
             </div>
         </div>

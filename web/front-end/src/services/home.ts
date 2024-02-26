@@ -98,7 +98,7 @@ export async function addDocs(file) {
     });
 }
 
-export async function updateSampleInfo(positives: string, negatives: string) {
+export async function updateSampleInfo(positives: string[], negatives: string[]) {
     return request<SampleInfoDto>('/api/v1/qalib/v1/updateSampleInfo', {
         method: 'POST',
         data: {

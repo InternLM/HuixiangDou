@@ -27,7 +27,7 @@ const ToggleSearch: FC<ToggleSearchProps> = ({ webSearchToken, children }) => {
             message.error('token不能为空');
             return;
         }
-        const res = await integrateWebSearch(beanId, token);
+        const res = await integrateWebSearch(token);
     };
 
     return (

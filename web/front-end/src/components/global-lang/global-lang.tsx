@@ -20,7 +20,7 @@ const GlobalLang: FC<any> = ({ children }) => {
     const value = useMemo(() => ({ locale, setLocale: setCurrentLocale }), [locale, setCurrentLocale]);
 
     return (
-        <IntlProvider locale={locale} messages={locales[locale]}>
+        <IntlProvider locale={locale}>
             <GlobalLangeContext.Provider value={value}>
                 {children}
             </GlobalLangeContext.Provider>
