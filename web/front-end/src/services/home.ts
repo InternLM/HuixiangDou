@@ -35,7 +35,7 @@ export interface BeanInfoDto {
     'docsBase': string,
     'status': number,
     'suffix': string,
-    'feishu': Feishu,
+    'lark': Feishu,
     'wechat': {
         'onMessageUrl': string
     },
@@ -89,9 +89,12 @@ export async function getInfo() {
     }, beanPrefix);
 }
 
-export async function addDocs(file) {
+export async function addDocs(files: File[]) {
     const data = new FormData();
-    data.append('files', file);
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        data.append('files', file);
+    }
     return request('/api/v1/qalib/v1/addDocs', {
         method: 'POST',
         data
@@ -118,7 +121,8 @@ export async function integrateWebSearch(webSearchToken: string) {
     return request('/api/v1/qalib/v1/integrateWebSearch', {
         method: 'POST',
         data: {
-            webSearchToken
+            webSearchToken,
+            vendor: 'google'
         }
     }, beanPrefix);
 }
