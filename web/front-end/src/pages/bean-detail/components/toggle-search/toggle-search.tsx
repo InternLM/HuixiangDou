@@ -1,6 +1,6 @@
 import { FC, ReactNode, useState } from 'react';
 import {
-    Input, message, Modal, Switch
+    Input, message, Modal
 } from 'sea-lion-ui';
 import Button from '@components/button/button';
 import { useParams } from 'react-router-dom';
