@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 from BCEmbedding.tools.langchain import BCERerank
+from file_operation import FileOperation
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
@@ -32,7 +33,7 @@ class Retriever:
         self.reject_throttle = reject_throttle
         self.rejecter = Vectorstore.load_local(os.path.join(
             work_dir, 'db_reject'),
-                                               embeddings=self.embeddings)
+                                               embeddings=embeddings)
         self.retriever = Vectorstore.load_local(
             os.path.join(work_dir, 'db_response'),
             embeddings=embeddings,
@@ -43,7 +44,7 @@ class Retriever:
                     'k': 30
                 })
         self.compression_retriever = ContextualCompressionRetriever(
-            base_compressor=self.reranker, base_retriever=self.retriever)
+            base_compressor=reranker, base_retriever=self.retriever)
 
     def cos_similarity(self, v1: list, v2: list):
         """Compute cos distance."""
@@ -60,16 +61,29 @@ class Retriever:
     def is_reject(self, question, k=20, disable_throttle=False):
         """If no search results below the threshold can be found from the
         database, reject this query."""
-        docs = []
         if disable_throttle:
-            docs = self.rejecter.similarity_search_with_relevance_scores(
+            # for searching throttle during update sample
+            docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
                 question, k=1)
+            if len(docs_with_score) < 1:
+                return True, docs_with_score
+            return False, docs_with_score
         else:
-            docs = self.rejecter.similarity_search_with_relevance_scores(
-                question, k=k, score_threshold=self.reject_throttle)
-        if len(docs) < 1:
-            return True, docs
-        return False, docs
+            # for retrieve result
+            # if no chunk passed the throttle, give the max
+            docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
+                question, k=k)
+            ret = []
+            max_score = -1
+            top1 = None
+            for (doc, score) in docs_with_score:
+                if score >= self.reject_throttle:
+                    ret.append(doc)
+                if score > max_score:
+                    max_score = score
+                    top1 = (doc, score)
+            reject = False if len(ret) > 0 else True
+            return reject, [top1]
 
     def query(self, question: str, context_max_length: int = 16000):
         """Processes a query and returns the best match from the vector store
@@ -83,32 +97,31 @@ class Retriever:
             str: The best matching text, or None
         """
         if question is None or len(question) < 1:
-            return None, None
+            return None, None, []
 
         reject, docs = self.is_reject(question=question)
+        assert (len(docs) > 0)
         if reject:
-            return None, None
+            return None, None, [
+                os.path.basename(docs[0][0].metadata['source'])
+            ]
 
         docs = self.compression_retriever.get_relevant_documents(question)
         chunks = []
         context = ''
         references = []
-        # for doc in docs:
-        # logger.debug(('db', doc.metadata, question))
-        # chunks.append(doc.page_content)
-        # filepath = doc.metadata['source']
-        # if filepath not in files:
-        #     files.append(filepath)
 
-        # add file content to context, within `context_max_length`
+        # add file text to context, until exceed `context_max_length`
+        import pdb
+        pdb.set_trace()
+
+        file_opr = FileOperation()
         for idx, doc in enumerate(docs):
             chunk = doc.page_content
             chunks.append(chunk)
 
-            file_text = ''
             source = doc.metadata['source']
-            with open(source) as f:
-                file_text = f.read()
+            file_text = file_opr.read_file(source)
             if len(file_text) + len(context) > context_max_length:
                 references.append(source)
                 # add and break
@@ -125,9 +138,14 @@ class Retriever:
                     start_index = max(0, chunk_index - (add_len - len(chunk)))
                     context += file_text[start_index:start_index + add_len]
                 break
-            context += '\n'
-            context += file_text
+
+            if source not in references:
+                context += file_text
+                context += '\n'
+                references.append(source)
 
         assert (len(context) <= context_max_length)
         logger.debug('query:{} top1 file:{}'.format(question, references[0]))
-        return '\n'.join(chunks), context, references
+        return '\n'.join(chunks), context, [
+            os.path.basename(r) for r in references
+        ]

@@ -1,4 +1,5 @@
 import json
+import pdb
 from pathlib import Path
 
 from config import feature_store_base_dir, redis_host, redis_port
@@ -15,7 +16,12 @@ task_out = Queue(name='TaskResponse',
                  port=redis_port(),
                  charset='utf-8',
                  decode_responses=True)
-import pdb
+
+chat_out = Queue(name='ChatResponse',
+                 host=redis_host(),
+                 port=redis_port(),
+                 charset='utf-8',
+                 decode_responses=True)
 
 
 def test_create_fs():
@@ -33,7 +39,7 @@ def test_create_fs():
     file_list = [str(x) for x in list(Path(base_dir).glob('*'))]
     target['payload']['file_list'] = file_list
     print(target)
-    task_in.put(json.dumps(target))
+    task_in.put(json.dumps(target, ensure_ascii=False))
 
     out = task_out.get()
     print(out)
@@ -61,15 +67,57 @@ def test_update_sample():
         }
     }
     print(target)
-    task_in.put(json.dumps(target))
+    task_in.put(json.dumps(target, ensure_ascii=False))
 
     out = task_out.get()
     print(out)
 
     out = task_out.get()
     print(out)
+
+
+def test_chat():
+    # "payload": {
+    #     "feature_store_id": "STRING",
+    #     "query_id": "STRING",
+    #     "content": "STRING",
+    #     "images": ["STRING"],
+    #     "history": [{
+    #         "sender": Integer,
+    #         "content": "STRING"
+    #     }]
+    # }
+
+    queries = ['请问公寓退房需要注意什么？']
+
+    for query in queries:
+        target = {
+            'type': TaskCode.CHAT.value,
+            'payload': {
+                'query_id':
+                'ae86',
+                'feature_store_id':
+                '9527',
+                'content':
+                query,
+                'images': [],
+                'history': [{
+                    'sender': 0,
+                    'content': '你好'
+                }, {
+                    'sender': 0,
+                    'content': '你是谁'
+                }, {
+                    'sender': 1,
+                    'content': '我是行政助手茴香豆'
+                }]
+            }
+        }
+        task_in.put(json.dumps(target, ensure_ascii=False))
+        print(chat_out.get())
 
 
 if __name__ == '__main__':
     # test_create_fs()
-    test_update_sample()
+    # test_update_sample()
+    test_chat()

@@ -9,8 +9,8 @@ from pathlib import Path
 
 import numpy as np
 import pytoml
-import textract
 from BCEmbedding.tools.langchain import BCERerank
+from file_operation import FileOperation
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
@@ -64,18 +64,6 @@ class FeatureStore:
             ('##', 'Header 2'),
             ('###', 'Header 3'),
         ])
-        self.image_suffix = ['.jpg', '.jpeg', '.png', '.bmp']
-        self.md_suffix = '.md'
-        self.text_suffix = [
-            '.txt', '.go', '.py', '.c', '.h', '.js', '.ts', '.text'
-        ]
-        self.excel_suffix = ['.xlsx', '.xls', '.csv']
-        self.pdf_suffix = '.pdf'
-        self.word_suffix = ['.docx', '.doc']
-        self.normal_suffix = [self.md_suffix
-                              ] + self.text_suffix + self.excel_suffix + [
-                                  self.pdf_suffix
-                              ] + self.word_suffix
 
     def is_chinese_doc(self, text):
         """If the proportion of Chinese in a bilingual document exceeds 0.5%,
@@ -186,63 +174,6 @@ class FeatureStore:
             documents.append(chunk)
         return documents
 
-    def get_file_type(self, filepath: str):
-        if filepath.endswith(self.pdf_suffix):
-            return 'pdf'
-
-        if filepath.endswith(self.md_suffix):
-            return 'md'
-
-        for suffix in self.text_suffix:
-            if filepath.endswith(suffix):
-                return 'text'
-
-        for suffix in self.word_suffix:
-            if filepath.endswith(suffix):
-                return 'word'
-
-        for suffix in self.excel_suffix:
-            if filepath.endswith(suffix):
-                return 'excel'
-        return None
-
-    def read_file(self, filepath: str):
-        file_type = self.get_file_type(filepath)
-
-        text = ''
-        if file_type == 'md' or file_type == 'text':
-            with open(filepath) as f:
-                text = f.read()
-
-        elif file_type == 'pdf':
-            documents = PyPDFLoader(filepath).load()
-            for document in documents:
-                text += document.page_content
-
-        elif file_type == 'excel':
-            if filepath.endswith('.csv'):
-                documents = CSVLoader(file_path=filepath).load()
-            else:
-                documents = []
-                # TODO FIXME import exceptions
-                # documents = UnstructuredExcelLoader(filepath, mode='elements').load()
-
-            for document in documents:
-                text += document.page_content
-
-        elif file_type == 'word':
-            # https://stackoverflow.com/questions/36001482/read-doc-file-with-python
-            # https://textract.readthedocs.io/en/latest/installation.html
-            text = textract.process(filepath).decode('utf8')
-
-        text = text.replace('\n\n', '\n')
-        text = text.replace('\n\n', '\n')
-        text = text.replace('\n\n', '\n')
-        text = text.replace('  ', ' ')
-        text = text.replace('  ', ' ')
-        text = text.replace('  ', ' ')
-        return text
-
     def ingress_response(self, file_dir: str, work_dir: str):
         """Extract the features required for the response pipeline based on the
         document."""
@@ -252,16 +183,17 @@ class FeatureStore:
 
         files = [str(x) for x in list(Path(file_dir).glob('**/*'))]
 
+        file_opr = FileOperation()
         documents = []
         for i, file in enumerate(files):
             basename = os.path.basename(file)
             logger.debug('{}/{}.. {}'.format(i, len(files), basename))
-            file_type = self.get_file_type(file)
+            file_type = file_opr.get_type(file)
 
             if file_type == 'md':
                 documents += self.get_md_documents(file)
             else:
-                text = self.read_file(file)
+                text = read_file(file)
                 text = basename + text
 
                 print(text)
@@ -281,11 +213,13 @@ class FeatureStore:
 
         ps = [str(x) for x in list(Path(file_dir).glob('**/*'))]
         documents = []
+        file_opr = FileOperation()
+
         for i, p in enumerate(ps):
             logger.debug('{}/{}..'.format(i, len(ps)))
             basename = os.path.basename(p)
 
-            file_type = self.get_file_type(p)
+            file_type = file_opr.get_type(p)
             if file_type == 'md':
                 # reject base not clean md
                 text = basename + '\n'
@@ -301,7 +235,7 @@ class FeatureStore:
                     documents.append(new_doc)
 
             else:
-                text = self.read_file(p)
+                text = read_file(p)
                 text = basename + text
                 documents += self.get_text_documents(text, p)
 
@@ -340,77 +274,6 @@ class FeatureStore:
         self.compression_retriever = ContextualCompressionRetriever(
             base_compressor=self.reranker, base_retriever=self.retriever)
 
-    def is_reject(self, question, k=20, disable_throttle=False):
-        """If no search results below the threshold can be found from the
-        database, reject this query."""
-        docs = []
-        if disable_throttle:
-            docs = self.rejecter.similarity_search_with_relevance_scores(
-                question, k=1)
-        else:
-            docs = self.rejecter.similarity_search_with_relevance_scores(
-                question, k=k, score_threshold=self.reject_throttle)
-        if len(docs) < 1:
-            return True, docs
-        return False, docs
-
-    def query(self, question: str, context_max_length: int = 16000):
-        """Processes a query and returns the best match from the vector store
-        database. If the question is rejected, returns None.
-
-        Args:
-            question (str): The question asked by the user.
-
-        Returns:
-            str: The best matching chunk, or None.
-            str: The best matching text, or None
-        """
-        if question is None or len(question) < 1:
-            return None, None, []
-
-        reject, docs = self.is_reject(question=question)
-        if reject:
-            return None, None, []
-
-        docs = self.compression_retriever.get_relevant_documents(question)
-        chunks = []
-        context = ''
-        files = []
-        for doc in docs:
-            # logger.debug(('db', doc.metadata, question))
-            chunks.append(doc.page_content)
-            filepath = doc.metadata['source']
-            if filepath not in files:
-                files.append(filepath)
-
-        # add file content to context, within `context_max_length`
-        for idx, doc in enumerate(docs):
-            chunk = doc.page_content
-            file_path = doc.metadata['source']
-            file_text = self.read_file(file_path)
-
-            if len(file_text) + len(context) > context_max_length:
-                # add and break
-                add_len = context_max_length - len(context)
-                if add_len <= 0:
-                    break
-                chunk_index = file_text.find(chunk)
-                if chunk_index == -1:
-                    # chunk not in file_text
-                    context += chunk
-                    context += '\n'
-                    context += file_text[0:add_len - len(chunk) - 1]
-                else:
-                    start_index = max(0, chunk_index - (add_len - len(chunk)))
-                    context += file_text[start_index:start_index + add_len]
-                break
-            context += '\n'
-            context += file_text
-
-        assert (len(context) <= context_max_length)
-        logger.debug('query:{} top1 file:{}'.format(question, files[0]))
-        return '\n'.join(chunks), context
-
     def preprocess(self, filepaths: list, work_dir: str):
         """Preprocesses markdown files in a given directory excluding those
         containing 'mdb'. Copies each file to 'preprocess' with new name formed
@@ -433,40 +296,29 @@ class FeatureStore:
             shutil.rmtree(file_dir)
         os.makedirs(file_dir)
 
-        def copy_normal(filepath: str):
-            basename = os.path.basename(filepath)
-            shutil.copy(filepath, os.path.join(file_dir, basename))
-
-        def copy_image(filepath: str):
-            # TODO use multimodal model
-            pass
-
         sucess_cnt = 0
         fail_cnt = 0
         skip_cnt = 0
 
-        for filepath in filepaths:
-            handler = None
-            for suffix in self.image_suffix:
-                if filepath.endswith(suffix):
-                    handler = copy_image
-                    break
-            if handler is None:
-                for suffix in self.normal_suffix:
-                    if filepath.endswith(suffix):
-                        handler = copy_normal
-                        break
+        file_opr = FileOperation()
 
-            if handler is None:
-                skip_cnt += 1
-                logger.info(f'skip {filepath}')
-            else:
-                try:
-                    handler(filepath)
-                    sucess_cnt += 1
-                except Exception as e:
-                    fail_cnt += 1
-                    logger.error(str(e))
+        for filepath in filepaths:
+            try:
+                _type = file_opr.get_type(filepath)
+                if _type == 'image':
+                    # TODO call multi-modal for OCR
+                    pass
+                elif _type in ['pdf', 'md', 'text', 'word', 'excel']:
+                    basename = os.path.basename(filepath)
+                    shutil.copy(filepath, os.path.join(file_dir, basename))
+                    success_cnt += 1
+                else:
+                    skip_cnt += 1
+                    logger.info(f'skip {filepath}')
+            except Exception as e:
+                fail_cnt += 1
+                logger.error(str(e))
+
         logger.debug(
             f'preprocess input {len(filepaths)} files, {sucess_cnt} success, {fail_cnt} fail, {skip_cnt} skip. '
         )

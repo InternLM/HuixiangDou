@@ -148,10 +148,11 @@ class HybridLLMServer:
             self.inference = InferenceWrapper(model_path)
         else:
             logger.warning('local LLM disabled.')
-        self.token = ''
+        self.token = ('', 0)
         self.time_slot = {'start': time.time(), 'count': 0}
 
     def wait_time_slot(self):
+        # query per minute
         now = time.time()
         if now - self.time_slot['start'] > 60:
             self.time_slot = {'start': time.time(), 'count': 0}
@@ -160,7 +161,7 @@ class HybridLLMServer:
             if count >= 10:
                 this_slot = self.time_slot['start']
                 wait = this_slot + 60 - now
-                print('this_slot {} sleep {}'.format(this_slot, wait))
+                logger.debug('this_slot {} sleep {}'.format(this_slot, wait))
                 time.sleep(wait)
             else:
                 count += 1
@@ -205,7 +206,12 @@ class HybridLLMServer:
         output_text = None
         self.wait_time_slot()
         res = requests.post(url, headers=header, data=json.dumps(data))
-        output_text = res.json()['data']['choices'][0]['text']
+        res_json = res.json()
+        data = res.json()['data']
+        if len(data) < 1:
+            import pdb
+            pdb.set_trace()
+        output_text = data['choices'][0]['text']
 
         return output_text
 

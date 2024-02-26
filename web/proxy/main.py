@@ -38,7 +38,10 @@ def callback_task_state(feature_store_id: str, code: int, _type: str,
         'type': _type,
         'status': status
     }
-    resp.put(json.dumps(target))
+    resp.put(json.dumps(
+        target,
+        ensure_ascii=False,
+    ))
 
 
 class CacheRetriever:
@@ -71,13 +74,13 @@ class CacheRetriever:
     def get(self, fs_id: str):
         if fs_id in self.cache:
             self.cache[fs_id]['time'] = time.time()
-            return self.cache[fs_id]['retriever'], None
+            return self.cache[fs_id]['retriever']
 
         BASE = feature_store_base_dir()
         workdir = os.path.join(BASE, fs_id, 'workdir')
         configpath = os.path.join(BASE, fs_id, 'config.ini')
-        if not os.path.exists(workdir) or not os.path.exist(configpath):
-            return None, 'workdir not exist'
+        if not os.path.exists(workdir) or not os.path.exists(configpath):
+            return None, 'workdir or config.ini not exist'
 
         with open(configpath, encoding='utf8') as f:
             reject_throttle = pytoml.load(
@@ -103,6 +106,7 @@ class CacheRetriever:
                               work_dir=workdir,
                               reject_throttle=reject_throttle)
         self.cache[fs_id] = {'retriever': retriever, 'time': time.time()}
+        return retriever
 
     def pop(self, fs_id: str):
         if fs_id not in self.cache:
@@ -131,7 +135,7 @@ def callback_chat_state(feature_store_id: str, query_id: str, code: int,
             'references': ref
         }
     }
-    que.put(json.dumps(target))
+    que.put(json.dumps(target, ensure_ascii=False))
 
 
 def format_history(history):
@@ -196,14 +200,8 @@ def chat_with_featue_store(cache: CacheRetriever,
     chat_state = partial(callback_chat_state,
                          feature_store_id=fs_id,
                          query_id=query_id)
-    retriever, error = cache.get(fs_id=fs_id)
 
-    if error is not None:
-        chat_state(code=ErrorCode.INTERNAL_ERROR.value,
-                   status=ErrorCode.INTERNAL_ERROR.describe(),
-                   text='',
-                   ref=[])
-        return
+    retriever = cache.get(fs_id=fs_id)
 
     BASE = feature_store_base_dir()
     workdir = os.path.join(BASE, fs_id, 'workdir')
@@ -211,14 +209,16 @@ def chat_with_featue_store(cache: CacheRetriever,
     worker = Worker(work_dir=workdir, config_path=configpath)
 
     # TODO parse images
-
     history = format_history(payload.history)
-    error, response, references = worker.generate(payload.content, history)
+    error, response, references = worker.generate(query=payload.content,
+                                                  history=history,
+                                                  retriever=retriever,
+                                                  groupname='')
     if error != ErrorCode.SUCCESS:
         chat_state(code=ErrorCode.INTERNAL_ERROR.value,
                    status=ErrorCode.INTERNAL_ERROR.describe(),
                    text='',
-                   ref=[])
+                   ref=references)
         return
     chat_state(code=ErrorCode.SUCCESS.value,
                status=ErrorCode.SUCCESS.describe(),

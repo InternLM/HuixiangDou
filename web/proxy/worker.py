@@ -133,7 +133,7 @@ class Worker:
                 tracker=tracker,
                 throttle=6,
                 default=3):
-            return ErrorCode.NOT_A_QUESTION, response
+            return ErrorCode.NOT_A_QUESTION, response, []
 
         topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query))
         tracker.log('topic', topic)
@@ -148,7 +148,7 @@ class Worker:
 
         if db_context is None or len(db_context) < 1:
             tracker.log('feature store reject')
-            return ErrorCode.UNRELATED, response, []
+            return ErrorCode.UNRELATED, response, retrieve_ref
 
         if self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
                 query, chunk),
