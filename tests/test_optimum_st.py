@@ -76,9 +76,6 @@ def profiling():
         'Could you assist me in finding my lost card? vanilla_emb')
     print(pred[0][:5])
 
-    import pdb
-    pdb.set_trace()
-
     onnx_path = 'onnx'
     model = ORTModelForFeatureExtraction.from_pretrained(
         onnx_path, file_name='model.onnx')

@@ -60,7 +60,7 @@ def check_env(args):
 
 
 def lark_send_only(assistant, fe_config: dict):
-    queries = ['请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗']
+    queries = ['请问如何安装 mmpose ?']
     for query in queries:
         code, reply = assistant.generate(query=query, history=[], groupname='')
         logger.info(f'{code}, {query}, {reply}')
