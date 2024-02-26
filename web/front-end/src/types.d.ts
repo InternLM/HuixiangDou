@@ -12,5 +12,3 @@ declare module '*.svg' {
     const url: string;
     export default url;
 }
-// declare Google Analytics gtag.js
-declare interface Window {gtag: any; dataBuried: any; }

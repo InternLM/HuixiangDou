@@ -1,6 +1,6 @@
 import { FC, ReactNode, useState } from 'react';
 import {
-    Input, message, Modal, Switch
+    Input, message, Modal
 } from 'sea-lion-ui';
 import Button from '@components/button/button';
 import { useParams } from 'react-router-dom';
@@ -27,7 +27,7 @@ const ToggleSearch: FC<ToggleSearchProps> = ({ webSearchToken, children }) => {
             message.error('token不能为空');
             return;
         }
-        const res = await integrateWebSearch(beanId, token);
+        const res = await integrateWebSearch(token);
     };
 
     return (

@@ -7,10 +7,11 @@ import { IconFont } from 'sea-lion-ui';
 import logo from '@assets/imgs/logo.png';
 import bean from '@assets/imgs/bean.png';
 import Chat from '@pages/bean-detail/components/chat';
-import { getInfo } from '@services/home';
+import { Feishu, getInfo } from '@services/home';
 import ToggleSearch from '@pages/bean-detail/components/toggle-search';
 import Example from '@pages/bean-detail/components/example';
 import ImportDocs from '@pages/bean-detail/components/import-docs';
+import IntegrateFeishu from '@pages/bean-detail/components/integrate-feishu';
 import styles from './bean-detail.module.less';
 
 export interface BeanDetailProps {
@@ -26,7 +27,6 @@ export enum BeanState {
 const BeanDetail: FC<BeanDetailProps> = () => {
     const locales = useLocale('beanDetail');
     const [name, setName] = useState('');
-    const [feishuInfo, setFeishuInfo] = useState(null);
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [searchToken, setSearchToken] = useState('');
     const [beanState, setBeanState] = useState(null);
@@ -78,12 +78,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 },
                 {
                     title: locales.accessFeishu,
-                    children: (
-                        <div className={styles.btn}>
-                            {locales.viewDetail}
-                            <IconFont icon="icon-GotoOutline" />
-                        </div>
-                    ),
+                    children: <IntegrateFeishu />,
                     key: 'accessFeishu'
                 },
                 {

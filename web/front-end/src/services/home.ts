@@ -20,6 +20,14 @@ export interface BeanRspDto extends BasicRespDto {
         'featureStoreId': string // 知识库id
     }
 }
+export interface Feishu {
+    'webhookUrl': string,
+    'appId': string,
+    'appSecret': string,
+    'encryptKey': string,
+    'verificationToken': string,
+    'eventUrl': string
+}
 export interface BeanInfoDto {
     'featureStoreId': string,
     'name': string,
@@ -27,14 +35,7 @@ export interface BeanInfoDto {
     'docsBase': string,
     'status': number,
     'suffix': string,
-    'feishu': {
-        'webhookUrl': string,
-        'appId': string,
-        'appSecret': string,
-        'encryptKey': string,
-        'verificationToken': string,
-        'eventUrl': string
-    },
+    'feishu': Feishu,
     'wechat': {
         'onMessageUrl': string
     },
@@ -97,7 +98,7 @@ export async function addDocs(file) {
     });
 }
 
-export async function updateSampleInfo(positives: string, negatives: string) {
+export async function updateSampleInfo(positives: string[], negatives: string[]) {
     return request<SampleInfoDto>('/api/v1/qalib/v1/updateSampleInfo', {
         method: 'POST',
         data: {
@@ -113,12 +114,18 @@ export async function getSampleInfo() {
     }, beanPrefix);
 }
 
-export async function integrateWebSearch(featureStoreId: string, webSearchToken: string) {
+export async function integrateWebSearch(webSearchToken: string) {
     return request('/api/v1/qalib/v1/integrateWebSearch', {
         method: 'POST',
         data: {
-            featureStoreId,
             webSearchToken
         }
+    }, beanPrefix);
+}
+
+export async function integrateLark(data: Feishu) {
+    return request('/api/v1/qalib/v1/integrateLark', {
+        method: 'POST',
+        data
     }, beanPrefix);
 }
