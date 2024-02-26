@@ -23,10 +23,6 @@ const ToggleSearch: FC<ToggleSearchProps> = ({ webSearchToken, children }) => {
     };
 
     const handleSaveToken = async () => {
-        if (!token) {
-            message.error('token不能为空');
-            return;
-        }
         const res = await integrateWebSearch(token);
     };
 
@@ -54,6 +50,7 @@ const ToggleSearch: FC<ToggleSearchProps> = ({ webSearchToken, children }) => {
                     获取限量免费 token
                 </div>
                 <div>2. 填入 token, 新 token 会覆盖旧 token </div>
+                <div>3. 如果保存一个空 token， 网络搜索会被关闭</div>
                 <div className={styles.inputWrapper}>
                     <Input
                         value={token}

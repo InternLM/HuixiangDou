@@ -39,7 +39,7 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
         if (openModal) {
             (async () => {
                 const res = await getInfo();
-                if (res) {
+                if (res && res.lark) {
                     form.setFieldsValue({
                         webhookUrl: res.lark.webhookUrl || '',
                         eventUrl: res.lark.eventUrl || '',
