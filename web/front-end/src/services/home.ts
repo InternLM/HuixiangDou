@@ -35,7 +35,7 @@ export interface BeanInfoDto {
     'docsBase': string,
     'status': number,
     'suffix': string,
-    'feishu': Feishu,
+    'lark': Feishu,
     'wechat': {
         'onMessageUrl': string
     },
@@ -64,6 +64,15 @@ export interface DocsRspDto {
     docs: string[]
 }
 
+export interface Chat {
+    'content': string,
+    'images': [string], // 本次上传的图片流列表，使用base64编码
+    'history': {
+        'sender': number, // 0: 用户 1: HuixiangDou
+        'content': string
+    }[]
+}
+
 export async function getStatistic() {
     return request<StatisticDto>('/api/v1/statistic/v1/total', {
         method: 'GET',
@@ -89,9 +98,12 @@ export async function getInfo() {
     }, beanPrefix);
 }
 
-export async function addDocs(file) {
+export async function addDocs(files: File[]) {
     const data = new FormData();
-    data.append('files', file);
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        data.append('files', file);
+    }
     return request('/api/v1/qalib/v1/addDocs', {
         method: 'POST',
         data
@@ -118,7 +130,8 @@ export async function integrateWebSearch(webSearchToken: string) {
     return request('/api/v1/qalib/v1/integrateWebSearch', {
         method: 'POST',
         data: {
-            webSearchToken
+            webSearchToken,
+            vendor: 'google'
         }
     }, beanPrefix);
 }
@@ -127,5 +140,21 @@ export async function integrateLark(data: Feishu) {
     return request('/api/v1/qalib/v1/integrateLark', {
         method: 'POST',
         data
+    }, beanPrefix);
+}
+
+export async function online(data: Chat) {
+    return request<{ queryId: string }>('/api/v1/chat/v1/online', {
+        method: 'POST',
+        data
+    }, beanPrefix);
+}
+
+export async function onlineResponse(queryId: string) {
+    return request('/api/v1/chat/v1/onlineResponse', {
+        method: 'POST',
+        data: {
+            queryId
+        }
     }, beanPrefix);
 }

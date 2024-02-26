@@ -52,32 +52,32 @@ const Home = () => {
             {
                 title: locales.bean,
                 key: 'bean',
-                number: statistic.qalibTotal
+                number: statistic.qalibTotal || 0
             },
             {
                 title: locales.WeChat,
                 key: 'WeChat',
-                number: statistic.wechatTotal
+                number: statistic.wechatTotal || 0
             },
             {
                 title: locales.users,
                 key: 'users',
-                number: statistic.servedTotal
+                number: statistic.servedTotal || 0
             },
             {
                 title: locales.activeBean,
                 key: 'activeBean',
-                number: statistic.lastMonthUsed
+                number: statistic.lastMonthUsed || 0
             },
             {
                 title: locales.feishu,
                 key: 'feishu',
-                number: statistic.feishuTotal
+                number: statistic.feishuTotal || 0
             },
             {
                 title: locales.uniqueUsers,
                 key: 'uniqueUsers',
-                number: statistic.realServedTotal
+                number: statistic.realServedTotal || 0
             }
         ]);
     }, [locales, statistic]);

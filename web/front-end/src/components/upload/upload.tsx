@@ -22,21 +22,10 @@ const Upload: FC<UploadProps> = ({ files = [], children }) => {
     };
 
     const uploadFile = (e: any) => {
-        const _newFiles = [...newFiles];
-        for (let i = 0; i < e.target.files.length; i++) {
-            const file = e.target.files[i];
-            _newFiles.push(file.name);
-            if (file.size > 1024 * 1024 * 100) {
-                alert('文件大小不能超过100M');
-                return;
-            }
-            addDocs(file)
-                .catch(() => {
-                    // remove the file from the list
-                    setNewFiles(_newFiles.filter((f) => f !== file.name));
-                });
-        }
-        setNewFiles(_newFiles);
+        addDocs(e.target.files)
+            .then((res) => {
+                setNewFiles([...newFiles, ...res.docs]);
+            });
     };
 
     return (
@@ -48,6 +37,7 @@ const Upload: FC<UploadProps> = ({ files = [], children }) => {
                     type="file"
                     accept={acceptFileTypes}
                     multiple
+                    max={10}
                     style={{ display: 'none' }}
                 />
                 {children}
