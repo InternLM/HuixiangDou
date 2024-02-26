@@ -72,6 +72,25 @@ def test_update_sample():
     out = task_out.get()
     print(out)
 
+
+def test_update_pipeline():
+    # "payload": {
+    #     "name": "STRING",
+    #     "feature_store_id": "STRING",
+    #     "web_search_token": ""
+    # }
+
+    target = {
+        'type': TaskCode.FS_UPDATE_PIPELINE.value,
+        'payload': {
+            'name': 'ailab 行政说明',
+            'feature_store_id': '9527',
+            'web_search_token': ''
+        }
+    }
+    print(target)
+    task_in.put(json.dumps(target, ensure_ascii=False))
+
     out = task_out.get()
     print(out)
 
@@ -88,7 +107,8 @@ def test_chat():
     #     }]
     # }
 
-    queries = ['请问公寓退房需要注意什么？']
+    # queries = ['请问买下单位公寓，需要多少钱？']
+    queries = ['请问公寓退房需要注意哪些事情？']
 
     for query in queries:
         target = {
@@ -120,4 +140,5 @@ def test_chat():
 if __name__ == '__main__':
     # test_create_fs()
     # test_update_sample()
+    # test_update_pipeline()
     test_chat()

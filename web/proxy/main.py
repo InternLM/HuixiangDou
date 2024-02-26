@@ -215,8 +215,8 @@ def chat_with_featue_store(cache: CacheRetriever,
                                                   retriever=retriever,
                                                   groupname='')
     if error != ErrorCode.SUCCESS:
-        chat_state(code=ErrorCode.INTERNAL_ERROR.value,
-                   status=ErrorCode.INTERNAL_ERROR.describe(),
+        chat_state(code=error.value,
+                   status=error.describe(),
                    text='',
                    ref=references)
         return
@@ -267,22 +267,22 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
                          feature_store_id=fs_id,
                          _type=TaskCode.FS_ADD_DOC.value)
 
-    try:
-        success_cnt, fail_cnt, skip_cnt = fs.initialize(filepaths=path_list,
-                                                        work_dir=workdir)
-        if success_cnt == len(path_list):
-            # success
-            task_state(code=ErrorCode.SUCCESS.value,
-                       status=ErrorCode.SUCCESS.describe())
-        elif success_cnt == 0:
-            task_state(code=ErrorCode.FAILED.value, status='无文件被处理')
-        else:
-            status = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
-            task_state(code=ErrorCode.SUCCESS.value, status=status)
+    # try:
+    success_cnt, fail_cnt, skip_cnt = fs.initialize(filepaths=path_list,
+                                                    work_dir=workdir)
+    if success_cnt == len(path_list):
+        # success
+        task_state(code=ErrorCode.SUCCESS.value,
+                   status=ErrorCode.SUCCESS.describe())
+    elif success_cnt == 0:
+        task_state(code=ErrorCode.FAILED.value, status='无文件被处理')
+    else:
+        status = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
+        task_state(code=ErrorCode.SUCCESS.value, status=status)
 
-    except Exception as e:
-        logger.error(str(e))
-        task_state(code=ErrorCode.FAILED.value, status=str(e))
+    # except Exception as e:
+    #     logger.error(str(e))
+    #     task_state(code=ErrorCode.FAILED.value, status=str(e))
 
 
 def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
@@ -319,21 +319,53 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
                    status='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
         return
 
-    try:
-        fs = FeatureStore(config_path=configpath,
-                          embeddings=cache.embeddings,
-                          reranker=cache.reranker)
-        fs.update_throttle(config_path=configpath,
-                           work_dir=workdir,
-                           good_questions=positive,
-                           bad_questions=negative)
-        del fs
-        task_state(code=ErrorCode.SUCCESS.value,
-                   status=ErrorCode.SUCCESS.describe())
+    # try:
 
-    except Exception as e:
-        logger.error(str(e))
-        task_state(code=ErrorCode.FAILED.value, status=str(e))
+    retriever = cache.get(fs_id=fs_id)
+    retriever.update_throttle(config_path=configpath,
+                              work_dir=workdir,
+                              good_questions=positive,
+                              bad_questions=negative)
+    del retriever
+    task_state(code=ErrorCode.SUCCESS.value,
+               status=ErrorCode.SUCCESS.describe())
+
+    # except Exception as e:
+    #     logger.error(str(e))
+    #     task_state(code=ErrorCode.FAILED.value, status=str(e))
+
+
+def update_pipeline(payload: types.SimpleNamespace):
+    # "payload": {
+    #     "name": "STRING",
+    #     "feature_store_id": "STRING",
+    #     "web_search_token": ""
+    # }
+    fs_id = payload.feature_store_id
+    token = payload.web_search_token
+
+    # check
+    task_state = partial(callback_task_state,
+                         feature_store_id=fs_id,
+                         _type=TaskCode.FS_UPDATE_PIPELINE.value)
+
+    BASE = feature_store_base_dir()
+    fs_id = payload.feature_store_id
+    workdir = os.path.join(BASE, fs_id, 'workdir')
+    configpath = os.path.join(BASE, fs_id, 'config.ini')
+
+    if not os.path.exists(workdir) or not os.path.exists(configpath):
+        task_state(code=ErrorCode.INTERNAL_ERROR.value,
+                   status='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
+        return
+
+    with open(configpath, encoding='utf8') as f:
+        config = pytoml.load(f)
+    config['web_search']['x_api_key'] = token
+    with open(configpath, 'w', encoding='utf8') as f:
+        pytoml.dump(config, f)
+    task_state(code=ErrorCode.SUCCESS.value,
+               status=ErrorCode.SUCCESS.describe())
 
 
 def process():
@@ -349,6 +381,8 @@ def process():
         msg, error = parse_json_str(que.get())
         if error is not None:
             raise error
+
+        logger.debug(f'process {msg.type}')
         if msg.type == TaskCode.FS_ADD_DOC.value:
             callback_task_state(feature_store_id=msg.payload.feature_store_id,
                                 code=ErrorCode.WORK_IN_PROGRESS.value,
@@ -363,6 +397,8 @@ def process():
                                 status=ErrorCode.WORK_IN_PROGRESS.describe())
             fs_cache.pop(msg.payload.feature_store_id)
             update_sample(fs_cache, msg.payload)
+        elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
+            update_pipeline(msg.payload)
         elif msg.type == TaskCode.CHAT.value:
             chat_with_featue_store(fs_cache, msg.payload)
         else:

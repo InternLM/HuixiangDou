@@ -8,6 +8,7 @@ import shutil
 from pathlib import Path
 
 import numpy as np
+import pytoml
 from BCEmbedding.tools.langchain import BCERerank
 from file_operation import FileOperation
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -85,6 +86,42 @@ class Retriever:
             reject = False if len(ret) > 0 else True
             return reject, [top1]
 
+    def update_throttle(self,
+                        work_dir: str,
+                        config_path: str = 'config.ini',
+                        good_questions=[],
+                        bad_questions=[]):
+        """Update reject throttle based on positive and negative examples."""
+
+        if len(good_questions) == 0 or len(bad_questions) == 0:
+            raise Exception('good and bad question examples cat not be empty.')
+        questions = good_questions + bad_questions
+        predictions = []
+        for question in questions:
+            self.reject_throttle = -1
+            _, docs = self.is_reject(question=question, disable_throttle=True)
+            score = docs[0][1]
+            predictions.append(score)
+
+        labels = [1 for _ in range(len(good_questions))
+                  ] + [0 for _ in range(len(bad_questions))]
+        precision, recall, thresholds = precision_recall_curve(
+            labels, predictions)
+
+        # get the best index for sum(precision, recall)
+        sum_precision_recall = precision[:-1] + recall[:-1]
+        index_max = np.argmax(sum_precision_recall)
+        optimal_threshold = thresholds[index_max]
+
+        with open(config_path, encoding='utf8') as f:
+            config = pytoml.load(f)
+        config['feature_store']['reject_throttle'] = optimal_threshold
+        with open(config_path, 'w', encoding='utf8') as f:
+            pytoml.dump(config, f)
+        logger.info(
+            f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
+        )
+
     def query(self, question: str, context_max_length: int = 16000):
         """Processes a query and returns the best match from the vector store
         database. If the question is rejected, returns None.
@@ -112,8 +149,6 @@ class Retriever:
         references = []
 
         # add file text to context, until exceed `context_max_length`
-        import pdb
-        pdb.set_trace()
 
         file_opr = FileOperation()
         for idx, doc in enumerate(docs):
@@ -121,7 +156,7 @@ class Retriever:
             chunks.append(chunk)
 
             source = doc.metadata['source']
-            file_text = file_opr.read_file(source)
+            file_text = file_opr.read(source)
             if len(file_text) + len(context) > context_max_length:
                 references.append(source)
                 # add and break

@@ -193,14 +193,12 @@ class FeatureStore:
             if file_type == 'md':
                 documents += self.get_md_documents(file)
             else:
-                text = read_file(file)
+                text = file_opr.read(file)
                 text = basename + text
 
                 print(text)
                 documents += self.get_text_documents(text, file)
 
-        import pdb
-        pdb.set_trace()
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
@@ -211,33 +209,34 @@ class FeatureStore:
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        ps = [str(x) for x in list(Path(file_dir).glob('**/*'))]
+        files = [str(x) for x in list(Path(file_dir).glob('**/*'))]
         documents = []
         file_opr = FileOperation()
 
-        for i, p in enumerate(ps):
-            logger.debug('{}/{}..'.format(i, len(ps)))
-            basename = os.path.basename(p)
+        for i, file in enumerate(files):
+            logger.debug('{}/{}..'.format(i, len(files)))
+            basename = os.path.basename(file)
 
-            file_type = file_opr.get_type(p)
+            file_type = file_opr.get_type(file)
             if file_type == 'md':
                 # reject base not clean md
                 text = basename + '\n'
-                with open(p, encoding='utf8') as f:
+                with open(file, encoding='utf8') as f:
                     text += f.read()
                 if len(text) <= 1:
                     continue
 
-                chunks = self.split_md(text=text, source=os.path.abspath(p))
+                chunks = self.split_md(text=text, source=os.path.abspath(file))
                 for chunk in chunks:
-                    new_doc = Document(page_content=chunk,
-                                       metadata={'source': os.path.abspath(p)})
+                    new_doc = Document(
+                        page_content=chunk,
+                        metadata={'source': os.path.abspath(file)})
                     documents.append(new_doc)
 
             else:
-                text = read_file(p)
+                text = file_opr.read(file)
                 text = basename + text
-                documents += self.get_text_documents(text, p)
+                documents += self.get_text_documents(text, file)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
@@ -296,7 +295,7 @@ class FeatureStore:
             shutil.rmtree(file_dir)
         os.makedirs(file_dir)
 
-        sucess_cnt = 0
+        success_cnt = 0
         fail_cnt = 0
         skip_cnt = 0
 
@@ -320,46 +319,9 @@ class FeatureStore:
                 logger.error(str(e))
 
         logger.debug(
-            f'preprocess input {len(filepaths)} files, {sucess_cnt} success, {fail_cnt} fail, {skip_cnt} skip. '
+            f'preprocess input {len(filepaths)} files, {success_cnt} success, {fail_cnt} fail, {skip_cnt} skip. '
         )
-        return file_dir, (sucess_cnt, fail_cnt, skip_cnt)
-
-    def update_throttle(self,
-                        work_dir: str,
-                        config_path: str = 'config.ini',
-                        good_questions=[],
-                        bad_questions=[]):
-        """Update reject throttle based on positive and negative examples."""
-
-        if len(good_questions) == 0 or len(bad_questions) == 0:
-            raise Exception('good and bad question examples cat not be empty.')
-        self.load_feature(work_dir=work_dir)
-        questions = good_questions + bad_questions
-        predictions = []
-        for question in questions:
-            self.reject_throttle = -1
-            _, docs = self.is_reject(question=question, disable_throttle=True)
-            score = docs[0][1]
-            predictions.append(score)
-
-        labels = [1 for _ in range(len(good_questions))
-                  ] + [0 for _ in range(len(bad_questions))]
-        precision, recall, thresholds = precision_recall_curve(
-            labels, predictions)
-
-        # get the best index for sum(precision, recall)
-        sum_precision_recall = precision[:-1] + recall[:-1]
-        index_max = np.argmax(sum_precision_recall)
-        optimal_threshold = thresholds[index_max]
-
-        with open(config_path, encoding='utf8') as f:
-            config = pytoml.load(f)
-        config['feature_store']['reject_throttle'] = optimal_threshold
-        with open(config_path, 'w', encoding='utf8') as f:
-            pytoml.dump(config, f)
-        logger.info(
-            f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
-        )
+        return file_dir, (success_cnt, fail_cnt, skip_cnt)
 
     def initialize(self, filepaths: list, work_dir: str):
         """Initializes response and reject feature store.

@@ -196,22 +196,22 @@ class Worker:
                             0, self.context_max_length -
                             2 * len(self.SCORING_RELAVANCE_TEMPLATE))
 
-                    if self.single_judge(
-                            self.SECURITY_TEMAPLTE.format(article),
-                            tracker=tracker,
-                            throttle=3,
-                            default=0):
+                    if self.single_judge(self.SECURITY_TEMAPLTE.format(
+                            str(article)),
+                                         tracker=tracker,
+                                         throttle=3,
+                                         default=0):
                         tracker.log('跳过不安全的内容', article)
                         continue
 
                     if self.single_judge(
                             self.SCORING_RELAVANCE_TEMPLATE.format(
-                                query, article),
+                                query, str(article)),
                             tracker=tracker,
                             throttle=5,
                             default=10):
-                        web_context += '\n\n'
-                        web_context += article.content
+                        web_context += '\n'
+                        web_context += str(article)
                         use_ref.append(article.source)
 
             web_context = web_context[0:self.context_max_length]

@@ -9,6 +9,7 @@ from loguru import logger
 class TaskCode(Enum):
     FS_ADD_DOC = 'add_doc'
     FS_UPDATE_SAMPLE = 'update_sample'
+    FS_UPDATE_PIPELINE = 'update_pipeline'
     CHAT = 'chat'
     CHAT_RESPONSE = 'chat_response'
 

@@ -44,7 +44,7 @@ class FileOperation:
                 return 'excel'
         return None
 
-    def read_file(self, filepath: str):
+    def read(self, filepath: str):
         file_type = self.get_type(filepath)
 
         text = ''
@@ -85,6 +85,6 @@ class FileOperation:
 if __name__ == '__main__':
     opr = FileOperation()
     print(
-        opr.read_file(
+        opr.read(
             '/data2/khj/HuixiangDou/web/proxy/feature_stores/9527/workdir/preprocess/技术交底书.doc'
         ))

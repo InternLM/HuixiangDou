@@ -152,20 +152,23 @@ class HybridLLMServer:
         self.time_slot = {'start': time.time(), 'count': 0}
 
     def wait_time_slot(self):
-        # query per minute
+        # 100 query per minute
         now = time.time()
-        if now - self.time_slot['start'] > 60:
+        if now - self.time_slot['start'] >= 60:
             self.time_slot = {'start': time.time(), 'count': 0}
         else:
             count = self.time_slot['count']
-            if count >= 10:
+            if count >= 100:
                 this_slot = self.time_slot['start']
                 wait = this_slot + 60 - now
-                logger.debug('this_slot {} sleep {}'.format(this_slot, wait))
-                time.sleep(wait)
+                if wait > 0:
+                    logger.debug('this_slot {} sleep {}'.format(
+                        this_slot, wait))
+                    time.sleep(wait)
             else:
                 count += 1
                 self.time_slot['count'] = count
+        print(self.time_slot, time.time())
 
     def call_puyu(self, prompt, history):
 
@@ -211,6 +214,7 @@ class HybridLLMServer:
         if len(data) < 1:
             import pdb
             pdb.set_trace()
+            print(data)
         output_text = data['choices'][0]['text']
 
         return output_text

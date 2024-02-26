@@ -20,9 +20,6 @@ class Article:
         self.source = source
 
     def __str__(self):
-        return self.contetn
-
-    def __format__(self):
         return self.content
 
     def __len__(self):
@@ -75,8 +72,8 @@ class WebSearch:
         with open(self.config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             api_key = config['web_search']['x_api_key']
-            if len(api_key) > 0 and 'YOUR-API-KEY' not in api_key:
-                return api_key
+            # if len(api_key) > 0 and 'YOUR-API-KEY' not in api_key:
+            return api_key
         raise Exception(
             'web_search X-API-KEY not found, please input your API key')
 
@@ -202,7 +199,8 @@ class WebSearch:
 
             text = ''
             if len(articles) > 0:
-                text = '\n\n'.join(articles)
+                texts = [str(a) for a in articles]
+                text = '\n\n'.join(texts)
             with open(filepath, 'w', encoding='utf8') as f:
                 f.write(text)
         except Exception as e:
