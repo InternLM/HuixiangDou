@@ -22,15 +22,21 @@ const Upload: FC<UploadProps> = ({ files = [], children }) => {
     };
 
     const uploadFile = (e: any) => {
-        const file = e.target.files[0];
-        addDocs(file)
-            .then((res) => {
-                const docs = [...newFiles, res.docs];
-                setNewFiles(docs);
-            })
-            .catch((err) => {
-                console.log(err);
-            });
+        const _newFiles = [...newFiles];
+        for (let i = 0; i < e.target.files.length; i++) {
+            const file = e.target.files[i];
+            _newFiles.push(file.name);
+            if (file.size > 1024 * 1024 * 100) {
+                alert('文件大小不能超过100M');
+                return;
+            }
+            addDocs(file)
+                .catch(() => {
+                    // remove the file from the list
+                    setNewFiles(_newFiles.filter((f) => f !== file.name));
+                });
+        }
+        setNewFiles(_newFiles);
     };
 
     return (
@@ -47,13 +53,17 @@ const Upload: FC<UploadProps> = ({ files = [], children }) => {
                 {children}
             </div>
             <h4>新上传文档</h4>
-            {newFiles.map((file) => (
-                <div key={file}>{file}</div>
-            ))}
+            <div className={styles.fileList}>
+                {newFiles.map((file) => (
+                    <div key={file}>{file}</div>
+                ))}
+            </div>
             <h4>已上传文档</h4>
-            {files.map((file) => (
-                <div key={file}>{file}</div>
-            ))}
+            <div className={styles.fileList}>
+                {files.map((file) => (
+                    <div key={file}>{file}</div>
+                ))}
+            </div>
         </>
     );
 };
