@@ -162,7 +162,7 @@ def run():
 
     # query by worker
     with open(args.config_path, encoding='utf8') as f:
-        fe_config = pytoml.load(f)['frontend']
+        fe_config = pytoml.load(f)['front-end']
     logger.info('Config loaded.')
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
 

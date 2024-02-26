@@ -1,0 +1,29 @@
+.toggle-search {
+    .token {
+        font-size: 14px;
+        line-height: 16px;
+        padding: 8px 0;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+        color: #9D9D9D;
+    }
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    :global {
+        .seal-input-group .seal-input-inner-container:focus-within {
+            outline: 1px solid #59a041;
+        }
+    }
+}
+
+a {
+    color: #286500
+}

@@ -21,3 +21,4 @@ commit.id
 resource/wechat_questions.json
 .eggs/
 feature_stores/
+web/qa
