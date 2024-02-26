@@ -18,4 +18,3 @@ build/
 dist/
 huixiangdou.egg-info/
 commit.id
-.husky
