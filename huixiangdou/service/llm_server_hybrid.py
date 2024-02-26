@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """LLM server proxy."""
 import argparse
+import json
 import os
 import random
 import time
@@ -8,6 +9,7 @@ from multiprocessing import Process, Value
 
 import openai
 import pytoml
+import requests
 from aiohttp import web
 from loguru import logger
 from openai import OpenAI
@@ -35,21 +37,22 @@ def build_messages(prompt, history, system):
     return messages
 
 
+def os_run(cmd: str):
+    ret = os.popen(cmd)
+    ret = ret.read().rstrip().lstrip()
+    return ret
+
+
 class InferenceWrapper:
     """A class to wrapper kinds of inference framework."""
 
-    def __init__(self, model_path: str, local_max_length: int = 12000):
+    def __init__(self, model_path: str):
         """Init model handler."""
 
         if check_gpu_max_memory_gb() < 20:
             logger.warning(
                 'GPU mem < 20GB, try Experience Version or set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8" in `config.ini`'  # noqa E501
             )
-            if not os.path.exists(model_path):
-                model_path = 'Qwen/Qwen-7B-Chat-Int8'
-                logger.warning(
-                    'auto set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8"'  # noqa E501
-                )
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
@@ -145,6 +148,66 @@ class HybridLLMServer:
             self.inference = InferenceWrapper(model_path)
         else:
             logger.warning('local LLM disabled.')
+        self.token = ''
+        self.time_slot = {'start': time.time(), 'count': 0}
+
+    def wait_time_slot(self):
+        now = time.time()
+        if now - self.time_slot['start'] > 60:
+            self.time_slot = {'start': time.time(), 'count': 0}
+        else:
+            count = self.time_slot['count']
+            if count >= 10:
+                this_slot = self.time_slot['start']
+                wait = this_slot + 60 - now
+                print('this_slot {} sleep {}'.format(this_slot, wait))
+                time.sleep(wait)
+            else:
+                count += 1
+                self.time_slot['count'] = count
+
+    def call_puyu(self, prompt, history):
+
+        url = 'https://puyu.openxlab.org.cn/puyu/api/v1/chat/completion'
+
+        now = time.time()
+        if self.token is None or now - self.token[1] >= 3500:
+            self.token = (os_run('openxlab token'), time.time())
+
+        header = {
+            'Content-Type': 'application/json',
+            'Authorization': self.token[0]
+        }
+
+        messages = []
+        for item in history:
+            messages.append({
+                'role': 'user',
+                'text': item[0],
+            })
+            messages.append({
+                'role': 'assistant',
+                'text': item[1],
+            })
+        messages.append({
+            'role': 'user',
+            'text': prompt,
+        })
+
+        data = {
+            'model': 'ChatPJLM-latest',
+            'messages': messages,
+            'n': 1,
+            'temperature': 0.8,
+            'top_p': 0.9,
+            'disable_report': False
+        }
+        output_text = None
+        self.wait_time_slot()
+        res = requests.post(url, headers=header, data=json.dumps(data))
+        output_text = res.json()['data']['choices'][0]['text']
+
+        return output_text
 
     def call_kimi(self, prompt, history):
         """Generate a response from Kimi (a remote LLM).
@@ -270,6 +333,8 @@ class HybridLLMServer:
             elif llm_type == 'deepseek':
                 output_text = self.call_deepseek(prompt=prompt,
                                                  history=history)
+            elif llm_type == 'puyu':
+                output_text = self.call_puyu(prompt=prompt, history=history)
             else:
                 output_text = self.call_gpt(prompt=prompt, history=history)
 

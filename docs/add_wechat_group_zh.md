@@ -112,7 +112,7 @@ python3 bot.py  # 确保这两句没有崩溃
 ```Shell
 # config.ini
 ..
-[frontend]
+[front-end]
 type = "wechat_personal"
 
 python3 -m huixiangdou.main --standalone # 非 docker 用户

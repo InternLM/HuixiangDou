@@ -1,0 +1,75 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "node",
+    // "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports":true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@layouts/*": [
+        "src/layouts/*"
+      ],
+      "@assets/*": [
+        "src/assets/*"
+      ],
+      "@pages/*": [
+        "src/pages/*"
+      ],
+      "@services/*": [
+        "src/services/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@styles/*": [
+        "src/styles/*"
+      ],
+      "@routes/*": [
+        "src/routes/*"
+      ],
+      "@config/*": [
+        "src/config/*"
+      ],
+      "@locales/*": [
+        "src/locales/*"
+      ],
+      "@interceptors/*": [
+        "src/interceptors/*"
+      ],
+      "@hooks/*": [
+        "src/hooks/*"
+      ],
+      "@constants/*": [
+        "src/constants/*"
+      ]
+    },
+    "allowJs": true,
+    "outDir": "./dist",
+  },
+  "include": [
+    "src/**/*",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "src/types.d.ts"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

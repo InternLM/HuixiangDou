@@ -1,5 +1,9 @@
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, Request
+from starlette.responses import HTMLResponse
+from fastapi.responses import FileResponse
+
+from web.util.log import log
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
@@ -11,12 +15,19 @@ from web.config.logging import LOGGING_CONFIG
 from web.middleware.token import check_hxd_token
 from web.scheduler.huixiangdou_task import start_scheduler, stop_scheduler
 from web.util.log import log
+from web.util.str import safe_join
+import os
+
 
 # log
 logger = log(__name__)
 
 # define global variable
 API_VER = 'v1'
+SERVER_PORT = os.getenv("SERVER_PORT") if os.getenv("SERVER_PORT") else "23333"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_RESOURCE_DIR = os.path.join(BASE_DIR, "front-end", "dist")
+ASSETS_RESOURCE_DIR = os.path.join(STATIC_RESOURCE_DIR, "assets")
 
 # FastAPI setting
 app = FastAPI()
@@ -32,6 +43,22 @@ app.include_router(router=qalib.qalib_api, prefix=f"/api/{API_VER}/qalib", depen
 app.include_router(router=statistic.statistic_api, prefix=f"/api/{API_VER}/statistic")
 app.include_router(router=chat.chat_api, prefix=f"/api/{API_VER}/chat", dependencies=[Depends(check_hxd_token)])
 app.include_router(router=message.message_api, prefix=f"/api/{API_VER}/message")
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/home", response_class=HTMLResponse)
+async def server():
+    return FileResponse(f"{STATIC_RESOURCE_DIR}/index.html")
+
+
+@app.get("/assets/{path:path}")
+async def resource_assets(path: str):
+    return FileResponse(safe_join(ASSETS_RESOURCE_DIR, path))
+
+
+@app.get("/{path:path}")
+async def resource_other(path: str):
+    return FileResponse(safe_join(STATIC_RESOURCE_DIR, path))
 
 
 @app.on_event("startup")
@@ -62,7 +89,7 @@ def main():
     uvicorn.run(
         "web.main:app",
         host='0.0.0.0',
-        port=23333,
+        port=int(SERVER_PORT),
         timeout_keep_alive=600,
         workers=3,
         log_config=LOGGING_CONFIG

@@ -28,9 +28,10 @@ Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
 
 # 🆕 What's new
 
-* [2024/02] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
-* [2024/02] [experimental] Integrated multimodal model for OCR functionality into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)
-* [2024/01] Support [personal wechat](./docs/add_wechat_group_zh.md) and [lark group](./docs/add_lark_group_zh.md)
+- \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank for higher precision 👍
+- \[2024/02\] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
+- \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
+- \[2024/01\] Support [personal wechat](./docs/add_wechat_group_zh.md) and [lark group](./docs/add_lark_group_zh.md)
 
 # 📦 Hardware Requirements
 
@@ -39,7 +40,7 @@ The following are the hardware requirements for running. It is suggested to foll
 |      Version       | GPU Memory Requirements |                                                                            Features                                                                             |                                Tested on Linux                                |
 | :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
 | Experience Version |          2.3GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-|   Basic Version    |          15GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|   Basic Version    |          19GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |  Advanced Version  |          40GB           |                                             Fully utilizing search + long-text, answer source code-level questions                                              | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
@@ -47,6 +48,12 @@ The following are the hardware requirements for running. It is suggested to foll
 We will take mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
+
+Huggingface login
+
+```shell
+huggingface-cli login
+```
 
 Execute all the commands below (including the '#' symbol).
 
@@ -60,12 +67,11 @@ git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 
 # Build a feature store
 mkdir workdir # create a working directory
-conda install conda-forge::faiss-gpu # python3.11 needs `conda` to install `faiss`
 python3 -m pip install -r requirements.txt # install dependencies
 python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
 ```
 
-The first run will automatically download [text2vec-base-chinese](https://huggingface.co/GanymedeNil/text2vec-base-chinese), you can also manually download it and update model path in `config.ini`.
+The first run will automatically download [text2vec model](./config.ini), you can also manually download it and update model path in `config.ini`.
 
 After running, HuixiangDou can distinguish which user topics should be dealt with and which chitchats should be rejected. Please edit [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, finance, electricity, etc.).
 
@@ -281,6 +287,11 @@ The basic version may not perform well. You can enable these features to enhance
 5. What if the GPU memory is too low?
 
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
+
+# 🍀 Acknowledgements
+
+- [kimi-chat](https://kimi.moonshot.cn/): long context LLM
+- [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): Bilingual and Crosslingual Embedding (BCEmbedding) in English and Chinese
 
 # 📝 Citation
 
