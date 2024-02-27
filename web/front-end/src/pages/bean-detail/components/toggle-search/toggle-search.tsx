@@ -6,6 +6,7 @@ import {
 } from 'sea-lion-ui';
 import Button from '@components/button/button';
 import { integrateWebSearch, MsgCode } from '@services/home';
+import { Switch } from 'antd';
 import styles from './toggle-search.module.less';
 
 export interface ToggleSearchProps {
@@ -22,8 +23,19 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
     const [openModal, setOpenModal] = useState(false);
     const [token, setToken] = useState('');
 
-    const handleOpen = () => {
-        setOpenModal(true);
+    const handleChangeSwitch = async (e) => {
+        console.log('webSearchToken', !!webSearchToken);
+        if (!webSearchToken) {
+            setOpenModal(true);
+            e.preventDefault();
+            e.stopPropagation();
+        } else {
+            const res = await integrateWebSearch('');
+            if (res.msgCode === MsgCode.success) {
+                refresh();
+                message.success('网络搜索已关闭');
+            }
+        }
     };
 
     const handleSaveToken = async () => {
@@ -47,13 +59,7 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
 
     return (
         <div className={styles.toggleSearch}>
-            <div
-                className={styles.token}
-                onClick={handleOpen}
-                title="点击修改"
-            >
-                {webSearchToken || '尚未开启网络搜索'}
-            </div>
+            <Switch checked={!!webSearchToken} onClick={handleChangeSwitch} />
             <Modal
                 open={openModal}
                 title="网络搜索"

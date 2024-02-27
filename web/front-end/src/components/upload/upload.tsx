@@ -6,16 +6,19 @@ import Button from '@components/button/button';
 import styles from './upload.module.less';
 
 export interface UploadProps {
+    afterUpload?: () => void;
     files?: string[];
     children?: ReactNode;
 }
 
 const acceptFileTypes = '.jpg,.png,.jpeg,.bmp,.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go';
 
-const Upload: FC<UploadProps> = ({ files = [], children }) => {
+const Upload: FC<UploadProps> = ({
+    afterUpload,
+    files = [], children
+}) => {
     const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
-    const [newFiles, setNewFiles] = useState(files); // 已上传文件列表
     const [pendingFiles, setPendingFiles] = useState([]); // 待上传文件列表
 
     const handleClick = () => {
@@ -33,16 +36,14 @@ const Upload: FC<UploadProps> = ({ files = [], children }) => {
         addDocs(pendingFiles)
             .then((res) => {
                 setPendingFiles([]);
-                setNewFiles([...newFiles, ...res.docs]);
+                if (afterUpload) {
+                    afterUpload();
+                }
             })
             .finally(() => {
                 setLoading(false);
             });
     };
-
-    useEffect(() => {
-        setNewFiles(files);
-    }, [files]);
 
     return (
         <>
@@ -58,7 +59,6 @@ const Upload: FC<UploadProps> = ({ files = [], children }) => {
                 />
                 {children}
             </div>
-            <div className={styles.desc}>上传时可以框选多个文件</div>
             <h4>待上传文档</h4>
             <div className={styles.fileList}>
                 {pendingFiles.map((file) => (
@@ -70,7 +70,7 @@ const Upload: FC<UploadProps> = ({ files = [], children }) => {
             )}
             <h4>已上传文档</h4>
             <div className={styles.fileList}>
-                {newFiles.map((file) => (
+                {files.map((file) => (
                     <div key={file}>{file}</div>
                 ))}
             </div>

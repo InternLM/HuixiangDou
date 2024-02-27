@@ -35,7 +35,7 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
 
     const handleSubmit = async () => {
         form.validateFields().then(async (values) => {
-            integrateLark(values).then((res) => {
+            integrateLark(values.appId, values.appSecret).then((res) => {
                 if (res && res.msgCode === MsgCode.success) {
                     setEventUrl(res.data?.eventUrl);
                     message.success('保存成功');
@@ -85,13 +85,6 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
                     layout="vertical"
                 >
                     <Form.Item
-                        name="webhookUrl"
-                        label="webhookUrl"
-                        rules={[{ required: true, message: 'webhookUrl 不能为空' }]}
-                    >
-                        <Input placeholder="webhookUrl (必填)" />
-                    </Form.Item>
-                    <Form.Item
                         name="appId"
                         label="appId"
                         rules={[{ required: true, message: 'appId 不能为空' }]}
@@ -105,20 +98,27 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
                     >
                         <Input placeholder="appSecret (必填)" />
                     </Form.Item>
-                    <Form.Item
-                        name="encryptKey"
-                        label="encryptKey"
-                        rules={[{ required: true, message: 'encryptKey 不能为空' }]}
-                    >
-                        <Input placeholder="encryptKey (必填)" />
-                    </Form.Item>
-                    <Form.Item
-                        name="verificationToken"
-                        label="verificationToken"
-                        rules={[{ required: true, message: 'verificationToken 不能为空' }]}
-                    >
-                        <Input placeholder="verificationToken (必填)" />
-                    </Form.Item>
+                    {/* <Form.Item */}
+                    {/*    name="webhookUrl" */}
+                    {/*    label="webhookUrl" */}
+                    {/*    rules={[{ required: true, message: 'webhookUrl 不能为空' }]} */}
+                    {/* > */}
+                    {/*    <Input placeholder="webhookUrl (必填)" /> */}
+                    {/* </Form.Item> */}
+                    {/* <Form.Item */}
+                    {/*    name="encryptKey" */}
+                    {/*    label="encryptKey" */}
+                    {/*    rules={[{ required: true, message: 'encryptKey 不能为空' }]} */}
+                    {/* > */}
+                    {/*    <Input placeholder="encryptKey (必填)" /> */}
+                    {/* </Form.Item> */}
+                    {/* <Form.Item */}
+                    {/*    name="verificationToken" */}
+                    {/*    label="verificationToken" */}
+                    {/*    rules={[{ required: true, message: 'verificationToken 不能为空' }]} */}
+                    {/* > */}
+                    {/*    <Input placeholder="verificationToken (必填)" /> */}
+                    {/* </Form.Item> */}
                 </Form>
                 <Button onClick={handleSubmit}>提交</Button>
             </Modal>

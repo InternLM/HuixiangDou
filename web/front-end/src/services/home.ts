@@ -150,10 +150,13 @@ export async function integrateWebSearch(webSearchToken: string) {
     }, beanPrefix);
 }
 
-export async function integrateLark(data: Feishu) {
+export async function integrateLark(appId: string, appSecret: string) {
     return request<LarkRspDto>('/api/v1/qalib/v1/integrateLark', {
         method: 'POST',
-        data,
+        data: {
+            appId,
+            appSecret
+        },
         meta: {
             isAllResponseBody: true
         }
