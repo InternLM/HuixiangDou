@@ -11,7 +11,7 @@ import web.util.str as str_util
 from web.model.base import BaseBody, standard_error_response
 from web.model.huixiangdou import HxdToken, HxdTask, HxdTaskType, HxdTaskPayload
 from web.model.integrate import IntegrateLarkBody, IntegrateWebSearchBody
-from web.model.qalib import QalibInfo, QalibPositiveNegative, QalibSample, WebSearch, Wechat
+from web.model.qalib import QalibInfo, QalibPositiveNegative, QalibSample, WebSearch, Wechat, Lark
 from web.mq.hxd_task import HuixiangDouTask
 from web.orm.redis import r
 from web.util.log import log
@@ -162,13 +162,11 @@ class QaLibService:
         if not info:
             return standard_error_response(biz_const.ERR_QALIB_INFO_NOT_FOUND)
 
-        info.lark.webhookUrl = body.webhookUrl
-        info.lark.appId = body.appId
-        info.lark.appSecret = body.appSecret
-        info.lark.encryptKey = body.encryptKey
-        info.lark.verificationToken = body.verificationToken
+        event_url = get_lark_on_message_url(body.appId, body.appSecret)
+        info.lark = Lark(webhookUrl=body.webhookUrl, appId=body.appId, appSecret=body.appSecret,
+                         encryptKey=body.encryptKey, verificationToken=body.verificationToken, eventUrl=event_url)
         QaLibCache().set_qalib_info(feature_store_id, info)
-        return BaseBody()
+        return BaseBody(data=info.lark)
 
     async def integrate_web_search(self, body: IntegrateWebSearchBody):
         feature_store_id = self.hxd_info.featureStoreId
