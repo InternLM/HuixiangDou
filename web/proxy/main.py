@@ -1,4 +1,4 @@
-# 监听 HuiXiangDou:Task queue
+# Listen HuiXiangDou:Task queue
 import json
 import os
 import pdb
@@ -363,6 +363,7 @@ def process():
     while True:
         # try:
         msg, error = parse_json_str(que.get())
+        logger.info(msg)
         if error is not None:
             raise error
 

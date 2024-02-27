@@ -5,10 +5,10 @@
 # REDIS_PASSWORD=
 # SERVER_PORT=7860 (when deploy on OpenXLab-APPs, this SERVER_PORT should be 7860)
 
-import os
+import subprocess as sp
 
 # launch the HuixiangDou-WEB
-os.system("python -m web.main")
+sp.Popen(["python", "-m", "web.main"])
 
 # launch huixiangdou pipeline
-os.system("cd web/proxy && python main.py")
+sp.Popen(["python", "main.py"], cwd="web/proxy")

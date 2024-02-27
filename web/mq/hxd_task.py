@@ -20,7 +20,7 @@ class HuixiangDouTask:
             logger.error("HuixiangDou's task is empty, update task aborted.")
             return False
         try:
-            r.lpush(biz_const.RDS_KEY_HXD_TASK, task.model_dump_json())
+            r.rpush(biz_const.RDS_KEY_HXD_TASK, task.model_dump_json())
         except Exception as e:
             logger.error(f"{e}")
             return False
