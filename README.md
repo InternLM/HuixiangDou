@@ -30,9 +30,9 @@ If this helps you, please give it a star! ⭐
 
 # 🆕 What's new
 
-- \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank
+- \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank for higher precision 👍
 - \[2024/02\] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
-- \[2024/02\] \[experimental\] Integrated multimodal model for OCR functionality into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)
+- \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
 - \[2024/01\] Support [personal wechat](./docs/add_wechat_group_zh.md) and [lark group](./docs/add_lark_group_zh.md)
 
 # 📦 Hardware Requirements
@@ -47,7 +47,7 @@ The following are the hardware requirements for running. It is suggested to foll
 
 # 🔥 Run
 
-We will take mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
+We will take mmpose and rust-ncnn as examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
 
@@ -66,6 +66,7 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # Download chatting topics
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/tpoisonooo/rust-ncnn --depth=1 repodir/rust-ncnn
 
 # Build a feature store
 mkdir workdir # create a working directory
