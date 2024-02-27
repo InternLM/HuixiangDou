@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os.path
 from typing import List, Union
@@ -193,7 +195,7 @@ class QaLibCache:
         pass
 
     @classmethod
-    def get_qalib_info(cls, feature_store_id: str) -> QalibInfo | None:
+    def get_qalib_info(cls, feature_store_id: str) -> Union[QalibInfo, None]:
         name = biz_const.RDS_KEY_QALIB_INFO
         key = feature_store_id
         o = r.hget(name, key)
