@@ -5,16 +5,16 @@ from web.util.log import log
 logger = log(__name__)
 
 # redis
-RDS_KEY_LOGIN = "HuiXiangDou:login:info"
-RDS_KEY_QALIB_INFO = "HuiXiangDou:qalib:info"
-RDS_KEY_SUFFIX_TO_QALIB = "HuiXiangDou:suffixMap"
-RDS_KEY_SAMPLE_INFO = "HuiXiangDou:qalib:sample"
-RDS_KEY_PIPELINE = "HuiXiangDou:pipeline"
-RDS_KEY_HXD_TASK = "HuiXiangDou:Task"
-RDS_KEY_HXD_TASK_RESPONSE = "HuiXiangDou:TaskResponse"
-RDS_KEY_HXD_CHAT_RESPONSE = "HuiXiangDou:ChatResponse"
-RDS_KEY_SCHEDULER = "HuiXiangDou:sched"
-RDS_KEY_QUERY_INFO = "HuiXiangDou:query"
+RDS_KEY_LOGIN = "HuixiangDou:login:info"
+RDS_KEY_QALIB_INFO = "HuixiangDou:qalib:info"
+RDS_KEY_SUFFIX_TO_QALIB = "HuixiangDou:suffixMap"
+RDS_KEY_SAMPLE_INFO = "HuixiangDou:qalib:sample"
+RDS_KEY_PIPELINE = "HuixiangDou:pipeline"
+RDS_KEY_HXD_TASK = "HuixiangDou:Task"
+RDS_KEY_HXD_TASK_RESPONSE = "HuixiangDou:TaskResponse"
+RDS_KEY_HXD_CHAT_RESPONSE = "HuixiangDou:ChatResponse"
+RDS_KEY_SCHEDULER = "HuixiangDou:sched"
+RDS_KEY_QUERY_INFO = "HuixiangDou:query"
 
 # jwt
 JWT_HEADER = {
