@@ -81,11 +81,11 @@ async def sync_hxd_task_response() -> None:
         logger.error(f"deserializing huixiangdou task response failed, raw: {o}")
         return
     task_type = hxd_task_response.type
-    if task_type == HxdTaskType.ADD_DOC:
+    if task_type == HxdTaskType.ADD_DOC.value:
         handle_task_add_doc_response(hxd_task_response)
-    elif task_type == HxdTaskType.UPDATE_SAMPLE:
+    elif task_type == HxdTaskType.UPDATE_SAMPLE.value:
         handle_task_update_sample_response(hxd_task_response)
-    elif task_type == HxdTaskType.UPDATE_PIPELINE:
+    elif task_type == HxdTaskType.UPDATE_PIPELINE.value:
         handle_task_update_pipeline_response(hxd_task_response)
     else:
         logger.error(f"unrecognized task type: {task_type}")
