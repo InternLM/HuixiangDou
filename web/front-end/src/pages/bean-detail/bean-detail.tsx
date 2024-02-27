@@ -2,7 +2,6 @@ import {
     FC, ReactNode, useEffect, useMemo, useState
 } from 'react';
 import { useLocale } from '@hooks/useLocale';
-import { useParams } from 'react-router-dom';
 import { IconFont } from 'sea-lion-ui';
 import logo from '@assets/imgs/logo.png';
 import bean from '@assets/imgs/bean.png';
@@ -28,8 +27,10 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     const locales = useLocale('beanDetail');
     const [name, setName] = useState('');
     const [weChatInfo, setWeChatInfo] = useState(null);
+    const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
     const [searchToken, setSearchToken] = useState('');
     const [beanState, setBeanState] = useState(null);
+    const [refreshFlag, setRefreshFlag] = useState(false);
 
     const state = {
         [BeanState.failed]: locales.createFailed,
@@ -42,6 +43,10 @@ const BeanDetail: FC<BeanDetailProps> = () => {
         [BeanState.finished]: '#e3f9dd',
     };
 
+    const refresh = () => {
+        setRefreshFlag(!refreshFlag);
+    };
+
     useEffect(() => {
         (async () => {
             const res = await getInfo();
@@ -49,20 +54,21 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 setName(res.name);
                 setBeanState(res.status);
                 setSearchToken(res.webSearch?.token);
+                setFeishuInfo(res.lark);
             }
         })();
-    }, []);
+    }, [refreshFlag]);
 
     const content = useMemo(() => {
-        if (beanState === BeanState.created) {
-            return (
-                [{
-                    title: locales.addDocs,
-                    children: <ImportDocs />,
-                    key: 'docs'
-                }]
-            );
-        }
+        // if (beanState === BeanState.created) {
+        //     return (
+        //         [{
+        //             title: locales.addDocs,
+        //             children: <ImportDocs />,
+        //             key: 'docs'
+        //         }]
+        //     );
+        // }
         return (
             [
                 {
@@ -87,17 +93,17 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 },
                 {
                     title: locales.accessFeishu,
-                    children: <IntegrateFeishu />,
+                    children: <IntegrateFeishu feishu={feishuInfo} refresh={refresh} />,
                     key: 'accessFeishu'
                 },
                 {
                     title: locales.switchSearch,
-                    children: <ToggleSearch webSearchToken={searchToken} />,
+                    children: <ToggleSearch refresh={refresh} webSearchToken={searchToken} />,
                     key: 'switchSearch'
                 },
             ]
         );
-    }, [locales, searchToken]);
+    }, [locales, searchToken, beanState, feishuInfo, refresh]);
 
     return (
         <div className={styles.beanDetail}>
