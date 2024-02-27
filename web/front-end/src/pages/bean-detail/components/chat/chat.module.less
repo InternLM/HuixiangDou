@@ -1,15 +1,49 @@
 .chat {
     border-radius: 8px;
     border: 1px solid #dcdcdc;
+    padding: 12px;
     .message-list {
         width: 100%;
         min-height: 400px;
+        .avatar {
+            width: 20px;
+            height: 20px;
+            img {
+                width: 100%;
+            }
+        }
+        .message-wrapper {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0;
+        }
+        .message {
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: #f4f5f9;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .img-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .reference-wrapper {
+            border-top: 1px solid #dcdcdc;
+            padding-top: 8px;
+            margin-top: 8px;
+            white-space: pre-wrap;
+            .reference {
+                font-size: 14px;
+                color: #666;
+            }
+        }
     }
     .input-wrapper {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 12px;
+        padding-top: 12px;
         :global {
             .seal-input-group .seal-input-inner-container:focus-within {
                 outline: 1px solid #59a041;
