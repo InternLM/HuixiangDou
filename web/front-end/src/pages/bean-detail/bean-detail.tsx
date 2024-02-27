@@ -60,15 +60,15 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     }, [refreshFlag]);
 
     const content = useMemo(() => {
-        // if (beanState === BeanState.created) {
-        //     return (
-        //         [{
-        //             title: locales.addDocs,
-        //             children: <ImportDocs />,
-        //             key: 'docs'
-        //         }]
-        //     );
-        // }
+        if (beanState === BeanState.created) {
+            return (
+                [{
+                    title: locales.addDocs,
+                    children: <ImportDocs />,
+                    key: 'docs'
+                }]
+            );
+        }
         return (
             [
                 {
