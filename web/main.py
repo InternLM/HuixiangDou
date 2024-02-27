@@ -2,25 +2,24 @@
 # This is the main entrance of Huixiangdou-WEB.
 # This project is written under python 3.9
 
+import os
+
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, Request
-from starlette.responses import HTMLResponse
-from fastapi.responses import FileResponse
-
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from starlette.responses import HTMLResponse
 from starlette.responses import JSONResponse
 
 import web.api.access as access
 import web.api.qalib as qalib
 import web.api.statistic as statistic
-from web.api import chat, message
+from web.api import chat, message, integrate
 from web.config.logging import LOGGING_CONFIG
 from web.middleware.token import check_hxd_token
 from web.scheduler.huixiangdou_task import start_scheduler, stop_scheduler
 from web.util.log import log
 from web.util.str import safe_join
-import os
-
 
 # log
 logger = log(__name__)
@@ -43,6 +42,8 @@ app.add_middleware(
 )
 app.include_router(router=access.access_api, prefix=f"/api/{API_VER}/access")
 app.include_router(router=qalib.qalib_api, prefix=f"/api/{API_VER}/qalib", dependencies=[Depends(check_hxd_token)])
+app.include_router(router=integrate.integrate_api, prefix=f"/api/{API_VER}/qalib",
+                   dependencies=[Depends(check_hxd_token)])
 app.include_router(router=statistic.statistic_api, prefix=f"/api/{API_VER}/statistic")
 app.include_router(router=chat.chat_api, prefix=f"/api/{API_VER}/chat", dependencies=[Depends(check_hxd_token)])
 app.include_router(router=message.message_api, prefix=f"/api/{API_VER}/message")
