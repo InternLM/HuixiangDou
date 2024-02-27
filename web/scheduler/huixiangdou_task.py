@@ -29,9 +29,9 @@ def handle_task_add_doc_response(response: HxdTaskResponse):
         logger.error(f"can't find {name}:{fid} in redis.")
         return
     qalib_info = QalibInfo(**json.loads(o))
-    qalib_info.status = response.code
+    qalib_info.status = biz_const.HXD_PIPELINE_QALIB_CREATE_SUCCESS if response.code == 0 else biz_const.HXD_PIPELINE_QALIB_CREATE_FAILED
     r.hset(name=name, key=fid, value=qalib_info.model_dump_json())
-    logger.info(f"do task={response.type} with fid={response.feature_store_id}'s result: {response.status}")
+    logger.info(f"do task={response.type} with fid={response.feature_store_id}'s result: {response.code}-{response.status}")
 
 
 def handle_task_update_sample_response(response: HxdTaskResponse):
@@ -81,11 +81,11 @@ async def sync_hxd_task_response() -> None:
         logger.error(f"deserializing huixiangdou task response failed, raw: {o}")
         return
     task_type = hxd_task_response.type
-    if task_type == HxdTaskType.ADD_DOC:
+    if task_type == HxdTaskType.ADD_DOC.value:
         handle_task_add_doc_response(hxd_task_response)
-    elif task_type == HxdTaskType.UPDATE_SAMPLE:
+    elif task_type == HxdTaskType.UPDATE_SAMPLE.value:
         handle_task_update_sample_response(hxd_task_response)
-    elif task_type == HxdTaskType.UPDATE_PIPELINE:
+    elif task_type == HxdTaskType.UPDATE_PIPELINE.value:
         handle_task_update_pipeline_response(hxd_task_response)
     else:
         logger.error(f"unrecognized task type: {task_type}")

@@ -1,4 +1,4 @@
-# 监听 HuiXiangDou:Task queue
+# Listen HuiXiangDou:Task queue
 import json
 import os
 import pdb
@@ -49,6 +49,7 @@ class CacheRetriever:
             reranker_model_path = config['reranker_model_path']
 
         # load text2vec and rerank model
+        logger.info('loading test2vec and rerank models')
         self.embeddings = HuggingFaceEmbeddings(
             model_name=embedding_model_path,
             model_kwargs={'device': 'cuda'},
@@ -363,6 +364,7 @@ def process():
     while True:
         # try:
         msg, error = parse_json_str(que.get())
+        logger.info(msg)
         if error is not None:
             raise error
 
@@ -386,7 +388,7 @@ def process():
         elif msg.type == TaskCode.CHAT.value:
             chat_with_featue_store(fs_cache, msg.payload)
         else:
-            logger.warning(f'unknown type {msg.type}')
+            logger.warning(f'unknown type {msg.type}, supported type {[TaskCode.FS_ADD_DOC.value, TaskCode.FS_UPDATE_SAMPLE.value, TaskCode.FS_UPDATE_PIPELINE.value, TaskCode.CHAT.value]}')
 
         # except Exception as e:
         #     logger.error(str(e))
