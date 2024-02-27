@@ -2,6 +2,7 @@ import base64
 import hashlib
 import json
 import time
+from typing import Union
 
 from fastapi import Request, Response
 
@@ -103,7 +104,7 @@ class ChatCache:
         cls._set_query_info(query_id, feature_store_id, q)
 
     @classmethod
-    def get_query_info(cls, query_id: str, feature_store_id: str) -> ChatQueryInfo | None:
+    def get_query_info(cls, query_id: str, feature_store_id: str) -> Union[ChatQueryInfo, None]:
         key = biz_constant.RDS_KEY_QUERY_INFO + "-" + feature_store_id
         field = query_id
         o = r.hget(key, field)

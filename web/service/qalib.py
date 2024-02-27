@@ -193,7 +193,7 @@ class QaLibCache:
         pass
 
     @classmethod
-    def get_qalib_info(cls, feature_store_id: str) -> QalibInfo | None:
+    def get_qalib_info(cls, feature_store_id: str) -> Union[QalibInfo, None]:
         name = biz_const.RDS_KEY_QALIB_INFO
         key = feature_store_id
         o = r.hget(name, key)
@@ -263,7 +263,7 @@ class QaLibCache:
             return False
 
     @classmethod
-    def get_sample_info(cls, feature_store_id: str) -> QalibSample | None:
+    def get_sample_info(cls, feature_store_id: str) -> Union[QalibSample, None]:
         o = r.hget(name=biz_const.RDS_KEY_SAMPLE_INFO, key=feature_store_id)
         if not o:
             logger.info(f"[qalib] feature_store_id: {feature_store_id}, get empty sample")
@@ -279,7 +279,7 @@ class QaLibCache:
         r.hset(name=biz_const.RDS_KEY_SUFFIX_TO_QALIB, key=suffix, value=feature_store_id)
 
     @classmethod
-    def get_qalib_by_suffix(cls, suffix: str) -> str | None:
+    def get_qalib_by_suffix(cls, suffix: str) -> Union[str, None]:
         o = r.hget(name=biz_const.RDS_KEY_SUFFIX_TO_QALIB, key=suffix)
         if not o:
             logger.error(f"[qalib] suffix: {suffix} has no qalib")
