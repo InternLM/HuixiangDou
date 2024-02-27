@@ -24,7 +24,7 @@ English | [简体中文](README_zh.md)
 2. Propose an algorithm pipeline for answering technical questions.
 3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
 
-Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and [architecture](./docs/architecture_en.md).
+Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join our [WeChat group](resource/figures/wechat.jpg) to experience the effects of the assistant.
 
 If this helps you, please give it a star! ⭐
 
