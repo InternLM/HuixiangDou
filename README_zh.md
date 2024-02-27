@@ -1,3 +1,5 @@
+[English](README.md) | 简体中文
+
 <div align="center">
 
 <img src="resource/logo_black.svg" width="550px"/>
@@ -14,21 +16,21 @@
   </a>
 </div>
 
-简体中文 | [English](README.md)
-
 </div>
 
 “茴香豆”是一个基于 LLM 的领域知识助手。特点：
 
-1. 应对**群聊**这类复杂场景，解答用户问题的同时，不会消息泛滥
+1. 应对群聊这类复杂场景，解答用户问题的同时，不会消息泛滥
 2. 提出一套解答技术问题的算法 pipeline
 3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告 arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 
-查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)
+查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md) 和 [架构文档](./docs/architecture_zh.md)。
+
+如果对你有用，麻烦 star 一下⭐
 
 # 🆕 新功能
 
-- \[2024/02\] 用 [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank 提升检索精度 👍
+- \[2024/02\] 用 [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank 提升检索精度
 - \[2024/02\] [支持 deepseek](https://github.com/InternLM/HuixiangDou/blob/main/README_zh.md#step2-%E8%BF%90%E8%A1%8C%E5%9F%BA%E7%A1%80%E7%89%88%E6%8A%80%E6%9C%AF%E5%8A%A9%E6%89%8B) 和 qwen1.5; 按 GPU 显存动态选模型
 - \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
 - \[2024/01\] 实现[个人微信接入](./docs/add_wechat_group_zh.md); [飞书群收发和撤回](./docs/add_lark_group_zh.md)
@@ -45,11 +47,11 @@
 
 # 🔥 运行
 
-我们将以 mmpose 和 rust-ncnn 为底库范例，介绍如何把知识助手部署到飞书群
+我们将以 mmpose 为例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
 
-登录 huggingface，或使用 [hf 国内镜像](https://hf-mirror.com/)。
+登录 huggingface
 
 ```shell
 huggingface-cli login
@@ -64,7 +66,6 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # 下载聊天话题
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/tpoisonooo/rust-ncnn  --depth=1 repodir/rust-ncnn
 
 # 建立特征库
 mkdir workdir # 创建工作目录
