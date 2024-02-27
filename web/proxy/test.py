@@ -2,26 +2,12 @@ import json
 import pdb
 from pathlib import Path
 
-from config import feature_store_base_dir, redis_host, redis_port
+from config import feature_store_base_dir
 from helper import ErrorCode, Queue, TaskCode, parse_json_str
 
-task_in = Queue(name='Task',
-                host=redis_host(),
-                port=redis_port(),
-                charset='utf-8',
-                decode_responses=True)
-
-task_out = Queue(name='TaskResponse',
-                 host=redis_host(),
-                 port=redis_port(),
-                 charset='utf-8',
-                 decode_responses=True)
-
-chat_out = Queue(name='ChatResponse',
-                 host=redis_host(),
-                 port=redis_port(),
-                 charset='utf-8',
-                 decode_responses=True)
+task_in = Queue(name='Task')
+task_out = Queue(name='TaskResponse')
+chat_out = Queue(name='ChatResponse')
 
 
 def test_create_fs():
@@ -30,7 +16,7 @@ def test_create_fs():
         'payload': {
             'name': 'ailab 行政说明',
             'feature_store_id': '9527',
-            'file_abs_base': '/data2/khj/test-data',
+            'file_abs_base': '/root/huixiangdou-res/test-data',
             'file_list': ['huixiangdou.md', '']
         }
     }
