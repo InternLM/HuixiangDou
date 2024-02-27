@@ -1,3 +1,5 @@
+English | [简体中文](README_zh.md)
+
 <div align="center">
 
 <img src="resource/logo_blue.svg" width="550px"/>
@@ -14,8 +16,6 @@
   </a>
 </div>
 
-[简体中文](README_zh.md) | English
-
 </div>
 
 "HuixiangDou" is a domain-specific knowledge assistant based on the LLM. Features:
@@ -24,7 +24,9 @@
 2. Propose an algorithm pipeline for answering technical questions.
 3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
 
-Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
+Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and [architecture](./docs/architecture_en.md).
+
+If this helps you, please give it a star! ⭐
 
 # 🆕 What's new
 
@@ -45,7 +47,7 @@ The following are the hardware requirements for running. It is suggested to foll
 
 # 🔥 Run
 
-We will take mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
+We will take mmpose and rust-ncnn as examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
 
@@ -64,6 +66,7 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # Download chatting topics
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/tpoisonooo/rust-ncnn --depth=1 repodir/rust-ncnn
 
 # Build a feature store
 mkdir workdir # create a working directory

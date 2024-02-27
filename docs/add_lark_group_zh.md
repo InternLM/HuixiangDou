@@ -41,10 +41,12 @@ sudo yum -y install redis
 sudo systemctl start redis
 ..
 ```
+
 确保 redis 在后台已经活跃
 ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/84804532-c9fa-40b9-8605-6fd760a75f72)
 
 启动群聊消息监听
+
 ```
 # ECS 上，开个新终端，启动消息监听 6666 端口号
 cd huixiangdou
@@ -70,7 +72,6 @@ Press CTRL+C to quit
 这一步也需要同步配置加解密策略，防止解析报错：
 ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/8205cbc7-b7a1-4b50-ac46-8f6860be0ba0)
 
-
 **STEP4.** 权限管理-添加权限
 
 在测试企业中，添加权限不需要审批。以下是所需权限列表，搜索添加
@@ -95,11 +96,12 @@ Press CTRL+C to quit
 此时可在飞书 APP 上，**打开测试企业**，把应用“茴香豆” 加进群组。
 
 1. 在群里发消息，ECS 应保存到 redis 中
+
 2. 可以用 `curl -X POST -H "Content-Type: application/json" http://101.133.161.20:6666/fetch` 读取 redis 中的消息
    测通的样例：
    ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/333b3e79-bd80-41fe-9116-329e2e5356ab)
 
-4. 为了能及时撤回。 用户依次发送 4 条消息：“1、2、3、豆哥撤回”，接收顺序应该是 “豆哥撤回、1、2、3”
+3. 为了能及时撤回。 用户依次发送 4 条消息：“1、2、3、豆哥撤回”，接收顺序应该是 “豆哥撤回、1、2、3”
 
 ## 三、测试完整收发、撤回功能
 
@@ -142,12 +144,13 @@ python3 -m huixiangdou.main  --standalone
 点击“版本管理与发布-创建版本”，等待管理员审核上线。
 
 ## 五、FAQ
-1. 如果`curl -X POST -H "Content-Type: application/json" http://101.133.161.20:6666/fetch`执行超时如下图。
-![image](https://github.com/InternLM/HuixiangDou/assets/40042370/ba4ddb79-5b3d-4dae-8e9e-d958f42a35b7)
-解答：如果你的GPU机器有公网IP，修改webhook url地址为127.0.0.1
-![image](https://github.com/InternLM/HuixiangDou/assets/40042370/11c9159f-b479-4255-9582-92d6b3eab501)
 
-2. 报错huggingface_hub.utils._validators.HFValidationError: Repo id must be in the form
-repo_name' or 'namespace/repo_name': '/data/bcee-embedding-base v1'. Use`repo_type` argument if needed
-![image](https://github.com/InternLM/HuixiangDou/assets/40042370/b67ba8f8-7f37-4f62-b995-15fd3ad5e12e)
-解答：sentence_transformers包的bug,包版本降到2.2.2可以修复。
+1. 如果`curl -X POST -H "Content-Type: application/json" http://101.133.161.20:6666/fetch`执行超时如下图。
+   ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/ba4ddb79-5b3d-4dae-8e9e-d958f42a35b7)
+   解答：如果你的GPU机器有公网IP，修改webhook url地址为127.0.0.1
+   ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/11c9159f-b479-4255-9582-92d6b3eab501)
+
+2. 报错huggingface_hub.utils.\_validators.HFValidationError: Repo id must be in the form
+   repo_name' or 'namespace/repo_name': '/data/bcee-embedding-base v1'. Use`repo_type` argument if needed
+   ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/b67ba8f8-7f37-4f62-b995-15fd3ad5e12e)
+   解答：sentence_transformers包的bug,包版本降到2.2.2可以修复。

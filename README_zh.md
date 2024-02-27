@@ -1,3 +1,5 @@
+[English](README.md) | 简体中文
+
 <div align="center">
 
 <img src="resource/logo_black.svg" width="550px"/>
@@ -14,8 +16,6 @@
   </a>
 </div>
 
-简体中文 | [English](README.md)
-
 </div>
 
 “茴香豆”是一个基于 LLM 的领域知识助手。特点：
@@ -24,7 +24,9 @@
 2. 提出一套解答技术问题的算法 pipeline
 3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告 arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 
-查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)
+查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md) 和 [架构文档](./docs/architecture_zh.md)。
+
+如果对你有用，麻烦 star 一下⭐
 
 # 🆕 新功能
 
