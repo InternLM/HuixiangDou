@@ -66,11 +66,18 @@ export interface DocsRspDto {
 
 export interface Chat {
     'content': string,
-    'images': [string], // 本次上传的图片流列表，使用base64编码
+    'images': string[], // 本次上传的图片流列表，使用base64编码
     'history': {
         'sender': number, // 0: 用户 1: HuixiangDou
         'content': string
     }[]
+}
+
+export interface OnlineRspDto {
+    code: number,
+    state: string,
+    text: string,
+    references: string[]
 }
 
 export async function getStatistic() {
@@ -104,7 +111,7 @@ export async function addDocs(files: File[]) {
         const file = files[i];
         data.append('files', file);
     }
-    return request('/api/v1/qalib/v1/addDocs', {
+    return request<DocsRspDto>('/api/v1/qalib/v1/addDocs', {
         method: 'POST',
         data
     });
@@ -151,7 +158,7 @@ export async function online(data: Chat) {
 }
 
 export async function onlineResponse(queryId: string) {
-    return request('/api/v1/chat/v1/onlineResponse', {
+    return request<OnlineRspDto>('/api/v1/chat/v1/onlineResponse', {
         method: 'POST',
         data: {
             queryId

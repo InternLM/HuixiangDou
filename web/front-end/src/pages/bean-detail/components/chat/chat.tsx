@@ -100,7 +100,7 @@ const Chat: FC<ChatProps> = () => {
         <div className={styles.chat}>
             <div className={styles.messageList}>
                 {messages.map((message, index) => (
-                    <div className={styles.message} key={message.key}>
+                    <div className={styles.message} key={message.content + index}>
                         {message.sender === 0 ? '用户' : '机器人'}
                         {message.content}
                     </div>
@@ -119,7 +119,7 @@ const Chat: FC<ChatProps> = () => {
                     />
                 </div>
                 <Button
-                    disabled={queryId}
+                    disabled={!!queryId}
                     onClick={handleSendMessage}
                 >
                     发送
