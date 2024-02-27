@@ -80,6 +80,10 @@ export interface OnlineRspDto {
     references: string[]
 }
 
+export interface LarkRspDto extends BasicRespDto {
+    data: Feishu
+}
+
 export async function getStatistic() {
     return request<StatisticDto>('/api/v1/statistic/v1/total', {
         method: 'GET',
@@ -134,19 +138,25 @@ export async function getSampleInfo() {
 }
 
 export async function integrateWebSearch(webSearchToken: string) {
-    return request('/api/v1/qalib/v1/integrateWebSearch', {
+    return request<BasicRespDto>('/api/v1/qalib/v1/integrateWebSearch', {
         method: 'POST',
         data: {
             webSearchToken,
             vendor: 'google'
+        },
+        meta: {
+            isAllResponseBody: true
         }
     }, beanPrefix);
 }
 
 export async function integrateLark(data: Feishu) {
-    return request('/api/v1/qalib/v1/integrateLark', {
+    return request<LarkRspDto>('/api/v1/qalib/v1/integrateLark', {
         method: 'POST',
-        data
+        data,
+        meta: {
+            isAllResponseBody: true
+        }
     }, beanPrefix);
 }
 
