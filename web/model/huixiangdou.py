@@ -27,6 +27,7 @@ class HxdTaskPayload(BaseModel):
     images: Optional[List[str]] = []
     history: Optional[List[HxdTaskChatHistory]] = []
     web_search_token: Optional[str] = None
+    query_id: Optional[str] = ""
 
 
 class HxdTaskType(Enum):
