@@ -187,7 +187,7 @@ class FeatureStore:
         documents = []
         for i, file in enumerate(files):
             basename = os.path.basename(file)
-            logger.debug('{}/{}.. {}'.format(i, len(files), basename))
+            logger.debug('{}/{}.. {}'.format(i+1, len(files), basename))
             file_type = file_opr.get_type(file)
 
             if file_type == 'md':
@@ -214,7 +214,7 @@ class FeatureStore:
         file_opr = FileOperation()
 
         for i, file in enumerate(files):
-            logger.debug('{}/{}..'.format(i, len(files)))
+            logger.debug('{}/{}..'.format(i+1, len(files)))
             basename = os.path.basename(file)
 
             file_type = file_opr.get_type(file)
