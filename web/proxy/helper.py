@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import redis
 from loguru import logger
-
+from config import redis_host, redis_port, redis_passwd
 
 class TaskCode(Enum):
     FS_ADD_DOC = 'add_doc'
@@ -76,7 +76,11 @@ class ErrorCode(Enum):
 class Queue:
 
     def __init__(self, name, namespace='HuixiangDou', **redis_kwargs):
-        self.__db = redis.Redis(**redis_kwargs)
+        self.__db = redis.Redis(host=redis_host(),
+                 port=redis_port(),
+                 password=redis_passwd(),
+                 charset='utf-8',
+                 decode_responses=True)
         self.key = '%s:%s' % (namespace, name)
 
     def qsize(self):

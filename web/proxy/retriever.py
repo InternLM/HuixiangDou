@@ -111,7 +111,7 @@ class Retriever:
         # get the best index for sum(precision, recall)
         sum_precision_recall = precision[:-1] + recall[:-1]
         index_max = np.argmax(sum_precision_recall)
-        optimal_threshold = thresholds[index_max]
+        optimal_threshold = max(thresholds[index_max], 0.0)
 
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)
