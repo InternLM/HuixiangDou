@@ -99,6 +99,7 @@ async def fetch_chat_response():
         return
 
     while length > 0:
+        length -= 1
         o = r.lpop(name)
         if not o:
             logger.debug(f"lpop for {name} is empty, omit")
