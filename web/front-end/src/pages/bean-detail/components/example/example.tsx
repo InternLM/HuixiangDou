@@ -1,12 +1,13 @@
 import {
-    FC, ReactNode, useEffect, useState
+    FC, ReactNode, useEffect, useMemo, useState
 } from 'react';
 import {
-    CountInput, IconFont, Input, Modal
+    CountInput, IconFont, Modal
 } from 'sea-lion-ui';
+import { Tabs } from 'antd';
+import type { TabsProps } from 'antd';
 import { useLocale } from '@hooks/useLocale';
 import Button from '@components/button/button';
-import { useParams } from 'react-router-dom';
 import { getSampleInfo, updateSampleInfo } from '@services/home';
 import styles from './example.module.less';
 
@@ -15,31 +16,69 @@ export interface ExampleProps {
 }
 
 const Example: FC<ExampleProps> = () => {
-    const beanId = decodeURI(useParams()?.beanName);
     const locales = useLocale('beanDetail');
     const [openModal, setOpenModal] = useState(false);
-    const [negatives, setNegatives] = useState(['']);
-    const [positives, setPositives] = useState(['']);
-    const [inputValue, setInputValue] = useState('');
+    const [negatives, setNegatives] = useState('');
+    const [positives, setPositives] = useState('');
 
     useEffect(() => {
         if (openModal) {
             (async () => {
                 const res = await getSampleInfo();
                 if (res) {
-                    setPositives(res.positives);
-                    setNegatives(res.negatives);
-                    setInputValue(res.negatives.join('\n'));
+                    setPositives(res.positives.join('\n'));
+                    setNegatives(res.negatives.join('\n'));
                 }
             })();
         }
-    }, [beanId, openModal]);
+    }, [openModal]);
 
     const handleSave = async () => {
-        const newNegatives = inputValue.split('\n');
-        setNegatives(newNegatives);
-        const res = await updateSampleInfo([''], newNegatives);
+        const newNegatives = negatives.split('\n');
+        const newPositives = positives.split('\n');
+        const res = await updateSampleInfo(newPositives, newNegatives);
     };
+
+    const items: TabsProps['items'] = useMemo(() => {
+        return (
+            [
+                {
+                    key: 'positives',
+                    label: '设置正例',
+                    children: (
+                        <>
+                            <div className={styles.editor}>
+                                <CountInput
+                                    textarea
+                                    rows={12}
+                                    value={positives}
+                                    onChange={(e) => setPositives(e)}
+                                />
+                            </div>
+                            <Button onClick={handleSave}>保存</Button>
+                        </>
+                    ),
+                },
+                {
+                    key: 'negatives',
+                    label: '设置反例',
+                    children: (
+                        <>
+                            <div className={styles.editor}>
+                                <CountInput
+                                    textarea
+                                    rows={12}
+                                    value={negatives}
+                                    onChange={(e) => setNegatives(e)}
+                                />
+                            </div>
+                            <Button onClick={handleSave}>保存</Button>
+                        </>
+                    ),
+                },
+            ]
+        );
+    }, [negatives, positives, handleSave]);
 
     return (
         <div className={styles.example}>
@@ -53,15 +92,7 @@ const Example: FC<ExampleProps> = () => {
                 footer={(<div />)}
                 onClose={() => setOpenModal(false)}
             >
-                <div className={styles.editor}>
-                    <CountInput
-                        textarea
-                        rows={12}
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e)}
-                    />
-                </div>
-                <Button onClick={handleSave}>保存</Button>
+                <Tabs items={items} />
             </Modal>
         </div>
     );

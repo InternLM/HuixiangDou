@@ -12,7 +12,7 @@ from functools import lru_cache, partial, wraps
 import pytoml
 import redis
 from BCEmbedding.tools.langchain import BCERerank
-from config import feature_store_base_dir, redis_host, redis_port
+from config import feature_store_base_dir, redis_host, redis_port, redis_passwd
 from feature_store import FeatureStore
 from helper import ErrorCode, Queue, TaskCode, parse_json_str
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -23,15 +23,7 @@ from worker import Worker
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
                         status: str):
-    db = redis.Redis(host=redis_host(),
-                     port=redis_port(),
-                     charset='utf-8',
-                     decode_responses=True)
-    resp = Queue(name='TaskResponse',
-                 host=redis_host(),
-                 port=redis_port(),
-                 charset='utf-8',
-                 decode_responses=True)
+    resp = Queue(name='TaskResponse')
     target = {
         'feature_store_id': feature_store_id,
         'code': code,
@@ -119,11 +111,7 @@ class CacheRetriever:
 
 def callback_chat_state(feature_store_id: str, query_id: str, code: int,
                         status: str, text: str, ref: list):
-    que = Queue(name='ChatResponse',
-                host=redis_host(),
-                port=redis_port(),
-                charset='utf-8',
-                decode_responses=True)
+    que = Queue(name='ChatResponse')
 
     target = {
         'feature_store_id': feature_store_id,
@@ -246,10 +234,6 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
     if not os.path.exists(workdir):
         os.makedirs(workdir)
 
-    repodir = os.path.join(BASE, fs_id, 'repodir')
-    if not os.path.exists(repodir):
-        os.makedirs(repodir)
-
     configpath = os.path.join(BASE, fs_id, 'config.ini')
     if not os.path.exists(configpath):
         template_file = 'config-template.ini'
@@ -310,11 +294,12 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
     BASE = feature_store_base_dir()
     fs_id = payload.feature_store_id
     workdir = os.path.join(BASE, fs_id, 'workdir')
-    repodir = os.path.join(BASE, fs_id, 'repodir')
     configpath = os.path.join(BASE, fs_id, 'config.ini')
 
-    if not os.path.exists(workdir) or not os.path.exists(
-            repodir) or not os.path.exists(configpath):
+    db_reject = os.path.join(workdir, 'db_reject')
+    db_response = os.path.join(workdir, 'db_response')
+
+    if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
         task_state(code=ErrorCode.INTERNAL_ERROR.value,
                    status='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
         return
@@ -369,11 +354,7 @@ def update_pipeline(payload: types.SimpleNamespace):
 
 
 def process():
-    que = Queue(name='Task',
-                host=redis_host(),
-                port=redis_port(),
-                charset='utf-8',
-                decode_responses=True)
+    que = Queue(name='Task')
     fs_cache = CacheRetriever('config-template.ini')
 
     while True:

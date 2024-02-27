@@ -335,9 +335,11 @@ class FeatureStore:
         )
         file_dir, counter = self.preprocess(filepaths=filepaths,
                                             work_dir=work_dir)
-        self.ingress_response(file_dir=file_dir, work_dir=work_dir)
-        self.ingress_reject(file_dir=file_dir, work_dir=work_dir)
-        empty_cache()
+        success_cnt, _, __ = counter
+        if success_cnt > 0:
+            self.ingress_response(file_dir=file_dir, work_dir=work_dir)
+            self.ingress_reject(file_dir=file_dir, work_dir=work_dir)
+            empty_cache()
         return counter
 
 
