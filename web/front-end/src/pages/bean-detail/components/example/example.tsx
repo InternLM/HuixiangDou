@@ -36,7 +36,6 @@ const Example: FC<ExampleProps> = () => {
     const handleSave = async () => {
         const newNegatives = negatives.split('\n');
         const newPositives = positives.split('\n');
-        setNegatives(newNegatives);
         const res = await updateSampleInfo(newPositives, newNegatives);
     };
 
