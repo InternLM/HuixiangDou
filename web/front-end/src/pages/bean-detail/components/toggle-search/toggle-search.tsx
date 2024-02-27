@@ -1,20 +1,24 @@
-import { FC, ReactNode, useState } from 'react';
+import {
+    FC, ReactNode, useEffect, useState
+} from 'react';
 import {
     Input, message, Modal
 } from 'sea-lion-ui';
 import Button from '@components/button/button';
-import { useParams } from 'react-router-dom';
-import { integrateWebSearch } from '@services/home';
+import { integrateWebSearch, MsgCode } from '@services/home';
 import styles from './toggle-search.module.less';
 
 export interface ToggleSearchProps {
+    refresh: () => void;
     webSearchToken: string;
     children?: ReactNode;
 }
 
-const ToggleSearch: FC<ToggleSearchProps> = ({ webSearchToken, children }) => {
-    const beanId = decodeURI(useParams()?.beanName);
-
+const ToggleSearch: FC<ToggleSearchProps> = ({
+    refresh,
+    webSearchToken,
+    children
+}) => {
     const [openModal, setOpenModal] = useState(false);
     const [token, setToken] = useState('');
 
@@ -24,7 +28,22 @@ const ToggleSearch: FC<ToggleSearchProps> = ({ webSearchToken, children }) => {
 
     const handleSaveToken = async () => {
         const res = await integrateWebSearch(token);
+        if (res.msgCode === MsgCode.success && !token) {
+            refresh();
+            message.success('网络搜索已关闭');
+        } else if (res.msgCode === MsgCode.success && token) {
+            refresh();
+            message.success('保存成功');
+        } else if (res.msg) {
+            message.error(res.msg);
+        }
     };
+
+    useEffect(() => {
+        if (!openModal) {
+            setToken('');
+        }
+    }, [openModal]);
 
     return (
         <div className={styles.toggleSearch}>
