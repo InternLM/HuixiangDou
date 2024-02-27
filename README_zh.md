@@ -24,7 +24,7 @@
 2. 提出一套解答技术问题的算法 pipeline
 3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告 arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 
-查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md) 和 [架构文档](./docs/architecture_zh.md)。
+查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
 
 如果对你有用，麻烦 star 一下⭐
 
