@@ -130,12 +130,14 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                     </div>
                 ))}
             </div>
-            <div className={styles.statisticsItem}>
-                <div className={styles.statisticsItemTitle}>{locales.chatTest}</div>
-                <div>
-                    <Chat />
+            {beanState > BeanState.created && (
+                <div className={styles.statisticsItem}>
+                    <div className={styles.statisticsItemTitle}>{locales.chatTest}</div>
+                    <div>
+                        <Chat />
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };
