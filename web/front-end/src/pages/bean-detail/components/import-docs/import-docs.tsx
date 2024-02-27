@@ -9,25 +9,18 @@ import { getInfo } from '@services/home';
 import styles from './import-docs.module.less';
 
 export interface ImportDocsProps {
+    files: string[];
+    refresh: () => void;
     children?: ReactNode;
 }
 
-const ImportDocs: FC<ImportDocsProps> = () => {
+const ImportDocs: FC<ImportDocsProps> = ({ refresh, files }) => {
     const locales = useLocale('beanDetail');
     const [openModal, setOpenModal] = useState(false);
-    const [files, setFiles] = useState(['']);
 
-    useEffect(() => {
-        if (openModal) {
-            (async () => {
-                const res = await getInfo();
-                if (res) {
-                    setFiles(res.docs);
-                }
-            })();
-        }
-    }, [openModal]);
-
+    const afterUpload = () => {
+        refresh();
+    };
     return (
         <div className={styles.importDocs}>
             <Button onClick={() => setOpenModal(true)}>
@@ -40,7 +33,7 @@ const ImportDocs: FC<ImportDocsProps> = () => {
                 footer={(<div />)}
                 onClose={() => setOpenModal(false)}
             >
-                <Upload files={files}>
+                <Upload files={files} afterUpload={afterUpload}>
                     <IconFont icon="icon-PlusOutlined" />
                     <div>{locales.upload}</div>
                 </Upload>

@@ -3,7 +3,7 @@ import {
 } from 'react';
 import Button from '@components/button/button';
 import { online, onlineResponse } from '@services/home';
-import bean from '@assets/imgs/bean.png';
+import bean from '@assets/imgs/bean1.png';
 import styles from './chat.module.less';
 
 export interface ChatProps {
@@ -31,13 +31,16 @@ const Chat: FC<ChatProps> = () => {
             return;
         }
 
-        const currPrompt = editorRef.current.innerText;
-
         // read all images' base64 code from the editor
         const imgNodes = editorRef.current.querySelectorAll('img');
         const images = Array.from(imgNodes).map((node) => {
             return node.getAttribute('src');
         });
+        const currPrompt = editorRef.current.innerText.trim();
+        // if no prompt and no images, return
+        if (!currPrompt && images.length === 0) {
+            return;
+        }
         const history = messages.map((item) => {
             return {
                 content: item.content,
@@ -163,7 +166,7 @@ const Chat: FC<ChatProps> = () => {
                         onKeyDown={handleKeyDown}
                         onCompositionStart={() => setIsComposing(true)}
                         onCompositionEnd={() => setIsComposing(false)}
-                        data-text="placeholder"
+                        data-text="支持输入文字、图片和 emoji"
                     />
                 </div>
                 <Button

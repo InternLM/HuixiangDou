@@ -1,6 +1,6 @@
 export default {
     home: {
-        beanName: '知识库名称',
+        beanName: '请输入知识库名称，不存在则自动创建。不少于 8 个字符',
         createBean: '创建知识库',
         beanPwd: '知识库密码',
         create: '创建',

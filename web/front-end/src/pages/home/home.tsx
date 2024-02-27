@@ -27,12 +27,16 @@ const Home = () => {
             message.error(res.msg);
         }
         if (res.msgCode === MsgCode.success && res.data.featureStoreId) {
-            navigate(`/bean-detail/${res.data.featureStoreId}`);
+            navigate(`/bean-detail/?bean=${res.data.featureStoreId}`);
         }
     };
 
     const handleConfirm = () => {
-        if (beanName && beanPwd) {
+        if (beanName && beanName.length < 8) {
+            message.info('知识库名称不少于 8 个字符');
+            return;
+        }
+        if (beanName && beanName.length > 7 && beanPwd) {
             validateBean(beanName, beanPwd);
         }
     };
@@ -88,15 +92,18 @@ const Home = () => {
                 <div className={styles.logo}>
                     <img src={logo} alt="huixiangdou" />
                 </div>
+                <div className={styles.slogan}>行业知识助手，零开发接入飞书微信</div>
                 <div className={styles.inputWrapper}>
                     <Input
                         placeholder={locales.beanName}
                         value={beanName}
+                        max={500}
                         onChange={(e) => setBeanName(e.target.value)}
                     />
                     <Input
                         placeholder={locales.beanPwd}
                         value={beanPwd}
+                        max={500}
                         onChange={(e) => setBeanPwd(e.target.value)}
                     />
                 </div>
