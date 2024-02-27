@@ -1,63 +1,93 @@
-import requests
+import json
 import math
-import re
 import os
-import pickle
+import re
+from datetime import datetime
 
-TOKEN = ''
-OWENER = 'InternLM'
-NAME = 'lmdeploy'
-export_dir = './issues'
+import loguru
+import requests
 
-headers = {
-    'Authorization': TOKEN,
-}
 
 def get_issue_count(owner, name):
-    url = f"https://api.github.com/repos/{owner}/{name}/issues"
-    response = requests.get(url=url,headers=headers)
+    headers = {
+        'Authorization': TOKEN,
+    }
+    url = f'https://api.github.com/repos/{owner}/{name}/issues'
+    response = requests.get(url=url, headers=headers)
     if response.status_code == 200:
         issues = response.json()
         count = issues[0]['number']
     else:
-        print(f"Error fetching issues: {response.status_code}")
-        print(response.text)
+        loguru.logger.error(f'Error fetching issues: {response.status_code}')
+        loguru.logger.error(response.text)
+        if 'limit' in response.text:
+            loguru.logger.error('受到 github 限制，自动结束')
+            exit()
         count = 0
     return count
 
-def get_issues_list(owner,name,issue_count):
-    GITHUB_API_URL = f"https://api.github.com/repos/{owner}/{name}/issues"
-    pages = math.ceil(issue_count/100) +1 
-    print("all_pages:",pages)
+
+def get_issues_list(owner, name, issue_count):
+    headers = {
+        'Authorization': TOKEN,
+    }
+    GITHUB_API_URL = f'https://api.github.com/repos/{owner}/{name}/issues'
+    pages = math.ceil(issue_count / 100) + 1
+    loguru.logger.info(f'all_pages:{pages}')
     issues_list = []
     for page in range(pages):
-        response = requests.get(GITHUB_API_URL, headers=headers,params={'state': 'all','per_page':100,'page':{page}})
+        response = requests.get(GITHUB_API_URL,
+                                headers=headers,
+                                params={
+                                    'state': 'all',
+                                    'per_page': 100,
+                                    'page': {page}
+                                })
         if response.status_code == 200:
-            # 解析JSON响应体为Python对象
             issues = response.json()
             for issue in issues:
-                if "issues" in issue['html_url'] and issue['state']=='closed':
-                    issues_list.append({'number':issue['number'],'title':issue['title'],'html_url':issue['html_url'],'body':issue['body'],'closed_at':issue['closed_at']})
+                if 'issues' in issue['html_url'] and issue['state'] == 'closed':
+                    issues_list.append({
+                        'number': issue['number'],
+                        'title': issue['title'],
+                        'html_url': issue['html_url'],
+                        'body': issue['body'],
+                        'closed_at': issue['closed_at']
+                    })
         else:
-            print(f"Error fetching issues: {response.status_code}")
-            print(response.text)
+            loguru.logger.error(
+                f'Error fetching issues: {response.status_code}')
+            loguru.logger.error(response.text)
     return issues_list
 
-def get_all_comments(owner,name,issue_number):
+
+def get_all_comments(owner, name, issue_number):
+    headers = {
+        'Authorization': TOKEN,
+    }
     issue_comments_url = f'https://api.github.com/repos/{owner}/{name}/issues/{issue_number}/comments'
     comments = []
     result_comments = []
-    response = requests.get(issue_comments_url,headers=headers)
+    response = requests.get(issue_comments_url, headers=headers)
     if response.status_code != 200:
-        print('Failed to retrieve comments:', response.status_code,"issue_number",issue_number)
+        loguru.logger.error(
+            f'Failed to retrieve comments: {response.status_code} issue_number {issue_number}'
+        )
+        loguru.logger.error(f'{response.text}')
+        if 'limit' in response.text:
+            loguru.logger.error('受到 github 限制，自动结束')
+            exit()
         return []
     page_comments = response.json()
-    if not page_comments:  
-        print("no comment")
+    if not page_comments:
         return []
     comments.extend(page_comments)
-    for i,sub_comment in enumerate(comments) :
-        comment = {'id':i,'user':sub_comment['user']['login'],'body':sub_comment['body']}
+    for i, sub_comment in enumerate(comments):
+        comment = {
+            'id': i,
+            'user': sub_comment['user']['login'],
+            'body': sub_comment['body']
+        }
         # 删除 comment 引用其他部分，节省空间
         if '> ' in comment['body']:
             quoted_regex = re.compile(r'^>.*(?:\r?\n|\r)?', re.MULTILINE)
@@ -65,24 +95,27 @@ def get_all_comments(owner,name,issue_number):
         result_comments.append(comment)
     return result_comments
 
-def write_all_issues(issues_list):
+
+def write_all_issues(owener, name, issues_list):
     # issue number 从大到小获取 comment
     # 单次获取comment可能会有问题，太多了会受到github限制，可能需要多次构建
-    MAX_NUMBER = 1000 # 每次构建都要把之前构建好的跳过，这里默认一个很大的值
+    MAX_NUMBER = 1000  # 每次构建都要把之前构建好的跳过，这里默认一个很大的值
     for j in range(len(issues_list)):
         issue_number = issues_list[j]['number']
         if issue_number >= MAX_NUMBER:
-            print("跳过了",issue_number)
             continue
         issue_body = issues_list[j]['body']
-        issue_comments = get_all_comments(OWENER,NAME,issue_number)
+        issue_comments = get_all_comments(owener, name, issue_number)
         # 保存
         issue_title = issues_list[j]['title']
-        forbidden_chars_pattern = r'[<>:"/\\|?*]' # for windows
+        forbidden_chars_pattern = r'[<>:"/\\|?*]'  # for windows
         issue_title = re.sub(forbidden_chars_pattern, ' ', issue_title)
-        md_basename = f"{issue_number}_{issue_title}.md"
+        md_basename = f'{issue_number}_{issue_title}.md'
         md_question = issue_body
-        md_answer = ''.join([f"#### 第{i['id']}条回复来自{i['user']} \n {i['body']} \n"  for i in issue_comments])
+        md_answer = ''.join([
+            f"#### 第{i['id']}条回复来自{i['user']} \n {i['body']} \n"
+            for i in issue_comments
+        ])
         md_contents = f"""## quesion\n
     =========== question ===========
     {md_question}
@@ -92,21 +125,48 @@ def write_all_issues(issues_list):
     {md_answer}
     =========== answer ===========\n
         """
-        with open(os.path.join(export_dir,md_basename),mode='w',encoding='utf-8') as file:
+        with open(os.path.join(export_dir, md_basename),
+                  mode='w',
+                  encoding='utf-8') as file:
             file.write(md_contents)
 
-# get issues list
-issue_count = get_issue_count(OWENER,NAME)
-issues_list = get_issues_list(OWENER,NAME,issue_count)
 
-# 不需要每次都全量获取，先存储本地变量再读取comment
-with open('github_all_issues.pkl', 'wb') as file:
-    pickle.dump(issues_list, file)
+if __name__ == '__main__':
 
-with open('github_all_issues.pkl', 'rb') as file:
-    git_all_issues = pickle.load(file)
+    # config
+    TOKEN = ''
+    OWENER = 'InternLM'
+    NAME = 'lmdeploy'
+    export_dir = './issues'
+    save_month = 3  # 保存几个月内的 issue
 
-# 过滤空issue
-for i in git_all_issues:
-    if i['body'] is None:
-        git_all_issues.remove(i)
+    # run
+    if not os.path.exists(export_dir):
+        os.mkdir(export_dir)
+    issues_json_path = os.path.join(export_dir, 'git_issues_list.json')
+    if not os.path.exists(issues_json_path):
+        issue_count = get_issue_count(OWENER, NAME)
+        issues_list = get_issues_list(OWENER, NAME, issue_count)
+        # clear issues
+        current_date = datetime.now()
+        for i in issues_list:
+            if i['body'] is None:
+                issues_list.remove(i)
+                continue
+            issue_date = datetime.strptime(i['closed_at'][0]['closed_at'],
+                                           '%Y-%m-%dT%H:%M:%SZ')
+            diff = abs((current_date.year - issue_date.year) * 12 +
+                       (current_date.month - issue_date.month))
+            if diff > save_month:
+                issues_list.remove(i)
+
+        loguru.logger.info(f'create git_issues! {issues_json_path}')
+        with open(issues_json_path, 'w') as file:
+            json.dump(issues_list, file)
+    else:
+        loguru.logger.info(f'we already have git_issues! {issues_json_path}')
+        with open(issues_json_path, 'r') as file:
+            git_all_issues = json.load(file)
+            print(git_all_issues)
+
+    write_all_issues(OWENER, NAME, git_all_issues)
