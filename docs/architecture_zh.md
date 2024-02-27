@@ -59,7 +59,7 @@ module 内只有 3 个部分：
 
 feature_store 在整个 pipeline 里仅仅是 “引路牌” 的作用，并不依赖 chunk 作答。
 
-**2. llm 部分** 包含了 client 和 server_hybrid server，是因为：
+**2. llm 部分** 包含了 client 和 server_hybrid，是因为：
 
 1. 模型可能部署在本地，也可以是 openai 接口
 2. 每个模型的特色不同，我们既希望便宜，又不想少功能。所以就是“按需调用”，因此得名 `hybrid`
