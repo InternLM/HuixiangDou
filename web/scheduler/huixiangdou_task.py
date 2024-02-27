@@ -31,7 +31,7 @@ def handle_task_add_doc_response(response: HxdTaskResponse):
     qalib_info = QalibInfo(**json.loads(o))
     qalib_info.status = biz_const.HXD_PIPELINE_QALIB_CREATE_SUCCESS if response.code == 0 else biz_const.HXD_PIPELINE_QALIB_CREATE_FAILED
     r.hset(name=name, key=fid, value=qalib_info.model_dump_json())
-    logger.info(f"do task={response.type} with fid={response.feature_store_id}'s result: {response.status}")
+    logger.info(f"do task={response.type} with fid={response.feature_store_id}'s result: {response.code}-{response.status}")
 
 
 def handle_task_update_sample_response(response: HxdTaskResponse):
