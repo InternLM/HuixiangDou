@@ -31,6 +31,7 @@
     "react-dom": "^18.2.0",
     "react-intl": "^6.4.4",
     "react-router-dom": "^6.13.0",
+    "sanitize-html": "^2.12.1",
     "sea-lion-ui": "latest"
   },
   "devDependencies": {

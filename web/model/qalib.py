@@ -1,8 +1,9 @@
-from pydantic import BaseModel
 from typing import Optional, List
 
+from pydantic import BaseModel
 
-class Feishu(BaseModel):
+
+class Lark(BaseModel):
     webhookUrl: str
     appId: str
     appSecret: str
@@ -26,7 +27,7 @@ class QalibInfo(BaseModel):
     docBase: Optional[str] = None
     status: Optional[int] = None
     suffix: Optional[str] = None
-    feishu: Optional[Feishu] = None
+    lark: Optional[Lark] = None
     wechat: Optional[Wechat] = None
     webSearch: Optional[WebSearch] = None
 
@@ -40,3 +41,12 @@ class QalibSample(QalibPositiveNegative):
     name: str
     featureStoreId: str
     confirmed: bool
+
+
+class Pipeline(BaseModel):
+    webSearchToken: str
+    featureStoreId: str
+    confirmed: bool
+    success: bool
+    code: int
+    status: str

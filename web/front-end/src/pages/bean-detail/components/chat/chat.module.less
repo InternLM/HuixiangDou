@@ -16,4 +16,66 @@
             }
         }
     }
+    .editor-wrapper {
+        width: 100%;
+        position: relative;
+        text-align: center;
+        border-radius: 12px;
+        margin: auto;
+        padding: 5px 16px;
+        background: #F4F5F9;
+        border: 2px solid transparent;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        &:hover:not(:focus-within) {
+            background: #EBECF0;
+            .prompt-editor:not(:hover) {
+                background: #EBECF0;
+            }
+        }
+        &:focus-within {
+            background: #FFFFFF;
+            border: 2px solid #59a041;
+        }
+    }
+    .prompt-editor {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        max-height: 200px;
+        border-radius: 2px;
+        box-shadow: none;
+        font-size: 14px;
+        line-height: 1.2;
+        box-sizing: border-box;
+        border: none;
+        padding: 0.1rem 0;
+        background: #F4F5F9;
+        resize: none;
+        text-align: left;
+        min-height: calc(1.2 * 0.8rem + 0.2rem);
+        overflow: auto;
+        caret-color: #59a041;
+        white-space: pre-wrap;
+        &:hover {
+            background: #EBECF0;
+        }
+        &:focus {
+            background: #FFFFFF;
+        }
+        &:focus-within {
+            background: #FFFFFF;
+        }
+        &:focus-visible {
+            outline-style: none;
+        }
+        &:-webkit-autofill,
+        &:-webkit-autofill:hover,
+        &:-webkit-autofill:focus,
+        &:-webkit-autofill:active {
+            -webkit-transition-delay: 99999s;
+            -webkit-transition: color 99999s ease-out, background-color 99999s ease-out;
+        }
+    }
 }

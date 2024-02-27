@@ -39,16 +39,16 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
         if (openModal) {
             (async () => {
                 const res = await getInfo();
-                if (res) {
+                if (res && res.lark) {
                     form.setFieldsValue({
-                        webhookUrl: res.feishu.webhookUrl || '',
-                        eventUrl: res.feishu.eventUrl || '',
-                        appId: res.feishu.appId || '',
-                        appSecret: res.feishu.appSecret || '',
-                        verificationToken: res.feishu.verificationToken || '',
-                        encryptKey: res.feishu.encryptKey || ''
+                        webhookUrl: res.lark.webhookUrl || '',
+                        eventUrl: res.lark.eventUrl || '',
+                        appId: res.lark.appId || '',
+                        appSecret: res.lark.appSecret || '',
+                        verificationToken: res.lark.verificationToken || '',
+                        encryptKey: res.lark.encryptKey || ''
                     });
-                    setFeishuInfo(res.feishu);
+                    setFeishuInfo(res.lark);
                 }
             })();
         } else {
