@@ -10,4 +10,5 @@ import os
 # launch the HuixiangDou-WEB
 os.system("python -m web.main")
 
-# TODO launch
+# launch huixiangdou pipeline
+os.system("cd web/proxy && python main.py")
