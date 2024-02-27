@@ -212,9 +212,8 @@ class HybridLLMServer:
         res_json = res.json()
         data = res.json()['data']
         if len(data) < 1:
-            import pdb
-            pdb.set_trace()
-            print(data)
+            logger.error('puyu api return empty')
+            return ''
         output_text = data['choices'][0]['text']
 
         return output_text

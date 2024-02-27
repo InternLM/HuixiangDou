@@ -19,6 +19,8 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from loguru import logger
 from retriever import Retriever
 from worker import Worker
+from llm_server_hybrid import llm_serve
+from multiprocessing import Process, Value
 
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
@@ -357,6 +359,7 @@ def process():
     que = Queue(name='Task')
     fs_cache = CacheRetriever('config-template.ini')
 
+    logger.info('start wait task queue..')
     while True:
         # try:
         msg, error = parse_json_str(que.get())
@@ -390,4 +393,20 @@ def process():
 
 
 if __name__ == '__main__':
+    # start hybrid server
+    server_ready = Value('i', 0)
+    server_process = Process(target=llm_serve,
+                                args=('config-template.ini', server_ready))
+    server_process.daemon = True
+    server_process.start()
+    while True:
+        if server_ready.value == 0:
+            logger.info('waiting for server to be ready..')
+            time.sleep(3)
+        elif server_ready.value == 1:
+            break
+        else:
+            logger.error('start local LLM server failed, quit.')
+            raise Exception('local LLM path')
+    logger.info('Hybrid LLM Server start.')
     process()
