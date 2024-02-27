@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+# This is the main entrance of Huixiangdou-WEB.
+# This project is written under python 3.9
+
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, Request
 from starlette.responses import HTMLResponse
 from fastapi.responses import FileResponse
 
-from web.util.log import log
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
