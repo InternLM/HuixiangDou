@@ -76,6 +76,14 @@ class QaLibService:
         self.response = response
         self.hxd_info = hxd_info
 
+    @classmethod
+    def get_existed_docs(cls, feature_store_id) -> List:
+        o = r.hget(name=biz_const.RDS_KEY_QALIB_INFO, key=feature_store_id)
+        if not o:
+            return []
+        qalib_info = QalibInfo(**json.loads(o))
+        return qalib_info.docs
+
     async def info(self) -> BaseBody:
         return BaseBody(data=self.hxd_info)
 
@@ -86,7 +94,7 @@ class QaLibService:
         store_dir = get_store_dir(feature_store_id)
         if not files or not store_dir:
             return BaseBody()
-        docs = []
+        docs = self.get_existed_docs(feature_store_id)
         total_bytes = int(self.request.headers.get("content-length"))
         write_size = 0
         # store files
@@ -186,6 +194,8 @@ class QaLibService:
             return BaseBody()
 
         return standard_error_response(biz_const.ERR_INFO_UPDATE_FAILED)
+
+
 
 
 class QaLibCache:
