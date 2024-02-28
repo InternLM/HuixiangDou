@@ -57,7 +57,7 @@ def _create_qa_lib(name, hashed_pass, feature_store_id) -> bool:
         QaLibCache().set_suffix_to_qalib(suffix, feature_store_id)
         return True
     except Exception as e:
-        logger.error(f"{e}")
+        logger.error(f"[create] create name: {name} failed: {e}")
         if not del_access_info(name):
             logger.error(f"del access info by {name} failed")
         if not QaLibCache().del_qalib_info(feature_store_id):
