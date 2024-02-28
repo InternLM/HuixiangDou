@@ -17,7 +17,6 @@ import web.api.statistic as statistic
 from web.api import chat, message, integrate
 from web.config.logging import LOGGING_CONFIG
 from web.middleware.token import check_hxd_token
-from web.middleware.login import check_qalib_name
 from web.scheduler.huixiangdou_task import start_scheduler, stop_scheduler
 from web.util.log import log
 from web.util.str import safe_join
@@ -50,7 +49,7 @@ async def redirect_404(request, call_next):
     return response
 
 
-app.include_router(router=access.access_api, prefix=f"/api/{API_VER}/access", dependencies=[Depends(check_qalib_name)])
+app.include_router(router=access.access_api, prefix=f"/api/{API_VER}/access")
 app.include_router(router=qalib.qalib_api, prefix=f"/api/{API_VER}/qalib", dependencies=[Depends(check_hxd_token)])
 app.include_router(router=integrate.integrate_api, prefix=f"/api/{API_VER}/qalib",
                    dependencies=[Depends(check_hxd_token)])
@@ -61,6 +60,7 @@ app.include_router(router=message.message_api, prefix=f"/api/{API_VER}/message")
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/home", response_class=HTMLResponse)
+@app.get("/bean-detail", response_class=HTMLResponse)
 async def server():
     return FileResponse(f"{STATIC_RESOURCE_DIR}/index.html")
 
