@@ -4,11 +4,10 @@ import string
 import time
 from typing import List
 
+import jwt
 from fastapi import HTTPException
 
-from web.constant.biz_constant import JWT_SECRET
-import jwt
-from web.model.huixiangdou import HxdToken
+from web.config.env import HuixiangDouEnv
 
 
 def gen_random_string(length=4) -> str:
@@ -34,12 +33,12 @@ def gen_jwt(feature_store_id: str, qa_name: str, expire: int) -> str:
         "qa_name": qa_name,
         "exp": expire
     }
-    token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+    token = jwt.encode(payload, HuixiangDouEnv.get_jwt_secret(), algorithm="HS256")
     return token
 
 
 def parse_jwt(token: str) -> dict:
-    hxd_token = jwt.decode(token, JWT_SECRET, algorithms="HS256")
+    hxd_token = jwt.decode(token, HuixiangDouEnv.get_jwt_secret(), algorithms="HS256")
     return hxd_token
 
 

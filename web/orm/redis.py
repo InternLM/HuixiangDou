@@ -1,14 +1,15 @@
-import os
 import redis
+
+from web.config.env import HuixiangDouEnv
 from web.util.log import log
+
 logger = log(__name__)
 
-
 logger.info("connecting to redis")
-host = "localhost" if os.getenv("REDIS_HOST") is None else os.getenv("REDIS_HOST")
-password = "default_password" if os.getenv("REDIS_PASSWORD") is None else os.getenv("REDIS_PASSWORD")
-port = 6379 if os.getenv("REDIS_PORT") is None else os.getenv("REDIS_PORT")
-db = 0 if os.getenv("REDIS_DB") is None else os.getenv("REDIS_DB")
+host = HuixiangDouEnv.get_redis_host()
+password = HuixiangDouEnv.get_redis_password()
+port = HuixiangDouEnv.get_server_port()
+db = HuixiangDouEnv.get_redis_db()
 pool = redis.ConnectionPool(host=host, port=port, db=db, password=password)
 r = redis.Redis(connection_pool=pool)
 try:

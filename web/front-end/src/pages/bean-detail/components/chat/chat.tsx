@@ -80,6 +80,15 @@ const Chat: FC<ChatProps> = () => {
         if (queryId) {
             // polling for response
             let pollingTimes = 0;
+            const pendingMessage = {
+                sender: 1,
+                content: '...',
+                code: undefined,
+                state: '',
+                images: [],
+                references: [],
+            };
+            setMessages([...messages, pendingMessage]);
             b = setInterval(() => {
                 pollingTimes += 1;
                 onlineResponse(queryId)
@@ -106,7 +115,7 @@ const Chat: FC<ChatProps> = () => {
                         clearInterval(b);
                         setQueryId('');
                     });
-                if (pollingTimes === 30) {
+                if (pollingTimes === 60) {
                     clearInterval(b);
                     setQueryId('');
                     const newMessage = {
@@ -119,7 +128,7 @@ const Chat: FC<ChatProps> = () => {
                     };
                     setMessages([...messages, newMessage]);
                 }
-            }, 2000);
+            }, 3000);
         }
         return () => {
             clearInterval(b);
@@ -166,7 +175,7 @@ const Chat: FC<ChatProps> = () => {
                         onKeyDown={handleKeyDown}
                         onCompositionStart={() => setIsComposing(true)}
                         onCompositionEnd={() => setIsComposing(false)}
-                        data-text="支持输入文字、图片和 emoji"
+                        aria-placeholder="支持输入文字、图片和 emoji"
                     />
                 </div>
                 <Button

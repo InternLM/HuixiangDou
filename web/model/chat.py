@@ -16,11 +16,19 @@ class ChatOnlineResponseBody(BaseModel):
     queryId: str
 
 
+class ChatType(Enum):
+    LARK = 0
+    WECHAT = 1
+    ONLINE = 2
+
+
 class ChatQueryInfo(BaseModel):
     featureStoreId: str
     queryId: str
+    type: Optional[ChatType] = ChatType.ONLINE
     request: ChatRequestBody
     response: Optional[ChatResponse] = None
+    detail: Optional[object] = {}
 
 
 class ChatCaseType(Enum):
@@ -31,3 +39,9 @@ class ChatCaseType(Enum):
 class ChatCaseFeedbackBody(BaseModel):
     queryId: str
     type: ChatCaseType
+
+
+class LarkChatDetail(BaseModel):
+    appId: Optional[str] = ""
+    appSecret: Optional[str] = ""
+    messageId: Optional[str] = ""

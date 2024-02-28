@@ -8,6 +8,7 @@ from fastapi import Response, Request, File, UploadFile
 
 import web.constant.biz_constant as biz_const
 import web.util.str as str_util
+from web.config.env import HuixiangDouEnv
 from web.model.base import BaseBody, standard_error_response
 from web.model.huixiangdou import HxdToken, HxdTask, HxdTaskType, HxdTaskPayload
 from web.model.integrate import IntegrateLarkBody, IntegrateWebSearchBody
@@ -42,32 +43,29 @@ def get_store_dir(feature_store_id: str) -> Union[str, None]:
 
 
 def get_wechat_on_message_url() -> str:
-    endpoint = _get_message_endpoint()
+    endpoint = HuixiangDouEnv.get_message_endpoint()
     return endpoint + "api/v1/message/v1/wechat"
 
 
-def get_lark_on_message_url(app_id: str, app_secret: str) -> str:
-    endpoint = _get_message_endpoint()
+def get_lark_on_message_url() -> str:
+    endpoint = HuixiangDouEnv.get_message_endpoint()
     return endpoint + "api/v1/message/v1/lark"
 
 
-def _get_message_endpoint() -> str:
-    endpoint = os.getenv("HUIXIANGDOU_MESSAGE_ENDPOINT")
-    if not endpoint or len(endpoint) == 0:
-        endpoint = get_default_endpoint()
-    if not endpoint.endswith("/"):
-        endpoint += "/"
-    return endpoint
-
-
 def gen_suffix(feature_store_id: str) -> str:
-    if len(feature_store_id) <= 4:
+    length = biz_const.HXD_FEATURE_STORE_SUFFIX_LENGTH
+    if len(feature_store_id) <= length:
         return feature_store_id
-    return feature_store_id[-5:]
+    return feature_store_id[-length:]
 
 
-def get_default_endpoint() -> str:
-    return "http://0.0.0.0:23333/"
+def get_suffix_by_name(name: str) -> Union[str, None]:
+    length = biz_const.HXD_FEATURE_STORE_SUFFIX_LENGTH
+    if len(name) < length:
+        logger.error(f"group name: {name} shorter than suffix length, remind check group name")
+        return None
+
+    return name[-length:]
 
 
 class QaLibService:
@@ -139,7 +137,7 @@ class QaLibService:
         )
 
     async def get_sample_info(self):
-        sample_info = QaLibCache().get_sample_info(self.hxd_info.featureStoreId)
+        sample_info = QaLibCache.get_sample_info(self.hxd_info.featureStoreId)
         return BaseBody(data=sample_info)
 
     async def update_sample_info(self, body: QalibPositiveNegative):
@@ -151,7 +149,7 @@ class QaLibService:
         qalib_sample = QalibSample(name=name, featureStoreId=feature_store_id, positives=positives,
                                    negatives=negatives, confirmed=False)
         # update sample to redis
-        QaLibCache().set_sample_info(feature_store_id, qalib_sample)
+        QaLibCache.set_sample_info(feature_store_id, qalib_sample)
         # update sample to huixiangdou task
         if not HuixiangDouTask().updateTask(
                 HxdTask(
@@ -169,19 +167,25 @@ class QaLibService:
 
     async def integrate_lark(self, body: IntegrateLarkBody):
         feature_store_id = self.hxd_info.featureStoreId
-        info = QaLibCache().get_qalib_info(feature_store_id)
+        info = QaLibCache.get_qalib_info(feature_store_id)
         if not info:
             return standard_error_response(biz_const.ERR_QALIB_INFO_NOT_FOUND)
 
-        event_url = get_lark_on_message_url(body.appId, body.appSecret)
-        info.lark = Lark(webhookUrl=body.webhookUrl, appId=body.appId, appSecret=body.appSecret,
-                         encryptKey=body.encryptKey, verificationToken=body.verificationToken, eventUrl=event_url)
-        QaLibCache().set_qalib_info(feature_store_id, info)
+        if info.lark:
+            info.lark.appId = body.appId
+            info.lark.appSecret = body.appSecret
+        else:
+            info.lark = Lark(appId=body.appId, appSecret=body.appSecret,
+                             encryptKey=HuixiangDouEnv.get_lark_encrypt_key(),
+                             verificationToken=HuixiangDouEnv.get_lark_verification_token(),
+                             eventUrl=get_lark_on_message_url())
+        QaLibCache.set_qalib_info(feature_store_id, info)
+        QaLibCache.set_lark_info(body.appId, body.appSecret)
         return BaseBody(data=info.lark)
 
     async def integrate_web_search(self, body: IntegrateWebSearchBody):
         feature_store_id = self.hxd_info.featureStoreId
-        info = QaLibCache().get_qalib_info(feature_store_id)
+        info = QaLibCache.get_qalib_info(feature_store_id)
         if not info:
             return standard_error_response(biz_const.ERR_QALIB_INFO_NOT_FOUND)
 
@@ -193,12 +197,10 @@ class QaLibService:
                                    web_search_token=body.webSearchToken)
         )
         if HuixiangDouTask().updateTask(task):
-            QaLibCache().set_qalib_info(feature_store_id, info)
+            QaLibCache.set_qalib_info(feature_store_id, info)
             return BaseBody()
 
         return standard_error_response(biz_const.ERR_INFO_UPDATE_FAILED)
-
-
 
 
 class QaLibCache:
@@ -231,7 +233,10 @@ class QaLibCache:
         :return:
         """
         wechat = Wechat(onMessageUrl=get_wechat_on_message_url())
-        qalib_info = QalibInfo(featureStoreId=feature_store_id, status=status, name=name, wechat=wechat, suffix=suffix)
+        lark = Lark(encryptKey=HuixiangDouEnv.get_lark_encrypt_key(),
+                    verificationToken=HuixiangDouEnv.get_lark_verification_token(), eventUrl=get_lark_on_message_url())
+        qalib_info = QalibInfo(featureStoreId=feature_store_id, status=status, name=name, wechat=wechat, lark=lark,
+                               suffix=suffix)
         if not cls.set_qalib_info(feature_store_id, qalib_info):
             logger.error(f"[qalib] feature_store_id: {feature_store_id}, init qalib info failed")
             r.hdel(biz_const.RDS_KEY_QALIB_INFO, feature_store_id)
@@ -291,9 +296,23 @@ class QaLibCache:
         r.hset(name=biz_const.RDS_KEY_SUFFIX_TO_QALIB, key=suffix, value=feature_store_id)
 
     @classmethod
-    def get_qalib_by_suffix(cls, suffix: str) -> Union[str, None]:
+    def get_qalib_feature_store_id_by_suffix(cls, suffix: str) -> Union[str, None]:
         o = r.hget(name=biz_const.RDS_KEY_SUFFIX_TO_QALIB, key=suffix)
         if not o:
             logger.error(f"[qalib] suffix: {suffix} has no qalib")
             return None
         return str(o)
+
+    @classmethod
+    def get_lark_info_by_app_id(cls, app_id: str) -> Union[str, None]:
+        key = biz_const.RDS_KEY_LARK_CONFIG + ":" + app_id
+        o = r.get(key)
+        if not o:
+            logger.error(f"f[lark] app_id: {app_id} has no record")
+            return None
+        return str(o)
+
+    @classmethod
+    def set_lark_info(cls, app_id: str, app_secret: str):
+        key = biz_const.RDS_KEY_LARK_CONFIG + ":" + app_id
+        r.set(key, app_secret)

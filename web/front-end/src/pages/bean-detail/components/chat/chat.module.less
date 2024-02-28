@@ -5,6 +5,10 @@
     .message-list {
         width: 100%;
         min-height: 400px;
+        scorllbar-width: none;
+        &::-webkit-scrollbar {
+            width: 0;
+        }
         .avatar {
             width: 20px;
             height: 20px;
@@ -22,6 +26,7 @@
             border-radius: 8px;
             background: #f4f5f9;
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            white-space: pre-wrap;
         }
         .img-wrapper {
             display: flex;
@@ -92,6 +97,11 @@
         overflow: auto;
         caret-color: #59a041;
         white-space: pre-wrap;
+        &[aria-placeholder]:empty::before {
+            color: #666;
+            content: attr(aria-placeholder);
+            position: absolute;
+        }
         &:hover {
             background: #EBECF0;
         }
