@@ -118,6 +118,7 @@ def write_all_issues(owener, name, issues_list):
         ])
         md_contents = f"""## quesion\n
     =========== question ===========
+    {issue_title}\n
     {md_question}
     =========== question ===========\n
     ## answer\n
