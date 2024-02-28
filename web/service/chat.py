@@ -8,7 +8,7 @@ from fastapi import Request, Response
 
 from web.constant import biz_constant
 from web.model.base import BaseBody, standard_error_response
-from web.model.chat import ChatRequestBody, ChatQueryInfo, ChatOnlineResponseBody
+from web.model.chat import ChatRequestBody, ChatQueryInfo, ChatOnlineResponseBody, ChatCaseFeedbackBody, ChatCaseType
 from web.model.huixiangdou import HxdTask, HxdTaskType, HxdTaskPayload, ChatResponse
 from web.model.qalib import QalibInfo
 from web.mq.hxd_task import HuixiangDouTask
@@ -56,7 +56,7 @@ class ChatService:
         if not info:
             return standard_error_response(biz_constant.ERR_NOT_EXIST_CHAT)
         if not info.response:
-            return standard_error_response(biz_constant.CHAT_STILL_IN_QUEUE)
+            return standard_error_response(biz_constant.ERR_CHAT_STILL_IN_QUEUE)
         return BaseBody(data=info.response)
 
     def _generate_query_id(self, content):
@@ -85,6 +85,17 @@ class ChatService:
                 f.write(decoded_image)
             ret.append(store_path)
         return ret
+
+    def case_feedback(self, body: ChatCaseFeedbackBody):
+        feature_store_id = self.hxd_info.featureStoreId
+        query_id = body.queryId
+        query_info = ChatCache.get_query_info(query_id, feature_store_id)
+        if not query_info:
+            return standard_error_response(biz_constant.ERR_CHAT_CASE_FEEDBACK)
+        return BaseBody() \
+            if ChatCache.update_case_feedback(feature_store_id, body.type, query_info.model_dump_json()) \
+            else standard_error_response(biz_constant.ERR_CHAT_CASE_FEEDBACK)
+
 
 
 class ChatCache:
@@ -119,3 +130,15 @@ class ChatCache:
         key = biz_constant.RDS_KEY_QUERY_INFO + "-" + feature_store_id
         field = query_id
         r.hset(key, field, info.model_dump_json())
+
+    @classmethod
+    def update_case_feedback(cls, feature_store_id: str, case_type: ChatCaseType, feedback: str) -> bool:
+        try:
+            name = f"{biz_constant.RDS_KEY_FEEDBACK_CASE}:{case_type}:{feature_store_id}"
+            r.rpush(name, feedback)
+            return True
+        except Exception as e:
+            logger.error(f"{e}")
+            return False
+
+
