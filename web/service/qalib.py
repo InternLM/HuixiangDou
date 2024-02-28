@@ -90,12 +90,15 @@ class QaLibService:
     async def add_docs(self, files: List[UploadFile] = File(...)):
         feature_store_id = self.hxd_info.featureStoreId
         name = self.hxd_info.name
+        logger.info(f"start to add docs for qalib: {name}")
 
         store_dir = get_store_dir(feature_store_id)
         if not files or not store_dir:
             return BaseBody()
         docs = self.get_existed_docs(feature_store_id)
         total_bytes = int(self.request.headers.get("content-length"))
+        if total_bytes > biz_const.HXD_ADD_DOCS_ONCE_MAX:
+            return standard_error_response(biz_const.ERR_QALIB_ADD_DOCS_ONCE_MAX)
         write_size = 0
         # store files
         for file in files:
@@ -210,7 +213,6 @@ class QaLibCache:
         if not o:
             logger.error(f"[qalib] feature_store_id: {feature_store_id}, get info empty")
             return None
-
         return QalibInfo(**json.loads(o))
 
     @classmethod

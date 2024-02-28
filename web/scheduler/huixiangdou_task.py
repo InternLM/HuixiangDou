@@ -29,7 +29,8 @@ def handle_task_add_doc_response(response: HxdTaskResponse):
         logger.error(f"can't find {name}:{fid} in redis.")
         return
     qalib_info = QalibInfo(**json.loads(o))
-    qalib_info.status = biz_const.HXD_PIPELINE_QALIB_CREATE_SUCCESS if response.code == 0 else biz_const.HXD_PIPELINE_QALIB_CREATE_FAILED
+    qalib_info.status = biz_const.HXD_PIPELINE_QALIB_CREATE_SUCCESS if response.code == 0 else response.code
+    qalib_info.status_desc = response.status
     r.hset(name=name, key=fid, value=qalib_info.model_dump_json())
     logger.info(f"do task={response.type} with fid={response.feature_store_id}'s result: {response.code}-{response.status}")
 

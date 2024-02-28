@@ -25,6 +25,7 @@ class QalibInfo(BaseModel):
     docs: Optional[List[str]] = []
     docBase: Optional[str] = None
     status: Optional[int] = None
+    status_desc: Optional[str] = None
     suffix: Optional[str] = None
     lark: Optional[Lark] = None
     wechat: Optional[Wechat] = None
