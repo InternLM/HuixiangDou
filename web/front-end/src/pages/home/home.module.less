@@ -33,12 +33,24 @@
         }
         .slogan {
             text-align: center;
-            margin-bottom: 72px;
-            font-size: 20px;
+            font-size: 3ch;
             position: relative;
             top: -20px;
             color: #83bb70;
             font-weight: 500;
+            margin: 0 auto 72px;
+
+            width: 30ch;
+            animation: typing 8s steps(16) infinite,
+            blink 0.5s step-end infinite alternate;
+            white-space: nowrap;
+            overflow: hidden;
+            border-right: 5px solid #59a041;
+            background: linear-gradient(35deg, #4050ff 20%, #6ac24e 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-box-decoration-break: clone;
         }
         .input-wrapper {
             width: 600px;
@@ -88,5 +100,28 @@
                 }
             }
         }
+    }
+}
+@keyframes typing {
+    0% {
+        width: 0;
+    }
+    20% {
+        width: 0;
+    }
+    40% {
+        width: 30ch;
+    }
+    70% {
+        width: 30ch;
+    }
+    100% {
+        width: 0;
+    }
+}
+
+@keyframes blink {
+    50% {
+        border-color: transparent;
     }
 }
