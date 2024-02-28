@@ -90,6 +90,7 @@ class QaLibService:
     async def add_docs(self, files: List[UploadFile] = File(...)):
         feature_store_id = self.hxd_info.featureStoreId
         name = self.hxd_info.name
+        logger.info(f"start to add docs for qalib: {name}")
 
         store_dir = get_store_dir(feature_store_id)
         if not files or not store_dir:
