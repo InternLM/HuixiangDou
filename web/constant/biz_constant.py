@@ -47,25 +47,29 @@ ERR_QALIB_INFO_NOT_FOUND = {
     "code": "A2002",
     "msg": "QA lib's info is not found"
 }
+ERR_QALIB_ADD_DOCS_ONCE_MAX = {
+    "code": "A2003",
+    "msg": "Exceeded the maximum total files' size for single adding docs"
+}
 ERR_CHAT = {
     "code": "A3001",
-    "msg": "chat error"
+    "msg": "Chat error"
 }
 ERR_NOT_EXIST_CHAT = {
     "code": "A3002",
-    "msg": "query not exist"
+    "msg": "Query not exist"
 }
 ERR_INFO_UPDATE_FAILED = {
     "code": "A3003",
-    "msg": "info update failed"
+    "msg": "Info update failed"
 }
 ERR_CHAT_CASE_FEEDBACK = {
     "code": "A3004",
-    "msg": "case feedback failed"
+    "msg": "Case feedback failed"
 }
-ERR_CHAT_STILL_IN_QUEUE = {
+CHAT_STILL_IN_QUEUE = {
     "code": "A3100",
-    "msg": "chat processing"
+    "msg": "Chat processing"
 }
 
 
@@ -77,3 +81,6 @@ HXD_PIPELINE_QALIB_CREATE_FAILED = -1
 
 # 1 day
 HXD_CHAT_TTL = 86400
+
+# 1000 MB
+HXD_ADD_DOCS_ONCE_MAX = 1048576000

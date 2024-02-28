@@ -97,6 +97,8 @@ class QaLibService:
             return BaseBody()
         docs = self.get_existed_docs(feature_store_id)
         total_bytes = int(self.request.headers.get("content-length"))
+        if total_bytes > biz_const.HXD_ADD_DOCS_ONCE_MAX:
+            return standard_error_response(biz_const.ERR_QALIB_ADD_DOCS_ONCE_MAX)
         write_size = 0
         # store files
         for file in files:
