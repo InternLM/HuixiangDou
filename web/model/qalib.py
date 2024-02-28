@@ -1,11 +1,11 @@
 from typing import Optional, List
+
 from pydantic import BaseModel
 
 
 class Lark(BaseModel):
-    webhookUrl: str
-    appId: str
-    appSecret: str
+    appId: Optional[str] = ""
+    appSecret: Optional[str] = ""
     encryptKey: str
     verificationToken: str
     eventUrl: str
