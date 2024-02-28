@@ -56,7 +56,7 @@ class ChatService:
         if not info:
             return standard_error_response(biz_constant.ERR_NOT_EXIST_CHAT)
         if not info.response:
-            return standard_error_response(biz_constant.ERR_CHAT_STILL_IN_QUEUE)
+            return standard_error_response(biz_constant.CHAT_STILL_IN_QUEUE)
         return BaseBody(data=info.response)
 
     def _generate_query_id(self, content):
