@@ -175,13 +175,16 @@ class HybridLLMServer:
         url = 'https://puyu.openxlab.org.cn/puyu/api/v1/chat/completion'
 
         now = time.time()
-        if self.token is None or now - self.token[1] >= 3500:
+        if int(now - self.token[1]) >= 3500:
+            logger.debug('refresh token')
             self.token = (os_run('openxlab token'), time.time())
 
         header = {
             'Content-Type': 'application/json',
             'Authorization': self.token[0]
         }
+
+        logger.info('prompt length {}'.format(len(prompt)))
 
         messages = []
         for item in history:
@@ -203,19 +206,35 @@ class HybridLLMServer:
             'messages': messages,
             'n': 1,
             'temperature': 0.8,
-            'top_p': 0.9,
+            'top_p': 0.1,
+            'top_k': 1,
             'disable_report': False
         }
         output_text = None
         self.wait_time_slot()
-        res = requests.post(url, headers=header, data=json.dumps(data))
-        res_json = res.json()
-        data = res.json()['data']
-        if len(data) < 1:
-            logger.error('puyu api return empty')
-            return ''
-        output_text = data['choices'][0]['text']
 
+        try:
+            res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=30).json()
+            res_data = res_json['data']
+            if len(res_data) < 1:
+                logger.error('puyu api return empty, wait and retry again')
+                time.sleep(3)
+                
+                res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=30).json()
+                res_data = res_json['data']
+                if len(res_data) < 1:
+                    logger.error('puyu api still return empty')
+                    return output_text
+            logger.info(res_json)
+            output_text = res_data['choices'][0]['text']
+            if len(output_text) < 1 or '仩嗨亾笁潪能實験厔' in output_text:
+                import pdb
+                pdb.set_trace()
+                raise Exception('return empty')
+        except Exception as e:
+            import pdb
+            pdb.set_trace()
+            logger.error(str(e))
         return output_text
 
     def call_kimi(self, prompt, history):
@@ -243,9 +262,9 @@ class HybridLLMServer:
             try:
                 logger.debug('remote api sending: {}'.format(messages))
                 completion = client.chat.completions.create(
-                    model=self.server_config['remote_llm_model'],
+                    model='moonshot-v1-128k',
                     messages=messages,
-                    temperature=0.3,
+                    temperature=0.0,
                 )
                 return completion.choices[0].message.content
             except Exception as e:
@@ -314,7 +333,7 @@ class HybridLLMServer:
                 time.sleep(randval)
         return ''
 
-    def generate_response(self, prompt, history=[], remote=False):
+    def generate_response(self, prompt, history=[], remote=False, backend='puyu'):
         """Generate a response from the appropriate LLM based on the
         configuration.
 
@@ -336,13 +355,13 @@ class HybridLLMServer:
         if remote:
             prompt = prompt[0:self.remote_max_length]
             # call remote LLM
-            llm_type = self.server_config['remote_type']
-            if llm_type == 'kimi':
+            # llm_type = self.server_config['remote_type']
+            if backend == 'kimi':
                 output_text = self.call_kimi(prompt=prompt, history=history)
-            elif llm_type == 'deepseek':
+            elif backend == 'deepseek':
                 output_text = self.call_deepseek(prompt=prompt,
                                                  history=history)
-            elif llm_type == 'puyu':
+            elif backend == 'puyu':
                 output_text = self.call_puyu(prompt=prompt, history=history)
             else:
                 output_text = self.call_gpt(prompt=prompt, history=history)
@@ -404,17 +423,19 @@ def llm_serve(config_path: str, server_ready: Value):
         """Call local llm inference."""
 
         input_json = await request.json()
-        logger.debug(input_json)
+        # logger.debug(input_json)
 
         prompt = input_json['prompt']
         history = input_json['history']
-        logger.debug(f'history: {history}')
+        # logger.debug(f'history: {history}')
         remote = False
         if 'remote' in input_json:
             remote = input_json['remote']
+        backend = input_json['backend']
         text = server.generate_response(prompt=prompt,
                                         history=history,
-                                        remote=remote)
+                                        remote=remote,
+                                        backend=backend)
         return web.json_response({'text': text})
 
     app = web.Application()
@@ -435,7 +456,7 @@ def main():
         server_process.daemon = True
         server_process.start()
 
-        from .llm_client import ChatClient
+        from llm_client import ChatClient
         client = ChatClient(config_path=args.config_path)
         while server_ready.value == 0:
             logger.info('waiting for server to be ready..')

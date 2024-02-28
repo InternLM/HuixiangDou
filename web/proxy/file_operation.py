@@ -72,6 +72,7 @@ class FileOperation:
             # https://stackoverflow.com/questions/36001482/read-doc-file-with-python
             # https://textract.readthedocs.io/en/latest/installation.html
             text = textract.process(filepath).decode('utf8')
+            print(len(text))
 
         text = text.replace('\n\n', '\n')
         text = text.replace('\n\n', '\n')

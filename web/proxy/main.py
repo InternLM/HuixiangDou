@@ -24,13 +24,13 @@ from multiprocessing import Process, Value
 
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
-                        status: str):
+                        state: str):
     resp = Queue(name='TaskResponse')
     target = {
         'feature_store_id': feature_store_id,
         'code': code,
         'type': _type,
-        'status': status
+        'state': state
     }
     resp.put(json.dumps(
         target,
@@ -113,7 +113,7 @@ class CacheRetriever:
 
 
 def callback_chat_state(feature_store_id: str, query_id: str, code: int,
-                        status: str, text: str, ref: list):
+                        state: str, text: str, ref: list):
     que = Queue(name='ChatResponse')
 
     target = {
@@ -121,11 +121,12 @@ def callback_chat_state(feature_store_id: str, query_id: str, code: int,
         'query_id': query_id,
         'response': {
             'code': code,
-            'status': status,
+            'state': state,
             'text': text,
             'references': ref
         }
     }
+    logger.debug(target)
     que.put(json.dumps(target, ensure_ascii=False))
 
 
@@ -197,6 +198,14 @@ def chat_with_featue_store(cache: CacheRetriever,
     BASE = feature_store_base_dir()
     workdir = os.path.join(BASE, fs_id, 'workdir')
     configpath = os.path.join(BASE, fs_id, 'config.ini')
+    db_reject = os.path.join(workdir, 'db_reject')
+    db_response = os.path.join(workdir, 'db_response')
+
+    if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
+        task_state(code=ErrorCode.PARAMETER_ERROR.value,
+                   state='知识库未建立或建立异常，此时不能 chat。')
+        return
+
     worker = Worker(work_dir=workdir, config_path=configpath)
 
     # TODO parse images
@@ -207,12 +216,12 @@ def chat_with_featue_store(cache: CacheRetriever,
                                                   groupname='')
     if error != ErrorCode.SUCCESS:
         chat_state(code=error.value,
-                   status=error.describe(),
+                   state=error.describe(),
                    text='',
                    ref=references)
         return
     chat_state(code=ErrorCode.SUCCESS.value,
-               status=ErrorCode.SUCCESS.describe(),
+               state=ErrorCode.SUCCESS.describe(),
                text=response,
                ref=references)
 
@@ -260,16 +269,16 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
     if success_cnt == len(path_list):
         # success
         task_state(code=ErrorCode.SUCCESS.value,
-                   status=ErrorCode.SUCCESS.describe())
+                   state=ErrorCode.SUCCESS.describe())
     elif success_cnt == 0:
-        task_state(code=ErrorCode.FAILED.value, status='无文件被处理')
+        task_state(code=ErrorCode.FAILED.value, state='无文件被处理')
     else:
-        status = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
-        task_state(code=ErrorCode.SUCCESS.value, status=status)
+        state = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
+        task_state(code=ErrorCode.SUCCESS.value, state=state)
 
     # except Exception as e:
     #     logger.error(str(e))
-    #     task_state(code=ErrorCode.FAILED.value, status=str(e))
+    #     task_state(code=ErrorCode.FAILED.value, state=str(e))
 
 
 def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
@@ -291,7 +300,7 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
 
     if len(positive) < 1 or len(negative) < 1:
         task_state(code=ErrorCode.BAD_PARAMETER.value,
-                   status='正例为空。请根据真实用户问题，填写正例；同时填写几句场景无关闲聊作负例')
+                   state='正例为空。请根据真实用户问题，填写正例；同时填写几句场景无关闲聊作负例')
         return
 
     BASE = feature_store_base_dir()
@@ -304,7 +313,7 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
 
     if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
         task_state(code=ErrorCode.INTERNAL_ERROR.value,
-                   status='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
+                   state='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
         return
 
     # try:
@@ -316,11 +325,11 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
                               bad_questions=negative)
     del retriever
     task_state(code=ErrorCode.SUCCESS.value,
-               status=ErrorCode.SUCCESS.describe())
+               state=ErrorCode.SUCCESS.describe())
 
     # except Exception as e:
     #     logger.error(str(e))
-    #     task_state(code=ErrorCode.FAILED.value, status=str(e))
+    #     task_state(code=ErrorCode.FAILED.value, state=str(e))
 
 
 def update_pipeline(payload: types.SimpleNamespace):
@@ -344,7 +353,7 @@ def update_pipeline(payload: types.SimpleNamespace):
 
     if not os.path.exists(workdir) or not os.path.exists(configpath):
         task_state(code=ErrorCode.INTERNAL_ERROR.value,
-                   status='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
+                   state='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
         return
 
     with open(configpath, encoding='utf8') as f:
@@ -353,7 +362,7 @@ def update_pipeline(payload: types.SimpleNamespace):
     with open(configpath, 'w', encoding='utf8') as f:
         pytoml.dump(config, f)
     task_state(code=ErrorCode.SUCCESS.value,
-               status=ErrorCode.SUCCESS.describe())
+               state=ErrorCode.SUCCESS.describe())
 
 
 def process():
@@ -373,14 +382,14 @@ def process():
             callback_task_state(feature_store_id=msg.payload.feature_store_id,
                                 code=ErrorCode.WORK_IN_PROGRESS.value,
                                 _type=msg.type,
-                                status=ErrorCode.WORK_IN_PROGRESS.describe())
+                                state=ErrorCode.WORK_IN_PROGRESS.describe())
             fs_cache.pop(msg.payload.feature_store_id)
             build_feature_store(fs_cache, msg.payload)
         elif msg.type == TaskCode.FS_UPDATE_SAMPLE.value:
             callback_task_state(feature_store_id=msg.payload.feature_store_id,
                                 code=ErrorCode.WORK_IN_PROGRESS.value,
                                 _type=msg.type,
-                                status=ErrorCode.WORK_IN_PROGRESS.describe())
+                                state=ErrorCode.WORK_IN_PROGRESS.describe())
             fs_cache.pop(msg.payload.feature_store_id)
             update_sample(fs_cache, msg.payload)
         elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
@@ -396,19 +405,19 @@ def process():
 
 if __name__ == '__main__':
     # start hybrid server
-    server_ready = Value('i', 0)
-    server_process = Process(target=llm_serve,
-                                args=('config-template.ini', server_ready))
-    server_process.daemon = True
-    server_process.start()
-    while True:
-        if server_ready.value == 0:
-            logger.info('waiting for server to be ready..')
-            time.sleep(3)
-        elif server_ready.value == 1:
-            break
-        else:
-            logger.error('start local LLM server failed, quit.')
-            raise Exception('local LLM path')
+    # server_ready = Value('i', 0)
+    # server_process = Process(target=llm_serve,
+    #                             args=('config-template.ini', server_ready))
+    # server_process.daemon = True
+    # server_process.start()
+    # while True:
+    #     if server_ready.value == 0:
+    #         logger.info('waiting for server to be ready..')
+    #         time.sleep(3)
+    #     elif server_ready.value == 1:
+    #         break
+    #     else:
+    #         logger.error('start local LLM server failed, quit.')
+    #         raise Exception('local LLM path')
     logger.info('Hybrid LLM Server start.')
     process()

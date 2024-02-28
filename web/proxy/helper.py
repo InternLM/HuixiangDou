@@ -28,6 +28,7 @@ class ErrorCode(Enum):
     UNRELATED = 3, 'Topics unrelated to the knowledge base. Updating good_questions and bad_questions can improve accuracy.'  # noqa E501
     NO_SEARCH_KEYWORDS = 4, 'Cannot extract keywords.'
     NO_SEARCH_RESULT = 5, 'Cannot retrieve results.'
+    SEARCH_FAIL = 15, 'Search fail, please check TOKEN and quota'
     BAD_ANSWER = 6, 'Irrelevant answer.'
     SECURITY = 7, 'Reply has a high relevance to prohibited topics.'
     NOT_WORK_TIME = 8, 'Non-working hours. The config.ini file can be modified to adjust this. **In scenarios where speech may pose risks, let the robot operate under human supervision**'  # noqa E501
@@ -74,7 +75,6 @@ class ErrorCode(Enum):
 
 
 class Queue:
-
     def __init__(self, name, namespace='HuixiangDou', **redis_kwargs):
         self.__db = redis.Redis(host=redis_host(),
                  port=redis_port(),
@@ -120,6 +120,7 @@ class Queue:
 
 def parse_json_str(json_str: str):
     try:
+        logger.info(json_str)
         return json.loads(json_str,
                           object_hook=lambda d: SimpleNamespace(**d)), None
     except Exception as e:

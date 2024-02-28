@@ -61,7 +61,7 @@ class Worker:
         # Switch languages according to the scenario.
         if self.language == 'zh':
             self.TOPIC_TEMPLATE = '告诉我这句话的主题，直接说主题不要解释：“{}”'
-            self.SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'  # noqa E501
+            self.SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'  # noqa E501
             self.SCORING_RELAVANCE_TEMPLATE = '问题：“{}”\n材料：“{}”\n请仔细阅读以上内容，判断问题和材料的关联度，用0～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n'  # noqa E501
             self.KEYWORDS_TEMPLATE = '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。搜索参数类型 string， 内容是短语或关键字，以空格分隔。\n你现在是{}交流群里的技术助手，用户问“{}”，你打算通过谷歌搜索查询相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'  # noqa E501
             self.SECURITY_TEMAPLTE = '判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 0～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'  # noqa E501
@@ -79,7 +79,7 @@ class Worker:
             self.SUMMARIZE_TEMPLATE = '"{}" \n Read the content above carefully, summarize it in a short and powerful way.'  # noqa E501
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
-    def single_judge(self, prompt, tracker, throttle: int, default: int):
+    def single_judge(self, prompt, tracker, throttle: int, default: int, backend='puyu'):
         """Generates a score based on the prompt, and then compares it to
         threshold.
 
@@ -96,7 +96,7 @@ class Worker:
             return False
 
         score = default
-        relation = self.llm.generate_response(prompt=prompt, remote=False)
+        relation = self.llm.generate_response(prompt=prompt, remote=False, backend=backend)
         tracker.log('score', [relation, throttle, default])
         filtered_relation = ''.join([c for c in relation if c.isdigit()])
         try:
@@ -131,8 +131,9 @@ class Worker:
         if not self.single_judge(
                 prompt=self.SCORING_QUESTION_TEMPLTE.format(query),
                 tracker=tracker,
-                throttle=6,
-                default=3):
+                throttle=3,
+                default=2,
+                backend='kimi'):
             return ErrorCode.NOT_A_QUESTION, response, []
 
         topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query))
@@ -147,24 +148,32 @@ class Worker:
             2 * len(self.GENERATE_TEMPLATE))
 
         if db_context is None or len(db_context) < 1:
-            tracker.log('feature store reject')
-            return ErrorCode.UNRELATED, response, retrieve_ref
+            tracker.log('topic feature store reject')
 
-        if self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
-                query, chunk),
-                             tracker=tracker,
-                             throttle=5,
-                             default=10):
-            prompt, history = self.llm.build_prompt(
-                instruction=query,
-                context=db_context,
-                history_pair=history,
-                template=self.GENERATE_TEMPLATE)
-            response = self.llm.generate_response(prompt=prompt,
-                                                  history=history,
-                                                  remote=True)
-            tracker.log('feature store doc', [chunk, response])
-            return ErrorCode.SUCCESS, response, retrieve_ref
+            chunk, db_context, retrieve_ref = retriever.query(
+                query,
+                context_max_length=self.context_max_length -
+                2 * len(self.GENERATE_TEMPLATE))
+            if db_context is None or len(db_context) < 1:
+                return ErrorCode.UNRELATED, response, retrieve_ref
+
+        # if self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
+        #         query, chunk),
+        #                      tracker=tracker,
+        #                      throttle=5,
+        #                      default=10,
+        #                      backend='kimi'):
+        prompt, history = self.llm.build_prompt(
+            instruction=query,
+            context=db_context,
+            history_pair=history,
+            template=self.GENERATE_TEMPLATE)
+        response = self.llm.generate_response(prompt=prompt,
+                                                history=history,
+                                                remote=True,
+                                                backend='kimi')
+        tracker.log('feature store doc', [chunk, response])
+        return ErrorCode.SUCCESS, response, retrieve_ref
 
         # start web search
         web = WebSearch(config_path=self.config_path)
@@ -185,7 +194,9 @@ class Worker:
         use_ref = []
         try:
             web_context = ''
-            articles = web.get(query=web_keywords, max_article=2)
+            articles, error = web.get(query=web_keywords, max_article=2)
+            if error is not None:
+                return ErrorCode.SEARCH_FAIL, response, []
 
             tracker.log('search returned')
             for article in articles:

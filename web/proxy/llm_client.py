@@ -68,7 +68,7 @@ class ChatClient:
 
         return instruction, real_history
 
-    def generate_response(self, prompt, history=[], remote=False):
+    def generate_response(self, prompt, history=[], backend="puyu", remote=False):
         """Generate a response from the chat service.
 
         Args:
@@ -111,7 +111,8 @@ class ChatClient:
             data = {
                 'prompt': prompt,
                 'history': data_history,
-                'remote': remote
+                'remote': remote,
+                'backend': backend
             }
             resp = requests.post(url,
                                  headers=header,

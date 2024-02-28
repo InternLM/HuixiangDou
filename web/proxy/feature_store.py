@@ -56,7 +56,7 @@ class FeatureStore:
         self.retriever = None
         self.md_splitter = MarkdownTextSplitter(chunk_size=768,
                                                 chunk_overlap=32)
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024,
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=768,
                                                             chunk_overlap=32)
 
         self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[

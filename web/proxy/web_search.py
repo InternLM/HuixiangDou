@@ -45,7 +45,7 @@ class WebSearch:
         get(query: str, max_article=1): Searches with cache. If the query already exists in the cache, return the cached result.  # noqa E501
     """
 
-    def __init__(self, config_path: dict, retry: int = 3) -> None:
+    def __init__(self, config_path: dict, retry: int = 2) -> None:
         """Initializes the WebSearch object with the given config path and
         retry count."""
         self.config_path = config_path
@@ -91,6 +91,32 @@ class WebSearch:
             pass
         return None
 
+    def fetch_url(self, query:str, target_link: str):
+        if not target_link.startswith('http'):
+            return None
+
+        logger.info(f'extract: {target_link}')
+        try:
+            response = requests.get(target_link, timeout=30)
+
+            doc = Document(response.text)
+            content_html = doc.summary()
+            title = doc.short_title()
+            soup = BS(content_html, 'html.parser')
+
+            if len(soup.text) < 4 * len(query):
+                return None
+            content = '{} {}'.format(title, soup.text)
+            content = content.replace('\n\n', '\n')
+            content = content.replace('\n\n', '\n')
+            content = content.replace('  ', ' ')
+
+            return Article(content=content, source=target_link)
+        except Exception as e:
+            logger.error('fetch_url {}'.format(str(e)))
+        return None
+
+
     def google(self, query: str, max_article):
         """Executes a google search based on the provided query.
 
@@ -110,12 +136,13 @@ class WebSearch:
                                     url,
                                     headers=headers,
                                     data=payload,
-                                    timeout=60)  # noqa E501
+                                    timeout=15)  # noqa E501
         jsonobj = json.loads(response.text)
 
         # 带偏序的 url 连接拾取
         keys = self.load_urls()
         urls = {}
+        normal_urls = []
 
         for organic in jsonobj['organic']:
             link = ''
@@ -133,6 +160,8 @@ class WebSearch:
                     else:
                         urls[key].append(link)
                     break
+                else:
+                    normal_urls.append(link)
 
         logger.debug(f'gather urls: {urls}')
 
@@ -146,38 +175,22 @@ class WebSearch:
         logger.debug(f'target_links:{target_links}')
 
         articles = []
+        error = None
         for target_link in target_links:
             # network with exponential backoff
-            life = 0
-            while life < self.retry:
-                try:
-                    logger.info(f'extract: {target_link}')
-                    response = requests.get(target_link, timeout=60)
-                    if len(response.text) < 1:
-                        break
+            a = self.fetch_url(query=query, target_link=target_link)
+            if a is not None:
+                articles.append(a)
 
-                    doc = Document(response.text)
-                    content_html = doc.summary()
-                    title = doc.short_title()
-                    soup = BS(content_html, 'html.parser')
+        # fetch from normal urls
+        # for url in normal_urls:
+        #     # try fetch result
+        #     if len(articles) >= max_article:
+        #         break
+        #     a = self.fetch_url(query=query, target_link=url)
+        #     if a is not None:
+        #         articles.append(a)
 
-                    if len(soup.text) < len(query):
-                        break
-                    content = '{} {}'.format(title, soup.text)
-                    content = content.replace('\n\n', '\n')
-                    content = content.replace('\n\n', '\n')
-                    content = content.replace('  ', ' ')
-                    articles.append(
-                        Article(content=content, source=target_link))
-
-                    break
-                except Exception as e:
-                    logger.error(
-                        ('web_parse exception', query, e, target_link))
-                    life += 1
-
-                    randval = random.randint(1, int(pow(2, life)))
-                    time.sleep(randval)
         return articles
 
     def save_search_result(self, query: str, articles: list):
@@ -215,19 +228,14 @@ class WebSearch:
         """
         query = query.strip()
 
-        life = 0
-        while life < self.retry:
-            try:
-                articles = self.google(query=query, max_article=max_article)
-                self.save_search_result(query=query, articles=articles)
-                return articles
-            except Exception as e:
-                logger.error(('web_search exception', query, str(e)))
-                life += 1
-
-                randval = random.randint(1, int(pow(2, life)))
-                time.sleep(randval)
-        return []
+        try:
+            articles = self.google(query=query, max_article=max_article)
+            self.save_search_result(query=query, articles=articles)
+            return articles, None
+        except Exception as e:
+            logger.error(('web_search exception', query, str(e)))
+            return [], Exception('search fail, please check TOKEN')
+        return [], None
 
 
 def parse_args():
