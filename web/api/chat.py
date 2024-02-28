@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Response, Depends
 
 from web.middleware.token import check_hxd_token
-from web.model.chat import ChatRequestBody, ChatOnlineResponseBody
+from web.model.chat import ChatRequestBody, ChatOnlineResponseBody, ChatCaseFeedbackBody
 from web.model.qalib import QalibInfo
 from web.service.chat import ChatService
 
@@ -17,4 +17,12 @@ async def chat_online(request: Request, response: Response, body: ChatRequestBod
 @chat_api.post("/v1/onlineResponse")
 async def chat_online_response(request: Request, response: Response, body: ChatOnlineResponseBody,
                                hxd_info: QalibInfo = Depends(check_hxd_token)):
-    return await ChatService(request, response, hxd_info).fetch_response(body)
+    return (await ChatService(request, response, hxd_info).fetch_response(body)
+
+
+@chat_api.post("/v1/caseFeedback"))
+async def case_feedback(request: Request, response: Response, body: ChatCaseFeedbackBody,
+                               hxd_info: QalibInfo = Depends(check_hxd_token)):
+    return await ChatService(request, response, hxd_info).case_feedback(body)
+
+

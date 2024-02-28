@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional, List
 
 from pydantic import BaseModel
@@ -20,3 +21,13 @@ class ChatQueryInfo(BaseModel):
     queryId: str
     request: ChatRequestBody
     response: Optional[ChatResponse] = None
+
+
+class ChatCaseType(Enum):
+    GOOD_CASE = "good"
+    BAD_CASE = "bad"
+
+
+class ChatCaseFeedbackBody(BaseModel):
+    queryId: str
+    type: ChatCaseType
