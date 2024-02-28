@@ -96,13 +96,12 @@ def get_all_comments(owner, name, issue_number):
     return result_comments
 
 
-def write_all_issues(owener, name, issues_list):
+def write_all_issues(owener, name, issues_list, max_issue_number):
     # issue number 从大到小获取 comment
     # 单次获取comment可能会有问题，太多了会受到github限制，可能需要多次构建
-    MAX_NUMBER = 1000  # 每次构建都要把之前构建好的跳过，这里默认一个很大的值
     for j in range(len(issues_list)):
         issue_number = issues_list[j]['number']
-        if issue_number >= MAX_NUMBER:
+        if issue_number >= max_issue_number:
             continue
         issue_body = issues_list[j]['body']
         issue_comments = get_all_comments(owener, name, issue_number)
@@ -126,7 +125,7 @@ def write_all_issues(owener, name, issues_list):
     {md_answer}
     =========== answer ===========\n
         """
-        with open(os.path.join(export_dir, md_basename),
+        with open(os.path.join(EXPORT_DIR, md_basename),
                   mode='w',
                   encoding='utf-8') as file:
             file.write(md_contents)
@@ -138,13 +137,15 @@ if __name__ == '__main__':
     TOKEN = ''
     OWENER = 'InternLM'
     NAME = 'lmdeploy'
-    export_dir = './issues'
-    save_month = 3  # 保存几个月内的 issue
+    # 每次构建都要把之前构建好的跳过，这里默认一个很大的值
+    MAX_ISSUE_NUMBER = 2000
+    EXPORT_DIR = './issues'
+    SAVE_MONTH = 3  # 保存几个月内的 issue
 
     # run
-    if not os.path.exists(export_dir):
-        os.mkdir(export_dir)
-    issues_json_path = os.path.join(export_dir, 'git_issues_list.json')
+    if not os.path.exists(EXPORT_DIR):
+        os.mkdir(EXPORT_DIR)
+    issues_json_path = os.path.join(EXPORT_DIR, 'git_issues_list.json')
     if not os.path.exists(issues_json_path):
         issue_count = get_issue_count(OWENER, NAME)
         issues_list = get_issues_list(OWENER, NAME, issue_count)
@@ -158,7 +159,7 @@ if __name__ == '__main__':
                                            '%Y-%m-%dT%H:%M:%SZ')
             diff = abs((current_date.year - issue_date.year) * 12 +
                        (current_date.month - issue_date.month))
-            if diff > save_month:
+            if diff > SAVE_MONTH:
                 issues_list.remove(i)
 
         loguru.logger.info(f'create git_issues! {issues_json_path}')
@@ -170,4 +171,7 @@ if __name__ == '__main__':
             git_all_issues = json.load(file)
             print(git_all_issues)
 
-    write_all_issues(OWENER, NAME, git_all_issues)
+    write_all_issues(OWENER,
+                     NAME,
+                     git_all_issues,
+                     max_issue_number=MAX_ISSUE_NUMBER)
