@@ -51,7 +51,7 @@
 
 ## STEP1. 建立话题特征库
 
-登录 huggingface，或使用 [hf 国内镜像](https://hf-mirror.com/)。
+由于 embedding 模型需要验证才能获取，你需要登录 huggingface。为了加速下载你可以使用 [hf 国内镜像](https://hf-mirror.com/)。
 
 ```shell
 huggingface-cli login
@@ -140,6 +140,7 @@ remote_llm_model = "deepseek-chat"
   2. 多线程处理和缓存机制可以提高检测效率，但需要注意检测结果的稳定性。
   3. 使用滑动窗口的方式可以减少跳帧和缓存对检测结果的影响。
   ```
+  注：如果使用 deepseek 进行 remote llm 调用，出现 400 错误可能是因为安全审查；在 [huixiangdou/main.py](huixiangdou/main.py) 中修改 `queries = ['请问如何安装 mmpose ?']` 为其他问题即可正常运行。
 
 - **docker 用户**。如果你正在使用 docker，`HuixiangDou` 的 Hybrid LLM Service 需要分离部署。
 
