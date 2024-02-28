@@ -213,7 +213,6 @@ class QaLibCache:
         if not o:
             logger.error(f"[qalib] feature_store_id: {feature_store_id}, get info empty")
             return None
-
         return QalibInfo(**json.loads(o))
 
     @classmethod
