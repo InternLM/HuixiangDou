@@ -51,7 +51,7 @@
 
 ## STEP1. 建立话题特征库
 
-由于 embedding 模型需要验证才能获取，你需要登录 huggingface。为了加速下载你可以使用 [hf 国内镜像](https://hf-mirror.com/)。
+由于 [embedding](https://huggingface.co/maidalun1020/bce-embedding-base_v1) 和 [rerank](https://huggingface.co/maidalun1020/bce-reranker-base_v1) 模型需要验证才能获取，你需要登录 huggingface。为了加速下载你可以使用 [hf 国内镜像](https://hf-mirror.com/)。
 
 ```shell
 huggingface-cli login
