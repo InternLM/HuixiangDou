@@ -15,6 +15,7 @@ import web.api.access as access
 import web.api.qalib as qalib
 import web.api.statistic as statistic
 from web.api import chat, message, integrate
+from web.config.env import HuixiangDouEnv
 from web.config.logging import LOGGING_CONFIG
 from web.middleware.token import check_hxd_token
 from web.scheduler.huixiangdou_task import start_scheduler, stop_scheduler
@@ -26,7 +27,7 @@ logger = log(__name__)
 
 # define global variable
 API_VER = 'v1'
-SERVER_PORT = os.getenv("SERVER_PORT") if os.getenv("SERVER_PORT") else "23333"
+SERVER_PORT = HuixiangDouEnv.get_server_port()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_RESOURCE_DIR = os.path.join(BASE_DIR, "front-end", "dist")
 ASSETS_RESOURCE_DIR = os.path.join(STATIC_RESOURCE_DIR, "assets")
@@ -40,6 +41,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.middleware("http")
 async def redirect_404(request, call_next):
