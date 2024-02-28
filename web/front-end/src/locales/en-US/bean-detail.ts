@@ -12,7 +12,7 @@ export default {
         chatTest: '聊天测试',
         openChatTest: '开始测试',
         beanName: '知识库名称',
-        createFailed: '创建失败',
+        createFailed: '添加文档失败',
         created: '创建完成，尚未添加文档',
         createSuccess: '创建完成',
         upload: '选择文件，可以框选多个',
