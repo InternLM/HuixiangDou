@@ -28,21 +28,30 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
 
     const [openModal, setOpenModal] = useState(false);
     const [eventUrl, setEventUrl] = useState(feishu?.eventUrl);
+    const [loading, setLoading] = useState(false);
 
     const handleOpen = () => {
         setOpenModal(true);
     };
 
     const handleSubmit = async () => {
-        form.validateFields().then(async (values) => {
-            integrateLark(values.appId, values.appSecret).then((res) => {
-                if (res && res.msgCode === MsgCode.success) {
-                    setEventUrl(res.data?.eventUrl);
-                    message.success('保存成功');
-                    refresh();
-                }
+        setLoading(true);
+        form.validateFields()
+            .then(async (values) => {
+                integrateLark(values.appId, values.appSecret)
+                    .then((res) => {
+                        if (res && res.msgCode === MsgCode.success) {
+                            setEventUrl(res.data?.eventUrl);
+                            message.success('保存成功');
+                            refresh();
+                        }
+                    })
+                    .finally(() => {
+                        setLoading(false);
+                    });
+            }).finally(() => {
+                setLoading(false);
             });
-        });
     };
 
     useEffect(() => {
@@ -98,29 +107,8 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
                     >
                         <Input placeholder="appSecret (必填)" />
                     </Form.Item>
-                    {/* <Form.Item */}
-                    {/*    name="webhookUrl" */}
-                    {/*    label="webhookUrl" */}
-                    {/*    rules={[{ required: true, message: 'webhookUrl 不能为空' }]} */}
-                    {/* > */}
-                    {/*    <Input placeholder="webhookUrl (必填)" /> */}
-                    {/* </Form.Item> */}
-                    {/* <Form.Item */}
-                    {/*    name="encryptKey" */}
-                    {/*    label="encryptKey" */}
-                    {/*    rules={[{ required: true, message: 'encryptKey 不能为空' }]} */}
-                    {/* > */}
-                    {/*    <Input placeholder="encryptKey (必填)" /> */}
-                    {/* </Form.Item> */}
-                    {/* <Form.Item */}
-                    {/*    name="verificationToken" */}
-                    {/*    label="verificationToken" */}
-                    {/*    rules={[{ required: true, message: 'verificationToken 不能为空' }]} */}
-                    {/* > */}
-                    {/*    <Input placeholder="verificationToken (必填)" /> */}
-                    {/* </Form.Item> */}
                 </Form>
-                <Button onClick={handleSubmit}>提交</Button>
+                <Button onClick={handleSubmit}>{loading ? 'Saving...' : '提交'}</Button>
             </Modal>
         </div>
     );
