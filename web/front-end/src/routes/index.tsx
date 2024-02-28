@@ -18,7 +18,7 @@ const RouterRoot = () => {
                         element={<Navigate to="home" replace />}
                     />
                     <Route path="home" element={<Home />} />
-                    <Route path="bean-detail/:beanName" element={<BeanDetail />} />
+                    <Route path="bean-detail" element={<BeanDetail />} />
                 </Route>
                 <Route
                     path="*"

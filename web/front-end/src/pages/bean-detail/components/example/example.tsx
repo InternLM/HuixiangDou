@@ -52,6 +52,9 @@ const Example: FC<ExampleProps> = () => {
                                     textarea
                                     rows={12}
                                     value={positives}
+                                    placeholder={`正例是真实场景中，来自提问者的、须答复的问题，每句话一行，例如：
+你好，我是实习生，请问单位有宿舍么？
+你们的产品和友商对比有啥优势啊？`}
                                     onChange={(e) => setPositives(e)}
                                 />
                             </div>
@@ -69,6 +72,10 @@ const Example: FC<ExampleProps> = () => {
                                     textarea
                                     rows={12}
                                     value={negatives}
+                                    placeholder={`反例是真实场景中的闲聊，不应该答复。
+每句一行，例如：
+今天中午吃日料么？
+快看天上有颗流星，快跑`}
                                     onChange={(e) => setNegatives(e)}
                                 />
                             </div>

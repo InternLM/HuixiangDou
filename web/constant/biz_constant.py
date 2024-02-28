@@ -15,6 +15,7 @@ RDS_KEY_HXD_TASK_RESPONSE = "HuixiangDou:TaskResponse"
 RDS_KEY_HXD_CHAT_RESPONSE = "HuixiangDou:ChatResponse"
 RDS_KEY_SCHEDULER = "HuixiangDou:sched"
 RDS_KEY_QUERY_INFO = "HuixiangDou:query"
+RDS_KEY_FEEDBACK_CASE = "HuixiangDou:feedback:case"
 
 # jwt
 JWT_HEADER = {
@@ -58,7 +59,11 @@ ERR_INFO_UPDATE_FAILED = {
     "code": "A3003",
     "msg": "info update failed"
 }
-CHAT_STILL_IN_QUEUE = {
+ERR_CHAT_CASE_FEEDBACK = {
+    "code": "A3004",
+    "msg": "case feedback failed"
+}
+ERR_CHAT_STILL_IN_QUEUE = {
     "code": "A3100",
     "msg": "chat processing"
 }
@@ -72,4 +77,3 @@ HXD_PIPELINE_QALIB_CREATE_FAILED = -1
 
 # 1 day
 HXD_CHAT_TTL = 86400
-

@@ -80,6 +80,13 @@ class LoginService:
         )
 
     async def login(self):
+        if not self.name or len(self.name) < 8:
+            logger.error(f"login name={self.name} not valid.")
+            return BaseBody(
+                msg=biz_const.ERR_ACCESS_LOGIN.get("msg"),
+                msgCode=biz_const.ERR_ACCESS_LOGIN.get("code")
+            )
+
         # calc the password hashcode
         o = r.hget(name=biz_const.RDS_KEY_LOGIN, key=self.name)
 

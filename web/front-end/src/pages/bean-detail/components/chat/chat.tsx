@@ -3,6 +3,7 @@ import {
 } from 'react';
 import Button from '@components/button/button';
 import { online, onlineResponse } from '@services/home';
+import bean from '@assets/imgs/bean1.png';
 import styles from './chat.module.less';
 
 export interface ChatProps {
@@ -14,12 +15,14 @@ export interface Message {
     'content': string,
     'code': number,
     'state': string,
+    images: string[],
     'references': string[]
 }
 
 const Chat: FC<ChatProps> = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [queryId, setQueryId] = useState(''); // 查询回复id
+    const [isComposing, setIsComposing] = useState(false);
 
     const editorRef = useRef<HTMLDivElement>(null);
 
@@ -27,13 +30,17 @@ const Chat: FC<ChatProps> = () => {
         if (queryId) {
             return;
         }
+
         // read all images' base64 code from the editor
         const imgNodes = editorRef.current.querySelectorAll('img');
         const images = Array.from(imgNodes).map((node) => {
             return node.getAttribute('src');
         });
-
-        const currPrompt = editorRef.current.innerText;
+        const currPrompt = editorRef.current.innerText.trim();
+        // if no prompt and no images, return
+        if (!currPrompt && images.length === 0) {
+            return;
+        }
         const history = messages.map((item) => {
             return {
                 content: item.content,
@@ -45,6 +52,7 @@ const Chat: FC<ChatProps> = () => {
             content: currPrompt,
             code: undefined,
             state: '',
+            images,
             references: [],
         };
         setMessages([...messages, newMessage]);
@@ -61,38 +69,60 @@ const Chat: FC<ChatProps> = () => {
 
     const handleKeyDown = (e) => {
         const key = e.code;
-        if (key === 'Enter' && !e.shiftKey) {
+        if (!isComposing && key === 'Enter' && !e.shiftKey) {
             handleSendMessage();
             e.preventDefault();
         }
     };
 
     useEffect(() => {
-        let id;
+        let b;
         if (queryId) {
             // polling for response
-            id = setInterval(async () => {
-                const res = await onlineResponse(queryId);
-                if (res) {
-                    // 如果回复成功且有回复内容；或者回复失败，停止轮询
-                    if ((res.code === 0 && res.text) || res.code > 0) {
-                        clearInterval(id);
+            let pollingTimes = 0;
+            b = setInterval(() => {
+                pollingTimes += 1;
+                onlineResponse(queryId)
+                    .then((res) => {
+                        if (res) {
+                            // 如果回复成功且有回复内容；或者回复失败，停止轮询
+                            if ((res.code === 0 && res.text) || res.code > 0) {
+                                clearInterval(b);
+                                setQueryId('');
+                                const newMessage = {
+                                    sender: 1,
+                                    content: res.text,
+                                    code: res.code,
+                                    state: res.state,
+                                    images: [],
+                                    references: res.references,
+                                };
+                                setMessages([...messages, newMessage]);
+                            }
+                        }
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        clearInterval(b);
                         setQueryId('');
-                        const newMessage = {
-                            sender: 1,
-                            content: res.text,
-                            code: res.code,
-                            state: res.state,
-                            references: res.references,
-                        };
-                        setMessages([...messages, newMessage]);
-                    }
+                    });
+                if (pollingTimes === 30) {
+                    clearInterval(b);
+                    setQueryId('');
+                    const newMessage = {
+                        sender: 1,
+                        content: '请求超时，请稍后再试',
+                        code: 0,
+                        state: '',
+                        images: [],
+                        references: [],
+                    };
+                    setMessages([...messages, newMessage]);
                 }
             }, 2000);
         }
         return () => {
-            clearInterval(id);
-            setQueryId('');
+            clearInterval(b);
         };
     }, [queryId]);
 
@@ -100,9 +130,28 @@ const Chat: FC<ChatProps> = () => {
         <div className={styles.chat}>
             <div className={styles.messageList}>
                 {messages.map((message, index) => (
-                    <div className={styles.message} key={message.content + index}>
-                        {message.sender === 0 ? '用户' : '机器人'}
-                        {message.content}
+                    <div className={styles.messageWrapper} key={message.content + index}>
+                        <div className={styles.avatar}>
+                            {message.sender === 0 ? '🤓' : (
+                                <img src={bean} alt="bean" />
+                            )}
+                        </div>
+                        <div className={styles.message} style={{ background: message.sender === 1 ? '#EDFFEA' : '#f0f0f0' }}>
+                            <div className={styles.imgWrapper}>
+                                {Array.isArray(message.images) && message.images.length > 0 && message.images.map((img) => (
+                                    <img src={img} style={{ height: 24 }} alt="img" />
+                                ))}
+                            </div>
+                            <div>{message.content}</div>
+                            {Array.isArray(message.references) && message.references.length > 0 && (
+                                <div className={styles.referenceWrapper}>
+                                    参考文档:
+                                    <div className={styles.reference}>
+                                        {message.references.join('\n')}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>
@@ -115,7 +164,9 @@ const Chat: FC<ChatProps> = () => {
                         id="prompt-textarea"
                         className={styles.promptEditor}
                         onKeyDown={handleKeyDown}
-                        data-text="placeholder"
+                        onCompositionStart={() => setIsComposing(true)}
+                        onCompositionEnd={() => setIsComposing(false)}
+                        data-text="支持输入文字、图片和 emoji"
                     />
                 </div>
                 <Button

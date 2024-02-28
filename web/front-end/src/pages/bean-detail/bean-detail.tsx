@@ -4,7 +4,7 @@ import {
 import { useLocale } from '@hooks/useLocale';
 import { IconFont } from 'sea-lion-ui';
 import logo from '@assets/imgs/logo.png';
-import bean from '@assets/imgs/bean.png';
+import bean from '@assets/imgs/bean1.png';
 import Chat from '@pages/bean-detail/components/chat';
 import { Feishu, getInfo } from '@services/home';
 import ToggleSearch from '@pages/bean-detail/components/toggle-search';
@@ -26,6 +26,7 @@ export enum BeanState {
 const BeanDetail: FC<BeanDetailProps> = () => {
     const locales = useLocale('beanDetail');
     const [name, setName] = useState('');
+    const [files, setFiles] = useState([]); // 已上传文件列表
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
     const [searchToken, setSearchToken] = useState('');
@@ -55,6 +56,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 setBeanState(res.status);
                 setSearchToken(res.webSearch?.token);
                 setFeishuInfo(res.lark);
+                setFiles(res.docs);
             }
         })();
     }, [refreshFlag]);
@@ -64,7 +66,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
             return (
                 [{
                     title: locales.addDocs,
-                    children: <ImportDocs />,
+                    children: <ImportDocs files={files} refresh={refresh} />,
                     key: 'docs'
                 }]
             );
@@ -73,7 +75,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
             [
                 {
                     title: locales.addDocs,
-                    children: <ImportDocs />,
+                    children: <ImportDocs files={files} refresh={refresh} />,
                     key: 'docs'
                 },
                 {

@@ -8,7 +8,7 @@ import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, RedirectResponse
 from starlette.responses import JSONResponse
 
 import web.api.access as access
@@ -40,6 +40,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def redirect_404(request, call_next):
+    response = await call_next(request)
+    if response.status_code == 404:
+        return RedirectResponse(url="/")
+    return response
+
+
 app.include_router(router=access.access_api, prefix=f"/api/{API_VER}/access")
 app.include_router(router=qalib.qalib_api, prefix=f"/api/{API_VER}/qalib", dependencies=[Depends(check_hxd_token)])
 app.include_router(router=integrate.integrate_api, prefix=f"/api/{API_VER}/qalib",
@@ -51,6 +60,7 @@ app.include_router(router=message.message_api, prefix=f"/api/{API_VER}/message")
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/home", response_class=HTMLResponse)
+@app.get("/bean-detail", response_class=HTMLResponse)
 async def server():
     return FileResponse(f"{STATIC_RESOURCE_DIR}/index.html")
 

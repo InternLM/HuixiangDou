@@ -1,6 +1,6 @@
 export default {
     home: {
-        beanName: '知识库名称',
+        beanName: '请输入知识库名称，不存在则自动创建。不少于 8 个字符',
         createBean: '创建知识库',
         beanPwd: '知识库密码',
         create: '创建',
@@ -13,7 +13,6 @@ export default {
         users: '服务人次',
         uniqueUsers: '去重服务人次',
         pwdError: '密码错误',
-        noData: '暂无数据',
         welcome: 'Welcome, grateful',
         hello: 'Hi',
         hi: 'Hello',
