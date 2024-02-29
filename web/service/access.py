@@ -6,6 +6,7 @@ from passlib.hash import bcrypt
 
 import web.constant.biz_constant as biz_const
 import web.util.str as str
+from web.config.env import HuixiangDouEnv
 from web.model.access import LoginBody, AccessInfo
 from web.model.base import BaseBody
 from web.orm.redis import r
@@ -78,8 +79,8 @@ class LoginService:
             value=str.gen_jwt(jwt_payloads[0][0], jwt_payloads[0][1], int(round(time.time() * 1000) + 604800000)),
             max_age=604800,
             expires=604800,
-            # only send cookie in https
-            secure=True,
+            # only send cookie in https when secure is True
+            secure=HuixiangDouEnv.get_cookie_secure(),
             # cookie will be sent in all requests, including cross-site's requests
             # to make sure the huixiangdou's cookie can be transformed in OpenXLab-Apps
             samesite='none'
@@ -109,7 +110,7 @@ class LoginService:
                 )
 
             # set cookies
-            # todo domain need to set
+            # todo domain need to set？
             self._set_cookie(biz_const.HXD_COOKIE_KEY, [feature_store_id, self.name])
             return BaseBody(
                 data={
