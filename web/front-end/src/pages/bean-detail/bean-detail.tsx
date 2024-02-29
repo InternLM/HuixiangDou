@@ -11,6 +11,8 @@ import ToggleSearch from '@pages/bean-detail/components/toggle-search';
 import Example from '@pages/bean-detail/components/example';
 import ImportDocs from '@pages/bean-detail/components/import-docs';
 import IntegrateFeishu from '@pages/bean-detail/components/integrate-feishu';
+import { Token } from '@utils/utils';
+import { useNavigate } from 'react-router-dom';
 import styles from './bean-detail.module.less';
 
 export interface BeanDetailProps {
@@ -24,6 +26,7 @@ export enum BeanState {
 }
 
 const BeanDetail: FC<BeanDetailProps> = () => {
+    const navigate = useNavigate();
     const locales = useLocale('beanDetail');
     const [name, setName] = useState('');
     const [files, setFiles] = useState([]); // 已上传文件列表
@@ -46,6 +49,11 @@ const BeanDetail: FC<BeanDetailProps> = () => {
 
     const refresh = () => {
         setRefreshFlag(!refreshFlag);
+    };
+    const logout = () => {
+        // 退出登录
+        Token.removeAll();
+        navigate('/home');
     };
 
     useEffect(() => {
@@ -125,6 +133,12 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                     >
                         {state[beanState]}
                     </span>
+                    <div
+                        onClick={logout}
+                        className={styles.logout}
+                    >
+                        登出
+                    </div>
                 </div>
             </div>
             <div className={styles.statisticsWrapper}>
