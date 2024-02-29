@@ -2,7 +2,7 @@ import {
     FC, ReactNode, useEffect, useRef, useState
 } from 'react';
 import Button from '@components/button/button';
-import { online, onlineResponse } from '@services/home';
+import { caseFeedback, online, onlineResponse } from '@services/home';
 import bean from '@assets/imgs/bean1.png';
 import styles from './chat.module.less';
 
@@ -11,12 +11,115 @@ export interface ChatProps {
 }
 
 export interface Message {
-    'sender': number,
-    'content': string,
-    'code': number,
-    'state': string,
+    queryId?: string,
+    sender: number,
+    content: string,
+    code: number,
+    state: string,
     images: string[],
-    'references': string[]
+    references: string[]
+}
+
+export const enum Feedback {
+    good = 1,
+    bad = 0
+}
+
+function MessageItem(props: { message: Message }) {
+    const [feedback, setFeedback] = useState('');
+    const [maxWidth, setMaxWidth] = useState(20);
+    if (!props.message) {
+        return null;
+    }
+    const {
+        state,
+        sender,
+        content,
+        images,
+        references,
+        queryId
+    } = props.message;
+
+    const sendFeedback = async (type: string) => {
+        const res = await caseFeedback(queryId, type);
+    };
+
+    return (
+        <div className={styles.messageWrapper}>
+            <div className={styles.avatar}>
+                {sender === 0 ? '🤓' : (
+                    <img src={bean} alt="bean" />
+                )}
+            </div>
+            <div className={styles.message} style={{ background: sender === 1 ? '#EDFFEA' : '#f0f0f0' }}>
+                <div className={styles.imgWrapper}>
+                    {Array.isArray(images)
+                        && images.length > 0
+                        && images.map((img) => (
+                            <img src={img} style={{ height: 24 }} alt="img" />
+                        ))}
+                </div>
+                <div>{content}</div>
+                {Array.isArray(references) && references.length > 0 && (
+                    <div className={styles.referenceWrapper}>
+                        参考文档:
+                        <div className={styles.reference}>
+                            {references.join('\n')}
+                        </div>
+                    </div>
+                )}
+                {state && state.toLowerCase() !== 'success' && (
+                    <div className={styles.reference}>
+                        [Empty]:
+                        {' '}
+                        {state}
+                    </div>
+                )}
+                {queryId && sender === 1 && (
+                    <div
+                        style={{ maxWidth }}
+                        className={styles.footer}
+                        onMouseEnter={() => {
+                            setMaxWidth(200);
+                        }}
+                        onMouseLeave={() => {
+                            setMaxWidth(24);
+                        }}
+                    >
+                        {!feedback && (
+                            <div className={styles.feedback}>
+                                💬
+                            </div>
+                        )}
+                        <div
+                            className={styles.feedback}
+                            style={{ background: feedback === '👍' ? '#e3e3e3' : undefined }}
+                            onClick={() => {
+                                if (!feedback) {
+                                    setFeedback('👍');
+                                    sendFeedback('good');
+                                }
+                            }}
+                        >
+                            👍
+                        </div>
+                        <div
+                            className={styles.feedback}
+                            style={{ background: feedback === '👎' ? '#e3e3e3' : undefined }}
+                            onClick={() => {
+                                if (!feedback) {
+                                    setFeedback('👎');
+                                    sendFeedback('bad');
+                                }
+                            }}
+                        >
+                            👎
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
 
 const Chat: FC<ChatProps> = () => {
@@ -108,8 +211,9 @@ const Chat: FC<ChatProps> = () => {
                                 clearInterval(b);
                                 setQueryId('');
                                 const newMessage = {
+                                    queryId,
                                     sender: 1,
-                                    content: res.code ? res.state : res.text,
+                                    content: res.text,
                                     code: res.code,
                                     state: res.state,
                                     images: [],
@@ -126,9 +230,8 @@ const Chat: FC<ChatProps> = () => {
                         setQueryId('');
                     });
                 if (pollingTimes === 60) {
-                    clearInterval(b);
-                    setQueryId('');
                     const newMessage = {
+                        queryId,
                         sender: 1,
                         content: '请求超时，请稍后再试',
                         code: 0,
@@ -136,6 +239,8 @@ const Chat: FC<ChatProps> = () => {
                         images: [],
                         references: [],
                     };
+                    clearInterval(b);
+                    setQueryId('');
                     setMessages([...messages, newMessage]);
                     scrollToBottom();
                 }
@@ -150,29 +255,10 @@ const Chat: FC<ChatProps> = () => {
         <div className={styles.chat}>
             <div className={styles.messageList} ref={messageListRef}>
                 {messages.map((message, index) => (
-                    <div className={styles.messageWrapper} key={message.content + index}>
-                        <div className={styles.avatar}>
-                            {message.sender === 0 ? '🤓' : (
-                                <img src={bean} alt="bean" />
-                            )}
-                        </div>
-                        <div className={styles.message} style={{ background: message.sender === 1 ? '#EDFFEA' : '#f0f0f0' }}>
-                            <div className={styles.imgWrapper}>
-                                {Array.isArray(message.images) && message.images.length > 0 && message.images.map((img) => (
-                                    <img src={img} style={{ height: 24 }} alt="img" />
-                                ))}
-                            </div>
-                            <div>{message.content}</div>
-                            {Array.isArray(message.references) && message.references.length > 0 && (
-                                <div className={styles.referenceWrapper}>
-                                    参考文档:
-                                    <div className={styles.reference}>
-                                        {message.references.join('\n')}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <MessageItem
+                        key={message.content + index}
+                        message={message}
+                    />
                 ))}
             </div>
             <div className={styles.inputWrapper}>
