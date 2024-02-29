@@ -30,6 +30,7 @@
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             white-space: pre-wrap;
             max-width: 80%;
+            position: relative;
         }
         .img-wrapper {
             display: flex;
@@ -42,9 +43,30 @@
             padding-top: 8px;
             margin-top: 8px;
             white-space: pre-wrap;
-            .reference {
-                font-size: 14px;
-                color: #666;
+        }
+        .reference {
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+            font-size: 14px;
+            position: absolute;
+            top: -10px;
+            left: calc(100% - 10px);
+            overflow: hidden;
+            transition: all 1s ease;
+            .feedback {
+                cursor: pointer;
+                padding: 3px;
+                border-radius: 50%;
+                &:hover {
+                    background-color: #e3e3e3;
+                }
             }
         }
     }
