@@ -23,6 +23,11 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
     const [openModal, setOpenModal] = useState(false);
     const [token, setToken] = useState('');
 
+    const afterSuccess = () => {
+        refresh();
+        setOpenModal(false);
+    };
+
     const handleChangeSwitch = async (e) => {
         console.log('webSearchToken', !!webSearchToken);
         if (!webSearchToken) {
@@ -32,7 +37,7 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
         } else {
             const res = await integrateWebSearch('');
             if (res.msgCode === MsgCode.success) {
-                refresh();
+                afterSuccess();
                 message.success('网络搜索已关闭');
             }
         }
@@ -41,10 +46,10 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
     const handleSaveToken = async () => {
         const res = await integrateWebSearch(token);
         if (res.msgCode === MsgCode.success && !token) {
-            refresh();
+            afterSuccess();
             message.success('网络搜索已关闭');
         } else if (res.msgCode === MsgCode.success && token) {
-            refresh();
+            afterSuccess();
             message.success('保存成功');
         } else if (res.msg) {
             message.error(res.msg);

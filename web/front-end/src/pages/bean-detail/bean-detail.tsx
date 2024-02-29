@@ -20,7 +20,7 @@ export interface BeanDetailProps {
 export enum BeanState {
     'failed' = -1,
     'created' = 0,
-    'finished' = 2,
+    'finished' = 1,
 }
 
 const BeanDetail: FC<BeanDetailProps> = () => {
@@ -30,7 +30,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
     const [searchToken, setSearchToken] = useState('');
-    const [beanState, setBeanState] = useState(null);
+    const [beanState, setBeanState] = useState(BeanState.created);
     const [refreshFlag, setRefreshFlag] = useState(false);
 
     const state = {
@@ -62,48 +62,48 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     }, [refreshFlag]);
 
     const content = useMemo(() => {
-        if (beanState === BeanState.created) {
+        if (beanState === BeanState.finished) {
             return (
-                [{
-                    title: locales.addDocs,
-                    children: <ImportDocs files={files} refresh={refresh} />,
-                    key: 'docs'
-                }]
+                [
+                    {
+                        title: locales.addDocs,
+                        children: <ImportDocs files={files} refresh={refresh} />,
+                        key: 'docs'
+                    },
+                    {
+                        title: locales.addExamples,
+                        children: <Example />,
+                        key: 'examples'
+                    },
+                    {
+                        title: locales.accessWeChat,
+                        children: (
+                            <div className={styles.btn}>
+                                {locales.viewDetail}
+                                <IconFont icon="icon-GotoOutline" />
+                            </div>
+                        ),
+                        key: 'accessWeChat'
+                    },
+                    {
+                        title: locales.accessFeishu,
+                        children: <IntegrateFeishu feishu={feishuInfo} refresh={refresh} />,
+                        key: 'accessFeishu'
+                    },
+                    {
+                        title: locales.switchSearch,
+                        children: <ToggleSearch refresh={refresh} webSearchToken={searchToken} />,
+                        key: 'switchSearch'
+                    },
+                ]
             );
         }
         return (
-            [
-                {
-                    title: locales.addDocs,
-                    children: <ImportDocs files={files} refresh={refresh} />,
-                    key: 'docs'
-                },
-                {
-                    title: locales.addExamples,
-                    children: <Example />,
-                    key: 'examples'
-                },
-                {
-                    title: locales.accessWeChat,
-                    children: (
-                        <div className={styles.btn}>
-                            {locales.viewDetail}
-                            <IconFont icon="icon-GotoOutline" />
-                        </div>
-                    ),
-                    key: 'accessWeChat'
-                },
-                {
-                    title: locales.accessFeishu,
-                    children: <IntegrateFeishu feishu={feishuInfo} refresh={refresh} />,
-                    key: 'accessFeishu'
-                },
-                {
-                    title: locales.switchSearch,
-                    children: <ToggleSearch refresh={refresh} webSearchToken={searchToken} />,
-                    key: 'switchSearch'
-                },
-            ]
+            [{
+                title: locales.addDocs,
+                children: <ImportDocs files={files} refresh={refresh} />,
+                key: 'docs'
+            }]
         );
     }, [locales, searchToken, beanState, feishuInfo, refresh]);
 
@@ -138,7 +138,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                     </div>
                 ))}
             </div>
-            {beanState > BeanState.created && (
+            {beanState === BeanState.finished && (
                 <div className={styles.statisticsItem}>
                     <div className={styles.statisticsItemTitle}>{locales.chatTest}</div>
                     <div>

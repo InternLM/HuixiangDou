@@ -20,6 +20,7 @@ const Example: FC<ExampleProps> = () => {
     const [openModal, setOpenModal] = useState(false);
     const [negatives, setNegatives] = useState('');
     const [positives, setPositives] = useState('');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (openModal) {
@@ -34,9 +35,12 @@ const Example: FC<ExampleProps> = () => {
     }, [openModal]);
 
     const handleSave = async () => {
+        setLoading(true);
         const newNegatives = negatives.split('\n');
         const newPositives = positives.split('\n');
-        const res = await updateSampleInfo(newPositives, newNegatives);
+        updateSampleInfo(newPositives, newNegatives).finally(() => {
+            setLoading(false);
+        });
     };
 
     const items: TabsProps['items'] = useMemo(() => {
@@ -58,7 +62,7 @@ const Example: FC<ExampleProps> = () => {
                                     onChange={(e) => setPositives(e)}
                                 />
                             </div>
-                            <Button onClick={handleSave}>保存</Button>
+                            <Button onClick={handleSave}>{loading ? 'Saving...' : '保存'}</Button>
                         </>
                     ),
                 },
@@ -79,7 +83,7 @@ const Example: FC<ExampleProps> = () => {
                                     onChange={(e) => setNegatives(e)}
                                 />
                             </div>
-                            <Button onClick={handleSave}>保存</Button>
+                            <Button onClick={handleSave}>{loading ? 'Saving...' : '保存'}</Button>
                         </>
                     ),
                 },
