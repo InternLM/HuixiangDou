@@ -118,7 +118,7 @@ class ChatService:
         image_store_dir += "/images/"
         return image_store_dir + query_id[-8:] + "_" + name
 
-    def case_feedback(self, body: ChatCaseFeedbackBody):
+    async def case_feedback(self, body: ChatCaseFeedbackBody):
         feature_store_id = self.hxd_info.featureStoreId
         query_id = body.queryId
         query_info = ChatCache.get_query_info(query_id, feature_store_id)
