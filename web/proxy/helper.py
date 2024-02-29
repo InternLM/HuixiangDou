@@ -1,6 +1,7 @@
 import json
 from enum import Enum
 from types import SimpleNamespace
+import requests
 
 import redis
 from loguru import logger
@@ -127,6 +128,30 @@ def parse_json_str(json_str: str):
         logger.error(str(e))
         return None, e
 
+def ocr(filepath: str, timeout=5):
+    header = {'Content-Type': 'application/json'}
+    data = {
+        'image_path': filepath
+    }
+    try:
+        resp = requests.post('http://127.0.0.1:9999/api', headers=header, data=json.dumps(data), timeout=timeout)
+        resp_json = resp.json()
+        content = resp_json['content']
+        # check bad encode ratio
+        useful_char_cnt = 0
+        scopes = [['a', 'z'], ['\u4e00', '\u9fff'], ['A', 'Z'], ['0', '9']]
+        for char in content:
+            for scope in scopes:
+                if char >= scope[0] and char <= scope[1]:
+                    useful_char_cnt += 1
+                    break
+        if useful_char_cnt / len(content) <= 0.5:
+            # Garbled characters
+            return None
+        return content
+    except Exception as e:
+        logger.error(str(e))
+    return None
 
 class QueryTracker:
     """A class to track queries and log them into a file.

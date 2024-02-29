@@ -157,8 +157,10 @@ class Retriever:
 
             source = doc.metadata['source']
             file_text = file_opr.read(source)
-            logger.info('{} content {}'.format(source, file_text[0:300]))
+            logger.info('target {} file length {}'.format(source, len(file_text)))
             if len(file_text) + len(context) > context_max_length:
+                if source in references:
+                    continue
                 references.append(source)
                 # add and break
                 add_len = context_max_length - len(context)

@@ -127,7 +127,7 @@ class HybridLLMServer:
     def __init__(self,
                  llm_config: dict,
                  device: str = 'cuda',
-                 retry=3) -> None:
+                 retry=2) -> None:
         """Initialize the HybridLLMServer with the given configuration, device,
         and number of retries."""
         self.device = device
@@ -187,6 +187,8 @@ class HybridLLMServer:
         logger.info('prompt length {}'.format(len(prompt)))
 
         messages = []
+        if len(history) > 3:
+            history = history[-3:]
         for item in history:
             messages.append({
                 'role': 'user',
@@ -207,34 +209,31 @@ class HybridLLMServer:
             'n': 1,
             'temperature': 0.8,
             'top_p': 0.1,
-            'top_k': 1,
             'disable_report': False
         }
         output_text = None
         self.wait_time_slot()
 
-        try:
-            res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=30).json()
-            res_data = res_json['data']
-            if len(res_data) < 1:
-                logger.error('puyu api return empty, wait and retry again')
-                time.sleep(3)
-                
+        life = 0
+        while life < self.retry:
+            try:
                 res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=30).json()
                 res_data = res_json['data']
                 if len(res_data) < 1:
-                    logger.error('puyu api still return empty')
+                    logger.error('RPM exceed')
                     return output_text
-            logger.info(res_json)
-            output_text = res_data['choices'][0]['text']
-            if len(output_text) < 1 or '仩嗨亾笁潪能實験厔' in output_text:
-                import pdb
-                pdb.set_trace()
-                raise Exception('return empty')
-        except Exception as e:
-            import pdb
-            pdb.set_trace()
-            logger.error(str(e))
+                output_text = res_data['choices'][0]['text']
+                if len(output_text) < 1 or '仩嗨亾笁潪能實験厔' in output_text:
+                    import pdb
+                    pdb.set_trace()
+                    raise Exception('return empty')
+                return output_text
+
+            except Exception as e:
+                with open('badcase{}.txt'.format(life), 'w') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                logger.error(str(e))
+                life += 1
         return output_text
 
     def call_kimi(self, prompt, history):
@@ -269,7 +268,10 @@ class HybridLLMServer:
                 return completion.choices[0].message.content
             except Exception as e:
                 logger.error(str(e))
-                # retry
+                if 'risk' in str(e):
+                    # high risk question, skip
+                    life += self.retry
+                    return ''
                 life += 1
                 randval = random.randint(1, int(pow(2, life)))
                 time.sleep(randval)

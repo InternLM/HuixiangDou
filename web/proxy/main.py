@@ -14,7 +14,7 @@ import redis
 from BCEmbedding.tools.langchain import BCERerank
 from config import feature_store_base_dir, redis_host, redis_port, redis_passwd
 from feature_store import FeatureStore
-from helper import ErrorCode, Queue, TaskCode, parse_json_str
+from helper import ErrorCode, Queue, TaskCode, parse_json_str, ocr
 from langchain.embeddings import HuggingFaceEmbeddings
 from loguru import logger
 from retriever import Retriever
@@ -209,8 +209,16 @@ def chat_with_featue_store(cache: CacheRetriever,
     worker = Worker(work_dir=workdir, config_path=configpath)
 
     # TODO parse images
+
+    image_texts = []
+    for image in payload.images:
+        text = ocr(image)
+        if text is not None:
+            image_texts.append(text)
+    image_text = '\n'.join(image_texts)
+
     history = format_history(payload.history)
-    error, response, references = worker.generate(query=payload.content,
+    error, response, references = worker.generate(query=image_text+payload.content,
                                                   history=history,
                                                   retriever=retriever,
                                                   groupname='')

@@ -11,7 +11,7 @@ from helper import ErrorCode, QueryTracker
 from llm_client import ChatClient
 from loguru import logger
 from web_search import WebSearch
-
+import openxlab_util
 
 class Worker:
     """The Worker class orchestrates the logic of handling user queries,
@@ -78,6 +78,23 @@ class Worker:
             self.PERPLESITY_TEMPLATE = 'Question: {} Answer: {}\nRead the dialogue above, does the answer express that they don\'t know? The more comprehensive the answer, the lower the score. Rate it on a scale of 0-10, no explanation, just give the score.\nThe scoring standard is as follows: an accurate answer to the question gets 0 points; a detailed answer gets 1 point; knowing some answers but having uncertain information gets 8 points; knowing a small part of the answer but recommends seeking help from others gets 9 points; not knowing any of the answers and directly recommending asking others for help gets 10 points. Just give the score, no explanation.'  # noqa E501
             self.SUMMARIZE_TEMPLATE = '"{}" \n Read the content above carefully, summarize it in a short and powerful way.'  # noqa E501
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
+
+
+    def security_content(self, tracker, response: str):
+        # 安全检查，通过为 true
+        if len(response) < 1:
+            return True
+
+        if self.single_judge(self.SECURITY_TEMAPLTE.format(response),
+            tracker=tracker,
+            throttle=3,
+            default=0):
+            return False
+
+        if openxlab_util.security(response):
+            return True
+        return False
+
 
     def single_judge(self, prompt, tracker, throttle: int, default: int, backend='puyu'):
         """Generates a score based on the prompt, and then compares it to
@@ -157,6 +174,7 @@ class Worker:
             if db_context is None or len(db_context) < 1:
                 return ErrorCode.UNRELATED, response, retrieve_ref
 
+        logger.info('fetch context length {}'.format(len(db_context)))
         # if self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
         #         query, chunk),
         #                      tracker=tracker,
@@ -171,9 +189,20 @@ class Worker:
         response = self.llm.generate_response(prompt=prompt,
                                                 history=history,
                                                 remote=True,
-                                                backend='kimi')
+                                                backend='puyu')
         tracker.log('feature store doc', [chunk, response])
-        return ErrorCode.SUCCESS, response, retrieve_ref
+
+        if response is not None and len(response) > 0:
+            prompt = self.PERPLESITY_TEMPLATE.format(query, response)
+            if not self.single_judge(prompt=prompt,
+                                 tracker=tracker,
+                                 throttle=9,
+                                 default=0,
+                                 backend='kimi'):
+                # get answer, check security and return
+                if not self.security_content(tracker, response):
+                    return ErrorCode.SECURITY, '请遵循核心价值观', retrieve_ref
+                return ErrorCode.SUCCESS, response, retrieve_ref
 
         # start web search
         web = WebSearch(config_path=self.config_path)
@@ -257,12 +286,8 @@ class Worker:
         #     response = self.llm.generate_response(
         #         prompt=self.SUMMARIZE_TEMPLATE.format(response))
 
-        if len(response) > 0 and self.single_judge(
-                self.SECURITY_TEMAPLTE.format(response),
-                tracker=tracker,
-                throttle=3,
-                default=0):
-            return ErrorCode.SECURITY, response, use_ref
+        if not self.security_content(tracker, response):
+            return ErrorCode.SECURITY, '所有内容应遵循核心价值观', use_ref
 
         if reborn_code != ErrorCode.SUCCESS:
             return reborn_code, response, use_ref

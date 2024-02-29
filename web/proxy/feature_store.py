@@ -25,7 +25,7 @@ from langchain_core.documents import Document
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
 from torch.cuda import empty_cache
-
+from helper import ocr
 
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
@@ -181,8 +181,8 @@ class FeatureStore:
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        files = [str(x) for x in list(Path(file_dir).glob('**/*'))]
-
+        files = [str(x) for x in list(Path(file_dir).glob('*'))]
+        logger.info('glob {} in dir {}'.format(files, file_dir))
         file_opr = FileOperation()
         documents = []
         for i, file in enumerate(files):
@@ -194,9 +194,8 @@ class FeatureStore:
                 documents += self.get_md_documents(file)
             else:
                 text = file_opr.read(file)
+                logger.info('{} content length {}'.format(file, len(text)))
                 text = basename + text
-
-                print(text)
                 documents += self.get_text_documents(text, file)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
@@ -209,7 +208,7 @@ class FeatureStore:
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        files = [str(x) for x in list(Path(file_dir).glob('**/*'))]
+        files = [str(x) for x in list(Path(file_dir).glob('*'))]
         documents = []
         file_opr = FileOperation()
 
@@ -305,8 +304,15 @@ class FeatureStore:
             try:
                 _type = file_opr.get_type(filepath)
                 if _type == 'image':
-                    # TODO call multi-modal for OCR
-                    pass
+                    text = ocr(filepath=filepath)
+                    if text is None:
+                        skip_cnt += 1
+                    else:
+                        write_filename = '{}.text'.format(os.path.basename(filepath))
+                        logger.info((file_dir, write_filename))
+                        with open(os.path.join(file_dir, write_filename), 'w') as f:
+                            f.write(text)
+                        success_cnt += 1
                 elif _type in ['pdf', 'md', 'text', 'word', 'excel']:
                     basename = os.path.basename(filepath)
                     shutil.copy(filepath, os.path.join(file_dir, basename))
