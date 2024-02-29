@@ -24,3 +24,4 @@ feature_stores/
 web/qa
 redis.conf
 nohup.out
+*.pyc

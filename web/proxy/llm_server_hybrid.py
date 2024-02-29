@@ -208,7 +208,7 @@ class HybridLLMServer:
             'messages': messages,
             'n': 1,
             'temperature': 0.8,
-            'top_p': 0.1,
+            'top_p': 0.7,
             'disable_report': False
         }
         output_text = None
@@ -217,7 +217,7 @@ class HybridLLMServer:
         life = 0
         while life < self.retry:
             try:
-                res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=30).json()
+                res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
                 res_data = res_json['data']
                 if len(res_data) < 1:
                     logger.error('RPM exceed')

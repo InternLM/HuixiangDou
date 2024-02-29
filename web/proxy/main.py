@@ -225,7 +225,7 @@ def chat_with_featue_store(cache: CacheRetriever,
     if error != ErrorCode.SUCCESS:
         chat_state(code=error.value,
                    state=error.describe(),
-                   text='',
+                   text=response,
                    ref=references)
         return
     chat_state(code=ErrorCode.SUCCESS.value,

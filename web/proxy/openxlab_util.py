@@ -19,7 +19,7 @@ def security(query: str, retry=2):
             }
 
             resp = requests.post('https://openxlab.org.cn/gw/checkit/api/v1/audit/text', data=json.dumps(data), headers=headers)
-            print(resp, resp.content)
+            logger.debug((resp, resp.content))
 
             json_obj = json.loads(resp.content)
             items = json_obj['data']
@@ -27,7 +27,7 @@ def security(query: str, retry=2):
             block = False
             for item in items:
                 label = item['label']
-                if label is not None and label in ['porn', 'politics', 'ad', 'contraband']:
+                if label is not None and label in ['porn', 'politics']:
                     suggestion = item['suggestion']
                     if suggestion == 'block':
                         logger.debug(items)
@@ -38,12 +38,11 @@ def security(query: str, retry=2):
                 return False
             return True
         except Exception as e:
-            print(e)
+            logger.debug(e)
             life += 1
 
             randval = random.randint(1, int(pow(2, life)))
             time.sleep(randval)
-            # pdb.set_trace()
     return False
 
 

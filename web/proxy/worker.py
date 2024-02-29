@@ -84,7 +84,6 @@ class Worker:
         # 安全检查，通过为 true
         if len(response) < 1:
             return True
-
         if self.single_judge(self.SECURITY_TEMAPLTE.format(response),
             tracker=tracker,
             throttle=3,
@@ -114,7 +113,7 @@ class Worker:
 
         score = default
         relation = self.llm.generate_response(prompt=prompt, remote=False, backend=backend)
-        tracker.log('score', [relation, throttle, default])
+        tracker.log('score' + prompt[0:20], [relation, throttle, default])
         filtered_relation = ''.join([c for c in relation if c.isdigit()])
         try:
             score_str = re.sub(r'[^\d]', ' ', filtered_relation).strip()
@@ -201,7 +200,7 @@ class Worker:
                                  backend='kimi'):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
-                    return ErrorCode.SECURITY, '请遵循核心价值观', retrieve_ref
+                    return ErrorCode.SECURITY, '检测到高危内容，不予显示', retrieve_ref
                 return ErrorCode.SUCCESS, response, retrieve_ref
 
         # start web search
@@ -287,7 +286,7 @@ class Worker:
         #         prompt=self.SUMMARIZE_TEMPLATE.format(response))
 
         if not self.security_content(tracker, response):
-            return ErrorCode.SECURITY, '所有内容应遵循核心价值观', use_ref
+            return ErrorCode.SECURITY, '网络搜索可能包含不安全内容，不予显示', use_ref
 
         if reborn_code != ErrorCode.SUCCESS:
             return reborn_code, response, use_ref
