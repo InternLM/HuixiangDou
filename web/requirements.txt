@@ -9,3 +9,4 @@ python-multipart==0.0.9
 tqdm==4.65.0
 apscheduler==3.10.4
 lark-oapi==1.2.1
+flask==3.0.2

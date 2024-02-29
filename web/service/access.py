@@ -1,7 +1,7 @@
 import json
 import time
 
-from fastapi import Response
+from fastapi import Response, Request
 from passlib.hash import bcrypt
 
 import web.constant.biz_constant as biz_const
@@ -66,10 +66,11 @@ def _create_qa_lib(name, hashed_pass, feature_store_id) -> bool:
 
 
 class LoginService:
-    def __init__(self, login: LoginBody, response: Response):
+    def __init__(self, login: LoginBody, request: Request, response: Response):
         self.name = login.name
         self.password = login.password
         self.response = response
+        self.request = request
 
     def _set_cookie(self, cookie_key, *jwt_payloads):
         self.response.set_cookie(
@@ -77,6 +78,11 @@ class LoginService:
             value=str.gen_jwt(jwt_payloads[0][0], jwt_payloads[0][1], int(round(time.time() * 1000) + 604800000)),
             max_age=604800,
             expires=604800,
+            # only send cookie in https
+            secure=True,
+            # cookie will be sent in all requests, including cross-site's requests
+            # to make sure the huixiangdou's cookie can be transformed in OpenXLab-Apps
+            samesite='none'
         )
 
     async def login(self):
