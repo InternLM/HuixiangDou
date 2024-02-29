@@ -27,7 +27,7 @@ export const enum Feedback {
 
 function MessageItem(props: { message: Message }) {
     const [feedback, setFeedback] = useState('');
-    const [maxWidth, setMaxWidth] = useState(20);
+    const [maxWidth, setMaxWidth] = useState(24);
     if (!props.message) {
         return null;
     }
@@ -86,35 +86,40 @@ function MessageItem(props: { message: Message }) {
                             setMaxWidth(24);
                         }}
                     >
-                        {!feedback && (
-                            <div className={styles.feedback}>
-                                💬
+                        <div
+                            className={styles.feedback}
+                            style={{ background: '#e3e3e3' }}
+                        >
+                            {feedback || '💬'}
+                        </div>
+                        {feedback !== '👍' && (
+                            <div
+                                className={styles.feedback}
+                                style={{ background: feedback === '👍' ? '#e3e3e3' : undefined }}
+                                onClick={() => {
+                                    if (!feedback) {
+                                        setFeedback('👍');
+                                        sendFeedback('good');
+                                    }
+                                }}
+                            >
+                                👍
                             </div>
                         )}
-                        <div
-                            className={styles.feedback}
-                            style={{ background: feedback === '👍' ? '#e3e3e3' : undefined }}
-                            onClick={() => {
-                                if (!feedback) {
-                                    setFeedback('👍');
-                                    sendFeedback('good');
-                                }
-                            }}
-                        >
-                            👍
-                        </div>
-                        <div
-                            className={styles.feedback}
-                            style={{ background: feedback === '👎' ? '#e3e3e3' : undefined }}
-                            onClick={() => {
-                                if (!feedback) {
-                                    setFeedback('👎');
-                                    sendFeedback('bad');
-                                }
-                            }}
-                        >
-                            👎
-                        </div>
+                        {feedback !== '👎' && (
+                            <div
+                                className={styles.feedback}
+                                style={{ background: feedback === '👎' ? '#e3e3e3' : undefined }}
+                                onClick={() => {
+                                    if (!feedback) {
+                                        setFeedback('👎');
+                                        sendFeedback('bad');
+                                    }
+                                }}
+                            >
+                                👎
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -272,7 +277,7 @@ const Chat: FC<ChatProps> = () => {
                         onKeyDown={handleKeyDown}
                         onCompositionStart={() => setIsComposing(true)}
                         onCompositionEnd={() => setIsComposing(false)}
-                        aria-placeholder="支持输入文字、图片和 emoji"
+                        aria-placeholder="支持输入文字、emoji 和粘贴图片"
                     />
                 </div>
                 <Button
