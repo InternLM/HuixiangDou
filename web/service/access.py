@@ -83,7 +83,7 @@ class LoginService:
             secure=HuixiangDouEnv.get_cookie_secure(),
             # cookie will be sent in all requests, including cross-site's requests
             # to make sure the huixiangdou's cookie can be transformed in OpenXLab-Apps
-            samesite='none'
+            samesite=HuixiangDouEnv.get_cookie_samesite()
         )
 
     async def login(self):

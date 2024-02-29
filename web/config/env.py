@@ -60,3 +60,7 @@ class HuixiangDouEnv:
     @classmethod
     def get_lark_log_level(cls) -> lark.LogLevel:
         return lark.LogLevel.DEBUG
+
+    @classmethod
+    def get_cookie_samesite(cls) -> str:
+        return 'none' if HuixiangDouEnv.get_cookie_secure() else 'lax'
