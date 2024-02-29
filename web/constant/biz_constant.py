@@ -16,16 +16,13 @@ RDS_KEY_HXD_CHAT_RESPONSE = "HuixiangDou:ChatResponse"
 RDS_KEY_SCHEDULER = "HuixiangDou:sched"
 RDS_KEY_QUERY_INFO = "HuixiangDou:query"
 RDS_KEY_FEEDBACK_CASE = "HuixiangDou:feedback:case"
+RDS_KEY_LARK_CONFIG = "HuixiangDou:lark"
+
 
 # jwt
 JWT_HEADER = {
     "alg": "HS256"
 }
-_jwt_secret = os.getenv("JWT_SECRET")
-if not _jwt_secret:
-    logger.error("Environment JWT_SECRET is None, you need set one, exiting with code 3")
-    exit(3)
-JWT_SECRET = _jwt_secret
 
 # cookie
 HXD_COOKIE_KEY = "hxd_token"
@@ -84,3 +81,5 @@ HXD_CHAT_TTL = 86400
 
 # 1000 MB
 HXD_ADD_DOCS_ONCE_MAX = 1048576000
+
+HXD_FEATURE_STORE_SUFFIX_LENGTH = 4
