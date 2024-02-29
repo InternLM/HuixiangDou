@@ -1,5 +1,5 @@
 from fastapi import Request, Response
-from lark_oapi.adapter.flask import *
+from lark_oapi.adapter.flask import parse_req, parse_resp
 
 from web.service.agent import LarkAgent
 
