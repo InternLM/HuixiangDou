@@ -23,8 +23,15 @@ const Chat: FC<ChatProps> = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [queryId, setQueryId] = useState(''); // 查询回复id
     const [isComposing, setIsComposing] = useState(false);
+    const messageListRef = useRef(null);
 
     const editorRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        if (messageListRef.current) {
+            messageListRef.current.scrollTo({ top: 999999, behavior: 'smooth' });
+        }
+    };
 
     const handleSendMessage = async () => {
         if (queryId) {
@@ -34,7 +41,7 @@ const Chat: FC<ChatProps> = () => {
         // read all images' base64 code from the editor
         const imgNodes = editorRef.current.querySelectorAll('img');
         const images = Array.from(imgNodes).map((node) => {
-            return node.getAttribute('src');
+            return node.src;
         });
         const currPrompt = editorRef.current.innerText.trim();
         // if no prompt and no images, return
@@ -56,6 +63,7 @@ const Chat: FC<ChatProps> = () => {
             references: [],
         };
         setMessages([...messages, newMessage]);
+        scrollToBottom();
         editorRef.current.innerHTML = '';
         const res = await online({
             content: currPrompt,
@@ -89,6 +97,7 @@ const Chat: FC<ChatProps> = () => {
                 references: [],
             };
             setMessages([...messages, pendingMessage]);
+            scrollToBottom();
             b = setInterval(() => {
                 pollingTimes += 1;
                 onlineResponse(queryId)
@@ -100,13 +109,14 @@ const Chat: FC<ChatProps> = () => {
                                 setQueryId('');
                                 const newMessage = {
                                     sender: 1,
-                                    content: res.text,
+                                    content: res.code ? res.state : res.text,
                                     code: res.code,
                                     state: res.state,
                                     images: [],
                                     references: res.references,
                                 };
                                 setMessages([...messages, newMessage]);
+                                scrollToBottom();
                             }
                         }
                     })
@@ -127,6 +137,7 @@ const Chat: FC<ChatProps> = () => {
                         references: [],
                     };
                     setMessages([...messages, newMessage]);
+                    scrollToBottom();
                 }
             }, 3000);
         }
@@ -137,7 +148,7 @@ const Chat: FC<ChatProps> = () => {
 
     return (
         <div className={styles.chat}>
-            <div className={styles.messageList}>
+            <div className={styles.messageList} ref={messageListRef}>
                 {messages.map((message, index) => (
                     <div className={styles.messageWrapper} key={message.content + index}>
                         <div className={styles.avatar}>
