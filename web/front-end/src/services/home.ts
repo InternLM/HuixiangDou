@@ -178,3 +178,13 @@ export async function onlineResponse(queryId: string) {
         }
     }, beanPrefix);
 }
+
+export async function caseFeedback(queryId: string, type: string) {
+    return request<OnlineRspDto>('/api/v1/chat/v1/caseFeedback', {
+        method: 'POST',
+        data: {
+            queryId,
+            type
+        }
+    }, beanPrefix);
+}
