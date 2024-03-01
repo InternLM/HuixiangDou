@@ -158,7 +158,11 @@ class Retriever:
             chunks.append(chunk)
 
             source = doc.metadata['source']
-            file_text = file_opr.read(source)
+            file_text, error = file_opr.read(source)
+            if error is not None:
+                # read file failed, skip
+                continue
+
             logger.info('target {} file length {}'.format(source, len(file_text)))
             if len(file_text) + len(context) > context_max_length:
                 if source in references:

@@ -2,7 +2,7 @@ import textract
 from langchain_community.document_loaders import (
     CSVLoader, Docx2txtLoader, PyPDFLoader, UnstructuredExcelLoader,
     UnstructuredWordDocumentLoader)
-
+from loguru import logger
 
 class FileOperation:
 
@@ -71,8 +71,12 @@ class FileOperation:
         elif file_type == 'word':
             # https://stackoverflow.com/questions/36001482/read-doc-file-with-python
             # https://textract.readthedocs.io/en/latest/installation.html
-            text = textract.process(filepath).decode('utf8')
-            print(len(text))
+            try:
+                text = textract.process(filepath).decode('utf8')
+            except Exception as e:
+                logger.error((filepath, str(e)))
+                return '', e
+            # print(len(text))
 
         text = text.replace('\n\n', '\n')
         text = text.replace('\n\n', '\n')
@@ -80,7 +84,7 @@ class FileOperation:
         text = text.replace('  ', ' ')
         text = text.replace('  ', ' ')
         text = text.replace('  ', ' ')
-        return text
+        return text, None
 
 
 if __name__ == '__main__':

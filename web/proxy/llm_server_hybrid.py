@@ -28,11 +28,13 @@ def check_gpu_max_memory_gb():
     return -1
 
 
-def build_messages(prompt, history, system):
-    messages = [{'role': 'system', 'content': system}]
+def build_messages(prompt, history, system=None):
+    messages = []
+    if system is not None and len(system) > 0:
+        messages.append({'role': 'system', 'content': system})
     for item in history:
         messages.append({'role': 'user', 'content': item[0]})
-        messages.append({'role': 'system', 'content': item[1]})
+        messages.append({'role': 'assistant', 'content': item[1]})
     messages.append({'role': 'user', 'content': prompt})
     return messages
 
@@ -189,20 +191,8 @@ class HybridLLMServer:
         messages = []
         if len(history) > 3:
             history = history[-3:]
-        for item in history:
-            messages.append({
-                'role': 'user',
-                'text': item[0],
-            })
-            messages.append({
-                'role': 'assistant',
-                'text': item[1],
-            })
-        messages.append({
-            'role': 'user',
-            'text': prompt,
-        })
-
+        
+        messages = build_messages(prompt=prompt, history=history)
         data = {
             'model': 'ChatPJLM-latest',
             'messages': messages,

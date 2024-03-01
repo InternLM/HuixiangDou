@@ -27,6 +27,23 @@ from sklearn.metrics import precision_recall_curve
 from torch.cuda import empty_cache
 from helper import ocr
 
+from multiprocessing import Process
+
+def ocr_images_async(file_dir, images: list, suffix):
+    for filepath in images:
+        try:
+            text = ocr(filepath=filepath)
+            if text is not None:
+                # image.jpg to image.jpg.text
+                write_filename = '{}{}'.format(os.path.basename(filepath), suffix)
+                logger.info(('ocr_image_async', file_dir, write_filename))
+                with open(os.path.join(file_dir, write_filename), 'w') as f:
+                    f.write(text)
+        except Exception as e:
+            logger.error(str(e))
+            # ocr fail, quit without retry
+            break
+
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
@@ -64,6 +81,7 @@ class FeatureStore:
             ('##', 'Header 2'),
             ('###', 'Header 3'),
         ])
+        self.enable_ocr = True
 
     def is_chinese_doc(self, text):
         """If the proportion of Chinese in a bilingual document exceeds 0.5%,
@@ -185,21 +203,37 @@ class FeatureStore:
         logger.info('glob {} in dir {}'.format(files, file_dir))
         file_opr = FileOperation()
         documents = []
+        state_map = {}
+
         for i, file in enumerate(files):
             basename = os.path.basename(file)
+            if basename.endswith('.text'):
+                basename = '.text'.join(basename.split('.text')[0:-1])
+
             logger.debug('{}/{}.. {}'.format(i+1, len(files), basename))
             file_type = file_opr.get_type(file)
 
             if file_type == 'md':
                 documents += self.get_md_documents(file)
             else:
-                text = file_opr.read(file)
+                text, error = file_opr.read(file)
+                if error is not None:
+                    state_map[basename] = {
+                        "status": False,
+                        "desc": "read fail"
+                    }
+                    continue
+                state_map[basename] = {
+                    "status": True,
+                    "desc": str(len(text))
+                }
                 logger.info('{} content length {}'.format(file, len(text)))
                 text = basename + text
                 documents += self.get_text_documents(text, file)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
+        return state_map
 
     def ingress_reject(self, file_dir: str, work_dir: str):
         """Extract the features required for the reject pipeline based on
@@ -233,7 +267,9 @@ class FeatureStore:
                     documents.append(new_doc)
 
             else:
-                text = file_opr.read(file)
+                text, error = file_opr.read(file)
+                if error is not None:
+                    continue
                 text = basename + text
                 documents += self.get_text_documents(text, file)
 
@@ -299,35 +335,61 @@ class FeatureStore:
         skip_cnt = 0
 
         file_opr = FileOperation()
+        images = []
+        normals = []
+        ocr_process = None
+        state_map = {}
 
         for filepath in filepaths:
+            _type = file_opr.get_type(filepath)
+            if _type == 'image':
+                images.append(filepath)
+            elif _type in ['pdf', 'md', 'text', 'word', 'excel']:
+                normals.append(filepath)
+            else:
+                skip_cnt +=1
+
+        # process images if enable ocr
+        if self.enable_ocr:
+            # start a process to call ocr for images
+            ocr_process = Process(target=ocr_images_async, args=(file_dir, images, '.text'))
+            ocr_process.start()
+        else:
+            skip_cnt += len(images)
+
+        # process normal file (pdf, text)
+        for filepath in normals:
+            basename = os.path.basename(filepath)
             try:
-                _type = file_opr.get_type(filepath)
-                if _type == 'image':
-                    text = ocr(filepath=filepath)
-                    if text is None:
-                        skip_cnt += 1
-                    else:
-                        write_filename = '{}.text'.format(os.path.basename(filepath))
-                        logger.info((file_dir, write_filename))
-                        with open(os.path.join(file_dir, write_filename), 'w') as f:
-                            f.write(text)
-                        success_cnt += 1
-                elif _type in ['pdf', 'md', 'text', 'word', 'excel']:
-                    basename = os.path.basename(filepath)
-                    shutil.copy(filepath, os.path.join(file_dir, basename))
-                    success_cnt += 1
-                else:
-                    skip_cnt += 1
-                    logger.info(f'skip {filepath}')
+                shutil.copy(filepath, os.path.join(file_dir, basename))
+                success_cnt += 1
             except Exception as e:
                 fail_cnt += 1
                 logger.error(str(e))
+                state_map[basename] = {
+                    'status': False,
+                    'desc': 'IO error'
+                }
+
+        if self.enable_ocr:
+            ocr_process.join()
+            # check ocr result
+            for filepath in images:
+                basename = os.path.basename(filepath)
+                converted = os.path.join(file_dir, basename+'.text')
+                if os.path.exists(converted):
+                    success_cnt += 1
+                else:
+                    state_map[basename] = {
+                        'status': False,
+                        'desc': 'skip'
+                    }
+                    skip_cnt += 1
 
         logger.debug(
             f'preprocess input {len(filepaths)} files, {success_cnt} success, {fail_cnt} fail, {skip_cnt} skip. '
         )
-        return file_dir, (success_cnt, fail_cnt, skip_cnt)
+        return file_dir, (success_cnt, fail_cnt, skip_cnt), state_map
 
     def initialize(self, filepaths: list, work_dir: str):
         """Initializes response and reject feature store.
@@ -339,14 +401,26 @@ class FeatureStore:
         logger.info(
             'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
-        file_dir, counter = self.preprocess(filepaths=filepaths,
-                                            work_dir=work_dir)
+        file_dir, counter, proc_state = self.preprocess(filepaths=filepaths, work_dir=work_dir)
         success_cnt, _, __ = counter
+        ingress_state = {}
+
         if success_cnt > 0:
-            self.ingress_response(file_dir=file_dir, work_dir=work_dir)
+            ingress_state = self.ingress_response(file_dir=file_dir, work_dir=work_dir)
             self.ingress_reject(file_dir=file_dir, work_dir=work_dir)
             empty_cache()
-        return counter
+
+        state_map = proc_state | ingress_state
+        if len(state_map) != len(filepaths):
+            for filepath in filepaths:
+                basename = os.path.basename(filepath)
+                if basename not in state_map:
+                    logger.warning(f'{filepath} no state')
+                state_map[basename] = {
+                    'status': False,
+                    'desc': 'internal error'
+                }
+        return counter, state_map
 
 
 def parse_args():

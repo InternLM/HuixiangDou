@@ -24,14 +24,16 @@ from multiprocessing import Process, Value
 
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
-                        state: str):
+                        state: str, files_state: dict={}):
     resp = Queue(name='TaskResponse')
     target = {
         'feature_store_id': feature_store_id,
         'code': code,
         'type': _type,
-        'state': state
+        'state': state,
+        'files_state': files_state
     }
+    logger.debug(target)
     resp.put(json.dumps(
         target,
         ensure_ascii=False,
@@ -271,17 +273,25 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
                          _type=TaskCode.FS_ADD_DOC.value)
 
     # try:
-    success_cnt, fail_cnt, skip_cnt = fs.initialize(filepaths=path_list,
-                                                    work_dir=workdir)
+    counter, state_map = fs.initialize(filepaths=path_list, work_dir=workdir)
+    files_state = []
+    for k,v in state_map.items():
+        files_state.append({
+            'file': k,
+            'status': v['status'],
+            'desc': v['desc']
+        })
+    success_cnt, fail_cnt, skip_cnt = counter
     if success_cnt == len(path_list):
         # success
         task_state(code=ErrorCode.SUCCESS.value,
-                   state=ErrorCode.SUCCESS.describe())
+                   state=ErrorCode.SUCCESS.describe(),
+                   files_state=files_state)
     elif success_cnt == 0:
-        task_state(code=ErrorCode.FAILED.value, state='无文件被处理')
+        task_state(code=ErrorCode.FAILED.value, state='无文件被处理', files_state=files_state)
     else:
         state = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
-        task_state(code=ErrorCode.SUCCESS.value, state=state)
+        task_state(code=ErrorCode.SUCCESS.value, state=state, files_state=files_state)
 
     # except Exception as e:
     #     logger.error(str(e))
