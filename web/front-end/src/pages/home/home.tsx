@@ -32,7 +32,7 @@ const Home = () => {
 
     const handleConfirm = () => {
         if (beanName && beanName.length < 8) {
-            message.info('知识库名称不少于 8 个字符');
+            message.info(locales.validateMsg);
             return;
         }
         if (beanName && beanName.length > 7 && beanPwd) {
@@ -91,7 +91,7 @@ const Home = () => {
                 <div className={styles.logo}>
                     <img src={logo} alt="huixiangdou" />
                 </div>
-                <div className={styles.slogan}>行业知识助手，零开发接入飞书微信</div>
+                <div className={styles.slogan}>{locales.slogan}</div>
                 <div className={styles.inputWrapper}>
                     <Input
                         placeholder={locales.beanName}

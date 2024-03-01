@@ -137,7 +137,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                         onClick={logout}
                         className={styles.logout}
                     >
-                        登出
+                        {locales.logout}
                     </div>
                 </div>
             </div>

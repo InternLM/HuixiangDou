@@ -4,6 +4,7 @@ import {
 import { addDocs } from '@services/home';
 import Button from '@components/button/button';
 import { message } from 'sea-lion-ui';
+import { useLocale } from '@hooks/useLocale';
 import styles from './upload.module.less';
 
 export interface UploadProps {
@@ -18,6 +19,8 @@ const Upload: FC<UploadProps> = ({
     afterUpload,
     files = [], children
 }) => {
+    const locales = useLocale('components');
+
     const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]); // 待上传文件列表
@@ -37,7 +40,7 @@ const Upload: FC<UploadProps> = ({
         // check file's size
         for (let i = 0; i < pendingFiles.length; i++) {
             if (pendingFiles[i].size > 1024 * 1024 * 1000) {
-                message.warning('文件大小不能超过1000M');
+                message.warning(locales.fileSize);
                 setLoading(false);
                 return;
             }
@@ -69,16 +72,16 @@ const Upload: FC<UploadProps> = ({
                 />
                 {children}
             </div>
-            <h4>待上传文档</h4>
+            <h4>{locales.pendingFiles}</h4>
             <div className={styles.fileList}>
                 {pendingFiles.map((file) => (
                     <div key={file}>{file.name}</div>
                 ))}
             </div>
             {pendingFiles.length > 0 && (
-                <Button onClick={uploadFile}>{loading ? 'Uploading...' : '确认上传'}</Button>
+                <Button onClick={uploadFile}>{loading ? locales.uploading : locales.confirmUpload}</Button>
             )}
-            <h4>已上传文档</h4>
+            <h4>{locales.uploadedFiles}</h4>
             <div className={styles.fileList}>
                 {files.map((file) => (
                     <div key={file}>{file}</div>

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import Notification, { NotificationProps } from '@components/notification/notification';
+import { useLocale } from '@hooks/useLocale';
 
 let notificationContainer = null;
 
@@ -26,11 +27,11 @@ export const notification = {
     },
 };
 const useNotification = () => {
+    const locales = useLocale('components');
     useEffect(() => {
         notification.showNotification({
             title: '',
-            content: `🎉HuixiangDou开源啦，快来给我们 star 吧!
-小时候，我想当开源人，朋友给我鼓励和我最爱的小星星🌟 🥺`,
+            content: locales.notificationContent,
             notificationKey: '__HuiXiangDou__',
         });
     }, []);
