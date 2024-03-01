@@ -29,7 +29,7 @@ def build_messages(prompt, history, system):
     messages = [{'role': 'system', 'content': system}]
     for item in history:
         messages.append({'role': 'user', 'content': item[0]})
-        messages.append({'role': 'system', 'content': item[1]})
+        messages.append({'role': 'assistant', 'content': item[1]})
     messages.append({'role': 'user', 'content': prompt})
     return messages
 
