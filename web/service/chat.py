@@ -1,6 +1,8 @@
 import base64
+import binascii
 import hashlib
 import json
+import os
 import time
 from typing import Union
 
@@ -36,6 +38,8 @@ class ChatService:
         images_path = []
         if len(body.images) > 0:
             images_path = self._store_images(body.images, query_id)
+            if len(images_path) == 0:
+                return standard_error_response(biz_constant.ERR_CHAT)
 
         task = HxdTask(
             type=HxdTaskType.CHAT,
@@ -97,11 +101,16 @@ class ChatService:
             return []
 
         image_store_dir += "/images/"
+        os.makedirs(image_store_dir, exist_ok=True)
         ret = []
 
         index = 0
         for image in images:
-            decoded_image = base64.b64decode(image)
+            try:
+                decoded_image = base64.b64decode(image)
+            except binascii.Error:
+                logger.error(f"invalid base64 encoded image, query_id: {query_id}")
+                return []
             store_path = image_store_dir + query_id[-8:] + "_" + str(index)
             with open(store_path, "wb") as f:
                 f.write(decoded_image)
@@ -116,6 +125,7 @@ class ChatService:
             return None
 
         image_store_dir += "/images/"
+        os.makedirs(name=image_store_dir, exist_ok=True)
         return image_store_dir + query_id[-8:] + "_" + name
 
     async def case_feedback(self, body: ChatCaseFeedbackBody):

@@ -76,7 +76,7 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
             ) : (
                 <Button onClick={handleOpen}>
                     {locales.viewDetail}
-                    <IconFont icon="icon-GotoOutline" />
+                    <IconFont icon="icon-IntroductionOutlined" />
                 </Button>
             )}
             <Modal
