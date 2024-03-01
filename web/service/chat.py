@@ -9,7 +9,7 @@ from typing import Union
 from fastapi import Request, Response
 
 from web.constant import biz_constant
-from web.model.base import BaseBody, standard_error_response
+from web.model.base import BaseBody, standard_error_response, Image
 from web.model.chat import ChatRequestBody, ChatQueryInfo, ChatOnlineResponseBody, ChatCaseFeedbackBody, ChatCaseType, \
     ChatType
 from web.model.huixiangdou import HxdTask, HxdTaskType, HxdTaskPayload, ChatResponse
@@ -17,6 +17,7 @@ from web.model.qalib import QalibInfo
 from web.mq.hxd_task import HuixiangDouTask
 from web.orm.redis import r
 from web.service.qalib import get_store_dir
+from web.util.image import detect_base64_image_suffix
 from web.util.log import log
 
 logger = log(__name__)
@@ -107,12 +108,18 @@ class ChatService:
         index = 0
         for image in images:
             try:
+                while len(image) % 4 != 0:
+                    image += "="
+                [image_format, image] = detect_base64_image_suffix(image)
+                if image_format == Image.INVALID:
+                    logger.error(f"invalid image format, query_id: {query_id}")
+                    return []
                 decoded_image = base64.b64decode(image)
             except binascii.Error:
                 logger.error(f"invalid base64 encoded image, query_id: {query_id}")
                 return []
-            store_path = image_store_dir + query_id[-8:] + "_" + str(index)
-            with open(store_path, "wb") as f:
+            store_path = image_store_dir + query_id[-8:] + "_" + str(index) + "." + image_format.value
+            with open(store_path, 'wb') as f:
                 f.write(decoded_image)
             ret.append(store_path)
         return ret
