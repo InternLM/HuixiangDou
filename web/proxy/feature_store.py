@@ -416,10 +416,10 @@ class FeatureStore:
                 basename = os.path.basename(filepath)
                 if basename not in state_map:
                     logger.warning(f'{filepath} no state')
-                state_map[basename] = {
-                    'status': False,
-                    'desc': 'internal error'
-                }
+                    state_map[basename] = {
+                        'status': False,
+                        'desc': 'internal error'
+                    }
         return counter, state_map
 
 
