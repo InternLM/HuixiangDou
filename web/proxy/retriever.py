@@ -22,7 +22,7 @@ from langchain_core.documents import Document
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
 from torch.cuda import empty_cache
-
+from helper import QueryTracker
 
 class Retriever:
     """Tokenize and extract features from the project's documents, for use in
@@ -122,7 +122,7 @@ class Retriever:
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
 
-    def query(self, question: str, context_max_length: int = 16000):
+    def query(self, question: str, context_max_length: int = 16000, tracker: QueryTracker=None):
         """Processes a query and returns the best match from the vector store
         database. If the question is rejected, returns None.
 
@@ -144,6 +144,8 @@ class Retriever:
             ]
 
         docs = self.compression_retriever.get_relevant_documents(question)
+        if tracker is not None:
+            tracker.log('retrieve', [doc.metadata['source'] for doc in docs])
         chunks = []
         context = ''
         references = []

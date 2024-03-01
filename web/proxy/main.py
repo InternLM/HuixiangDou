@@ -202,8 +202,7 @@ def chat_with_featue_store(cache: CacheRetriever,
     db_response = os.path.join(workdir, 'db_response')
 
     if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
-        task_state(code=ErrorCode.PARAMETER_ERROR.value,
-                   state='知识库未建立或建立异常，此时不能 chat。')
+        chat_state(code=ErrorCode.PARAMETER_ERROR.value, text='',state='知识库未建立或建立异常，此时不能 chat。', ref=[])
         return
 
     worker = Worker(work_dir=workdir, config_path=configpath)
