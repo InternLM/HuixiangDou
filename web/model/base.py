@@ -1,4 +1,5 @@
-from fastapi import HTTPException
+from enum import Enum
+
 from pydantic import BaseModel, Field
 
 
@@ -6,6 +7,12 @@ class BaseBody(BaseModel):
     msg: str = Field(default="ok")
     msgCode: str = Field(default="10000")
     data: object = None
+
+
+class Image(Enum):
+    INVALID = "invalid"
+    JPG = "jpeg"
+    PNG = "png"
 
 
 def standard_error_response(error: dict, data=None) -> BaseBody:
