@@ -7,6 +7,7 @@ import {
 import Button from '@components/button/button';
 import { integrateWebSearch, MsgCode } from '@services/home';
 import { Switch } from 'antd';
+import { useLocale } from '@hooks/useLocale';
 import styles from './toggle-search.module.less';
 
 export interface ToggleSearchProps {
@@ -20,6 +21,8 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
     webSearchToken,
     children
 }) => {
+    const locales = useLocale('beanDetail');
+
     const [openModal, setOpenModal] = useState(false);
     const [token, setToken] = useState('');
 
@@ -29,7 +32,6 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
     };
 
     const handleChangeSwitch = async (e) => {
-        console.log('webSearchToken', !!webSearchToken);
         if (!webSearchToken) {
             setOpenModal(true);
             e.preventDefault();
@@ -38,7 +40,7 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
             const res = await integrateWebSearch('');
             if (res.msgCode === MsgCode.success) {
                 afterSuccess();
-                message.success('网络搜索已关闭');
+                message.success(locales.webSearchClosed);
             }
         }
     };
@@ -47,10 +49,10 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
         const res = await integrateWebSearch(token);
         if (res.msgCode === MsgCode.success && !token) {
             afterSuccess();
-            message.success('网络搜索已关闭');
+            message.success(locales.webSearchClosed);
         } else if (res.msgCode === MsgCode.success && token) {
             afterSuccess();
-            message.success('保存成功');
+            message.success(locales.saveSuccess);
         } else if (res.msg) {
             message.error(res.msg);
         }
@@ -67,27 +69,26 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
             <Switch checked={!!webSearchToken} onClick={handleChangeSwitch} />
             <Modal
                 open={openModal}
-                title="网络搜索"
+                title={locales.webSearch}
                 footer={(<div />)}
                 onClose={() => setOpenModal(false)}
             >
                 <div>开启网络搜索，知识助手可以综合网络结果和本地文档给出答复</div>
                 <div>
-                    1. 注册
-                    {' '}
+                    {`1. ${locales.register} `}
                     <a target="_blank" href="https://serper.dev/api-key" rel="noreferrer">Serper</a>
                     {' '}
-                    获取限量免费 token
+                    {locales.webSearchDesc1}
                 </div>
-                <div>2. 填入 token, 新 token 会覆盖旧 token </div>
-                <div>3. 如果保存一个空 token， 网络搜索会被关闭</div>
+                <div>{locales.webSearchDesc2}</div>
+                <div>{locales.webSearchDesc3}</div>
                 <div className={styles.inputWrapper}>
                     <Input
                         value={token}
                         onChange={(e) => setToken(e.target.value)}
-                        placeholder="填入你的token"
+                        placeholder={locales.enterToken}
                     />
-                    <Button onClick={handleSaveToken}>保存</Button>
+                    <Button onClick={handleSaveToken}>{locales.save}</Button>
                 </div>
             </Modal>
         </div>

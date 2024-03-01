@@ -4,6 +4,7 @@ import {
 import Button from '@components/button/button';
 import { caseFeedback, online, onlineResponse } from '@services/home';
 import bean from '@assets/imgs/bean1.png';
+import { useLocale } from '@hooks/useLocale';
 import styles from './chat.module.less';
 
 export interface ChatProps {
@@ -26,6 +27,8 @@ export const enum Feedback {
 }
 
 function MessageItem(props: { message: Message }) {
+    const locales = useLocale('beanDetail');
+
     const [feedback, setFeedback] = useState('');
     const [maxWidth, setMaxWidth] = useState(24);
     if (!props.message) {
@@ -62,7 +65,7 @@ function MessageItem(props: { message: Message }) {
                 <div>{content}</div>
                 {Array.isArray(references) && references.length > 0 && (
                     <div className={styles.referenceWrapper}>
-                        参考文档:
+                        {locales.references}
                         <div className={styles.reference}>
                             {references.join('\n')}
                         </div>
@@ -132,6 +135,8 @@ const Chat: FC<ChatProps> = () => {
     const [queryId, setQueryId] = useState(''); // 查询回复id
     const [isComposing, setIsComposing] = useState(false);
     const messageListRef = useRef(null);
+
+    const locales = useLocale('beanDetail');
 
     const editorRef = useRef<HTMLDivElement>(null);
 
@@ -238,7 +243,7 @@ const Chat: FC<ChatProps> = () => {
                     const newMessage = {
                         queryId,
                         sender: 1,
-                        content: '请求超时，请稍后再试',
+                        content: locales.timeout,
                         code: 0,
                         state: '',
                         images: [],
@@ -277,14 +282,14 @@ const Chat: FC<ChatProps> = () => {
                         onKeyDown={handleKeyDown}
                         onCompositionStart={() => setIsComposing(true)}
                         onCompositionEnd={() => setIsComposing(false)}
-                        aria-placeholder="支持输入文字、emoji 和粘贴图片"
+                        aria-placeholder={locales.inputPlaceholder}
                     />
                 </div>
                 <Button
                     disabled={!!queryId}
                     onClick={handleSendMessage}
                 >
-                    发送
+                    {locales.send}
                 </Button>
             </div>
         </div>

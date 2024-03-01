@@ -1,6 +1,8 @@
 export default {
     home: {
+        slogan: '行业知识助手，零开发接入飞书微信',
         beanName: '请输入知识库名称，不存在则自动创建。不少于 8 个字符',
+        validateMsg: '请输入不少于 8 个字符的知识库名称',
         createBean: '创建知识库',
         beanPwd: '知识库密码',
         create: '创建',
@@ -16,6 +18,6 @@ export default {
         welcome: 'Welcome, grateful',
         hello: 'Hi',
         hi: 'Hello',
-        loading: 'Loading'
+        loading: 'Loading',
     }
 };
