@@ -1,13 +1,12 @@
 export default {
     components: {
-        notificationContent: `🎉HuixiangDou开源啦，快来给我们 star 吧!
-小时候，我想当开源人，朋友给我鼓励和我最爱的小星星🌟 🥺`,
-        hide4ever: '不再显示',
-        goStar: '前往鼓励',
-        fileSize: '文件大小不能超过1000M',
-        pendingFiles: '待上传文档',
-        confirmUpload: '确认上传',
-        uploading: '上传中',
-        uploadedFiles: '已上传文档',
+        notificationContent: '🎉 HuixiangDou is open source now. If this helps you, please give it a star! 🌟 🥺',
+        hide4ever: 'Hide forever',
+        goStar: 'Star',
+        fileSize: 'File size must not exceed 1GB',
+        pendingFiles: 'Uploading documents',
+        confirmUpload: 'Upload',
+        uploading: 'Uploading',
+        uploadedFiles: 'Uploaded documents',
     }
 };
