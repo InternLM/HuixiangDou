@@ -15,6 +15,10 @@
 .file-list {
     max-height: 300px;
     overflow: auto;
+    scorllbar-width: none;
+    &::-webkit-scrollbar {
+        width: 0;
+    }
     div {
         text-overflow: ellipsis;
         white-space: nowrap;

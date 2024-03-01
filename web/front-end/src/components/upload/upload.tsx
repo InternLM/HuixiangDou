@@ -3,6 +3,7 @@ import {
 } from 'react';
 import { addDocs } from '@services/home';
 import Button from '@components/button/button';
+import { message } from 'sea-lion-ui';
 import styles from './upload.module.less';
 
 export interface UploadProps {
@@ -33,6 +34,15 @@ const Upload: FC<UploadProps> = ({
 
     const uploadFile = () => {
         setLoading(true);
+        // check file's size
+        for (let i = 0; i < pendingFiles.length; i++) {
+            if (pendingFiles[i].size > 1024 * 1024 * 1000) {
+                message.warning('文件大小不能超过1000M');
+                setLoading(false);
+                return;
+            }
+        }
+
         addDocs(pendingFiles)
             .then((res) => {
                 setPendingFiles([]);

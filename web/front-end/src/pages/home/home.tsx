@@ -12,7 +12,6 @@ const Home = () => {
     const navigate = useNavigate();
     const [beanName, setBeanName] = useState('');
     const [beanPwd, setBeanPwd] = useState('');
-    const [existed, setExisted] = useState(false);
     const [statistic, setStatistic] = useState<StatisticDto>(null);
     const locales = useLocale('home');
 
@@ -104,6 +103,7 @@ const Home = () => {
                         placeholder={locales.beanPwd}
                         value={beanPwd}
                         max={500}
+                        className={styles.password}
                         onChange={(e) => setBeanPwd(e.target.value)}
                     />
                 </div>
@@ -119,7 +119,7 @@ const Home = () => {
                         onClick={handleConfirm}
                         aria-disabled={!beanName || !beanPwd}
                     >
-                        {existed ? locales.create : locales.go}
+                        {locales.go}
                     </div>
                 </div>
                 <div className={styles.divider} />

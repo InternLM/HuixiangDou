@@ -8,6 +8,10 @@ class HuixiangDouEnv:
         pass
 
     @classmethod
+    def get_cookie_secure(cls) -> bool:
+        return os.getenv("COOKIE_SECURE") if os.getenv("COOKIE_SECURE") else False
+
+    @classmethod
     def get_server_port(cls) -> str:
         return os.getenv("SERVER_PORT") if os.getenv("SERVER_PORT") else "23333"
 
@@ -56,3 +60,7 @@ class HuixiangDouEnv:
     @classmethod
     def get_lark_log_level(cls) -> lark.LogLevel:
         return lark.LogLevel.DEBUG
+
+    @classmethod
+    def get_cookie_samesite(cls) -> str:
+        return 'none' if HuixiangDouEnv.get_cookie_secure() else 'lax'

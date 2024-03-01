@@ -2,14 +2,20 @@
     border-radius: 8px;
     border: 1px solid #dcdcdc;
     padding: 12px;
+    margin-bottom: 100px;
     .message-list {
         width: 100%;
-        min-height: 400px;
+        height: 400px;
+        overflow: auto;
+        scorllbar-width: none;
+        &::-webkit-scrollbar {
+            width: 0;
+        }
         .avatar {
             width: 20px;
             height: 20px;
             img {
-                width: 100%;
+                width: 20px;
             }
         }
         .message-wrapper {
@@ -19,23 +25,48 @@
         }
         .message {
             padding: 8px 12px;
-            border-radius: 8px;
+            border-radius: 0 8px 8px 8px;
             background: #f4f5f9;
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            white-space: pre-wrap;
+            max-width: 80%;
+            position: relative;
         }
         .img-wrapper {
             display: flex;
             align-items: center;
             gap: 4px;
+            margin-bottom: 4px;
         }
         .reference-wrapper {
             border-top: 1px solid #dcdcdc;
             padding-top: 8px;
             margin-top: 8px;
             white-space: pre-wrap;
-            .reference {
-                font-size: 14px;
-                color: #666;
+        }
+        .reference {
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+            font-size: 14px;
+            position: absolute;
+            top: -10px;
+            left: calc(100% - 10px);
+            overflow: hidden;
+            transition: all 1s ease;
+            .feedback {
+                cursor: pointer;
+                padding: 3px;
+                border-radius: 50%;
+                &:hover {
+                    background-color: #e3e3e3;
+                }
             }
         }
     }
@@ -92,6 +123,11 @@
         overflow: auto;
         caret-color: #59a041;
         white-space: pre-wrap;
+        &[aria-placeholder]:empty::before {
+            color: #666;
+            content: attr(aria-placeholder);
+            position: absolute;
+        }
         &:hover {
             background: #EBECF0;
         }
