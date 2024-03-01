@@ -13,6 +13,7 @@ class Image(Enum):
     INVALID = "invalid"
     JPG = "jpeg"
     PNG = "png"
+    BMP = "bmp"
 
 
 def standard_error_response(error: dict, data=None) -> BaseBody:

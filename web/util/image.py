@@ -14,5 +14,7 @@ def detect_base64_image_suffix(base64: str) -> [Image, str]:
         return [Image.JPG, s[1]]
     if "data:image/png;" == base64_prefix:
         return [Image.PNG, s[1]]
+    if "data:image/bmp;" == base64_prefix:
+        return [Image.BMP, s[1]]
 
     return [Image.INVALID, ""]
