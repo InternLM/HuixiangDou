@@ -1,6 +1,20 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-"""Utils."""
+import json
 from enum import Enum
+from types import SimpleNamespace
+
+import redis
+import requests
+from config import redis_host, redis_passwd, redis_port
+from loguru import logger
+
+
+class TaskCode(Enum):
+    FS_ADD_DOC = 'add_doc'
+    FS_UPDATE_SAMPLE = 'update_sample'
+    FS_UPDATE_PIPELINE = 'update_pipeline'
+    CHAT = 'chat'
+    CHAT_RESPONSE = 'chat_response'
 
 
 class ErrorCode(Enum):
@@ -23,6 +37,12 @@ class ErrorCode(Enum):
 
     PARAMETER_ERROR = 9, "HTTP interface parameter error. Query cannot be empty; the format of history is list of lists, like [['question1', 'reply1'], ['question2'], ['reply2']]"  # noqa E501
     PARAMETER_MISS = 10, 'Missing key in http json input parameters.'
+
+    WORK_IN_PROGRESS = 11, 'not finish'
+    FAILED = 12, 'fail'
+    BAD_PARAMETER = 13, 'bad parameter'
+    INTERNAL_ERROR = 14, 'internal error'
+    SEARCH_FAIL = 15, 'Search fail, please check TOKEN and quota'
 
     def __new__(cls, value, description):
         """Create new instance of ErrorCode."""
@@ -55,6 +75,51 @@ class ErrorCode(Enum):
         if isinstance(code, cls):
             return {'code': int(code), 'message': code.describe()}
         raise TypeError(f'Expected type {cls}, got {type(code)}')
+
+
+class Queue:
+
+    def __init__(self, name, namespace='HuixiangDou', **redis_kwargs):
+        self.__db = redis.Redis(host=redis_host(),
+                                port=redis_port(),
+                                password=redis_passwd(),
+                                charset='utf-8',
+                                decode_responses=True)
+        self.key = '%s:%s' % (namespace, name)
+
+    def qsize(self):
+        """Return the approximate size of the queue."""
+        return self.__db.llen(self.key)
+
+    def empty(self):
+        """Return True if the queue is empty, False otherwise."""
+        return self.qsize() == 0
+
+    def put(self, item):
+        """Put item into the queue."""
+        self.__db.rpush(self.key, item)
+
+    def peek_tail(self):
+        return self.__db.lrange(self.key, -1, -1)
+
+    def get(self, block=True, timeout=None):
+        """Remove and return an item from the queue.
+
+        If optional args block is true and timeout is None (the default), block
+        if necessary until an item is available.
+        """
+        if block:
+            item = self.__db.blpop(self.key, timeout=timeout)
+        else:
+            item = self.__db.lpop(self.key)
+
+        if item:
+            item = item[1]
+        return item
+
+    def get_nowait(self):
+        """Equivalent to get(False)."""
+        return self.get(False)
 
 
 class QueryTracker:
@@ -95,3 +160,42 @@ class QueryTracker:
                 log_file.write('\n')
         except Exception as e:
             print(e)
+
+
+def parse_json_str(json_str: str):
+    try:
+        logger.info(json_str)
+        return json.loads(json_str,
+                          object_hook=lambda d: SimpleNamespace(**d)), None
+    except Exception as e:
+        logger.error(str(e))
+        return None, e
+
+
+def multimodal(filepath: str, timeout=5):
+    header = {'Content-Type': 'application/json'}
+    data = {'image_path': filepath}
+    try:
+        resp = requests.post('http://127.0.0.1:9999/api',
+                             headers=header,
+                             data=json.dumps(data),
+                             timeout=timeout)
+        resp_json = resp.json()
+        content = resp_json['content']
+        # check bad encode ratio
+        useful_char_cnt = 0
+        scopes = [['a', 'z'], ['\u4e00', '\u9fff'], ['A', 'Z'], ['0', '9']]
+        for char in content:
+            for scope in scopes:
+                if char >= scope[0] and char <= scope[1]:
+                    useful_char_cnt += 1
+                    break
+        if useful_char_cnt / len(content) <= 0.5:
+            # Garbled characters
+            return None
+        if len(content) <= 100:
+            return None
+        return content
+    except Exception as e:
+        logger.error(str(e))
+    return None

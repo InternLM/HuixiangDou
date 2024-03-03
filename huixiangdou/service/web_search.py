@@ -3,14 +3,28 @@
 import argparse
 import json
 import os
-import random
-import time
 
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS
 from loguru import logger
 from readability import Document
+
+
+class Article:
+
+    def __init__(self, content: str = '', source=''):
+        self.content = content
+        self.source = source
+
+    def __str__(self):
+        return self.content
+
+    def __len__(self):
+        return len(self.content)
+
+    def cut(self, start_index, end_index):
+        self.source = self.source[start_index:end_index]
 
 
 class WebSearch:
@@ -29,7 +43,7 @@ class WebSearch:
         get(query: str, max_article=1): Searches with cache. If the query already exists in the cache, return the cached result.  # noqa E501
     """
 
-    def __init__(self, config_path: dict, retry: int = 3) -> None:
+    def __init__(self, config_path: dict, retry: int = 2) -> None:
         """Initializes the WebSearch object with the given config path and
         retry count."""
         self.config_path = config_path
@@ -56,9 +70,8 @@ class WebSearch:
         with open(self.config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             api_key = config['web_search']['x_api_key']
-            if api_key is not None and len(
-                    api_key) > 0 and api_key != 'YOUR-API-KEY':
-                return api_key
+            # if len(api_key) > 0 and 'YOUR-API-KEY' not in api_key:
+            return api_key
         raise Exception(
             'web_search X-API-KEY not found, please input your API key')
 
@@ -74,6 +87,31 @@ class WebSearch:
                 return config['web_search']['save_dir']
         except Exception:
             pass
+        return None
+
+    def fetch_url(self, query: str, target_link: str):
+        if not target_link.startswith('http'):
+            return None
+
+        logger.info(f'extract: {target_link}')
+        try:
+            response = requests.get(target_link, timeout=30)
+
+            doc = Document(response.text)
+            content_html = doc.summary()
+            title = doc.short_title()
+            soup = BS(content_html, 'html.parser')
+
+            if len(soup.text) < 4 * len(query):
+                return None
+            content = '{} {}'.format(title, soup.text)
+            content = content.replace('\n\n', '\n')
+            content = content.replace('\n\n', '\n')
+            content = content.replace('  ', ' ')
+
+            return Article(content=content, source=target_link)
+        except Exception as e:
+            logger.error('fetch_url {}'.format(str(e)))
         return None
 
     def google(self, query: str, max_article):
@@ -95,12 +133,12 @@ class WebSearch:
                                     url,
                                     headers=headers,
                                     data=payload,
-                                    timeout=60)  # noqa E501
+                                    timeout=15)  # noqa E501
         jsonobj = json.loads(response.text)
 
-        # 带偏序的 url 连接拾取
         keys = self.load_urls()
         urls = {}
+        normal_urls = []
 
         for organic in jsonobj['organic']:
             link = ''
@@ -118,6 +156,8 @@ class WebSearch:
                     else:
                         urls[key].append(link)
                     break
+                else:
+                    normal_urls.append(link)
 
         logger.debug(f'gather urls: {urls}')
 
@@ -133,35 +173,10 @@ class WebSearch:
         articles = []
         for target_link in target_links:
             # network with exponential backoff
-            life = 0
-            while life < self.retry:
-                try:
-                    logger.info(f'extract: {target_link}')
-                    response = requests.get(target_link, timeout=60)
-                    if len(response.text) < 1:
-                        break
+            a = self.fetch_url(query=query, target_link=target_link)
+            if a is not None:
+                articles.append(a)
 
-                    doc = Document(response.text)
-                    content_html = doc.summary()
-                    title = doc.short_title()
-                    soup = BS(content_html, 'html.parser')
-
-                    if len(soup.text) < len(query):
-                        break
-                    article = '{} {}'.format(title, soup.text)
-                    article = article.replace('\n\n', '\n')
-                    article = article.replace('\n\n', '\n')
-                    article = article.replace('  ', ' ')
-                    articles.append(article)
-
-                    break
-                except Exception as e:
-                    logger.error(
-                        ('web_parse exception', query, e, target_link))
-                    life += 1
-
-                    randval = random.randint(1, int(pow(2, life)))
-                    time.sleep(randval)
         return articles
 
     def save_search_result(self, query: str, articles: list):
@@ -183,7 +198,8 @@ class WebSearch:
 
             text = ''
             if len(articles) > 0:
-                text = '\n\n'.join(articles)
+                texts = [str(a) for a in articles]
+                text = '\n\n'.join(texts)
             with open(filepath, 'w', encoding='utf8') as f:
                 f.write(text)
         except Exception as e:
@@ -198,19 +214,14 @@ class WebSearch:
         """
         query = query.strip()
 
-        life = 0
-        while life < self.retry:
-            try:
-                articles = self.google(query=query, max_article=max_article)
-                self.save_search_result(query=query, articles=articles)
-                return articles
-            except Exception as e:
-                logger.error(('web_search exception', query, str(e)))
-                life += 1
-
-                randval = random.randint(1, int(pow(2, life)))
-                time.sleep(randval)
-        return []
+        try:
+            articles = self.google(query=query, max_article=max_article)
+            self.save_search_result(query=query, articles=articles)
+            return articles, None
+        except Exception as e:
+            logger.error(('web_search exception', query, str(e)))
+            return [], Exception('search fail, please check TOKEN')
+        return [], None
 
 
 def parse_args():
