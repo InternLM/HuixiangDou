@@ -213,7 +213,7 @@ class WebSearch:
         the retry count. Sleeps for a random time interval between retries.
         """
         query = query.strip()
-
+        query = query[0:32]
         try:
             articles = self.google(query=query, max_article=max_article)
             self.save_search_result(query=query, articles=articles)

@@ -6,14 +6,15 @@ import time
 import numpy as np
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
-from file_operation import FileOperation
-from helper import QueryTracker
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.vectorstores.faiss import FAISS as Vectorstore
 from langchain_community.vectorstores.utils import DistanceStrategy
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
+
+from .file_operation import FileOperation
+from .helper import QueryTracker
 
 
 class Retriever:
@@ -80,7 +81,7 @@ class Retriever:
             self.reject_throttle = -1
             _, docs = self.is_reject(question=question, disable_throttle=True)
             score = docs[0][1]
-            predictions.append(score)
+            predictions.append(max(0, score))
 
         labels = [1 for _ in range(len(good_questions))
                   ] + [0 for _ in range(len(bad_questions))]
@@ -118,6 +119,10 @@ class Retriever:
         if question is None or len(question) < 1:
             return None, None, []
 
+        if len(question) > 512:
+            logger.warning('input too long, truncate to 512')
+            question = question[0:512]
+
         reject, docs = self.is_reject(question=question)
         assert (len(docs) > 0)
         if reject:
@@ -140,6 +145,10 @@ class Retriever:
             chunks.append(chunk)
 
             source = doc.metadata['source']
+            if '/data2/khj/huixiangdou/workdir/preprocess/installation.md' in source:
+                import pdb
+                pdb.set_trace()
+                print(doc)
             file_text, error = file_opr.read(source)
             if error is not None:
                 # read file failed, skip

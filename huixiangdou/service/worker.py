@@ -201,21 +201,13 @@ class Worker:
             tracker.log('feature store doc', [chunk, response])
             return ErrorCode.SUCCESS, response, references
 
-        prompt = self.KEYWORDS_TEMPLATE.format(groupname, query)
-        web_keywords = self.llm.generate_response(prompt=prompt)
-        # format keywords
-        for symbol in ['"', ',', '  ']:
-            web_keywords = web_keywords.replace(symbol, ' ')
-        web_keywords = web_keywords.strip()
-        tracker.log('web search keywords', web_keywords)
-
-        if len(web_keywords) < 1:
-            return ErrorCode.NO_SEARCH_KEYWORDS, response, references
-
         try:
             web_context = ''
             web_search = WebSearch(config_path=self.config_path)
-            articles = web_search.get(query=web_keywords, max_article=2)
+
+            articles, error = web_search.get(query=topic, max_article=2)
+            if error is not None:
+                return ErrorCode.SEARCH_FAIL, response, references
 
             tracker.log('search returned')
             web_context_max_length = self.context_max_length - 2 * len(
@@ -224,14 +216,6 @@ class Worker:
             for article in articles:
                 if len(article) > 0:
                     article.cut(0, web_context_max_length)
-
-                    if self.single_judge(self.SECURITY_TEMAPLTE.format(
-                            article.content),
-                                         tracker=tracker,
-                                         throttle=3,
-                                         default=0):
-                        tracker.log('Skip unsafe content', article)
-                        continue
 
                     if self.single_judge(
                             self.SCORING_RELAVANCE_TEMPLATE.format(
@@ -266,7 +250,7 @@ class Worker:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
             if self.single_judge(prompt=prompt,
                                  tracker=tracker,
-                                 throttle=9,
+                                 throttle=10,
                                  default=0):
                 reborn_code = ErrorCode.BAD_ANSWER
 

@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
+
 import textract
 from langchain_community.document_loaders import (CSVLoader, PyPDFLoader,
                                                   UnstructuredExcelLoader)
@@ -43,8 +45,15 @@ class FileOperation:
                 return 'excel'
         return None
 
+    def scan_dir(self, repo_dir: str):
+        filepaths = []
+        for root, _, files in os.walk(repo_dir):
+            for file in files:
+                if self.get_type(file) is not None:
+                    filepaths.append(os.path.join(root, file))
+        return filepaths
+
     def read(self, filepath: str):
-        filepath = filepath.lower()
         file_type = self.get_type(filepath)
 
         text = ''

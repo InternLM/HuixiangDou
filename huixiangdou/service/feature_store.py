@@ -10,8 +10,6 @@ from pathlib import Path
 
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
-from file_operation import FileOperation
-from helper import multimodal
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
@@ -21,6 +19,8 @@ from langchain_core.documents import Document
 from loguru import logger
 from torch.cuda import empty_cache
 
+from .file_operation import FileOperation
+from .helper import multimodal
 from .retriever import CacheRetriever, Retriever
 
 
@@ -142,19 +142,21 @@ class FeatureStore:
 
     def get_md_documents(self, filepath):
         documents = []
+        length = 0
         text = ''
         with open(filepath, encoding='utf8') as f:
             text = f.read()
         text = os.path.basename(filepath) + '\n' + self.clean_md(text)
         if len(text) <= 1:
-            return []
+            return [], length
 
         chunks = self.split_md(text=text, source=os.path.abspath(filepath))
         for chunk in chunks:
             new_doc = Document(page_content=chunk,
                                metadata={'source': os.path.abspath(filepath)})
+            length += len(chunk)
             documents.append(new_doc)
-        return documents
+        return documents, length
 
     def get_text_documents(self, text: str, filepath: str):
         if len(text) <= 1:
@@ -174,7 +176,7 @@ class FeatureStore:
             os.makedirs(feature_dir)
 
         files = [str(x) for x in list(Path(file_dir).glob('*'))]
-        logger.info('glob {} in dir {}'.format(files, file_dir))
+        # logger.info('glob {} in dir {}'.format(files, file_dir))
         file_opr = FileOperation()
         documents = []
         state_map = {}
@@ -188,7 +190,9 @@ class FeatureStore:
             file_type = file_opr.get_type(file)
 
             if file_type == 'md':
-                documents += self.get_md_documents(file)
+                md_documents, md_length = self.get_md_documents(file)
+                documents += md_documents
+                state_map[basename] = {'status': True, 'desc': md_length}
             else:
                 text, error = file_opr.read(file)
                 if error is not None:
@@ -276,26 +280,29 @@ class FeatureStore:
         file_opr = FileOperation()
         images = []
         normals = []
-        ocr_process = None
+        multimodal_process = None
         state_map = {}
 
         for filepath in filepaths:
             _type = file_opr.get_type(filepath)
             if _type == 'image':
-                images.append(filepath)
+                if self.enable_multimodal:
+                    images.append(filepath)
+                else:
+                    basename = os.path.basename(filepath)
+                    state_map[basename] = {'status': False, 'desc': 'skip'}
+                    skip_cnt += 1
             elif _type in ['pdf', 'md', 'text', 'word', 'excel']:
                 normals.append(filepath)
             else:
                 skip_cnt += 1
 
-        # process images if enable ocr
-        if self.enable_multimodal:
-            # start a process to call ocr for images
-            ocr_process = Process(target=multimodal_images_async,
-                                  args=(file_dir, images, '.text'))
-            ocr_process.start()
-        else:
-            skip_cnt += len(images)
+        # process images
+        if len(images) > 0:
+            # start a process to call multimodal for images
+            multimodal_process = Process(target=multimodal_images_async,
+                                         args=(file_dir, images, '.text'))
+            multimodal_process.start()
 
         # process normal file (pdf, text)
         for filepath in normals:
@@ -308,8 +315,8 @@ class FeatureStore:
                 logger.error(str(e))
                 state_map[basename] = {'status': False, 'desc': 'IO error'}
 
-        if self.enable_multimodal:
-            ocr_process.join()
+        if len(images) > 0:
+            multimodal_process.join()
             # check ocr result
             for filepath in images:
                 basename = os.path.basename(filepath)
@@ -344,9 +351,8 @@ class FeatureStore:
             ingress_state = self.ingress_response(file_dir=file_dir,
                                                   work_dir=work_dir)
             self.ingress_reject(file_dir=file_dir, work_dir=work_dir)
-            empty_cache()
 
-        state_map = proc_state | ingress_state
+        state_map = {**proc_state, **ingress_state}
         if len(state_map) != len(filepaths):
             for filepath in filepaths:
                 basename = os.path.basename(filepath)
@@ -398,16 +404,16 @@ def test_reject(retriever: Retriever, sample: str = None):
     """Simple test reject pipeline."""
     if sample is None:
         real_questions = [
-            '请问找不到libmmdeploy.so怎么办',
             'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
             '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
             'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
             '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
-            'mmdeploy 现在支持 mmtrack 模型转换了么',
             '请问 ncnn 全称是什么',
             '有啥中文的 text to speech 模型吗?',
             '今天中午吃什么？',
-            '茴香豆是怎么做的'
+            'huixiangdou 是什么？',
+            'mmpose 如何安装？',
+            '使用科研仪器需要注意什么？'
         ]
     else:
         with open(sample) as f:
@@ -445,7 +451,7 @@ def test_query(retriever: Retriever, sample: str = None):
 
     for example in real_questions:
         example = example[0:400]
-        retriever.query(example)
+        print(retriever.query(example))
         empty_cache()
 
     empty_cache()
@@ -459,12 +465,13 @@ if __name__ == '__main__':
                            config_path=args.config_path)
 
     # walk all files in repo dir
-    filepaths = []
-    for root, _, files in os.walk(args.repo_dir):
-        for file in files:
-            filepaths.append(os.path.join(root, file))
-
-    fs_init.initialize(filepaths=filepaths, work_dir=args.work_dir)
+    file_opr = FileOperation()
+    filepaths = file_opr.scan_dir(repo_dir=args.repo_dir)
+    counter, state_map = fs_init.initialize(filepaths=filepaths,
+                                            work_dir=args.work_dir)
+    logger.info(f'success, fail, skip: {counter}')
+    for k, v in state_map.items():
+        logger.info('{} {}'.format(k, v['desc']))
     del fs_init
 
     # update reject throttle
@@ -473,9 +480,13 @@ if __name__ == '__main__':
         good_questions = json.load(f)
     with open(os.path.join('resource', 'bad_questions.json')) as f:
         bad_questions = json.load(f)
-    retriever.update_throttle(good_questions=good_questions,
+    retriever.update_throttle(config_path=args.config_path,
+                              good_questions=good_questions,
                               bad_questions=bad_questions)
 
+    cache.pop('default')
+
     # test
+    retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
     test_reject(retriever, args.sample)
     test_query(retriever, args.sample)
