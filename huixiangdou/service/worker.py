@@ -8,9 +8,9 @@ import time
 import pytoml
 from loguru import logger
 
-from .feature_store import FeatureStore
 from .helper import ErrorCode, QueryTracker
 from .llm_client import ChatClient
+from .retriever import CacheRetriever
 from .sg_search import SourceGraphProxy
 from .web_search import WebSearch
 
@@ -41,8 +41,8 @@ class Worker:
             language (str, optional): Specifies the language to be used. Defaults to 'zh' (Chinese).  # noqa E501
         """
         self.llm = ChatClient(config_path=config_path)
-        self.fs = FeatureStore(config_path=config_path, language=language)
-        self.fs.load_feature(work_dir=work_dir)
+        self.retriever = CacheRetriever(config_path=config_path).get()
+
         self.config_path = config_path
         self.config = None
         self.language = language
@@ -152,11 +152,13 @@ class Worker:
         Returns:
             ErrorCode: An error code indicating the status of response generation.  # noqa E501
             str: Generated response to the user query.
+            references: List for referenced filename or web url
         """
         response = ''
+        references = []
 
         if not self.work_time():
-            return ErrorCode.NOT_WORK_TIME, response
+            return ErrorCode.NOT_WORK_TIME, response, references
 
         reborn_code = ErrorCode.SUCCESS
         tracker = QueryTracker(self.config['worker']['save_path'])
@@ -167,21 +169,21 @@ class Worker:
                 tracker=tracker,
                 throttle=6,
                 default=3):
-            return ErrorCode.NOT_A_QUESTION, response
+            return ErrorCode.NOT_A_QUESTION, response, references
 
         topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query))
         tracker.log('topic', topic)
 
         if len(topic) <= 2:
-            return ErrorCode.NO_TOPIC, response
+            return ErrorCode.NO_TOPIC, response, references
 
-        chunk, db_context = self.fs.query(
+        chunk, db_context, references = self.retriever.query(
             topic,
             context_max_length=self.context_max_length -
             2 * len(self.GENERATE_TEMPLATE))
         if db_context is None:
             tracker.log('feature store reject')
-            return ErrorCode.UNRELATED, response
+            return ErrorCode.UNRELATED, response, references
 
         if self.single_judge(self.SCORING_RELAVANCE_TEMPLATE.format(
                 query, chunk),
@@ -197,52 +199,35 @@ class Worker:
                                                   history=history,
                                                   remote=True)
             tracker.log('feature store doc', [chunk, response])
-            return ErrorCode.SUCCESS, response
-
-        prompt = self.KEYWORDS_TEMPLATE.format(groupname, query)
-        web_keywords = self.llm.generate_response(prompt=prompt)
-        # format keywords
-        for symbol in ['"', ',', '  ']:
-            web_keywords = web_keywords.replace(symbol, ' ')
-        web_keywords = web_keywords.strip()
-        tracker.log('web search keywords', web_keywords)
-
-        if len(web_keywords) < 1:
-            return ErrorCode.NO_SEARCH_KEYWORDS, response
+            return ErrorCode.SUCCESS, response, references
 
         try:
             web_context = ''
             web_search = WebSearch(config_path=self.config_path)
-            articles = web_search.get(query=web_keywords, max_article=2)
+
+            articles, error = web_search.get(query=topic, max_article=2)
+            if error is not None:
+                return ErrorCode.SEARCH_FAIL, response, references
 
             tracker.log('search returned')
-            for article in articles:
-                if article is not None and len(article) > 0:
-                    if len(article) > self.context_max_length:
-                        article = article[0:(
-                            self.context_max_length -
-                            2 * len(self.SCORING_RELAVANCE_TEMPLATE))]
+            web_context_max_length = self.context_max_length - 2 * len(
+                self.SCORING_RELAVANCE_TEMPLATE)
 
-                    if self.single_judge(
-                            self.SECURITY_TEMAPLTE.format(article),
-                            tracker=tracker,
-                            throttle=3,
-                            default=0):
-                        tracker.log('跳过不安全的内容', article)
-                        continue
+            for article in articles:
+                if len(article) > 0:
+                    article.cut(0, web_context_max_length)
 
                     if self.single_judge(
                             self.SCORING_RELAVANCE_TEMPLATE.format(
-                                query, article),
+                                query, article.content),
                             tracker=tracker,
                             throttle=5,
                             default=10):
                         web_context += '\n\n'
-                        web_context += article
+                        web_context += article.content
+                        references.append(article.source)
 
-            if len(web_context) >= self.context_max_length:
-                web_context = web_context[0:self.context_max_length]
-
+            web_context = web_context[0:web_context_max_length]
             web_context = web_context.strip()
 
             if len(web_context) > 0:
@@ -265,7 +250,7 @@ class Worker:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
             if self.single_judge(prompt=prompt,
                                  tracker=tracker,
-                                 throttle=9,
+                                 throttle=10,
                                  default=0):
                 reborn_code = ErrorCode.BAD_ANSWER
 
@@ -294,7 +279,7 @@ class Worker:
                                          tracker=tracker,
                                          throttle=9,
                                          default=0):
-                        return ErrorCode.BAD_ANSWER, response
+                        return ErrorCode.BAD_ANSWER, response, references
 
         if response is not None and len(response) >= 800:
             # reply too long, summarize it
@@ -306,12 +291,12 @@ class Worker:
                 tracker=tracker,
                 throttle=3,
                 default=0):
-            return ErrorCode.SECURITY, response
+            return ErrorCode.SECURITY, response, references
 
         if reborn_code != ErrorCode.SUCCESS:
-            return reborn_code, response
+            return reborn_code, response, references
 
-        return ErrorCode.SUCCESS, response
+        return ErrorCode.SUCCESS, response, references
 
 
 def parse_args():

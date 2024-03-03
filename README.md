@@ -26,10 +26,11 @@ English | [简体中文](README_zh.md)
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and [architecture](./docs/architecture_en.md).
 
-If this helps you, please give it a star! ⭐
+If this helps you, please give it a star ⭐
 
 # 🆕 What's new
 
+- \[2024/03\] Support `pdf`/`word`/`excel` file format; reply referenced filename or web URL
 - \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank for higher precision 👍
 - \[2024/02\] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
 - \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
@@ -41,13 +42,13 @@ The following are the hardware requirements for running. It is suggested to foll
 
 |      Version       | GPU Memory Requirements |                                                                            Features                                                                             |                                Tested on Linux                                |
 | :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| Experience Version |          2.3GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| Experience Version |          1.5GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 |   Basic Version    |          19GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |  Advanced Version  |          40GB           |                                             Fully utilizing search + long-text, answer source code-level questions                                              | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
 
-We will take mmpose and rust-ncnn as examples to explain how to deploy the knowledge assistant to Feishu group chat.
+We will take mmpose and some pdf/word/excel examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
 
@@ -66,12 +67,17 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # Download chatting topics
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/tpoisonooo/rust-ncnn --depth=1 repodir/rust-ncnn
+git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
 
-# Build a feature store
-mkdir workdir # create a working directory
-python3 -m pip install -r requirements.txt # install dependencies
-python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
+
+# parsing `word` requirements
+apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
+# python requirements
+pip install -r requirements.txt
+
+# save the features of repodir to workdir
+mkdir workdir
+python3 -m huixiangdou.service.feature_store
 ```
 
 The first run will automatically download [text2vec model](./config.ini), you can also manually download it and update model path in `config.ini`.
@@ -79,12 +85,13 @@ The first run will automatically download [text2vec model](./config.ini), you ca
 After running, HuixiangDou can distinguish which user topics should be dealt with and which chitchats should be rejected. Please edit [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, finance, electricity, etc.).
 
 ```shell
-# Accept technical topics
-process query: Does mmdeploy support mmtrack model conversion now?
-process query: Are there any Chinese text to speech models?
 # Reject chitchat
 reject query: What to eat for lunch today?
 reject query: How to make HuixiangDou?
+
+# Accept technical topics
+process query: How to install mmpose ?
+process query: What should I pay attention to when using research instruments?
 ```
 
 ## STEP2. Run Basic Technical Assistant
@@ -103,7 +110,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **Test Q&A Effect**
 
-\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 15GB), try deepseek for [30 million free token](https://platform.deepseek.com/). See [config-experience.ini](./config-experience.ini)
+\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 15GB), try `kimi` or `deepseek` for [30 million free token](https://platform.deepseek.com/). See [config-experience.ini](./config-experience.ini)
 
 ```
 # config.ini
