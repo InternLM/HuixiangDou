@@ -5,7 +5,7 @@ export default {
         viewDetail: 'View Tutorial',
         switchSearch: 'Web Search Switch',
         examples: 'Examples',
-        docs: 'View and Upload',
+        docs: 'Uploads',
         viewAndEdit: 'View and Edit',
         addExamples: 'Add Examples',
         addDocs: 'Add Documents',

@@ -58,7 +58,7 @@ const Upload: FC<UploadProps> = ({
     const uploadFile = () => {
         setLoading(true);
         const _pendingStatus = [...pendingStatus];
-        console.log(_pendingStatus);
+
         _pendingStatus.forEach((item) => {
             if (item.status === UploadStatus.init) {
                 item.status = UploadStatus.uploading;

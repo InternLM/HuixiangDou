@@ -1,5 +1,6 @@
-import { FC, ReactNode } from 'react';
+import { FC } from 'react';
 import { IconFont } from 'sea-lion-ui';
+import { LoadingOutlined } from '@ant-design/icons';
 import styles from './upload-item.module.less';
 
 export const enum UploadStatus {
@@ -44,7 +45,9 @@ const UploadItem: FC<UploadItemProps> = ({
             key={uid}
         >
             <div className={styles.icon}>
-                <IconFont color={StatusColor[status]} icon={StatusIcon[status]} />
+                {status === UploadStatus.uploading ? <LoadingOutlined /> : (
+                    <IconFont color={StatusColor[status]} icon={StatusIcon[status]} />
+                )}
             </div>
             <div>
                 <div className={styles.name}>{name}</div>
