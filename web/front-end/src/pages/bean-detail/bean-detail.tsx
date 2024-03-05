@@ -23,6 +23,10 @@ export enum BeanState {
     'failed' = -1,
     'created' = 0,
     'finished' = 1,
+    processing = 11,
+    processingError = 12,
+    paramsError = 13,
+    internalError = 14,
 }
 
 const BeanDetail: FC<BeanDetailProps> = () => {
@@ -40,11 +44,19 @@ const BeanDetail: FC<BeanDetailProps> = () => {
         [BeanState.failed]: locales.createFailed,
         [BeanState.created]: locales.created,
         [BeanState.finished]: locales.createSuccess,
+        [BeanState.processing]: locales.processing,
+        [BeanState.processingError]: locales.processingError,
+        [BeanState.paramsError]: locales.paramsError,
+        [BeanState.internalError]: locales.internalError,
     };
     const color = {
         [BeanState.failed]: '#f1bcbc',
         [BeanState.created]: '#ffe2bf',
         [BeanState.finished]: '#e3f9dd',
+        [BeanState.processing]: '#bcdef1',
+        [BeanState.processingError]: '#f1bcbc',
+        [BeanState.paramsError]: '#f1bcbc',
+        [BeanState.internalError]: '#f1bcbc',
     };
 
     const refresh = () => {
