@@ -202,6 +202,7 @@ class Worker:
             return ErrorCode.SUCCESS, response, references
 
         try:
+            references = []
             web_context = ''
             web_search = WebSearch(config_path=self.config_path)
 
