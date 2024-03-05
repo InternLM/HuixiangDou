@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">茴香豆 Android 助手</string>
+    <string name="app_description">这是 [茴香豆](https://github.com/internlm/huixiangdou) 的 Android 部分。\n开启后停留在微信对话界面，将读最新消息，调用大语言模型自动回复主题相关内容。如果是主题无关的闲聊，则不处理。\n如果对你有用，请 star 一下！</string>
+    <string name="wechat_service_demo">抢微信红包</string>
+    <string name="emoji_send_demo">茴香豆 LLM RAG 回复</string>
+
+    <string name="usage">点击下方按钮进入辅助功能，找到（茴香豆）开启或关闭。</string>
+    <string name="usage_go">点我</string>
+</resources>
