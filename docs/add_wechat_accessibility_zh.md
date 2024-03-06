@@ -16,7 +16,7 @@
 
 <img src="./figures/wechat-android-homepage.jpg" width="400">
 
-现在这个效果：
+现在这个效果，记得关掉手机自动熄屏：
 
 <img src="./figures/wechat-android-example.jpg" width="200">
 
