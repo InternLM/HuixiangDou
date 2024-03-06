@@ -318,6 +318,7 @@ python3 -m huixiangdou.main # docker 用户
 
 - [kimi-chat](https://kimi.moonshot.cn/): 长文本 LLM，支持直接上传文件
 - [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): 中英双语特征模型
+- [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): 微信抢红包
 
 # 📝 引用
 
