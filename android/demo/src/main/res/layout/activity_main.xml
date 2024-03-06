@@ -7,27 +7,67 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        android:orientation="vertical"
-        app:layout_constraintTop_toTopOf="parent">
+        android:orientation="vertical">
+
+
         <TextView
-            android:id="@+id/tv_desc"
+            android:id="@+id/tv_step0"
             android:layout_width="wrap_content"
-            android:text="@string/usage"
+            android:padding="8dp"
+            android:text="@string/usage0"
             android:layout_height="wrap_content"/>
 
-        <Button
+        <TextView
+            android:id="@+id/tv_step1"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:padding="8dp"
+            android:text="@string/usage1"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="80dp"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/et_url"
+                android:layout_width="wrap_content"
+                android:minWidth="120dp"
+                android:text="@string/addr_hint"
+                android:layout_height="match_parent"/>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_url"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:hint="@string/btn_confirm"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_step2"
+            android:layout_width="wrap_content"
+            android:padding="8dp"
+            android:text="@string/usage2"
+            android:textStyle="bold"
+            android:layout_height="wrap_content"/>
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_jump"
             android:text="@string/usage_go"
-            android:layout_width="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tv_step3"
+            android:layout_width="wrap_content"
+            android:padding="8dp"
+            android:textStyle="bold"
+            android:text="@string/usage3"
+            android:layout_height="wrap_content"/>
+
     </LinearLayout>
 </RelativeLayout>
