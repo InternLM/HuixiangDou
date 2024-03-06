@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from web.model.qalib import FilesState
+
 
 class HxdToken(BaseModel):
     exp: int
@@ -47,6 +49,7 @@ class HxdTaskResponse(BaseModel):
     code: Optional[int] = None
     status: Optional[str] = None
     type: Optional[str] = None
+    files_state: Optional[List[FilesState]] = None
 
 
 class ChatResponse(BaseModel):
