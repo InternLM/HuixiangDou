@@ -34,7 +34,7 @@ const useNotification = () => {
             content: locales.notificationContent,
             notificationKey: '__HuiXiangDou__',
         });
-    }, []);
+    }, [locales]);
 };
 
 export default useNotification;

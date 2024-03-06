@@ -8,5 +8,8 @@ export default {
         confirmUpload: 'Upload',
         uploading: 'Uploading',
         uploadedFiles: 'Uploaded documents',
+        uploadFailed: 'Failed',
+        total: 'Total',
+        failed: 'Failed',
     }
 };

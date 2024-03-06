@@ -5,16 +5,16 @@ import { IconFont, Modal } from 'sea-lion-ui';
 import Button from '@components/button/button';
 import { useLocale } from '@hooks/useLocale';
 import Upload from '@components/upload';
-import { getInfo } from '@services/home';
+import { FileState, getInfo } from '@services/home';
 import styles from './import-docs.module.less';
 
 export interface ImportDocsProps {
-    files: string[];
+    filesState: FileState[];
     refresh: () => void;
     children?: ReactNode;
 }
 
-const ImportDocs: FC<ImportDocsProps> = ({ refresh, files }) => {
+const ImportDocs: FC<ImportDocsProps> = ({ refresh, filesState }) => {
     const locales = useLocale('beanDetail');
     const [openModal, setOpenModal] = useState(false);
 
@@ -33,7 +33,7 @@ const ImportDocs: FC<ImportDocsProps> = ({ refresh, files }) => {
                 footer={(<div />)}
                 onClose={() => setOpenModal(false)}
             >
-                <Upload files={files} afterUpload={afterUpload}>
+                <Upload filesState={filesState} afterUpload={afterUpload}>
                     <IconFont icon="icon-PlusOutlined" />
                     <div>{locales.upload}</div>
                 </Upload>

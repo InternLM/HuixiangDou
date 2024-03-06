@@ -28,6 +28,13 @@ export interface Feishu {
     'verificationToken': string,
     'eventUrl': string
 }
+
+export interface FileState {
+    file: string,
+    status: boolean,
+    desc: string
+}
+
 export interface BeanInfoDto {
     'featureStoreId': string,
     'name': string,
@@ -41,7 +48,8 @@ export interface BeanInfoDto {
     },
     'webSearch': {
         'token': string
-    }
+    },
+    filesState: FileState[]
 }
 
 export interface SampleInfoDto {

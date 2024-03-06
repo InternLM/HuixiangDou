@@ -6,7 +6,7 @@ import { IconFont } from 'sea-lion-ui';
 import logo from '@assets/imgs/logo.png';
 import bean from '@assets/imgs/bean1.png';
 import Chat from '@pages/bean-detail/components/chat';
-import { Feishu, getInfo } from '@services/home';
+import { Feishu, FileState, getInfo } from '@services/home';
 import ToggleSearch from '@pages/bean-detail/components/toggle-search';
 import Example from '@pages/bean-detail/components/example';
 import ImportDocs from '@pages/bean-detail/components/import-docs';
@@ -34,6 +34,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     const locales = useLocale('beanDetail');
     const [name, setName] = useState('');
     const [files, setFiles] = useState([]); // 已上传文件列表
+    const [filesState, setFilesState] = useState<FileState[]>([]);
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
     const [searchToken, setSearchToken] = useState('');
@@ -77,6 +78,9 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 setSearchToken(res.webSearch?.token);
                 setFeishuInfo(res.lark);
                 setFiles(res.docs);
+                if (Array.isArray(res.filesState)) {
+                    setFilesState(res.filesState);
+                }
             }
         })();
     }, [refreshFlag]);
@@ -87,7 +91,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 [
                     {
                         title: locales.addDocs,
-                        children: <ImportDocs files={files} refresh={refresh} />,
+                        children: <ImportDocs filesState={filesState} refresh={refresh} />,
                         key: 'docs'
                     },
                     {
@@ -121,7 +125,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
         return (
             [{
                 title: locales.addDocs,
-                children: <ImportDocs files={files} refresh={refresh} />,
+                children: <ImportDocs filesState={filesState} refresh={refresh} />,
                 key: 'docs'
             }]
         );
