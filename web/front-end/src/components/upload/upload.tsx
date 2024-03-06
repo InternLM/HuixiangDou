@@ -1,9 +1,11 @@
 import {
-    FC, ReactNode, useEffect, useRef, useState
+    FC, ReactNode, useRef, useState
 } from 'react';
 import { addDocs } from '@services/home';
 import Button from '@components/button/button';
 import { message } from 'sea-lion-ui';
+import { useLocale } from '@hooks/useLocale';
+import UploadItem, { UploadItemProps, UploadStatus } from '@components/upload-item';
 import styles from './upload.module.less';
 
 export interface UploadProps {
@@ -18,9 +20,12 @@ const Upload: FC<UploadProps> = ({
     afterUpload,
     files = [], children
 }) => {
+    const locales = useLocale('components');
+
     const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]); // 待上传文件列表
+    const [pendingStatus, setPendingStatus] = useState<UploadItemProps[]>([]); // 待上传文件列表
 
     const handleClick = () => {
         if (fileInputRef.current) {
@@ -29,23 +34,56 @@ const Upload: FC<UploadProps> = ({
     };
 
     const onFileChange = (e) => {
-        setPendingFiles([...pendingFiles, ...e.target.files]);
+        const _files = e.target.files;
+        const _pendingStatus = [...pendingStatus];
+        const _pendingFiles = [...pendingFiles];
+        for (let i = 0; i < _files.length; i++) {
+            if (_files[i].size > 1024 * 1024 * 1000) {
+                message.warning(locales.fileSize);
+                setLoading(false);
+                return;
+            }
+            _pendingFiles.push(_files[i]);
+            _pendingStatus.push({
+                uid: `${new Date().getTime()}_${_files[i].name}`,
+                name: _files[i].name,
+                status: UploadStatus.init,
+                progress: 0,
+            });
+        }
+        setPendingFiles([..._pendingFiles]);
+        setPendingStatus([..._pendingStatus]);
     };
 
     const uploadFile = () => {
         setLoading(true);
-        // check file's size
-        for (let i = 0; i < pendingFiles.length; i++) {
-            if (pendingFiles[i].size > 1024 * 1024 * 1000) {
-                message.warning('文件大小不能超过1000M');
-                setLoading(false);
-                return;
+        const _pendingStatus = [...pendingStatus];
+
+        _pendingStatus.forEach((item) => {
+            if (item.status === UploadStatus.init) {
+                item.status = UploadStatus.uploading;
             }
-        }
+        });
+        setPendingStatus(_pendingStatus);
 
         addDocs(pendingFiles)
             .then((res) => {
+                if (res && Array.isArray(res.docs)) {
+                    _pendingStatus.forEach((item) => {
+                        if (item.status === UploadStatus.uploading && res.docs.includes(item.name)) {
+                            item.status = UploadStatus.done;
+                            item.progress = 100;
+                        } else {
+                            item.status = UploadStatus.error;
+                            item.progress = 0;
+                        }
+                    });
+                    setPendingStatus(_pendingStatus);
+                }
                 setPendingFiles([]);
+                setTimeout(() => {
+                    setPendingStatus([]);
+                }, 2000);
                 if (afterUpload) {
                     afterUpload();
                 }
@@ -69,16 +107,16 @@ const Upload: FC<UploadProps> = ({
                 />
                 {children}
             </div>
-            <h4>待上传文档</h4>
+            <h4>{locales.pendingFiles}</h4>
             <div className={styles.fileList}>
-                {pendingFiles.map((file) => (
-                    <div key={file}>{file.name}</div>
+                {pendingStatus.map((file) => (
+                    <UploadItem {...file} />
                 ))}
             </div>
             {pendingFiles.length > 0 && (
-                <Button onClick={uploadFile}>{loading ? 'Uploading...' : '确认上传'}</Button>
+                <Button onClick={uploadFile}>{loading ? locales.uploading : locales.confirmUpload}</Button>
             )}
-            <h4>已上传文档</h4>
+            <h4>{locales.uploadedFiles}</h4>
             <div className={styles.fileList}>
                 {files.map((file) => (
                     <div key={file}>{file}</div>
