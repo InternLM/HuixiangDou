@@ -30,6 +30,7 @@
 
 # 🆕 新功能
 
+- \[2024/03\] 新的[个人微信集成方法](./docs/add_wechat_accessibility_zh.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixaingdou-1.0.0.apk) !
 - \[2024/03\] 支持 `pdf`/`word`/`excel`，返回引用的文件名或 Web URL
 - \[2024/02\] 用 [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank 提升检索精度 👍
 - \[2024/02\] [支持 deepseek](https://github.com/InternLM/HuixiangDou/blob/main/README_zh.md#step2-%E8%BF%90%E8%A1%8C%E5%9F%BA%E7%A1%80%E7%89%88%E6%8A%80%E6%9C%AF%E5%8A%A9%E6%89%8B) 和 qwen1.5; 按 GPU 显存动态选模型

@@ -30,6 +30,7 @@ If this helps you, please give it a star ⭐
 
 # 🆕 What's new
 
+- \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixaingdou-1.0.0.apk) !
 - \[2024/03\] Support `pdf`/`word`/`excel` file format; reply referenced filename or web URL
 - \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank for higher precision 👍
 - \[2024/02\] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU

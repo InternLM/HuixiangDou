@@ -146,6 +146,10 @@ def wechat_personal_run(assistant, fe_config: dict):
         logger.debug(input_json)
 
         query = input_json['query']
+
+        if type(query) is dict:
+            query = query['content']
+
         code, reply, references = assistant.generate(query=query,
                                                      history=[],
                                                      groupname='')
