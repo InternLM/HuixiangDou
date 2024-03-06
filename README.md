@@ -303,6 +303,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 - [kimi-chat](https://kimi.moonshot.cn/): long context LLM
 - [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): Bilingual and Crosslingual Embedding (BCEmbedding) in English and Chinese
+- [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): Grab Wechat RedEnvelope
 
 # 📝 Citation
 
