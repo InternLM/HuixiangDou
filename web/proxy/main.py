@@ -62,7 +62,7 @@ class CacheRetriever:
         self.embeddings.client = self.embeddings.client.half()
         reranker_args = {
             'model': reranker_model_path,
-            'top_n': 3,
+            'top_n': 7,
             'device': 'cuda',
             'use_fp16': True
         }

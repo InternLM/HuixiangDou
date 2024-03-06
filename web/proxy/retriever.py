@@ -41,7 +41,7 @@ class Retriever:
             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
                 search_type='similarity',
                 search_kwargs={
-                    'score_threshold': 0.2,
+                    'score_threshold': 0.15,
                     'k': 30
                 })
         self.compression_retriever = ContextualCompressionRetriever(
@@ -59,7 +59,7 @@ class Retriever:
         feature2 = self.embeddings.embed_query(text2)
         return self.cos_similarity(feature1, feature2)
 
-    def is_reject(self, question, k=20, disable_throttle=False):
+    def is_reject(self, question, k=30, disable_throttle=False):
         """If no search results below the threshold can be found from the
         database, reject this query."""
         if disable_throttle:
@@ -101,7 +101,7 @@ class Retriever:
             self.reject_throttle = -1
             _, docs = self.is_reject(question=question, disable_throttle=True)
             score = docs[0][1]
-            predictions.append(score)
+            predictions.append(max(0, score))
 
         labels = [1 for _ in range(len(good_questions))
                   ] + [0 for _ in range(len(bad_questions))]
@@ -135,7 +135,11 @@ class Retriever:
         """
         if question is None or len(question) < 1:
             return None, None, []
-
+        
+        if len(question) > 512:
+            logger.warning('input too long, truncate to 512')
+            question = question[0:512]
+        
         reject, docs = self.is_reject(question=question)
         assert (len(docs) > 0)
         if reject:

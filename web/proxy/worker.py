@@ -208,21 +208,10 @@ class Worker:
         if len(web.load_key()) < 1:
             return ErrorCode.BAD_ANSWER, response, []
 
-        prompt = self.KEYWORDS_TEMPLATE.format(groupname, query)
-        web_keywords = self.llm.generate_response(prompt=prompt)
-        # format keywords
-        for symbol in ['"', ',', '  ']:
-            web_keywords = web_keywords.replace(symbol, ' ')
-        web_keywords = web_keywords.strip()
-        tracker.log('web search keywords', web_keywords)
-
-        if len(web_keywords) < 1:
-            return ErrorCode.NO_SEARCH_KEYWORDS, response, []
-
         use_ref = []
         try:
             web_context = ''
-            articles, error = web.get(query=web_keywords, max_article=2)
+            articles, error = web.get(query=topic, max_article=2)
             if error is not None:
                 return ErrorCode.SEARCH_FAIL, response, []
 
@@ -234,14 +223,6 @@ class Worker:
                         article.cut(
                             0, self.context_max_length -
                             2 * len(self.SCORING_RELAVANCE_TEMPLATE))
-
-                    if self.single_judge(self.SECURITY_TEMAPLTE.format(
-                            str(article)),
-                                         tracker=tracker,
-                                         throttle=3,
-                                         default=0):
-                        tracker.log('跳过不安全的内容', article)
-                        continue
 
                     if self.single_judge(
                             self.SCORING_RELAVANCE_TEMPLATE.format(

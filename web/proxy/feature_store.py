@@ -168,19 +168,21 @@ class FeatureStore:
 
     def get_md_documents(self, filepath):
         documents = []
+        length = 0
         text = ''
         with open(filepath, encoding='utf8') as f:
             text = f.read()
         text = os.path.basename(filepath) + '\n' + self.clean_md(text)
         if len(text) <= 1:
-            return []
+            return [], length
 
         chunks = self.split_md(text=text, source=os.path.abspath(filepath))
         for chunk in chunks:
             new_doc = Document(page_content=chunk,
                                metadata={'source': os.path.abspath(filepath)})
+            length += len(chunk)
             documents.append(new_doc)
-        return documents
+        return documents, length
 
     def get_text_documents(self, text: str, filepath: str):
         if len(text) <= 1:
@@ -214,7 +216,9 @@ class FeatureStore:
             file_type = file_opr.get_type(file)
 
             if file_type == 'md':
-                documents += self.get_md_documents(file)
+                md_documents, md_length = self.get_md_documents(file)
+                documents += md_documents
+                state_map[basename] = {'status': True, 'desc': md_length}
             else:
                 text, error = file_opr.read(file)
                 if error is not None:

@@ -148,6 +148,8 @@ def ocr(filepath: str, timeout=5):
         if useful_char_cnt / len(content) <= 0.5:
             # Garbled characters
             return None
+        if len(content) <= 100:
+            return None
         return content
     except Exception as e:
         logger.error(str(e))
