@@ -1,6 +1,7 @@
 import { FC, ReactNode } from 'react';
 import { notification } from '@components/notification/use-notification';
 import EmojiWrapper from '@components/notification/emoji-wrapper';
+import { useLocale } from '@hooks/useLocale';
 import styles from './notification.module.less';
 
 export interface NotificationProps {
@@ -15,6 +16,7 @@ const Notification: FC<NotificationProps> = ({
     content,
     notificationKey,
 }) => {
+    const locales = useLocale('components');
     return (
         <div className={styles.notification} id={notificationKey}>
             <div className={styles.title}>{title}</div>
@@ -24,7 +26,7 @@ const Notification: FC<NotificationProps> = ({
                     className={styles.cancel}
                     onClick={() => notification.unmountNotification(notificationKey)}
                 >
-                    不再显示
+                    {locales.hide4ever}
                 </div>
                 <EmojiWrapper>
                     <div
@@ -33,7 +35,7 @@ const Notification: FC<NotificationProps> = ({
                             window.open('https://github.com/InternLM/HuixiangDou/');
                         }}
                     >
-                        前往鼓励
+                        {locales.goStar}
                     </div>
                 </EmojiWrapper>
             </div>
