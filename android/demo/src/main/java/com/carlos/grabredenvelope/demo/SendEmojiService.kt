@@ -28,6 +28,7 @@ import com.google.gson.Gson
 import okhttp3.Call
 import okhttp3.Callback
 import java.io.IOException
+import java.lang.Exception
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -45,7 +46,7 @@ class NoDoubleClick {
             return true
         }
 
-        if (now - time > 1000) {
+        if (now - time > 4000) {
             time = now
             return true
         }
@@ -131,31 +132,39 @@ class SendEmojiService : AccessibilityService() {
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    handler.post {
-                        Log.d("msg resp code", response.code.toString())
+                    Log.d("msg resp code", response.code.toString())
 
-                        if (response.isSuccessful) {
-                            var reply: String = response.body?.string() ?: "response.body?"
+                    if (response.isSuccessful) {
+                        var reply_text: String = response.body?.string() ?: "response.body?"
 //                            var resp = Gson().fromJson(responseBody.toString(), Reply::class.java)
-                            var nodeInfo = rootInActiveWindow.findAccessibilityNodeInfosByViewId(RES_ID_EDIT_TEXT)
-                            if (nodeInfo.size > 0) {
-                                for (et in nodeInfo) {
-                                    if (et.className == EditText::class.java.name) {
-                                        var args = Bundle()
-                                        args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, reply)
-                                        et.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-                                        Thread.sleep(1000)
+                        try {
+                            var reply: Reply = Gson().fromJson(reply_text, Reply::class.java)
+                            if (reply.code == 0){
+                                handler.post {
+                                    var nodeInfo = rootInActiveWindow.findAccessibilityNodeInfosByViewId(RES_ID_EDIT_TEXT)
+                                    if (nodeInfo.size > 0) {
+                                        for (et in nodeInfo) {
+                                            if (et.className == EditText::class.java.name) {
+                                                var args = Bundle()
+                                                args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, reply.reply)
+                                                et.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+                                                Thread.sleep(800)
 
-                                        var do_send = send()
-                                        Log.d("msg", "action send?")
-                                        Log.d("msg", do_send.toString())
+                                                var do_send = send()
+                                                Log.d("msg", "action send?")
+                                                Log.d("msg", do_send.toString())
+                                            }
+                                        }
+
                                     }
                                 }
-
                             }
-                        } else {
-                            Log.e("msg", response.toString())
+                        } catch (e: Exception){
+                            Log.e("msg", e.toString())
                         }
+
+                    } else {
+                        Log.e("msg", response.toString())
                     }
                 }
             })
