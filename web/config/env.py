@@ -9,7 +9,7 @@ class HuixiangDouEnv:
 
     @classmethod
     def get_cookie_secure(cls) -> bool:
-        return os.getenv("COOKIE_SECURE") if os.getenv("COOKIE_SECURE") else False
+        return True if os.getenv("COOKIE_SECURE") else False
 
     @classmethod
     def get_server_port(cls) -> str:
