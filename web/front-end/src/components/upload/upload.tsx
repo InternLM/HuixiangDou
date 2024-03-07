@@ -60,7 +60,7 @@ const Upload: FC<UploadProps> = ({
         const _pendingStatus = [...pendingStatus];
 
         _pendingStatus.forEach((item) => {
-            if (item.status === UploadStatus.init) {
+            if (item.status !== UploadStatus.done) {
                 item.status = UploadStatus.uploading;
             }
         });
@@ -78,15 +78,31 @@ const Upload: FC<UploadProps> = ({
                             item.progress = 0;
                         }
                     });
-                    setPendingStatus(_pendingStatus);
+                    setTimeout(() => {
+                        setPendingStatus([]);
+                    }, 2000);
+                } else {
+                    _pendingStatus.forEach((item) => {
+                        if (item.status === UploadStatus.uploading) {
+                            item.status = UploadStatus.error;
+                            item.progress = 0;
+                        }
+                    });
                 }
+                setPendingStatus(_pendingStatus);
                 setPendingFiles([]);
-                setTimeout(() => {
-                    setPendingStatus([]);
-                }, 2000);
                 if (afterUpload) {
                     afterUpload();
                 }
+            })
+            .catch(() => {
+                _pendingStatus.forEach((item) => {
+                    if (item.status === UploadStatus.uploading) {
+                        item.status = UploadStatus.error;
+                        item.progress = 0;
+                    }
+                });
+                setPendingStatus(_pendingStatus);
             })
             .finally(() => {
                 setLoading(false);
