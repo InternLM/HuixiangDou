@@ -16,8 +16,8 @@ const Notification: FC<NotificationProps> = ({
     content,
     notificationKey,
 }) => {
-    const locales = useLocale('beanDetail');
-    console.log(locales, content, title, notificationKey);
+    const locales = useLocale('components');
+
     return (
         <div className={styles.notification} id={notificationKey}>
             <div className={styles.title}>{title}</div>

@@ -1,12 +1,16 @@
 import Header from '@components/header/header';
-import BodyLayout from '@layouts/header-container-layout/body-layout';
+import { Outlet } from 'react-router-dom';
+import useNotification from '@components/notification/use-notification';
 import styles from './header-container-layout.module.less';
 
 const HeaderContainerLayout = () => {
     return (
         <div className={styles.wrapper}>
             <Header />
-            <BodyLayout />
+            <div className={styles.body} id="root-body">
+                <Outlet />
+            </div>
+            {useNotification()}
         </div>
     );
 };
