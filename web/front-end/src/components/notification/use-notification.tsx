@@ -1,40 +1,45 @@
-import { useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
 import Notification, { NotificationProps } from '@components/notification/notification';
 import { useLocale } from '@hooks/useLocale';
+import ComponentPortal from '@components/components-portal/components-portal';
 
-let notificationContainer = null;
+const notificationWrapper = 'global-notification';
 
 export const notification = {
-    showNotification(params: Omit<NotificationProps, 'children'>) {
-        if (localStorage.getItem(params.notificationKey)) {
-            return;
-        }
-        if (!document.getElementById('global-notification')) {
-            notificationContainer = document.createElement('div');
-            notificationContainer.id = 'global-notification';
-            document.body.appendChild(notificationContainer);
-            ReactDOM.createRoot(notificationContainer).render(<Notification {...params} />);
-        }
-    },
+    notificationContainer: null,
 
+    showNotification(params: NotificationProps) {
+        if (document.getElementById(notificationWrapper)) {
+            document.body.removeChild(document.getElementById(notificationWrapper));
+            this.notificationContainer = null;
+        }
+        if (localStorage.getItem(params.notificationKey)) {
+            return null;
+        }
+        this.notificationContainer = document.createElement('div');
+        this.notificationContainer.id = notificationWrapper;
+        document.body.appendChild(this.notificationContainer);
+        return (
+            <ComponentPortal wrapperId={notificationWrapper}>
+                <Notification {...params} />
+            </ComponentPortal>
+        );
+    },
     unmountNotification(key) {
-        if (notificationContainer) {
+        if (this.notificationContainer) {
             localStorage.setItem(key, 'true');
-            ReactDOM.hydrateRoot(notificationContainer, null);
-            document.body.removeChild(notificationContainer);
+            document.body.removeChild(this.notificationContainer);
+            this.notificationContainer = null;
         }
     },
 };
 const useNotification = () => {
     const locales = useLocale('components');
-    useEffect(() => {
-        notification.showNotification({
-            title: '',
-            content: locales.notificationContent,
-            notificationKey: '__HuiXiangDou__',
-        });
-    }, []);
+
+    return notification.showNotification({
+        title: '',
+        content: locales.notificationContent,
+        notificationKey: '__HuiXiangDou__',
+    });
 };
 
 export default useNotification;

@@ -40,7 +40,7 @@
             font-weight: 500;
             margin: 0 auto 72px;
 
-            width: 30ch;
+            max-width: 48ch;
             animation: typing 8s steps(16) infinite,
             blink 0.5s step-end infinite alternate;
             white-space: nowrap;
@@ -104,19 +104,21 @@
 }
 @keyframes typing {
     0% {
-        width: 0;
+        max-width: 0;
     }
     20% {
-        width: 0;
+        max-width: 0;
     }
     40% {
-        width: 30ch;
+        max-width: 48ch;
+        width: fit-content;
     }
     70% {
-        width: 30ch;
+        max-width: 48ch;
+        width: fit-content;
     }
     100% {
-        width: 0;
+        max-width: 0;
     }
 }
 

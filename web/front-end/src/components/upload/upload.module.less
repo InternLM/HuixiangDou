@@ -19,7 +19,21 @@
     &::-webkit-scrollbar {
         width: 0;
     }
-    div {
+    .file-item {
+        border-radius: 4px;
+        padding: 2px 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .file-state {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        width: 80px;
+        color: #4e95e6;
+    }
+    .file-name {
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;

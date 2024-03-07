@@ -73,7 +73,7 @@ const ToggleSearch: FC<ToggleSearchProps> = ({
                 footer={(<div />)}
                 onClose={() => setOpenModal(false)}
             >
-                <div>开启网络搜索，知识助手可以综合网络结果和本地文档给出答复</div>
+                <div>{locales.webSearchDesc}</div>
                 <div>
                     {`1. ${locales.register} `}
                     <a target="_blank" href="https://serper.dev/api-key" rel="noreferrer">Serper</a>

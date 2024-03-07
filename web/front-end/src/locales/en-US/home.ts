@@ -15,6 +15,7 @@ export default {
         users: 'Serviced Users',
         uniqueUsers: 'Unique Serviced Users',
         pwdError: 'Password Error',
+        feedback: 'Feedback',
         welcome: 'Welcome, grateful',
         hello: 'Hi',
         hi: 'Hello',

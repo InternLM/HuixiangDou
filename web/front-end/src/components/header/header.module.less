@@ -3,12 +3,17 @@
     height: 64px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 24px;
 
-    .username {
-        font-size: 14px;
-        font-weight: normal;
-        position: relative;
-        top: -4px;
+    .feedback {
+        cursor: pointer;
+    }
+
+    .language {
+        cursor: pointer;
+        .chosen {
+            font-weight: bold;
+        }
     }
 }

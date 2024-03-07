@@ -1,7 +1,7 @@
 import {
     FC, ReactNode, useRef, useState
 } from 'react';
-import { addDocs } from '@services/home';
+import { addDocs, FileState } from '@services/home';
 import Button from '@components/button/button';
 import { message } from 'sea-lion-ui';
 import { useLocale } from '@hooks/useLocale';
@@ -10,15 +10,15 @@ import styles from './upload.module.less';
 
 export interface UploadProps {
     afterUpload?: () => void;
-    files?: string[];
+    filesState?: FileState[];
     children?: ReactNode;
 }
 
-const acceptFileTypes = '.jpg,.png,.jpeg,.bmp,.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go';
+const acceptFileTypes = '.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go';
 
 const Upload: FC<UploadProps> = ({
     afterUpload,
-    files = [], children
+    filesState = [], children
 }) => {
     const locales = useLocale('components');
 
@@ -118,8 +118,24 @@ const Upload: FC<UploadProps> = ({
             )}
             <h4>{locales.uploadedFiles}</h4>
             <div className={styles.fileList}>
-                {files.map((file) => (
-                    <div key={file}>{file}</div>
+                <div>
+                    {`${locales.total}: ${filesState.length},    `}
+                    {`${locales.failed}: ${filesState.filter((file) => !file.status).length}`}
+                </div>
+                {filesState.map((file) => (
+                    <div
+                        key={file.file}
+                        className={styles.fileItem}
+                    >
+                        <span
+                            style={{ color: file.status ? undefined : 'red' }}
+                            className={styles.fileState}
+                            title={file.desc}
+                        >
+                            {file.desc || locales.uploadFailed}
+                        </span>
+                        <span className={styles.fileName}>{file.file}</span>
+                    </div>
                 ))}
             </div>
         </>

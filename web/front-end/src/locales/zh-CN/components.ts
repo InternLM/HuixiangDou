@@ -9,5 +9,8 @@ export default {
         confirmUpload: '确认上传',
         uploading: '上传中',
         uploadedFiles: '已上传文档',
+        uploadFailed: '上传失败',
+        total: '共计',
+        failed: '失败',
     }
 };
