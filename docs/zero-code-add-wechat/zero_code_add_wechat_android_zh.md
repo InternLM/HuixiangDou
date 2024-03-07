@@ -7,7 +7,7 @@
 
 ## 二、运行
 
-从 [这里](https://www.lanzoub.com/iJBEG1ql9u6j) 下载编译好的 apk。
+从 [这里](https://www.lanzoub.com/i4XEc1qlkytc) 下载编译好的 apk。
 
 1. 填写 web 版提供的微信回调地址，点击 “确定”
 
