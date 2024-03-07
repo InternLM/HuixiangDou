@@ -11,11 +11,15 @@
 
 1. 填写 web 版提供的微信回调地址，点击 “确定”
 
+    <img src="./step1.png" width="300">
+
 2. 点击 “点我”，找到“茴香豆 LLM RAG 回复” 打开或关闭
+
+    <img src="./step2.png" width="300">
 
 3. 进入聊天界面，请对方发送消息即可体验
 
-    <img src="./wechat-android-example.jpg" width="200">
+    <img src="./example.jpg" width="200">
 
 ## FAQ
 
