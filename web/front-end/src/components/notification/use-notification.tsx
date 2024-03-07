@@ -10,10 +10,11 @@ export const notification = {
         if (localStorage.getItem(params.notificationKey)) {
             return;
         }
+        console.log(params);
         if (!document.getElementById('global-notification')) {
             notificationContainer = document.createElement('div');
             notificationContainer.id = 'global-notification';
-            document.body.appendChild(notificationContainer);
+            document.getElementById('root-body').appendChild(notificationContainer);
             ReactDOM.createRoot(notificationContainer).render(<Notification {...params} />);
         }
     },
@@ -22,7 +23,7 @@ export const notification = {
         if (notificationContainer) {
             localStorage.setItem(key, 'true');
             ReactDOM.hydrateRoot(notificationContainer, null);
-            document.body.removeChild(notificationContainer);
+            document.getElementById('root-body').removeChild(notificationContainer);
         }
     },
 };

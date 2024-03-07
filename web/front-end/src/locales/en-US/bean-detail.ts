@@ -20,6 +20,7 @@ export default {
         paramsError: 'Parameters error',
         internalError: 'Internal error',
         upload: 'Select Files, Multiple Selection Allowed',
+        supportFiles: 'pdf/word/markdown/excel formats are allowed',
         logout: 'Log Out',
         references: 'References: ',
         timeout: 'Request Timeout, Please Try Again Later',

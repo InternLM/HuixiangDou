@@ -20,6 +20,7 @@ export default {
         paramsError: '参数错误',
         internalError: '内部错误',
         upload: '选择文件，可以框选多个',
+        supportFiles: '支持 pdf/word/markdown/excel 等格式',
         logout: '登出',
         references: '参考文档: ',
         timeout: '请求超时，请稍后再试',

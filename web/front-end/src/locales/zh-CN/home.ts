@@ -14,6 +14,7 @@ export default {
         users: '服务人次',
         uniqueUsers: '去重服务人次',
         pwdError: '密码错误',
+        feedback: '问题反馈',
         welcome: 'Welcome, grateful',
         hello: 'Hi',
         hi: 'Hello',

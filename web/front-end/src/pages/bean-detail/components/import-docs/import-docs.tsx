@@ -1,11 +1,11 @@
 import {
-    FC, ReactNode, useEffect, useState
+    FC, ReactNode, useState
 } from 'react';
 import { IconFont, Modal } from 'sea-lion-ui';
 import Button from '@components/button/button';
 import { useLocale } from '@hooks/useLocale';
 import Upload from '@components/upload';
-import { FileState, getInfo } from '@services/home';
+import { FileState } from '@services/home';
 import styles from './import-docs.module.less';
 
 export interface ImportDocsProps {
@@ -36,6 +36,7 @@ const ImportDocs: FC<ImportDocsProps> = ({ refresh, filesState }) => {
                 <Upload filesState={filesState} afterUpload={afterUpload}>
                     <IconFont icon="icon-PlusOutlined" />
                     <div>{locales.upload}</div>
+                    <div>{locales.supportFiles}</div>
                 </Upload>
             </Modal>
         </div>
