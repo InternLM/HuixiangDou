@@ -25,10 +25,8 @@ def check_gpu_max_memory_gb():
     return -1
 
 
-def build_messages(prompt, history, system: str = None):
-    messages = []
-    if system is not None and len(system) > 0:
-        messages.append({'role': 'system', 'content': system})
+def build_messages(prompt, history, system):
+    messages = [{'role': 'system', 'content': system}]
     for item in history:
         messages.append({'role': 'user', 'content': item[0]})
         messages.append({'role': 'assistant', 'content': item[1]})
@@ -120,7 +118,7 @@ class HybridLLMServer:
     def __init__(self,
                  llm_config: dict,
                  device: str = 'cuda',
-                 retry=2) -> None:
+                 retry=3) -> None:
         """Initialize the HybridLLMServer with the given configuration, device,
         and number of retries."""
         self.device = device
@@ -142,48 +140,99 @@ class HybridLLMServer:
         else:
             logger.warning('local LLM disabled.')
 
-    def call_openai_api(self,
-                        prompt,
-                        history,
-                        base_url: str = None,
-                        system: str = None):
-        """Generate a response from openai API.
+    def call_kimi(self, prompt, history):
+        """Generate a response from Kimi (a remote LLM).
 
         Args:
-            prompt (str): The prompt to send to openai API.
+            prompt (str): The prompt to send to Kimi.
             history (list): List of previous interactions.
 
         Returns:
-            str: Generated response from RPC.
+            str: Generated response from Kimi.
         """
-        if base_url is not None:
-            client = OpenAI(api_key=self.server_config['remote_api_key'],
-                            base_url=base_url)
-        else:
-            client = OpenAI(api_key=self.server_config['remote_api_key'])
+        client = OpenAI(
+            api_key=self.server_config['remote_api_key'],
+            base_url='https://api.moonshot.cn/v1',
+        )
 
+        SYSTEM = '你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。'  # noqa E501
         messages = build_messages(prompt=prompt,
                                   history=history,
-                                  system=system)
+                                  system=SYSTEM)
 
         life = 0
         while life < self.retry:
             try:
-
-                import pdb
-                pdb.set_trace()
                 logger.debug('remote api sending: {}'.format(messages))
                 completion = client.chat.completions.create(
                     model=self.server_config['remote_llm_model'],
                     messages=messages,
-                    temperature=0.0,
+                    temperature=0.3,
                 )
                 return completion.choices[0].message.content
             except Exception as e:
                 logger.error(str(e))
                 # retry
                 life += 1
-                randval = random.randint(1, int(pow(3, life)))
+                randval = random.randint(1, int(pow(2, life)))
+                time.sleep(randval)
+        return ''
+
+    def call_gpt(self, prompt, history):
+        """Generate a response from GPT (a remote LLM).
+
+        Args:
+            prompt (str): The prompt to send to GPT-3.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response from GPT-3.
+        """
+        messages = []
+        for item in history:
+            messages.append({'role': 'user', 'content': item[0]})
+            messages.append({'role': 'system', 'content': item[1]})
+        messages.append({'role': 'user', 'content': prompt})
+        completion = openai.ChatCompletion.create(
+            model=self.server_config['remote_llm_model'], messages=messages)
+        res = completion.choices[0].message.content
+        return res
+
+    def call_deepseek(self, prompt, history):
+        """Generate a response from deepseek (a remote LLM).
+
+        Args:
+            prompt (str): The prompt to send.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response.
+        """
+        client = OpenAI(
+            api_key=self.server_config['remote_api_key'],
+            base_url='https://api.deepseek.com/v1',
+        )
+
+        messages = build_messages(
+            prompt=prompt,
+            history=history,
+            system='You are a helpful assistant')  # noqa E501
+
+        life = 0
+        while life < self.retry:
+            try:
+                logger.debug('remote api sending: {}'.format(messages))
+                completion = client.chat.completions.create(
+                    model=self.server_config['remote_llm_model'],
+                    messages=messages,
+                    temperature=0.1,
+                )
+                return completion.choices[0].message.content
+            except Exception as e:
+                logger.error(str(e))
+                # retry
+                life += 1
+                randval = random.randint(1, int(pow(2, life)))
                 time.sleep(randval)
         return ''
 
@@ -210,24 +259,13 @@ class HybridLLMServer:
             prompt = prompt[0:self.remote_max_length]
             # call remote LLM
             llm_type = self.server_config['remote_type']
-            system = None
-            base_url = None
-
             if llm_type == 'kimi':
-                system = '你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。'  # noqa E501
-                base_url = 'https://api.moonshot.cn/v1'
-
+                output_text = self.call_kimi(prompt=prompt, history=history)
             elif llm_type == 'deepseek':
-                system = 'You are a helpful assistant'
-                base_url = 'https://api.deepseek.com/v1'
-
-            elif llm_type == 'xi-api':
-                base_url = 'https://api.xi-ai.cn/v1'
-
-            output_text = self.call_openai_api(prompt=prompt,
-                                               history=history,
-                                               system=system,
-                                               base_url=base_url)
+                output_text = self.call_deepseek(prompt=prompt,
+                                                 history=history)
+            else:
+                output_text = self.call_gpt(prompt=prompt, history=history)
 
         else:
             prompt = prompt[0:self.local_max_length]

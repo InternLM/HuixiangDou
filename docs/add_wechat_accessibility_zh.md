@@ -6,9 +6,9 @@
 
 ## 一、准备工作
 
-- 一个 android 手机，对性能和系统版本都没要求
-- 微信版本 8.0.47，不同版本的 view id 不同可能没效果。[代码里](https://github.com/InternLM/HuixiangDou/blob/main/android/demo/src/main/java/com/carlos/grabredenvelope/demo/WechatConstants.kt)只记了这个版本的 id
-- 一个测试用的微信号
+* 一个 android 手机，对性能和系统版本都没要求
+* 微信版本 8.0.47，不同版本的 view id 不同可能没效果。[代码里](https://github.com/InternLM/HuixiangDou/blob/main/android/demo/src/main/java/com/carlos/grabredenvelope/demo/WechatConstants.kt)只记了这个版本的 id
+* 一个测试用的微信号
 
 ## 二、运行
 
@@ -24,25 +24,25 @@
 
 1. 源码在哪儿？
 
-   在 repo 的 android 目录，需要 kotlin+java 开发能力
+    在 repo 的 android 目录，需要 kotlin+java 开发能力
 
 2. 我的微信版本更高/更低怎么办？
 
-   一、【不想开发】去微信官网找个 8.0.47 版本安装
+    一、【不想开发】去微信官网找个 8.0.47 版本安装
 
-   二、【愿意开发】用 DDMS dump 一下 view 结构；然后打开源码的 `WechatConstants.kt` 文件，把你的版本的 id 填进去，build 即可
+    二、【愿意开发】用 DDMS dump 一下 view 结构；然后打开源码的 `WechatConstants.kt` 文件，把你的版本的 id 填进去，build 即可
+    
+    改完请发个 PR
 
-   改完请发个 PR
-
-   ```java
-   if (version == "8.0.47") {
-       RES_ID_GROUP_NAME..
-       RES_ID_USER_NAME..
-       RES_ID_USER_CONTENT..
-       RES_ID_EDIT_TEXT..
-   } else if ( 你的版本 ) {
-       ..
-   } else {
-       Log.w("msg", "unknown version, maybe incompatible")
-   }
-   ```
+    ```java
+    if (version == "8.0.47") {
+        RES_ID_GROUP_NAME..
+        RES_ID_USER_NAME..
+        RES_ID_USER_CONTENT..
+        RES_ID_EDIT_TEXT..
+    } else if ( 你的版本 ) {
+        ..
+    } else {
+        Log.w("msg", "unknown version, maybe incompatible")
+    }
+    ```
