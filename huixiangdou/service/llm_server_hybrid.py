@@ -25,8 +25,10 @@ def check_gpu_max_memory_gb():
     return -1
 
 
-def build_messages(prompt, history, system):
-    messages = [{'role': 'system', 'content': system}]
+def build_messages(prompt, history, system: str = None):
+    messages = []
+    if system is not None and len(system) > 0:
+        messages.append({'role': 'system', 'content': system})
     for item in history:
         messages.append({'role': 'user', 'content': item[0]})
         messages.append({'role': 'assistant', 'content': item[1]})
@@ -178,25 +180,47 @@ class HybridLLMServer:
                 time.sleep(randval)
         return ''
 
-    def call_gpt(self, prompt, history):
-        """Generate a response from GPT (a remote LLM).
+    def call_gpt(self,
+                 prompt,
+                 history,
+                 base_url: str = None,
+                 system: str = None):
+        """Generate a response from openai API.
 
         Args:
-            prompt (str): The prompt to send to GPT-3.
+            prompt (str): The prompt to send to openai API.
             history (list): List of previous interactions.
 
         Returns:
-            str: Generated response from GPT-3.
+            str: Generated response from RPC.
         """
-        messages = []
-        for item in history:
-            messages.append({'role': 'user', 'content': item[0]})
-            messages.append({'role': 'system', 'content': item[1]})
-        messages.append({'role': 'user', 'content': prompt})
-        completion = openai.ChatCompletion.create(
-            model=self.server_config['remote_llm_model'], messages=messages)
-        res = completion.choices[0].message.content
-        return res
+        if base_url is not None:
+            client = OpenAI(api_key=self.server_config['remote_api_key'],
+                            base_url=base_url)
+        else:
+            client = OpenAI(api_key=self.server_config['remote_api_key'])
+
+        messages = build_messages(prompt=prompt,
+                                  history=history,
+                                  system=system)
+
+        life = 0
+        while life < self.retry:
+            try:
+                logger.debug('remote api sending: {}'.format(messages))
+                completion = client.chat.completions.create(
+                    model=self.server_config['remote_llm_model'],
+                    messages=messages,
+                    temperature=0.0,
+                )
+                return completion.choices[0].message.content
+            except Exception as e:
+                logger.error(str(e))
+                # retry
+                life += 1
+                randval = random.randint(1, int(pow(3, life)))
+                time.sleep(randval)
+        return ''
 
     def call_deepseek(self, prompt, history):
         """Generate a response from deepseek (a remote LLM).
@@ -307,8 +331,18 @@ class HybridLLMServer:
                                                  history=history)
             elif llm_type == 'zhipuai':
                 output_text = self.call_zhipuai(prompt=prompt, history=history)
+            elif llm_type == 'xi-api' or llm_type == 'gpt':
+                base_url = None
+                system = None
+                if llm_type == 'xi-api':
+                    base_url = 'https://api.xi-ai.cn/v1'
+                    system = 'You are a helpful assistant.'
+                output_text = self.call_gpt(prompt=prompt,
+                                            history=history,
+                                            base_url=base_url,
+                                            system=system)
             else:
-                output_text = self.call_gpt(prompt=prompt, history=history)
+                logger.error('unknow llm_type {}'.format(llm_type))
 
         else:
             prompt = prompt[0:self.local_max_length]
