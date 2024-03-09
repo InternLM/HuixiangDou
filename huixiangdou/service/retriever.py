@@ -145,10 +145,6 @@ class Retriever:
             chunks.append(chunk)
 
             source = doc.metadata['source']
-            if '/data2/khj/huixiangdou/workdir/preprocess/installation.md' in source:
-                import pdb
-                pdb.set_trace()
-                print(doc)
             file_text, error = file_opr.read(source)
             if error is not None:
                 # read file failed, skip
