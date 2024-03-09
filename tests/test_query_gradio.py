@@ -49,8 +49,8 @@ with gr.Blocks() as demo:
     with gr.Row():
         input_question = gr.Textbox(label='输入你的提问')
         with gr.Column():
-            result = gr.Textbox()
-            run_button = gr.Button(label='结果')
+            result = gr.Textbox(label='生成结果')
+            run_button = gr.Button(label='运行')
     run_button.click(fn=get_reply, inputs=input_question, outputs=result)
 
 if __name__ == '__main__':

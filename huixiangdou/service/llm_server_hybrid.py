@@ -248,8 +248,7 @@ class HybridLLMServer:
         """
         try:
             from zhipuai import ZhipuAI
-            client = ZhipuAI(api_key=self.server_config['remote_api_key']
-                             )  # 也可在此显式指定 api_key
+            client = ZhipuAI(api_key=self.server_config['remote_api_key'])
         except Exception as e:
             logger.error(str(e))
             logger.error('请先 pip install zhipuai 安装zhipu依赖，或检查 api_key是否有效')
