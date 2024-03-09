@@ -24,7 +24,7 @@ from multiprocessing import Process, Value
 
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
-                        state: str, files_state: dict={}):
+                        state: str, files_state: list=[]):
     resp = Queue(name='TaskResponse')
     target = {
         'feature_store_id': feature_store_id,
@@ -388,36 +388,30 @@ def process():
 
     logger.info('start wait task queue..')
     while True:
-        # try:
-        msg, error = parse_json_str(que.get())
-        logger.info(msg)
-        if error is not None:
-            raise error
+        try:
+            msg, error = parse_json_str(que.get())
+            logger.info(msg)
+            if error is not None:
+                raise error
 
-        logger.debug(f'process {msg.type}')
-        if msg.type == TaskCode.FS_ADD_DOC.value:
-            callback_task_state(feature_store_id=msg.payload.feature_store_id,
-                                code=ErrorCode.WORK_IN_PROGRESS.value,
-                                _type=msg.type,
-                                state=ErrorCode.WORK_IN_PROGRESS.describe())
-            fs_cache.pop(msg.payload.feature_store_id)
-            build_feature_store(fs_cache, msg.payload)
-        elif msg.type == TaskCode.FS_UPDATE_SAMPLE.value:
-            callback_task_state(feature_store_id=msg.payload.feature_store_id,
-                                code=ErrorCode.WORK_IN_PROGRESS.value,
-                                _type=msg.type,
-                                state=ErrorCode.WORK_IN_PROGRESS.describe())
-            fs_cache.pop(msg.payload.feature_store_id)
-            update_sample(fs_cache, msg.payload)
-        elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
-            update_pipeline(msg.payload)
-        elif msg.type == TaskCode.CHAT.value:
-            chat_with_featue_store(fs_cache, msg.payload)
-        else:
-            logger.warning(f'unknown type {msg.type}, supported type {[TaskCode.FS_ADD_DOC.value, TaskCode.FS_UPDATE_SAMPLE.value, TaskCode.FS_UPDATE_PIPELINE.value, TaskCode.CHAT.value]}')
+            logger.debug(f'process {msg.type}')
+            if msg.type == TaskCode.FS_ADD_DOC.value:
+                fs_cache.pop(msg.payload.feature_store_id)
+                build_feature_store(fs_cache, msg.payload)
+            elif msg.type == TaskCode.FS_UPDATE_SAMPLE.value:
+                fs_cache.pop(msg.payload.feature_store_id)
+                update_sample(fs_cache, msg.payload)
+            elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
+                update_pipeline(msg.payload)
+            elif msg.type == TaskCode.CHAT.value:
+                chat_with_featue_store(fs_cache, msg.payload)
+            else:
+                logger.warning(f'unknown type {msg.type}, supported type {[TaskCode.FS_ADD_DOC.value, TaskCode.FS_UPDATE_SAMPLE.value, TaskCode.FS_UPDATE_PIPELINE.value, TaskCode.CHAT.value]}')
 
-        # except Exception as e:
-        #     logger.error(str(e))
+        except Exception as e:
+            logger.error(str(e))
+            time.sleep(3)
+            que = Queue(name='Task')
 
 
 if __name__ == '__main__':
