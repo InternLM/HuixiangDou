@@ -167,7 +167,7 @@ class HybridLLMServer:
                 completion = client.chat.completions.create(
                     model=self.server_config['remote_llm_model'],
                     messages=messages,
-                    temperature=0.3,
+                    temperature=0.0,
                 )
                 return completion.choices[0].message.content
             except Exception as e:
@@ -251,7 +251,7 @@ class HybridLLMServer:
             client = ZhipuAI(api_key=self.server_config['remote_api_key'])
         except Exception as e:
             logger.error(str(e))
-            logger.error('请先 pip install zhipuai 安装zhipu依赖，或检查 api_key是否有效')
+            logger.error('please `pip install zhipuai` and check API_KEY')
             return ''
 
         messages = build_messages(
