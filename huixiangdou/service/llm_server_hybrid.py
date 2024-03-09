@@ -248,10 +248,11 @@ class HybridLLMServer:
         """
         try:
             from zhipuai import ZhipuAI
-            client = ZhipuAI(api_key=self.server_config['remote_api_key']) # 也可在此显式指定 api_key
+            client = ZhipuAI(api_key=self.server_config['remote_api_key']
+                             )  # 也可在此显式指定 api_key
         except Exception as e:
             logger.error(str(e))
-            logger.error("请先 pip install zhipuai 安装zhipu依赖，或检查 api_key是否有效")
+            logger.error('请先 pip install zhipuai 安装zhipu依赖，或检查 api_key是否有效')
             return ''
 
         messages = build_messages(
@@ -266,6 +267,7 @@ class HybridLLMServer:
                 completion = client.chat.completions.create(
                     model=self.server_config['remote_llm_model'],
                     messages=messages,
+                    temperature=0.1,
                 )
                 return completion.choices[0].message.content
             except Exception as e:
@@ -275,7 +277,7 @@ class HybridLLMServer:
                 randval = random.randint(1, int(pow(2, life)))
                 time.sleep(randval)
         return ''
-    
+
     def generate_response(self, prompt, history=[], remote=False):
         """Generate a response from the appropriate LLM based on the
         configuration.
@@ -305,8 +307,7 @@ class HybridLLMServer:
                 output_text = self.call_deepseek(prompt=prompt,
                                                  history=history)
             elif llm_type == 'zhipuai':
-                output_text = self.call_zhipuai(prompt=prompt,
-                                                history=history)
+                output_text = self.call_zhipuai(prompt=prompt, history=history)
             else:
                 output_text = self.call_gpt(prompt=prompt, history=history)
 
