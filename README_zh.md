@@ -30,6 +30,7 @@
 
 # 🆕 新功能
 
+- \[2024/03\] 支持 [zhipuai](https://zhipuai.cn) 和 [xi-api 国内 gpt 代理](https://api.xi-ai.cn)，见 `config.ini`
 - \[2024/03\] 新的[个人微信集成方法](./docs/add_wechat_accessibility_zh.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixaingdou-1.0.0.apk) !
 - \[2024/03\] 支持 `pdf`/`word`/`excel`，返回引用的文件名或 Web URL
 - \[2024/02\] 用 [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank 提升检索精度 👍

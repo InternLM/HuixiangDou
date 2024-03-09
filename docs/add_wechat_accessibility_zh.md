@@ -31,7 +31,7 @@
     一、【不想开发】去微信官网找个 8.0.47 版本安装
 
     二、【愿意开发】用 DDMS dump 一下 view 结构；然后打开源码的 `WechatConstants.kt` 文件，把你的版本的 id 填进去，build 即可
-    
+
     改完请发个 PR
 
     ```java
