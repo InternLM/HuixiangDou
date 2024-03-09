@@ -81,7 +81,7 @@ class FeatureStore:
             ('##', 'Header 2'),
             ('###', 'Header 3'),
         ])
-        self.enable_ocr = True
+        self.enable_ocr = False
 
     def is_chinese_doc(self, text):
         """If the proportion of Chinese in a bilingual document exceeds 0.5%,
@@ -359,6 +359,12 @@ class FeatureStore:
             ocr_process = Process(target=ocr_images_async, args=(file_dir, images, '.text'))
             ocr_process.start()
         else:
+            for filepath in images:
+                basename = os.path.basename(filepath)
+                state_map[basename] = {
+                    'status': False,
+                    'desc': 'skip'
+                }
             skip_cnt += len(images)
 
         # process normal file (pdf, text)
