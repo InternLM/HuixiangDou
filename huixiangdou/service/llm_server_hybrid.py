@@ -167,7 +167,7 @@ class HybridLLMServer:
                 completion = client.chat.completions.create(
                     model=self.server_config['remote_llm_model'],
                     messages=messages,
-                    temperature=0.3,
+                    temperature=0.0,
                 )
                 return completion.choices[0].message.content
             except Exception as e:
@@ -236,6 +236,47 @@ class HybridLLMServer:
                 time.sleep(randval)
         return ''
 
+    def call_zhipuai(self, prompt, history):
+        """Generate a response from zhipuai (a remote LLM).
+
+        Args:
+            prompt (str): The prompt to send.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response.
+        """
+        try:
+            from zhipuai import ZhipuAI
+            client = ZhipuAI(api_key=self.server_config['remote_api_key'])
+        except Exception as e:
+            logger.error(str(e))
+            logger.error('please `pip install zhipuai` and check API_KEY')
+            return ''
+
+        messages = build_messages(
+            prompt=prompt,
+            history=history,
+            system='You are a helpful assistant')  # noqa E501
+
+        life = 0
+        while life < self.retry:
+            try:
+                logger.debug('remote api sending: {}'.format(messages))
+                completion = client.chat.completions.create(
+                    model=self.server_config['remote_llm_model'],
+                    messages=messages,
+                    temperature=0.1,
+                )
+                return completion.choices[0].message.content
+            except Exception as e:
+                logger.error(str(e))
+                # retry
+                life += 1
+                randval = random.randint(1, int(pow(2, life)))
+                time.sleep(randval)
+        return ''
+
     def generate_response(self, prompt, history=[], remote=False):
         """Generate a response from the appropriate LLM based on the
         configuration.
@@ -264,6 +305,8 @@ class HybridLLMServer:
             elif llm_type == 'deepseek':
                 output_text = self.call_deepseek(prompt=prompt,
                                                  history=history)
+            elif llm_type == 'zhipuai':
+                output_text = self.call_zhipuai(prompt=prompt, history=history)
             else:
                 output_text = self.call_gpt(prompt=prompt, history=history)
 
