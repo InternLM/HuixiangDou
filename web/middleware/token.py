@@ -51,10 +51,11 @@ def check_endpoint_update(info: QalibInfo):
             info.wechat.onMessageUrl = wechat_message_url
             update = True
 
-    lark_event_url = get_lark_on_message_url()
-    if info.lark.eventUrl != lark_event_url:
-        info.lark.eventUrl = lark_event_url
-        update = True
+    if info.lark:
+        lark_event_url = get_lark_on_message_url()
+        if info.lark.eventUrl != lark_event_url:
+            info.lark.eventUrl = lark_event_url
+            update = True
 
     if update:
         QaLibCache.set_qalib_info(info.featureStoreId, info)
