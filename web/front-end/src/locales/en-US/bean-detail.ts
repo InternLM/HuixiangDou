@@ -6,7 +6,7 @@ export default {
         switchSearch: 'Web Search Switch',
         examples: 'Examples',
         docs: 'Uploads',
-        viewAndEdit: 'View and Edit',
+        viewAndEdit: 'Edit',
         addExamples: 'Add Examples',
         addDocs: 'Add Documents',
         chatTest: 'Chat Test',
