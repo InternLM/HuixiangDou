@@ -4,12 +4,17 @@ from enum import Enum
 from typing import Union
 
 import lark_oapi as lark
+import requests
 from lark_oapi.api.im.v1 import GetChatRequest, P2ImMessageReceiveV1, MentionEvent, GetImageRequest, \
     ReplyMessageRequest, ReplyMessageRequestBody
 
 from web.config.env import HuixiangDouEnv
-from web.model.chat import ChatRequestBody, ChatType, LarkChatDetail, ChatQueryInfo
+from web.constant import biz_constant
+from web.model.base import standard_error_response, BaseBody
+from web.model.chat import ChatRequestBody, ChatType, LarkChatDetail, ChatQueryInfo, WechatRequest, WechatType, \
+    WechatPollItem, WechatResponse
 from web.service import qalib
+from web.service.cache import ChatCache
 from web.service.chat import ChatService
 from web.service.qalib import QaLibCache
 from web.util.log import log
@@ -61,6 +66,9 @@ class LarkAgent:
                 f"[lark] app_id: {app_id}, name: {chat_name} get feature store failed, omit lark message callback")
             return
 
+        # mark
+        ChatCache.mark_agent_used(app_id, ChatType.LARK)
+
         # parse lark content
         content = msg.content
         mentions = msg.mentions
@@ -75,7 +83,7 @@ class LarkAgent:
         if len(lark_content.images) > 0:
             query_id = chat_svc.generate_query_id(lark_content.content)
             for index in range(len(lark_content.images)):
-                image_store_path = chat_svc.gen_image_store_path(query_id, str(index))
+                image_store_path = chat_svc.gen_image_store_path(query_id, str(index), ChatType.LARK)
                 if cls._store_image(client, lark_content.images[index], image_store_path):
                     # replace image_key with actually store path
                     lark_content.images[index] = image_store_path
@@ -83,7 +91,7 @@ class LarkAgent:
         # todo cache and fetch history
         # push into chat task queue
         chat_detail = LarkChatDetail(appId=app_id, appSecret=app_secret, messageId=msg.message_id)
-        chat_svc.chat_by_agent(lark_content, ChatType.LARK, chat_detail, query_id)
+        chat_svc.chat_by_agent(lark_content, ChatType.LARK, chat_detail, data.event.sender.sender_id.open_id, query_id)
 
     @classmethod
     def _get_chat_name(cls, chat_id: str, client: lark.client) -> Union[str, None]:
@@ -200,3 +208,79 @@ class LarkAgent:
                 f"[lark] response: {chat_info.model_dump()} failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}")
             return False
         return True
+
+
+class WechatAgent:
+    @classmethod
+    def action(cls, body: WechatRequest, suffix: str) -> Union[BaseBody, WechatResponse]:
+        feature_store_id = QaLibCache.get_qalib_feature_store_id_by_suffix(suffix)
+        hxd_info = QaLibCache.get_qalib_info(feature_store_id)
+        if not hxd_info:
+            logger.error(
+                f"[wechat] suffix:{suffix} get feature store failed, omit wechat message callback")
+            return standard_error_response(biz_constant.ERR_QALIB_INFO_NOT_FOUND)
+
+        # mark
+        ChatCache.mark_agent_used(body.groupname, ChatType.WECHAT)
+
+        chat_svc = ChatService(None, None, hxd_info)
+        query_id = ""
+        if body.query.type != WechatType.Poll:
+            query_id = chat_svc.generate_query_id(body.query.content)
+        chat_request_body = None
+
+        if body.query.type == WechatType.Image:
+            # store image
+            path = chat_svc.gen_image_store_path(query_id, "i", ChatType.WECHAT)
+            cls._store_image(path, body.query.content)
+            chat_request_body = ChatRequestBody(images=[path])
+        elif body.query.type == WechatType.Poll:
+            # fetch response
+            return cls._fetch_response(feature_store_id)
+        else:
+            chat_request_body = ChatRequestBody(content=body.query.content)
+
+        # push into chat queue
+        chat_svc.chat_by_agent(chat_request_body, ChatType.WECHAT, body, body.username, query_id)
+        # record query_id
+        ChatCache.record_query_id_to_fetch(feature_store_id, query_id)
+        return WechatResponse()
+
+    @classmethod
+    def _store_image(cls, path: str, url: str) -> bool:
+        response = requests.get(url)
+        if not response or response.status_code != 200:
+            logger.error(
+                f"[wechat] get image: {url} binary failed, code: {response.status_code}, msg: {response.content}")
+            return False
+
+        with open(path, mode='wb') as fout:
+            fout.write(response.content)
+        return True
+
+    @classmethod
+    def _fetch_response(cls, feature_store_id: str) -> WechatResponse:
+        ret = WechatResponse()
+
+        query_id_list = ChatCache.mget_query_id_to_fetch(feature_store_id)
+        if len(query_id_list) == 0:
+            logger.debug(f"[wechat] feature_store_id: {feature_store_id} has no response yet")
+            return ret
+
+        complete_query_id_list = []
+        l = []
+        query_infos = ChatCache.mget_query_info(query_id_list, feature_store_id)
+        for item in query_infos:
+            if item.response:
+                l.append(WechatPollItem(req=item.detail, rsp=item.response))
+                complete_query_id_list.append(item.queryId)
+        ret.list = l
+
+        ChatCache.mark_query_id_complete(feature_store_id, complete_query_id_list)
+        return ret
+
+
+
+
+
+

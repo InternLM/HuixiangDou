@@ -42,9 +42,9 @@ def get_store_dir(feature_store_id: str) -> Union[str, None]:
         return None
 
 
-def get_wechat_on_message_url() -> str:
+def get_wechat_on_message_url(suffix: str) -> str:
     endpoint = HuixiangDouEnv.get_message_endpoint()
-    return endpoint + "api/v1/message/v1/wechat"
+    return endpoint + "api/v1/message/v1/wechat/" + suffix
 
 
 def get_lark_on_message_url() -> str:
@@ -232,7 +232,7 @@ class QaLibCache:
         :param status:
         :return:
         """
-        wechat = Wechat(onMessageUrl=get_wechat_on_message_url())
+        wechat = Wechat(onMessageUrl=get_wechat_on_message_url(suffix))
         lark = Lark(encryptKey=HuixiangDouEnv.get_lark_encrypt_key(),
                     verificationToken=HuixiangDouEnv.get_lark_verification_token(), eventUrl=get_lark_on_message_url())
         qalib_info = QalibInfo(featureStoreId=feature_store_id, status=status, name=name, wechat=wechat, lark=lark,
@@ -301,7 +301,7 @@ class QaLibCache:
         if not o:
             logger.error(f"[qalib] suffix: {suffix} has no qalib")
             return None
-        return str(o)
+        return o.decode("utf-8")
 
     @classmethod
     def get_lark_info_by_app_id(cls, app_id: str) -> Union[str, None]:
@@ -310,7 +310,7 @@ class QaLibCache:
         if not o:
             logger.error(f"f[lark] app_id: {app_id} has no record")
             return None
-        return str(o)
+        return o.decode("utf-8")
 
     @classmethod
     def set_lark_info(cls, app_id: str, app_secret: str):

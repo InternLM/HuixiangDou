@@ -45,3 +45,30 @@ class LarkChatDetail(BaseModel):
     appId: Optional[str] = ""
     appSecret: Optional[str] = ""
     messageId: Optional[str] = ""
+
+
+class WechatType(Enum):
+    TEXT = "text"
+    Image = "image"
+    Poll = "poll"
+
+
+class WechatQuery(BaseModel):
+    type: WechatType
+    content: Optional[str] = ""
+
+
+class WechatRequest(BaseModel):
+    query_id: Optional[str] = ""
+    groupname: Optional[str] = ""
+    username: Optional[str] = ""
+    query: Optional[WechatQuery]
+
+
+class WechatResponse(BaseModel):
+    list: Optional[object] = []
+
+
+class WechatPollItem(BaseModel):
+    req: WechatRequest
+    rsp: ChatResponse

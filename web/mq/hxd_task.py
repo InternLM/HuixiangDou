@@ -1,6 +1,7 @@
-from web.model.huixiangdou import HxdTask
+from web.model.huixiangdou import HxdTask, HxdTaskType
 from web.orm.redis import r
 import web.constant.biz_constant as biz_const
+from web.service.cache import ChatCache
 from web.util.log import log
 
 logger = log(__name__)
@@ -19,6 +20,11 @@ class HuixiangDouTask:
         if not task:
             logger.error("HuixiangDou's task is empty, update task aborted.")
             return False
+
+        ChatCache.mark_monthly_active(task.payload.feature_store_id)
+        if task.type == HxdTaskType.CHAT:
+            ChatCache.add_inference_number()
+
         try:
             r.rpush(biz_const.RDS_KEY_HXD_TASK, task.model_dump_json())
         except Exception as e:
