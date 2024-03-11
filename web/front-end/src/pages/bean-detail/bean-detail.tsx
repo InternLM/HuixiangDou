@@ -13,6 +13,7 @@ import ImportDocs from '@pages/bean-detail/components/import-docs';
 import IntegrateFeishu from '@pages/bean-detail/components/integrate-feishu';
 import { Token } from '@utils/utils';
 import { useNavigate } from 'react-router-dom';
+import IntegrateWechat from '@pages/bean-detail/components/integrate-wechat/integrate-wechat';
 import styles from './bean-detail.module.less';
 
 export interface BeanDetailProps {
@@ -33,7 +34,6 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     const navigate = useNavigate();
     const locales = useLocale('beanDetail');
     const [name, setName] = useState('');
-    const [files, setFiles] = useState([]); // 已上传文件列表
     const [filesState, setFilesState] = useState<FileState[]>([]);
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
@@ -77,7 +77,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 setBeanState(res.status);
                 setSearchToken(res.webSearch?.token);
                 setFeishuInfo(res.lark);
-                setFiles(res.docs);
+                setWeChatInfo(res.wechat?.onMessageUrl);
                 if (Array.isArray(res.filesState)) {
                     setFilesState(res.filesState);
                 }
@@ -101,12 +101,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                     },
                     {
                         title: locales.accessWeChat,
-                        children: (
-                            <div className={styles.btn}>
-                                {locales.viewDetail}
-                                <IconFont icon="icon-GotoOutline" />
-                            </div>
-                        ),
+                        children: <IntegrateWechat messageUrl={weChatInfo} />,
                         key: 'accessWeChat'
                     },
                     {
