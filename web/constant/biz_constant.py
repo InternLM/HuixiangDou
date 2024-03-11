@@ -17,6 +17,12 @@ RDS_KEY_SCHEDULER = "HuixiangDou:sched"
 RDS_KEY_QUERY_INFO = "HuixiangDou:query"
 RDS_KEY_FEEDBACK_CASE = "HuixiangDou:feedback:case"
 RDS_KEY_LARK_CONFIG = "HuixiangDou:lark"
+RDS_KEY_QUERY_ID_TO_FETCH = "HuixiangDou:queryIdToFetch"
+RDS_KEY_AGENT_LARK_USED = "HuixiangDou:agentLarkUsed"
+RDS_KEY_AGENT_WECHAT_USED = "HuixiangDou:agentWechatUsed"
+RDS_KEY_QALIB_ACTIVE = "HuixiangDou:monthlyActive"
+RDS_KEY_TOTAL_INFERENCE_NUMBER = "HuixiangDou:inference"
+RDS_KEY_USER_INFERENCE = "HuixiangDou:userInference"
 
 
 # jwt
