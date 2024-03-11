@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IconFont, Modal } from 'sea-lion-ui';
 import Button from '@components/button/button';
 import { useLocale } from '@hooks/useLocale';
+import CopyCode from '@components/copy-code/copy-code';
 import styles from './integrate-wechat.module.less';
 
 export interface IntegrateWechatProps {
@@ -32,7 +33,7 @@ const IntegrateWechat = (props: IntegrateWechatProps) => {
                     {locales.WeChatCallback}
                 </div>
                 <div className={styles.itemContent}>
-                    {props.messageUrl || locales.noCallback}
+                    <CopyCode code={props.messageUrl || locales.noCallback} />
                 </div>
                 <div className={styles.itemTitle}>
                     {locales.wechatGuidance}
