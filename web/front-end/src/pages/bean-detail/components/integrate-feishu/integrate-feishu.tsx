@@ -87,7 +87,7 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
             >
                 <div>{locales.larkGuidance}</div>
                 {eventUrl && (
-                    <div>{`eventUrl: ${eventUrl}`}</div>
+                    <div className={styles.eventUrl}>{`eventUrl:\n${eventUrl}`}</div>
                 )}
                 <Form
                     form={form}
