@@ -10,7 +10,7 @@ from web.model.huixiangdou import HxdTaskResponse, HxdTaskType, HxdChatResponse
 from web.model.qalib import QalibInfo, QalibSample, Pipeline
 from web.orm.redis import r
 from web.service.agent import LarkAgent
-from web.service.chat import ChatCache
+from web.service.cache import ChatCache
 from web.util.log import log
 
 logger = log(__name__)
@@ -114,7 +114,7 @@ async def fetch_chat_response():
         chat_response = HxdChatResponse(**json.loads(o))
         logger.info(
             f"[chat-response] feature_store_id: {chat_response.feature_store_id}, content: {chat_response.response.model_dump_json()}, query_id: {chat_response.query_id}")
-        query_info = ChatCache().set_query_response(chat_response.query_id, chat_response.feature_store_id, chat_response.response)
+        query_info = ChatCache.set_query_response(chat_response.query_id, chat_response.feature_store_id, chat_response.response)
 
         if not query_info:
             continue
@@ -123,7 +123,6 @@ async def fetch_chat_response():
         if query_info.type == ChatType.LARK:
             await LarkAgent.response_callback(query_info)
         elif query_info.type == ChatType.WECHAT:
-            # todo
             pass
 
 

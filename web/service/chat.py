@@ -1,7 +1,6 @@
 import base64
 import binascii
 import hashlib
-import json
 import os
 import time
 from typing import Union
@@ -10,12 +9,11 @@ from fastapi import Request, Response
 
 from web.constant import biz_constant
 from web.model.base import BaseBody, standard_error_response, Image
-from web.model.chat import ChatRequestBody, ChatQueryInfo, ChatOnlineResponseBody, ChatCaseFeedbackBody, ChatCaseType, \
-    ChatType
-from web.model.huixiangdou import HxdTask, HxdTaskType, HxdTaskPayload, ChatResponse
+from web.model.chat import ChatRequestBody, ChatQueryInfo, ChatOnlineResponseBody, ChatCaseFeedbackBody, ChatType
+from web.model.huixiangdou import HxdTask, HxdTaskType, HxdTaskPayload
 from web.model.qalib import QalibInfo
 from web.mq.hxd_task import HuixiangDouTask
-from web.orm.redis import r
+from web.service.cache import ChatCache
 from web.service.qalib import get_store_dir
 from web.util.image import detect_base64_image_suffix
 from web.util.log import log
@@ -51,7 +49,8 @@ class ChatService:
             chat_query_info = ChatQueryInfo(featureStoreId=feature_store_id, queryId=query_id,
                                             request=ChatRequestBody(content=body.content, images=images_path,
                                                                     history=body.history, type=ChatType.ONLINE))
-            ChatCache().set_query_request(query_id, feature_store_id, chat_query_info)
+            ChatCache.set_query_request(query_id, feature_store_id, chat_query_info)
+            ChatCache.mark_unique_inference_user(feature_store_id, ChatType.ONLINE)
             return BaseBody(data=ChatOnlineResponseBody(queryId=query_id))
 
         return standard_error_response(biz_constant.ERR_CHAT)
@@ -65,7 +64,8 @@ class ChatService:
             return standard_error_response(biz_constant.CHAT_STILL_IN_QUEUE)
         return BaseBody(data=info.response)
 
-    def chat_by_agent(self, body: ChatRequestBody, t: ChatType, chat_detail: object, query_id: str = None) -> bool:
+    def chat_by_agent(self, body: ChatRequestBody, t: ChatType, chat_detail: object, user_unique_id: str,
+                      query_id: str = None) -> bool:
         feature_store_id = self.hxd_info.featureStoreId
         if not query_id:
             query_id = self.generate_query_id(body.content)
@@ -81,7 +81,8 @@ class ChatService:
             chat_query_info = ChatQueryInfo(featureStoreId=feature_store_id, queryId=query_id,
                                             request=ChatRequestBody(content=body.content, images=body.images,
                                                                     history=body.history, type=t, detail=chat_detail))
-            ChatCache().set_query_request(query_id, feature_store_id, chat_query_info)
+            ChatCache.set_query_request(query_id, feature_store_id, chat_query_info)
+            ChatCache.mark_unique_inference_user(user_unique_id, t)
             return True
 
         return False
@@ -124,7 +125,7 @@ class ChatService:
             ret.append(store_path)
         return ret
 
-    def gen_image_store_path(self, query_id, name: str) -> Union[str, None]:
+    def gen_image_store_path(self, query_id, name: str, agent: ChatType) -> Union[str, None]:
         feature_store_id = self.hxd_info.featureStoreId
         image_store_dir = get_store_dir(feature_store_id)
         if not image_store_dir:
@@ -133,7 +134,7 @@ class ChatService:
 
         image_store_dir += "/images/"
         os.makedirs(name=image_store_dir, exist_ok=True)
-        return image_store_dir + query_id[-8:] + "_" + name
+        return image_store_dir + agent.name + query_id[-8:] + "_" + name
 
     async def case_feedback(self, body: ChatCaseFeedbackBody):
         feature_store_id = self.hxd_info.featureStoreId
@@ -144,49 +145,3 @@ class ChatService:
         return BaseBody() \
             if ChatCache.update_case_feedback(feature_store_id, body.type, query_info.model_dump_json()) \
             else standard_error_response(biz_constant.ERR_CHAT_CASE_FEEDBACK)
-
-
-class ChatCache:
-    def __init__(self):
-        pass
-
-    @classmethod
-    def set_query_request(cls, query_id: str, feature_store_id: str, info: ChatQueryInfo):
-        cls._set_query_info(query_id, feature_store_id, info)
-
-    @classmethod
-    def set_query_response(cls, query_id: str, feature_store_id: str, response: ChatResponse) -> Union[
-        ChatQueryInfo, None]:
-        q = cls.get_query_info(query_id, feature_store_id)
-        if not q:
-            return None
-        q.response = response
-        cls._set_query_info(query_id, feature_store_id, q)
-        return q
-
-    @classmethod
-    def get_query_info(cls, query_id: str, feature_store_id: str) -> Union[ChatQueryInfo, None]:
-        key = biz_constant.RDS_KEY_QUERY_INFO + ":" + feature_store_id
-        field = query_id
-        o = r.hget(key, field)
-        if not o or len(o) == 0:
-            logger.error(f"feature_store_id: {feature_store_id} get query: {query_id} empty, omit")
-            return None
-
-        return ChatQueryInfo(**json.loads(o))
-
-    @classmethod
-    def _set_query_info(cls, query_id: str, feature_store_id: str, info: ChatQueryInfo):
-        key = biz_constant.RDS_KEY_QUERY_INFO + ":" + feature_store_id
-        field = query_id
-        r.hset(key, field, info.model_dump_json())
-
-    @classmethod
-    def update_case_feedback(cls, feature_store_id: str, case_type: ChatCaseType, feedback: str) -> bool:
-        try:
-            name = f"{biz_constant.RDS_KEY_FEEDBACK_CASE}:{case_type}:{feature_store_id}"
-            r.rpush(name, feedback)
-            return True
-        except Exception as e:
-            logger.error(f"{e}")
-            return False
