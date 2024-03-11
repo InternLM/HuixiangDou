@@ -7,15 +7,21 @@
 
 ## 二、运行
 
-从 [这里](https://www.lanzoub.com/iJBEG1ql9u6j) 下载编译好的 apk。
+从 [这里](https://www.lanzoub.com/i4XEc1qlkytc) 下载编译好的 apk。
 
 1. 填写 web 版提供的微信回调地址，点击 “确定”
 
+    <img src="./step1.png" width="300">
+
 2. 点击 “点我”，找到“茴香豆 LLM RAG 回复” 打开或关闭
 
-3. 进入聊天界面，请对方发送消息即可体验
+    <img src="./step2.png" width="300">
 
-    <img src="./wechat-android-example.jpg" width="200">
+3. 不要关闭本进程，进入聊天界面，请对方发送消息即可体验
+
+    <img src="./example.jpg" width="200">
+
+   为了避免频繁发送，4s 内不会发出第二条消息。
 
 ## FAQ
 
