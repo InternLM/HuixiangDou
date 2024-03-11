@@ -2,7 +2,6 @@ import {
     FC, ReactNode, useEffect, useMemo, useState
 } from 'react';
 import { useLocale } from '@hooks/useLocale';
-import { IconFont } from 'sea-lion-ui';
 import logo from '@assets/imgs/logo.png';
 import bean from '@assets/imgs/bean1.png';
 import Chat from '@pages/bean-detail/components/chat';

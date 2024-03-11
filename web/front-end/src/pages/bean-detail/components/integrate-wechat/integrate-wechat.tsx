@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { IconFont, Modal } from 'sea-lion-ui';
 import Button from '@components/button/button';
 import { useLocale } from '@hooks/useLocale';
-import { Form } from 'antd';
 import styles from './integrate-wechat.module.less';
 
 export interface IntegrateWechatProps {
