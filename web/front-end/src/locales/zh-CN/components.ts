@@ -10,6 +10,7 @@ export default {
         uploading: '上传中',
         uploadedFiles: '已上传文档',
         uploadFailed: '上传失败',
+        processing: '处理中',
         total: '共计',
         failed: '失败',
     }
