@@ -389,7 +389,10 @@ def process():
     logger.info('start wait task queue..')
     while True:
         try:
-            msg, error = parse_json_str(que.get())
+            msg_pop = que.get(timeout=16)
+            if msg_pop is None:
+                continue
+            msg, error = parse_json_str(msg_pop)
             logger.info(msg)
             if error is not None:
                 raise error
