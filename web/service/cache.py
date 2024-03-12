@@ -93,7 +93,8 @@ class ChatCache:
         if len(query_id_list) == 0:
             return
         key = biz_constant.RDS_KEY_QUERY_ID_TO_FETCH + ":" + feature_store_id
-        r.hdel(key, query_id_list)
+        for item in query_id_list:
+            r.hdel(key, item)
 
     @classmethod
     def mark_agent_used(cls, agent_identifier: str, agent: ChatType):
