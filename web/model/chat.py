@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 
 from web.model.huixiangdou import HxdTaskChatHistory, ChatResponse
 
@@ -65,8 +65,8 @@ class WechatRequest(BaseModel):
     query: Optional[WechatQuery] = {}
 
 
-class WechatResponse(BaseModel):
-    list: Optional[object] = []
+class WechatResponse(RootModel):
+    root: Optional[object] = []
 
 
 class WechatPollItem(BaseModel):

@@ -80,7 +80,7 @@ class ChatService:
         if HuixiangDouTask().updateTask(task):
             chat_query_info = ChatQueryInfo(featureStoreId=feature_store_id, queryId=query_id,
                                             request=ChatRequestBody(content=body.content, images=body.images,
-                                                                    history=body.history, type=t, detail=chat_detail))
+                                                                    history=body.history), type=t, detail=chat_detail)
             ChatCache.set_query_request(query_id, feature_store_id, chat_query_info)
             ChatCache.mark_unique_inference_user(user_unique_id, t)
             return True
