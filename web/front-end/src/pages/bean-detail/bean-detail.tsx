@@ -33,6 +33,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     const navigate = useNavigate();
     const locales = useLocale('beanDetail');
     const [name, setName] = useState('');
+    const [docs, setDocs] = useState(['']);
     const [filesState, setFilesState] = useState<FileState[]>([]);
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
@@ -77,6 +78,9 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 setSearchToken(res.webSearch?.token);
                 setFeishuInfo(res.lark);
                 setWeChatInfo(res.wechat?.onMessageUrl);
+                if (Array.isArray(res.docs)) {
+                    setDocs(res.docs);
+                }
                 if (Array.isArray(res.filesState)) {
                     setFilesState(res.filesState);
                 }
@@ -90,7 +94,11 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 [
                     {
                         title: locales.addDocs,
-                        children: <ImportDocs filesState={filesState} refresh={refresh} />,
+                        children: <ImportDocs
+                            docs={docs}
+                            filesState={filesState}
+                            refresh={refresh}
+                        />,
                         key: 'docs'
                     },
                     {

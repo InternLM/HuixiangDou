@@ -9,6 +9,7 @@ export default {
         uploading: 'Uploading',
         uploadedFiles: 'Uploaded documents',
         uploadFailed: 'Failed',
+        processing: 'Processing',
         total: 'Total',
         failed: 'Failed',
     }

@@ -9,6 +9,7 @@ import UploadItem, { UploadItemProps, UploadStatus } from '@components/upload-it
 import styles from './upload.module.less';
 
 export interface UploadProps {
+    docs?: string[];
     afterUpload?: () => void;
     filesState?: FileState[];
     children?: ReactNode;
@@ -17,6 +18,7 @@ export interface UploadProps {
 const acceptFileTypes = '.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go';
 
 const Upload: FC<UploadProps> = ({
+    docs = [],
     afterUpload,
     filesState = [], children
 }) => {
@@ -138,6 +140,25 @@ const Upload: FC<UploadProps> = ({
                     {`${locales.total}: ${filesState.length},    `}
                     {`${locales.failed}: ${filesState.filter((file) => !file.status).length}`}
                 </div>
+                {docs
+                    .filter((doc) => !filesState.find((file) => file.file === doc))
+                    .map((doc) => {
+                        return (
+                            <div
+                                key={doc}
+                                className={styles.fileItem}
+                            >
+                                <span
+                                    style={{ color: '#4e95e6' }}
+                                    className={styles.fileState}
+                                    title={doc}
+                                >
+                                    {locales.processing}
+                                </span>
+                                <span className={styles.fileName}>{doc}</span>
+                            </div>
+                        );
+                    })}
                 {filesState.map((file) => (
                     <div
                         key={file.file}
