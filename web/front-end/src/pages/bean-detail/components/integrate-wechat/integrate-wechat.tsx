@@ -39,7 +39,7 @@ const IntegrateWechat = (props: IntegrateWechatProps) => {
                     {locales.wechatGuidance}
                 </div>
                 <Button
-                    onClick={() => window.open('https://github.com/InternLM/HuixiangDou/blob/for-openxlab/docs/zero-code-add-wechat/zero_code_add_wechat_android_zh.md')}
+                    onClick={() => window.open('https://zhuanlan.zhihu.com/p/686579577')}
                 >
                     {locales.viewGuide}
                     <IconFont icon="icon-GotoOutline" />
