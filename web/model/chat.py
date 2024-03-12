@@ -62,7 +62,7 @@ class WechatRequest(BaseModel):
     query_id: Optional[str] = ""
     groupname: Optional[str] = ""
     username: Optional[str] = ""
-    query: Optional[WechatQuery]
+    query: Optional[WechatQuery] = {}
 
 
 class WechatResponse(BaseModel):

@@ -2,10 +2,20 @@ import os
 
 import lark_oapi as lark
 
+from web.util.log import log
+
+logger = log(__name__)
+
 
 class HuixiangDouEnv:
-    def __init__(self):
-        pass
+
+    @classmethod
+    def print_env(cls):
+        methods = [method for method in cls.__dict__ if callable(getattr(HuixiangDouEnv, method)) and method != "print_env"]
+        for method in methods:
+            f = getattr(HuixiangDouEnv, method)
+            value = f()
+            logger.info(f"[config] {method}: {value}")
 
     @classmethod
     def get_cookie_secure(cls) -> bool:
