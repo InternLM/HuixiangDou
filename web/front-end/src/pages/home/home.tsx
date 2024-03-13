@@ -105,6 +105,7 @@ const Home = () => {
                         max={500}
                         className={styles.password}
                         onChange={(e) => setBeanPwd(e.target.value)}
+                        onPressEnter={handleConfirm}
                     />
                 </div>
                 <div className={styles.btnWrapper}>
