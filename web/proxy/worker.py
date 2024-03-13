@@ -112,7 +112,7 @@ class Worker:
             return False
 
         score = default
-        relation = self.llm.generate_response(prompt=prompt, remote=False, backend=backend)
+        relation = self.llm.generate_response(prompt=prompt, remote=True, backend=backend)
         tracker.log('score' + prompt[0:20], [relation, throttle, default])
         filtered_relation = ''.join([c for c in relation if c.isdigit()])
         try:
@@ -150,6 +150,8 @@ class Worker:
                 throttle=3,
                 default=2,
                 backend='puyu'):
+            # not a question, give LLM response
+            response = self.llm.generate_response(prompt=query, history=history, remote=True)
             return ErrorCode.NOT_A_QUESTION, response, []
 
         topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query))
@@ -200,7 +202,7 @@ class Worker:
                                  backend='puyu'):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
-                    return ErrorCode.SECURITY, '检测到高危内容，不予显示', retrieve_ref
+                    return ErrorCode.SECURITY, '检测到敏感内容，无法显示', retrieve_ref
                 return ErrorCode.SUCCESS, response, retrieve_ref
 
         # start web search
@@ -267,7 +269,7 @@ class Worker:
         #         prompt=self.SUMMARIZE_TEMPLATE.format(response))
 
         if not self.security_content(tracker, response):
-            return ErrorCode.SECURITY, '网络搜索可能包含不安全内容，不予显示', use_ref
+            return ErrorCode.SECURITY, '回复可能包含不安全内容，无法显示', use_ref
 
         if reborn_code != ErrorCode.SUCCESS:
             return reborn_code, response, use_ref
