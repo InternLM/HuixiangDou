@@ -75,14 +75,11 @@ const Upload: FC<UploadProps> = ({
                         if (item.status === UploadStatus.uploading && res.docs.includes(item.name)) {
                             item.status = UploadStatus.done;
                             item.progress = 100;
-                        } else {
+                        } else if (item.status === UploadStatus.uploading) {
                             item.status = UploadStatus.error;
                             item.progress = 0;
                         }
                     });
-                    setTimeout(() => {
-                        setPendingStatus([]);
-                    }, 2000);
                 } else {
                     _pendingStatus.forEach((item) => {
                         if (item.status === UploadStatus.uploading) {
