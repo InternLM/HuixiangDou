@@ -3,7 +3,7 @@ import {
 } from 'react';
 import { addDocs, FileState } from '@services/home';
 import Button from '@components/button/button';
-import { message } from 'sea-lion-ui';
+import { Input, message } from 'sea-lion-ui';
 import { useLocale } from '@hooks/useLocale';
 import UploadItem, { UploadItemProps, UploadStatus } from '@components/upload-item';
 import styles from './upload.module.less';
@@ -28,6 +28,12 @@ const Upload: FC<UploadProps> = ({
     const [loading, setLoading] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]); // 待上传文件列表
     const [pendingStatus, setPendingStatus] = useState<UploadItemProps[]>([]); // 待上传文件列表
+    const [filter, setFilter] = useState('');
+    const [searchValue, setSearchValue] = useState('');
+
+    const handleSearch = () => {
+        setSearchValue(filter);
+    };
 
     const handleClick = () => {
         if (fileInputRef.current) {
@@ -137,7 +143,19 @@ const Upload: FC<UploadProps> = ({
                     {`${locales.total}: ${filesState.length},    `}
                     {`${locales.failed}: ${filesState.filter((file) => !file.status).length}`}
                 </div>
+                <div className={styles.fileSearch}>
+                    <Input
+                        placeholder={locales.searchDesc}
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        onPressEnter={handleSearch}
+                    />
+                    <Button onClick={handleSearch}>
+                        {locales.search}
+                    </Button>
+                </div>
                 {docs
+                    .filter((doc) => doc.includes(searchValue))
                     .filter((doc) => !filesState.find((file) => file.file === doc))
                     .map((doc) => {
                         return (
@@ -148,29 +166,40 @@ const Upload: FC<UploadProps> = ({
                                 <span
                                     style={{ color: '#4e95e6' }}
                                     className={styles.fileState}
-                                    title={doc}
                                 >
                                     {locales.processing}
                                 </span>
-                                <span className={styles.fileName}>{doc}</span>
+                                <span
+                                    className={styles.fileName}
+                                    title={doc}
+                                >
+                                    {doc}
+                                </span>
                             </div>
                         );
                     })}
-                {filesState.map((file) => (
-                    <div
-                        key={file.file}
-                        className={styles.fileItem}
-                    >
-                        <span
-                            style={{ color: file.status ? undefined : 'red' }}
-                            className={styles.fileState}
-                            title={file.desc}
+                {filesState
+                    .filter((file) => file.file.includes(searchValue))
+                    .map((file) => (
+                        <div
+                            key={file.file}
+                            className={styles.fileItem}
                         >
-                            {file.desc || locales.uploadFailed}
-                        </span>
-                        <span className={styles.fileName}>{file.file}</span>
-                    </div>
-                ))}
+                            <span
+                                style={{ color: file.status ? undefined : 'red' }}
+                                className={styles.fileState}
+                                title={file.desc}
+                            >
+                                {file.desc || locales.uploadFailed}
+                            </span>
+                            <span
+                                className={styles.fileName}
+                                title={file.file}
+                            >
+                                {file.file}
+                            </span>
+                        </div>
+                    ))}
             </div>
         </>
     );

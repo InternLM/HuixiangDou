@@ -12,5 +12,7 @@ export default {
         processing: 'Processing',
         total: 'Total',
         failed: 'Failed',
+        searchDesc: 'Enter the document name to search',
+        search: 'Search'
     }
 };
