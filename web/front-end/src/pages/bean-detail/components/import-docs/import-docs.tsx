@@ -29,6 +29,7 @@ const ImportDocs: FC<ImportDocsProps> = ({ refresh, docs, filesState }) => {
                 <IconFont icon="icon-DocOutlined" />
             </Button>
             <Modal
+                maskClosable={false}
                 open={openModal}
                 title={locales.addDocs}
                 footer={(<div />)}
