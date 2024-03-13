@@ -156,7 +156,7 @@ class HybridLLMServer:
     def wait_time_slot(self):
         # 100 query per minute
         now = time.time()
-        if now - self.time_slot['start'] >= 60:
+        if now - self.time_slot['start'] >= 100:
             self.time_slot = {'start': time.time(), 'count': 0}
         else:
             count = self.time_slot['count']
@@ -172,7 +172,7 @@ class HybridLLMServer:
                 self.time_slot['count'] = count
         print(self.time_slot, time.time())
 
-    def call_puyu(self, prompt, history):
+    def call_puyu(self, prompt, history, model):
 
         url = 'https://puyu.openxlab.org.cn/puyu/api/v1/chat/completion'
 
@@ -192,16 +192,28 @@ class HybridLLMServer:
         if len(history) > 3:
             history = history[-3:]
         
-        messages = build_messages(prompt=prompt, history=history)
+        messages = []
+        for item in history:
+            messages.append({'role': 'user', 'text': item[0]})
+            messages.append({'role': 'assistant', 'text': item[1]})
+        messages.append({'role': 'user', 'text': prompt})
+
         data = {
-            'model': 'ChatPJLM-latest',
+            'model': model,
             'messages': messages,
             'n': 1,
-            'temperature': 0.8,
-            'top_p': 0.7,
             'disable_report': False
         }
-        output_text = None
+
+        if model == "InternLM-API 123B V0.8.14.1":
+            data["request_output_len"] = 128
+            data["top_p"] = 0.1
+            data["temperature"] = 0.1
+        else:
+            data["top_p"] = 0.9
+            data["temperature"] = 0.8
+
+        output_text = ""
         self.wait_time_slot()
 
         life = 0
@@ -210,13 +222,14 @@ class HybridLLMServer:
                 res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
                 res_data = res_json['data']
                 if len(res_data) < 1:
-                    logger.error('RPM exceed')
+                    logger.error('debug:')
+                    logger.error(res_json)
                     return output_text
                 output_text = res_data['choices'][0]['text']
-                if len(output_text) < 1 or '仩嗨亾笁潪能實験厔' in output_text:
-                    import pdb
-                    pdb.set_trace()
-                    raise Exception('return empty')
+
+                logger.info(res_json)
+                if '仩嗨亾笁潪能實験厔' in output_text:
+                    raise Exception('model waterprint')
                 return output_text
 
             except Exception as e:
@@ -353,8 +366,10 @@ class HybridLLMServer:
             elif backend == 'deepseek':
                 output_text = self.call_deepseek(prompt=prompt,
                                                  history=history)
+            elif backend == 'internlm':
+                output_text = self.call_puyu(prompt=prompt, history=history, model='ChatPJLM-latest')
             elif backend == 'puyu':
-                output_text = self.call_puyu(prompt=prompt, history=history)
+                output_text = self.call_puyu(prompt=prompt, history=history, model='InternLM-API 123B V0.8.14.1')
             else:
                 output_text = self.call_gpt(prompt=prompt, history=history)
 
@@ -370,7 +385,7 @@ class HybridLLMServer:
         time_finish = time.time()
 
         logger.debug('Q:{} A:{} \t\t remote {} timecost {} '.format(
-            prompt[-100:-1], output_text, remote,
+            prompt[0:300], output_text, remote,
             time_finish - time_tokenizer))
         return output_text
 

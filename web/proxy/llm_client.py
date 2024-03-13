@@ -68,7 +68,7 @@ class ChatClient:
 
         return instruction, real_history
 
-    def generate_response(self, prompt, history=[], backend="puyu", remote=False):
+    def generate_response(self, prompt, history=[], backend="internlm", remote=False):
         """Generate a response from the chat service.
 
         Args:
@@ -127,6 +127,7 @@ class ChatClient:
                 'Do you forget `--standalone` when `python3 -m huixiangdou.main` ?'  # noqa E501
             )
             return ''
+        raise Exception('LLM respond none')
 
 
 def parse_args():
