@@ -13,5 +13,7 @@ export default {
         processing: '处理中',
         total: '共计',
         failed: '失败',
+        searchDesc: '输入文档名称进行搜索',
+        search: '搜索'
     }
 };
