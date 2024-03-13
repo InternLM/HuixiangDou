@@ -123,7 +123,6 @@ const Upload: FC<UploadProps> = ({
                     type="file"
                     accept={acceptFileTypes}
                     multiple
-                    max={10}
                     style={{ display: 'none' }}
                 />
                 {children}
