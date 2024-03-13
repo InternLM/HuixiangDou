@@ -95,7 +95,7 @@ class Worker:
         return False
 
 
-    def single_judge(self, prompt, tracker, throttle: int, default: int, backend='puyu'):
+    def single_judge(self, prompt, tracker, throttle: int, default: int, backend='internlm'):
         """Generates a score based on the prompt, and then compares it to
         threshold.
 
@@ -149,7 +149,7 @@ class Worker:
                 tracker=tracker,
                 throttle=3,
                 default=2,
-                backend='kimi'):
+                backend='puyu'):
             return ErrorCode.NOT_A_QUESTION, response, []
 
         topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query))
@@ -179,7 +179,7 @@ class Worker:
         #                      tracker=tracker,
         #                      throttle=5,
         #                      default=10,
-        #                      backend='kimi'):
+        #                      backend='puyu'):
         prompt, history = self.llm.build_prompt(
             instruction=query,
             context=db_context,
@@ -188,7 +188,7 @@ class Worker:
         response = self.llm.generate_response(prompt=prompt,
                                                 history=history,
                                                 remote=True,
-                                                backend='puyu')
+                                                backend='internlm')
         tracker.log('feature store doc', [chunk, response])
 
         if response is not None and len(response) > 0:
@@ -197,7 +197,7 @@ class Worker:
                                  tracker=tracker,
                                  throttle=9,
                                  default=0,
-                                 backend='kimi'):
+                                 backend='puyu'):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
                     return ErrorCode.SECURITY, '检测到高危内容，不予显示', retrieve_ref

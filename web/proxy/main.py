@@ -389,12 +389,15 @@ def process():
     logger.info('start wait task queue..')
     while True:
         try:
-            msg, error = parse_json_str(que.get())
+            msg_pop = que.get(timeout=16)
+            if msg_pop is None:
+                continue
+            msg, error = parse_json_str(msg_pop)
             logger.info(msg)
             if error is not None:
                 raise error
 
-            logger.debug(f'process {msg.type}')
+            logger.debug(f'process {msg}')
             if msg.type == TaskCode.FS_ADD_DOC.value:
                 fs_cache.pop(msg.payload.feature_store_id)
                 build_feature_store(fs_cache, msg.payload)
@@ -406,7 +409,7 @@ def process():
             elif msg.type == TaskCode.CHAT.value:
                 chat_with_featue_store(fs_cache, msg.payload)
             else:
-                logger.warning(f'unknown type {msg.type}, supported type {[TaskCode.FS_ADD_DOC.value, TaskCode.FS_UPDATE_SAMPLE.value, TaskCode.FS_UPDATE_PIPELINE.value, TaskCode.CHAT.value]}')
+                logger.warning(f'unknown type {msg}')
 
         except Exception as e:
             logger.error(str(e))
