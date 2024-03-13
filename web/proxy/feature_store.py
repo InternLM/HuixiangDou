@@ -218,7 +218,7 @@ class FeatureStore:
             if file_type == 'md':
                 md_documents, md_length = self.get_md_documents(file)
                 documents += md_documents
-                state_map[basename] = {'status': True, 'desc': md_length}
+                state_map[basename] = {'status': True, 'desc': str(md_length)}
             else:
                 text, error = file_opr.read(file)
                 if error is not None:
