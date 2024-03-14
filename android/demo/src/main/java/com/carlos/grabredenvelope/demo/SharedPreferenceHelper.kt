@@ -13,6 +13,15 @@ class SharedPreferenceHelper(context: Context) {
         editor.commit()
     }
 
-    fun getString(key: String, defaultValue: String): String? =
-        sharedPreferences.getString(key, defaultValue)
+    fun saveBoolean(key: String, value: Boolean) {
+        val editor = sharedPreferences.edit()
+        editor.putBoolean(key, value)
+        editor.commit()
+    }
+
+    fun getBoolean(key: String, defaultValue: Boolean): Boolean =
+        sharedPreferences.getBoolean(key, defaultValue)
+
+    fun getString(key: String, defaultValue: String): String =
+        sharedPreferences.getString(key, defaultValue)!!
 }
