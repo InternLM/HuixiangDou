@@ -45,8 +45,13 @@ const Upload: FC<UploadProps> = ({
         const _files = e.target.files;
         const _pendingStatus = [...pendingStatus];
         const _pendingFiles = [...pendingFiles];
+        if (_files.length > 200) {
+            message.warning(locales.fileCount);
+            setLoading(false);
+            return;
+        }
         for (let i = 0; i < _files.length; i++) {
-            if (_files[i].size > 1024 * 1024 * 1000) {
+            if (_files[i].size > 1024 * 1024 * 35) {
                 message.warning(locales.fileSize);
                 setLoading(false);
                 return;
