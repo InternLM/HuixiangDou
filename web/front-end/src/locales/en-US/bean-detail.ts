@@ -22,6 +22,7 @@ export default {
         upload: 'Select Files, Multiple Selection Allowed',
         supportFiles: 'pdf/word/markdown/excel formats are allowed',
         logout: 'Log Out',
+        refresh: 'Refresh',
         references: 'References: ',
         timeout: 'Request Timeout, Please Try Again Later',
         inputPlaceholder: 'Support Text, Emoji and Image Paste',

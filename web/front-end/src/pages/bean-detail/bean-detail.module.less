@@ -40,6 +40,11 @@
     .fail-state {
         background-color: #f1bcbc;
     }
+    .name-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
     .statistics-wrapper {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -62,8 +67,13 @@
             gap: 4px;
         }
     }
+    .refresh {
+        margin-left: auto;
+        cursor: pointer;
+        color: #286500;
+    }
     .logout {
-        float: right;
+        //margin-left: auto;
         cursor: pointer;
         color: #9D9D9D;
     }

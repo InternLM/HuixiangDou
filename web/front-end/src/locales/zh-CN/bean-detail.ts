@@ -22,6 +22,7 @@ export default {
         upload: '选择文件，可以框选多个',
         supportFiles: '支持 pdf/word/markdown/excel 等格式',
         logout: '登出',
+        refresh: '刷新',
         references: '参考文档: ',
         timeout: '请求超时，请稍后再试',
         inputPlaceholder: '支持输入文字、emoji 和粘贴图片',

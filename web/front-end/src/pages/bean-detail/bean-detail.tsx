@@ -13,6 +13,7 @@ import IntegrateFeishu from '@pages/bean-detail/components/integrate-feishu';
 import { Token } from '@utils/utils';
 import { useNavigate } from 'react-router-dom';
 import IntegrateWechat from '@pages/bean-detail/components/integrate-wechat/integrate-wechat';
+import { Button, IconFont } from 'sea-lion-ui';
 import styles from './bean-detail.module.less';
 
 export interface BeanDetailProps {
@@ -69,24 +70,39 @@ const BeanDetail: FC<BeanDetailProps> = () => {
         navigate('/home');
     };
 
-    useEffect(() => {
-        (async () => {
-            const res = await getInfo();
-            if (res) {
-                setName(res.name);
-                setBeanState(res.status);
-                setSearchToken(res.webSearch?.token);
-                setFeishuInfo(res.lark);
-                setWeChatInfo(res.wechat?.onMessageUrl);
-                if (Array.isArray(res.docs)) {
-                    setDocs(res.docs);
-                }
-                if (Array.isArray(res.filesState)) {
-                    setFilesState(res.filesState);
-                }
+    const getBeanInfo = async () => {
+        const res = await getInfo();
+        if (res) {
+            setName(res.name);
+            setBeanState(res.status);
+            setSearchToken(res.webSearch?.token);
+            setFeishuInfo(res.lark);
+            setWeChatInfo(res.wechat?.onMessageUrl);
+            if (Array.isArray(res.docs)) {
+                setDocs(res.docs);
             }
-        })();
+            if (Array.isArray(res.filesState)) {
+                setFilesState(res.filesState);
+            }
+        }
+    };
+
+    useEffect(() => {
+        getBeanInfo();
     }, [refreshFlag]);
+
+    // polling getInfo when beanState is created and docs is not empty
+    useEffect(() => {
+        let timer = null;
+        if (beanState === BeanState.created && docs.length > 0) {
+            timer = setInterval(() => {
+                getBeanInfo();
+            }, 5000);
+        } else {
+            clearInterval(timer);
+        }
+        return () => clearInterval(timer);
+    }, [beanState, docs.length]);
 
     const content = useMemo(() => {
         if (beanState === BeanState.finished) {
@@ -141,9 +157,9 @@ const BeanDetail: FC<BeanDetailProps> = () => {
             <div className={styles.statisticsItem}>
                 <div className={styles.statisticsItemTitle}>
                     {locales.beanName}
-                    <img className={styles.titleImg} src={bean} />
+                    <img alt="bean" className={styles.titleImg} src={bean} />
                 </div>
-                <div>
+                <div className={styles.nameWrapper}>
                     <strong>{name}</strong>
                     <span
                         className={styles.beanState}
@@ -151,6 +167,10 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                     >
                         {state[beanState]}
                     </span>
+                    <Button className={styles.refresh} onClick={() => window.location.reload()}>
+                        {locales.refresh}
+                        <IconFont icon="icon-SyncOutlined" />
+                    </Button>
                     <div
                         onClick={logout}
                         className={styles.logout}
