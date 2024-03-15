@@ -11,8 +11,11 @@ English | [简体中文](README_zh.md)
   <a href="https://arxiv.org/abs/2401.08772" target="_blank">
     <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
   </a>
-  <a href="https://pypi.org/project/huixiangdou/" target="_blank">
+  <a href="https://pypi.org/project/huixiangdou" target="_blank">
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
+  </a>
+  <a href="https://youtu.be/ylXrT-Tei-Y" target="_blank">
+    <img alt="YouTube" src="https://img.shields.io/badge/YouTube-black?logo=youtube&logoColor=red" />
   </a>
 </div>
 
@@ -25,6 +28,8 @@ English | [简体中文](README_zh.md)
 3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and [architecture](./docs/architecture_en.md).
+
+Visit our introductory video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y).
 
 If this helps you, please give it a star ⭐
 
