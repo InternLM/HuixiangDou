@@ -24,24 +24,6 @@ from .helper import multimodal
 from .retriever import CacheRetriever, Retriever
 
 
-def multimodal_images_async(file_dir, images: list, suffix):
-    for filepath in images:
-        try:
-            text = multimodal(filepath=filepath)
-            if text is not None:
-                # image.jpg to image.jpg.text
-                write_filename = '{}{}'.format(os.path.basename(filepath),
-                                               suffix)
-                logger.info(
-                    ('multimodal_images_async', file_dir, write_filename))
-                with open(os.path.join(file_dir, write_filename), 'w') as f:
-                    f.write(text)
-        except Exception as e:
-            logger.error(str(e))
-            # multimodal fail, quit without retry
-            break
-
-
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
@@ -79,7 +61,7 @@ class FeatureStore:
             ('##', 'Header 2'),
             ('###', 'Header 3'),
         ])
-        self.enable_multimodal = False
+
 
     def split_md(self, text: str, source: None):
         """Split the markdown document in a nested way, first extracting the
@@ -168,73 +150,66 @@ class FeatureStore:
             documents.append(chunk)
         return documents
 
-    def ingress_response(self, file_dir: str, work_dir: str):
+    def ingress_response(self, files: list, work_dir: str):
         """Extract the features required for the response pipeline based on the
         document."""
         feature_dir = os.path.join(work_dir, 'db_response')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        files = [str(x) for x in list(Path(file_dir).glob('*'))]
         # logger.info('glob {} in dir {}'.format(files, file_dir))
         file_opr = FileOperation()
         documents = []
-        state_map = {}
 
         for i, file in enumerate(files):
-            basename = os.path.basename(file)
-            if basename.endswith('.text'):
-                basename = '.text'.join(basename.split('.text')[0:-1])
+            logger.debug('{}/{}.. {}'.format(i + 1, len(files), file.basename))
+            if not file.state:
+                continue
 
-            logger.debug('{}/{}.. {}'.format(i + 1, len(files), basename))
-            file_type = file_opr.get_type(file)
-
-            if file_type == 'md':
-                md_documents, md_length = self.get_md_documents(file)
+            if file._type == 'md':
+                md_documents, md_length = self.get_md_documents(file.copypath)
                 documents += md_documents
-                state_map[basename] = {'status': True, 'desc': md_length}
+                logger.info('{} content length {}'.format(file._type, len(text)))
+                file.reason = str(md_length)
+
             else:
-                text, error = file_opr.read(file)
+                text, error = file_opr.read(file.copypath)
                 if error is not None:
-                    state_map[basename] = {
-                        'status': False,
-                        'desc': 'read fail'
-                    }
+                    file.state = False
+                    file.reason = str(error)
                     continue
-                state_map[basename] = {'status': True, 'desc': str(len(text))}
-                logger.info('{} content length {}'.format(file, len(text)))
-                text = basename + text
+                file.reason = str(len(text))
+                logger.info('{} content length {}'.format(file._type, len(text)))
+                text = file.basename + text
                 documents += self.get_text_documents(text, file)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
-        return state_map
 
-    def ingress_reject(self, file_dir: str, work_dir: str):
+    def ingress_reject(self, files: list, work_dir: str):
         """Extract the features required for the reject pipeline based on
         documents."""
         feature_dir = os.path.join(work_dir, 'db_reject')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        files = [str(x) for x in list(Path(file_dir).glob('*'))]
         documents = []
         file_opr = FileOperation()
 
         for i, file in enumerate(files):
             logger.debug('{}/{}..'.format(i + 1, len(files)))
-            basename = os.path.basename(file)
-
-            file_type = file_opr.get_type(file)
-            if file_type == 'md':
+            if not file.state:
+                continue
+            
+            if file._type == 'md':
                 # reject base not clean md
-                text = basename + '\n'
-                with open(file, encoding='utf8') as f:
+                text = file.basename + '\n'
+                with open(file.copypath, encoding='utf8') as f:
                     text += f.read()
                 if len(text) <= 1:
                     continue
 
-                chunks = self.split_md(text=text, source=os.path.abspath(file))
+                chunks = self.split_md(text=text, source=os.path.abspath(file.copypath))
                 for chunk in chunks:
                     new_doc = Document(
                         page_content=chunk,
@@ -242,22 +217,22 @@ class FeatureStore:
                     documents.append(new_doc)
 
             else:
-                text, error = file_opr.read(file)
+                text, error = file_opr.read(file.copypath)
                 if error is not None:
                     continue
-                text = basename + text
+                text = file.basename + text
                 documents += self.get_text_documents(text, file)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
-    def preprocess(self, filepaths: list, work_dir: str):
+    def preprocess(self, files: list, work_dir: str):
         """Preprocesses markdown files in a given directory excluding those
         containing 'mdb'. Copies each file to 'preprocess' with new name formed
         by joining all subdirectories with '_'.
 
         Args:
-            filepaths (list): Directory where the original markdown files reside.
+            files (list): original file list.
             work_dir (str): Working directory where preprocessed files will be stored.  # noqa E501
 
         Returns:
@@ -266,73 +241,36 @@ class FeatureStore:
         Raises:
             Exception: Raise an exception if no markdown files are found in the provided repository directory.  # noqa E501
         """
-        file_dir = os.path.join(work_dir, 'preprocess')
-        if os.path.exists(file_dir):
+        preproc_dir = os.path.join(work_dir, 'preprocess')
+        if os.path.exists(preproc_dir):
             logger.warning(
-                f'{file_dir} already exists, remove and regenerate.')
-            shutil.rmtree(file_dir)
-        os.makedirs(file_dir)
+                f'{preproc_dir} already exists, remove and regenerate.')
+            shutil.rmtree(preproc_dir)
+        os.makedirs(preproc_dir)
 
-        success_cnt = 0
-        fail_cnt = 0
-        skip_cnt = 0
+        for idx, file in enumerate(files):
+            if file._type == 'image':
+                file.state = False
+                file.reason = 'skip image'
+    
+            elif file._type in ['pdf', 'md', 'text', 'word', 'excel']:
+                try:
+                    # rename other files to new dir
+                    file.copypath = os.path.join(preproc_dir, file.origin.replace('/', '_')[-84:])
+                    shutil.copy(file.origin, file.copypath)
+                    file.state = True
+                    file.reason = 'preprocessed'
 
-        file_opr = FileOperation()
-        images = []
-        normals = []
-        multimodal_process = None
-        state_map = {}
-
-        for filepath in filepaths:
-            _type = file_opr.get_type(filepath)
-            if _type == 'image':
-                if self.enable_multimodal:
-                    images.append(filepath)
-                else:
-                    basename = os.path.basename(filepath)
-                    state_map[basename] = {'status': False, 'desc': 'skip'}
-                    skip_cnt += 1
-            elif _type in ['pdf', 'md', 'text', 'word', 'excel']:
-                normals.append(filepath)
+                except Exception as e:
+                    file.state = False
+                    file.reason = str(e)
+            
             else:
-                skip_cnt += 1
+                file.state = False
+                file.reason = 'skip unknown format'
 
-        # process images
-        if len(images) > 0:
-            # start a process to call multimodal for images
-            multimodal_process = Process(target=multimodal_images_async,
-                                         args=(file_dir, images, '.text'))
-            multimodal_process.start()
 
-        # process normal file (pdf, text)
-        for filepath in normals:
-            filename = filepath.replace('/', '_')
-            try:
-                shutil.copy(filepath, os.path.join(file_dir, filename))
-                success_cnt += 1
-            except Exception as e:
-                fail_cnt += 1
-                logger.error(str(e))
-                state_map[filename] = {'status': False, 'desc': 'IO error'}
-
-        if len(images) > 0:
-            multimodal_process.join()
-            # check ocr result
-            for filepath in images:
-                basename = os.path.basename(filepath)
-                converted = os.path.join(file_dir, basename + '.text')
-                if os.path.exists(converted):
-                    success_cnt += 1
-                else:
-                    state_map[basename] = {'status': False, 'desc': 'skip'}
-                    skip_cnt += 1
-
-        logger.debug(
-            f'preprocess input {len(filepaths)} files, {success_cnt} success,\
-                {fail_cnt} fail, {skip_cnt} skip. ')
-        return file_dir, (success_cnt, fail_cnt, skip_cnt), state_map
-
-    def initialize(self, filepaths: list, work_dir: str):
+    def initialize(self, files: list, work_dir: str):
         """Initializes response and reject feature store.
 
         Only needs to be called once. Also calculates the optimal threshold
@@ -342,27 +280,10 @@ class FeatureStore:
         logger.info(
             'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
-        file_dir, counter, proc_state = self.preprocess(filepaths=filepaths,
-                                                        work_dir=work_dir)
-        success_cnt, _, __ = counter
-        ingress_state = {}
+        self.preprocess(files=files, work_dir=work_dir)
+        self.ingress_response(files=files, work_dir=work_dir)
+        self.ingress_reject(files=files, work_dir=work_dir)
 
-        if success_cnt > 0:
-            ingress_state = self.ingress_response(file_dir=file_dir,
-                                                  work_dir=work_dir)
-            self.ingress_reject(file_dir=file_dir, work_dir=work_dir)
-
-        state_map = {**proc_state, **ingress_state}
-        if len(state_map) != len(filepaths):
-            for filepath in filepaths:
-                basename = os.path.basename(filepath)
-                if basename not in state_map:
-                    logger.warning(f'{filepath} no state')
-                    state_map[basename] = {
-                        'status': False,
-                        'desc': 'internal error'
-                    }
-        return counter, state_map
 
 
 def parse_args():
@@ -466,12 +387,9 @@ if __name__ == '__main__':
 
     # walk all files in repo dir
     file_opr = FileOperation()
-    filepaths = file_opr.scan_dir(repo_dir=args.repo_dir)
-    counter, state_map = fs_init.initialize(filepaths=filepaths,
-                                            work_dir=args.work_dir)
-    logger.info(f'success, fail, skip: {counter}')
-    for k, v in state_map.items():
-        logger.info('{} {}'.format(k, v['desc']))
+    files = file_opr.scan_dir(repo_dir=args.repo_dir)
+    fs_init.initialize(files=files, work_dir=args.work_dir)
+    file_opr.summarize(files)
     del fs_init
 
     # update reject throttle

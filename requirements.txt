@@ -8,9 +8,7 @@ faiss-gpu
 langchain>=0.1.5
 loguru
 openai>=1.0.0
-openpyxl
 pydantic>=1.10.13
-pypdf2
 python-docx
 pytoml
 readability-lxml
@@ -23,3 +21,6 @@ torch>=2.0.0
 transformers>=4.37.0
 transformers_stream_generator
 unstructured
+pymupdf
+pandas
+openpyxl
