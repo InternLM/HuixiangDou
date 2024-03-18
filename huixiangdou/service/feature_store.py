@@ -306,14 +306,14 @@ class FeatureStore:
 
         # process normal file (pdf, text)
         for filepath in normals:
-            basename = os.path.basename(filepath)
+            filename = filepath.replace('/', '_')
             try:
-                shutil.copy(filepath, os.path.join(file_dir, basename))
+                shutil.copy(filepath, os.path.join(file_dir, filename))
                 success_cnt += 1
             except Exception as e:
                 fail_cnt += 1
                 logger.error(str(e))
-                state_map[basename] = {'status': False, 'desc': 'IO error'}
+                state_map[filename] = {'status': False, 'desc': 'IO error'}
 
         if len(images) > 0:
             multimodal_process.join()
@@ -328,8 +328,8 @@ class FeatureStore:
                     skip_cnt += 1
 
         logger.debug(
-            f'preprocess input {len(filepaths)} files, {success_cnt} success, {fail_cnt} fail, {skip_cnt} skip. '
-        )
+            f'preprocess input {len(filepaths)} files, {success_cnt} success,\
+                {fail_cnt} fail, {skip_cnt} skip. ')
         return file_dir, (success_cnt, fail_cnt, skip_cnt), state_map
 
     def initialize(self, filepaths: list, work_dir: str):
