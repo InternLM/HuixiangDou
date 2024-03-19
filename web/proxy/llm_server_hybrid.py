@@ -220,6 +220,8 @@ class HybridLLMServer:
         while life < self.retry:
             try:
                 res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
+                logger.error(res_json)
+
                 res_data = res_json['data']
                 if len(res_data) < 1:
                     logger.error('debug:')
