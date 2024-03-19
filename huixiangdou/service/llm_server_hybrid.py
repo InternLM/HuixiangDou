@@ -5,7 +5,6 @@ import random
 import time
 from multiprocessing import Process, Value
 
-import openai
 import pytoml
 from aiohttp import web
 from loguru import logger

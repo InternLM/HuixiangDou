@@ -1,13 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import hashlib
-import multiprocessing
 import os
 
 import fitz
 import pandas as pd
 import textract
-from langchain_community.document_loaders import (CSVLoader,
-                                                  UnstructuredExcelLoader)
 from loguru import logger
 
 

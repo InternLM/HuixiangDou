@@ -6,7 +6,6 @@ import os
 import re
 import shutil
 from multiprocessing import Pool
-from pathlib import Path
 
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
@@ -195,8 +194,7 @@ class FeatureStore:
             if file._type == 'md':
                 md_documents, md_length = self.get_md_documents(file)
                 documents += md_documents
-                logger.info('{} content length {}'.format(
-                    file._type, len(text)))
+                logger.info('{} content length {}'.format(file._type, md_length))
                 file.reason = str(md_length)
 
             else:
