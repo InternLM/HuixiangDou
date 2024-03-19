@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 from optimum.onnxruntime import ORTModelForFeatureExtraction
-from optimum.onnxruntime.configuration import AutoQuantizationConfig
+# from optimum.onnxruntime.configuration import AutoQuantizationConfig
 from transformers import AutoTokenizer, Pipeline
 
 
