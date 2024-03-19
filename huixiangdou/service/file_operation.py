@@ -1,17 +1,20 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import hashlib
+import multiprocessing
 import os
 
-import textract
-from langchain_community.document_loaders import (CSVLoader, UnstructuredExcelLoader)
-from loguru import logger
 import fitz
 import pandas as pd
-import multiprocessing
-import hashlib
+import textract
+from langchain_community.document_loaders import (CSVLoader,
+                                                  UnstructuredExcelLoader)
+from loguru import logger
+
 
 class FileName:
-    """Record file original name, copy to page and state"""
-    def __init__(self, root: str, filename: str, _type:str):
+    """Record file original name, copy to page and state."""
+
+    def __init__(self, root: str, filename: str, _type: str):
         self.root = root
         self.prefix = filename.replace('/', '_')
         self.basename = os.path.basename(filename)
@@ -22,10 +25,13 @@ class FileName:
         self.reason = ''
 
     def __str__(self):
-        return '{},{},{},{}\n'.format(self.basename, self.copypath, self.state, self.reason)
+        return '{},{},{},{}\n'.format(self.basename, self.copypath, self.state,
+                                      self.reason)
+
 
 class FileOperation:
     """Encapsulate all file reading operations."""
+
     def __init__(self):
         self.image_suffix = ['.jpg', '.jpeg', '.png', '.bmp']
         self.md_suffix = '.md'
@@ -83,10 +89,11 @@ class FileOperation:
                 skip += 1
             else:
                 logger.info('{} {}'.format(file.origin, file.reason))
-                failed +=1
-            
+                failed += 1
+
             logger.info('{} {}'.format(file.reason, file.copypath))
-        logger.info('累计{}文件，成功{}个，跳过{}个，异常{}个'.format(len(files), success, skip, failed))
+        logger.info('累计{}文件，成功{}个，跳过{}个，异常{}个'.format(len(files), success,
+                                                      skip, failed))
 
     def scan_dir(self, repo_dir: str):
         files = []
@@ -97,9 +104,10 @@ class FileOperation:
                     if type(_type) is tuple:
                         import pdb
                         pdb.set_trace()
-                    files.append(FileName(root=root, filename=filename, _type=_type))
+                    files.append(
+                        FileName(root=root, filename=filename, _type=_type))
         return files
-    
+
     def read_pdf(self, filepath: str):
         # load pdf and serialize table
         text = ''
@@ -108,7 +116,9 @@ class FileOperation:
                 text += page.get_text()
                 tables = page.find_tables()
                 for table in tables:
-                    tablename = '_'.join(filter(lambda x: x is not None and 'Col' not in x, table.header.names))
+                    tablename = '_'.join(
+                        filter(lambda x: x is not None and 'Col' not in x,
+                               table.header.names))
                     pan = table.to_pandas()
                     json_text = pan.dropna(axis=1).to_json(force_ascii=False)
                     text += tablename
@@ -159,6 +169,7 @@ class FileOperation:
         text = text.replace('  ', ' ')
         text = text.replace('  ', ' ')
         return text, None
+
 
 if __name__ == '__main__':
     opr = FileOperation()

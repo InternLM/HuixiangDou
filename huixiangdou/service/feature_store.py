@@ -19,9 +19,10 @@ from langchain_core.documents import Document
 from loguru import logger
 from torch.cuda import empty_cache
 
-from .file_operation import FileOperation, FileName
+from .file_operation import FileName, FileOperation
 from .helper import multimodal
 from .retriever import CacheRetriever, Retriever
+
 
 def read_and_save(file: FileName):
     if os.path.exists(file.copypath):
@@ -29,7 +30,8 @@ def read_and_save(file: FileName):
         logger.info('already exist, skip load')
         return
     file_opr = FileOperation()
-    logger.info('reading {}, would save to {}'.format(file.origin, file.copypath))
+    logger.info('reading {}, would save to {}'.format(file.origin,
+                                                      file.copypath))
     content, error = file_opr.read(file.origin)
     if error is not None:
         logger.error('{} load error: {}'.format(file.origin, str(error)))
@@ -41,6 +43,7 @@ def read_and_save(file: FileName):
 
     with open(file.copypath, 'w') as f:
         f.write(content)
+
 
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
@@ -79,7 +82,6 @@ class FeatureStore:
             ('##', 'Header 2'),
             ('###', 'Header 3'),
         ])
-
 
     def split_md(self, text: str, source: None):
         """Split the markdown document in a nested way, first extracting the
@@ -150,10 +152,14 @@ class FeatureStore:
         if len(text) <= 1:
             return [], length
 
-        chunks = self.split_md(text=text, source=os.path.abspath(file.copypath))
+        chunks = self.split_md(text=text,
+                               source=os.path.abspath(file.copypath))
         for chunk in chunks:
             new_doc = Document(page_content=chunk,
-                               metadata={'source': file.basename, 'read': file.copypath})
+                               metadata={
+                                   'source': file.basename,
+                                   'read': file.copypath
+                               })
             length += len(chunk)
             documents.append(new_doc)
         return documents, length
@@ -189,7 +195,8 @@ class FeatureStore:
             if file._type == 'md':
                 md_documents, md_length = self.get_md_documents(file)
                 documents += md_documents
-                logger.info('{} content length {}'.format(file._type, len(text)))
+                logger.info('{} content length {}'.format(
+                    file._type, len(text)))
                 file.reason = str(md_length)
 
             else:
@@ -200,7 +207,8 @@ class FeatureStore:
                     file.reason = str(error)
                     continue
                 file.reason = str(len(text))
-                logger.info('{} content length {}'.format(file._type, len(text)))
+                logger.info('{} content length {}'.format(
+                    file._type, len(text)))
                 text = file.prefix + text
                 documents += self.get_text_documents(text, file)
 
@@ -221,7 +229,7 @@ class FeatureStore:
         for i, file in enumerate(files):
             if not file.state:
                 continue
-            
+
             if file._type == 'md':
                 # reject base not clean md
                 text = file.basename + '\n'
@@ -230,11 +238,14 @@ class FeatureStore:
                 if len(text) <= 1:
                     continue
 
-                chunks = self.split_md(text=text, source=os.path.abspath(file.copypath))
+                chunks = self.split_md(text=text,
+                                       source=os.path.abspath(file.copypath))
                 for chunk in chunks:
-                    new_doc = Document(
-                        page_content=chunk,
-                        metadata={'source': file.basename, 'read': file.copypath})
+                    new_doc = Document(page_content=chunk,
+                                       metadata={
+                                           'source': file.basename,
+                                           'read': file.copypath
+                                       })
                     documents.append(new_doc)
 
             else:
@@ -248,8 +259,9 @@ class FeatureStore:
         vs.save_local(feature_dir)
 
     def preprocess(self, files: list, work_dir: str):
-        """Preprocesses files in a given directory. Copies each file to 'preprocess' with new name formed
-        by joining all subdirectories with '_'.
+        """Preprocesses files in a given directory. Copies each file to
+        'preprocess' with new name formed by joining all subdirectories with
+        '_'.
 
         Args:
             files (list): original file list.
@@ -275,13 +287,16 @@ class FeatureStore:
             elif file._type in ['pdf', 'word', 'excel']:
                 # read pdf/word/excel file and save to text format
                 md5 = file_opr.md5(file.origin)
-                file.copypath = os.path.join(preproc_dir, '{}.text'.format(md5))
-                pool.apply_async(read_and_save, (file,))
+                file.copypath = os.path.join(preproc_dir,
+                                             '{}.text'.format(md5))
+                pool.apply_async(read_and_save, (file, ))
 
             elif file._type in ['md', 'text']:
                 # rename text files to new dir
                 md5 = file_opr.md5(file.origin)
-                file.copypath = os.path.join(preproc_dir, file.origin.replace('/', '_')[-84:])
+                file.copypath = os.path.join(
+                    preproc_dir,
+                    file.origin.replace('/', '_')[-84:])
                 try:
                     shutil.copy(file.origin, file.copypath)
                     file.state = True
@@ -306,7 +321,6 @@ class FeatureStore:
                 else:
                     file.state = False
                     file.reason = 'read error'
-
 
     def initialize(self, files: list, work_dir: str):
         """Initializes response and reject feature store.

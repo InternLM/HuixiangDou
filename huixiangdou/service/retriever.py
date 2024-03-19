@@ -143,7 +143,9 @@ class Retriever:
             chunks.append(chunk)
 
             if 'read' not in doc.metadata:
-                logger.error('If you are using the version before 20240319, please rerun `python3 -m huixiangdou.service.feature_store`')
+                logger.error(
+                    'If you are using the version before 20240319, please rerun `python3 -m huixiangdou.service.feature_store`'
+                )
                 raise Exception('huixiangdou version mismatch')
             file_text, error = file_opr.read(doc.metadata['read'])
             if error is not None:
