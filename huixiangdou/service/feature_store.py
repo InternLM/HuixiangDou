@@ -19,7 +19,6 @@ from loguru import logger
 from torch.cuda import empty_cache
 
 from .file_operation import FileName, FileOperation
-from .helper import multimodal
 from .retriever import CacheRetriever, Retriever
 
 
@@ -194,7 +193,8 @@ class FeatureStore:
             if file._type == 'md':
                 md_documents, md_length = self.get_md_documents(file)
                 documents += md_documents
-                logger.info('{} content length {}'.format(file._type, md_length))
+                logger.info('{} content length {}'.format(
+                    file._type, md_length))
                 file.reason = str(md_length)
 
             else:
