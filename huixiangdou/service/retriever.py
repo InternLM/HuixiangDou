@@ -126,9 +126,7 @@ class Retriever:
         reject, docs = self.is_reject(question=question)
         assert (len(docs) > 0)
         if reject:
-            return None, None, [
-                os.path.basename(docs[0][0].metadata['source'])
-            ]
+            return None, None, [docs[0][0].metadata['source']]
 
         docs = self.compression_retriever.get_relevant_documents(question)
         if tracker is not None:
@@ -144,12 +142,15 @@ class Retriever:
             chunk = doc.page_content
             chunks.append(chunk)
 
-            source = doc.metadata['source']
-            file_text, error = file_opr.read(source)
+            if 'read' not in doc.metadata:
+                logger.error('If you are using the version before 20240319, please rerun `python3 -m huixiangdou.service.feature_store`')
+                raise Exception('huixiangdou version mismatch')
+            file_text, error = file_opr.read(doc.metadata['read'])
             if error is not None:
                 # read file failed, skip
                 continue
 
+            source = doc.metadata['source']
             logger.info('target {} file length {}'.format(
                 source, len(file_text)))
             if len(file_text) + len(context) > context_max_length:

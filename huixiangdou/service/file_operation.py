@@ -7,11 +7,13 @@ from loguru import logger
 import fitz
 import pandas as pd
 import multiprocessing
+import hashlib
 
 class FileName:
     """Record file original name, copy to page and state"""
     def __init__(self, root: str, filename: str, _type:str):
         self.root = root
+        self.prefix = filename.replace('/', '_')
         self.basename = os.path.basename(filename)
         self.origin = os.path.join(root, filename)
         self.copypath = ''
@@ -60,6 +62,15 @@ class FileOperation:
                 return 'excel'
         return None
 
+    def md5(self, filepath: str):
+        hash_object = hashlib.sha256()
+        with open(filepath, 'rb') as file:
+            chunk_size = 8192
+            while chunk := file.read(chunk_size):
+                hash_object.update(chunk)
+
+        return hash_object.hexdigest()[0:8]
+
     def summarize(self, files: list):
         success = 0
         skip = 0
@@ -71,6 +82,7 @@ class FileOperation:
             elif file.reason == 'skip':
                 skip += 1
             else:
+                logger.info('{} {}'.format(file.origin, file.reason))
                 failed +=1
             
             logger.info('{} {}'.format(file.reason, file.copypath))
@@ -82,60 +94,28 @@ class FileOperation:
             for filename in filenames:
                 _type = self.get_type(filename)
                 if _type is not None:
+                    if type(_type) is tuple:
+                        import pdb
+                        pdb.set_trace()
                     files.append(FileName(root=root, filename=filename, _type=_type))
         return files
     
     def read_pdf(self, filepath: str):
         # load pdf and serialize table
-
-
-        def read_single_page(pdf_path, start_page, end_page, output_queue):
-            with fitz.open(filepath) as all_pages:
-                page = all_pages[page_id]
-                pages = all_pages[start_page-1:end_page]
-
-                text = ''
-                for page in pages:
-                    text += page.get_text()
-                    tables = page.find_tables()
-                    for table in tables:
-                        tablename = '_'.join(filter(lambda x: x is not None and 'Col' not in x, table.header.names))
-                        pan = table.to_pandas()
-                        json_text = pan.dropna(axis=1).to_json(force_ascii=False)
-                        text += tablename
-                        text += '\n'
-                        text += json_text
-                        text += '\n'
-                return text
-
-        all_text = ''
-        page_len = 0
-        with fitz.open(filepath) as pdf:
-            page_len = len(pdf)
-
-        num_processes = 4
-        result_queue = multiprocessing.Queue()
-        
-        pages_per_process = page_len // num_processes
-        page_ranges = []
-        pool = multiprocessing.Pool(processes=num_processes)
-
-        for i in range(num_processes):
-            start_page = i * pages_per_process + 1
-            end_page = (i + 1) * pages_per_process if i < num_processes - 1 else page_len
-            page_ranges.append((start_page, end_page))
-        
-        # 使用进程池执行任务
-        pool.starmap(read_single_page, [(filepath,) + prange for prange in page_ranges], result_queue)
-        pool.close()
-        pool.join()
-
-        while not result_queue.empty():
-            page_text = result_queue.get()
-            print(page_text)
-            all_text += page_text
-
-        return all_text
+        text = ''
+        with fitz.open(filepath) as pages:
+            for page in pages:
+                text += page.get_text()
+                tables = page.find_tables()
+                for table in tables:
+                    tablename = '_'.join(filter(lambda x: x is not None and 'Col' not in x, table.header.names))
+                    pan = table.to_pandas()
+                    json_text = pan.dropna(axis=1).to_json(force_ascii=False)
+                    text += tablename
+                    text += '\n'
+                    text += json_text
+                    text += '\n'
+        return text
 
     def read_excel(self, filepath: str):
         table = None
@@ -179,7 +159,6 @@ class FileOperation:
         text = text.replace('  ', ' ')
         text = text.replace('  ', ' ')
         return text, None
-
 
 if __name__ == '__main__':
     opr = FileOperation()

@@ -5,7 +5,7 @@ import json
 import os
 import re
 import shutil
-from multiprocessing import Process
+from multiprocessing import Pool
 from pathlib import Path
 
 import pytoml
@@ -19,10 +19,28 @@ from langchain_core.documents import Document
 from loguru import logger
 from torch.cuda import empty_cache
 
-from .file_operation import FileOperation
+from .file_operation import FileOperation, FileName
 from .helper import multimodal
 from .retriever import CacheRetriever, Retriever
 
+def read_and_save(file: FileName):
+    if os.path.exists(file.copypath):
+        # already exists, return
+        logger.info('already exist, skip load')
+        return
+    file_opr = FileOperation()
+    logger.info('reading {}, would save to {}'.format(file.origin, file.copypath))
+    content, error = file_opr.read(file.origin)
+    if error is not None:
+        logger.error('{} load error: {}'.format(file.origin, str(error)))
+        return
+
+    if content is None or len(content) < 1:
+        logger.warning('{} empty, skip save'.format(file.origin))
+        return
+
+    with open(file.copypath, 'w') as f:
+        f.write(content)
 
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
@@ -122,31 +140,33 @@ class FeatureStore:
         new_text = new_text.lower()
         return new_text
 
-    def get_md_documents(self, filepath):
+    def get_md_documents(self, file: FileName):
         documents = []
         length = 0
         text = ''
-        with open(filepath, encoding='utf8') as f:
+        with open(file.copypath, encoding='utf8') as f:
             text = f.read()
-        text = os.path.basename(filepath) + '\n' + self.clean_md(text)
+        text = file.prefix + '\n' + self.clean_md(text)
         if len(text) <= 1:
             return [], length
 
-        chunks = self.split_md(text=text, source=os.path.abspath(filepath))
+        chunks = self.split_md(text=text, source=os.path.abspath(file.copypath))
         for chunk in chunks:
             new_doc = Document(page_content=chunk,
-                               metadata={'source': os.path.abspath(filepath)})
+                               metadata={'source': file.basename, 'read': file.copypath})
             length += len(chunk)
             documents.append(new_doc)
         return documents, length
 
-    def get_text_documents(self, text: str, filepath: str):
+    def get_text_documents(self, text: str, file: FileName):
         if len(text) <= 1:
             return []
         chunks = self.text_splitter.create_documents([text])
         documents = []
         for chunk in chunks:
-            chunk.metadata = {'source': filepath}
+            # `source` is for return references
+            # `read` is for LLM response
+            chunk.metadata = {'source': file.basename, 'read': file.copypath}
             documents.append(chunk)
         return documents
 
@@ -167,12 +187,13 @@ class FeatureStore:
                 continue
 
             if file._type == 'md':
-                md_documents, md_length = self.get_md_documents(file.copypath)
+                md_documents, md_length = self.get_md_documents(file)
                 documents += md_documents
                 logger.info('{} content length {}'.format(file._type, len(text)))
                 file.reason = str(md_length)
 
             else:
+                # now read pdf/word/excel text
                 text, error = file_opr.read(file.copypath)
                 if error is not None:
                     file.state = False
@@ -180,7 +201,7 @@ class FeatureStore:
                     continue
                 file.reason = str(len(text))
                 logger.info('{} content length {}'.format(file._type, len(text)))
-                text = file.basename + text
+                text = file.prefix + text
                 documents += self.get_text_documents(text, file)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
@@ -196,8 +217,8 @@ class FeatureStore:
         documents = []
         file_opr = FileOperation()
 
+        logger.debug('ingress reject..')
         for i, file in enumerate(files):
-            logger.debug('{}/{}..'.format(i + 1, len(files)))
             if not file.state:
                 continue
             
@@ -213,7 +234,7 @@ class FeatureStore:
                 for chunk in chunks:
                     new_doc = Document(
                         page_content=chunk,
-                        metadata={'source': os.path.abspath(file)})
+                        metadata={'source': file.basename, 'read': file.copypath})
                     documents.append(new_doc)
 
             else:
@@ -227,8 +248,7 @@ class FeatureStore:
         vs.save_local(feature_dir)
 
     def preprocess(self, files: list, work_dir: str):
-        """Preprocesses markdown files in a given directory excluding those
-        containing 'mdb'. Copies each file to 'preprocess' with new name formed
+        """Preprocesses files in a given directory. Copies each file to 'preprocess' with new name formed
         by joining all subdirectories with '_'.
 
         Args:
@@ -242,32 +262,50 @@ class FeatureStore:
             Exception: Raise an exception if no markdown files are found in the provided repository directory.  # noqa E501
         """
         preproc_dir = os.path.join(work_dir, 'preprocess')
-        if os.path.exists(preproc_dir):
-            logger.warning(
-                f'{preproc_dir} already exists, remove and regenerate.')
-            shutil.rmtree(preproc_dir)
-        os.makedirs(preproc_dir)
+        if not os.path.exists(preproc_dir):
+            os.makedirs(preproc_dir)
 
+        pool = Pool(processes=16)
+        file_opr = FileOperation()
         for idx, file in enumerate(files):
             if file._type == 'image':
                 file.state = False
                 file.reason = 'skip image'
-    
-            elif file._type in ['pdf', 'md', 'text', 'word', 'excel']:
+
+            elif file._type in ['pdf', 'word', 'excel']:
+                # read pdf/word/excel file and save to text format
+                md5 = file_opr.md5(file.origin)
+                file.copypath = os.path.join(preproc_dir, '{}.text'.format(md5))
+                pool.apply_async(read_and_save, (file,))
+
+            elif file._type in ['md', 'text']:
+                # rename text files to new dir
+                md5 = file_opr.md5(file.origin)
+                file.copypath = os.path.join(preproc_dir, file.origin.replace('/', '_')[-84:])
                 try:
-                    # rename other files to new dir
-                    file.copypath = os.path.join(preproc_dir, file.origin.replace('/', '_')[-84:])
                     shutil.copy(file.origin, file.copypath)
                     file.state = True
                     file.reason = 'preprocessed'
-
                 except Exception as e:
                     file.state = False
                     file.reason = str(e)
-            
+
             else:
                 file.state = False
                 file.reason = 'skip unknown format'
+        pool.close()
+        logger.debug('waiting for preprocess read finish..')
+        pool.join()
+
+        # check process result
+        for file in files:
+            if file._type in ['pdf', 'word', 'excel']:
+                if os.path.exists(file.copypath):
+                    file.state = True
+                    file.reason = 'preprocessed'
+                else:
+                    file.state = False
+                    file.reason = 'read error'
 
 
     def initialize(self, files: list, work_dir: str):
@@ -283,7 +321,6 @@ class FeatureStore:
         self.preprocess(files=files, work_dir=work_dir)
         self.ingress_response(files=files, work_dir=work_dir)
         self.ingress_reject(files=files, work_dir=work_dir)
-
 
 
 def parse_args():
