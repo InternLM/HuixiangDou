@@ -123,7 +123,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **测试问答效果**
 
-\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 15G），可开启 `kimi` 或 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照[config-experience.ini](./config-experience.ini)
+\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 15G），可开启 `kimi` 或 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照 [config-experience.ini](./config-experience.ini)
 
 ```ini
 # config.ini
@@ -301,7 +301,7 @@ python3 -m huixiangdou.main # docker 用户
 
    基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
 
-3. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
+3. 如何接入其他 local LLM / 接入后效果不理想怎么办？
 
    - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
    - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./huixiangdou/service/worker.py)
