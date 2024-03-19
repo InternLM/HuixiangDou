@@ -160,6 +160,9 @@ class Worker:
         if not self.work_time():
             return ErrorCode.NOT_WORK_TIME, response, references
 
+        if query is None or len(query) < 6:
+            return ErrorCode.NOT_A_QUESTION, response, references
+
         reborn_code = ErrorCode.SUCCESS
         tracker = QueryTracker(self.config['worker']['save_path'])
         tracker.log('input', [query, history, groupname])
