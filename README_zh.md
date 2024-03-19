@@ -14,6 +14,12 @@
   <a href="https://pypi.org/project/huixiangdou/" target="_blank">
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
   </a>
+  <a href="https://youtu.be/ylXrT-Tei-Y" target="_blank">
+    <img alt="YouTube" src="https://img.shields.io/badge/YouTube-black?logo=youtube&logoColor=red" />
+  </a>
+  <a href="https://youtu.be/ylXrT-Tei-Y" target="_blank">
+    <img alt="YouTube" src="https://img.shields.io/badge/BiliBili-pink?logo=bilibili&logoColor=white" />
+  </a>
 </div>
 
 </div>
@@ -24,12 +30,15 @@
 2. 提出一套解答技术问题的算法 pipeline
 3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告 arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 
+web 版视频教程见[B站](https://www.bilibili.com/video/BV1S2421N7mn)和[YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
+
 查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
 
 如果对你有用，麻烦 star 一下⭐
 
 # 🆕 新功能
 
+- \[2024/03\] 优化 `pdf` 和表格解析，改善精度并加速
 - \[2024/03\] 支持 [zhipuai](https://zhipuai.cn) 和 [xi-api 国内 gpt 代理](https://api.xi-ai.cn)，见 `config.ini`
 - \[2024/03\] 新的[个人微信集成方法](./docs/add_wechat_accessibility_zh.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
 - \[2024/03\] 支持 `pdf`/`word`/`excel`，返回引用的文件名或 Web URL
@@ -42,12 +51,11 @@
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-|  版本  | GPU显存需求 |                                                                        描述                                                                        |                             Linux 系统已验证设备                              |
-| :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+|  版本  | GPU显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
+| :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
 | 体验版 |    1.5GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [kimi](https://kimi.moonshot.cn) 和 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-| 基础版 |    19GB     |                                                       本地部署 LLM，能回答领域知识的基础问题                                                       | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| 高级版 |    40GB     |                                                    充分利用检索+长文本能力，能够回答源码级问题                                                     | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
-
+| 基础版 |    19GB     |                                                                         本地部署 LLM，能回答领域知识的基础问题                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 高级版 |    40GB     |                                                                      充分利用检索+长文本能力，能够回答源码级问题                                                                       | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 如果你只有 2G 显存，或追求性价比💰，[看这个知乎文档](https://zhuanlan.zhihu.com/p/685205206)。
 
