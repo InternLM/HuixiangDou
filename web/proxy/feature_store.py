@@ -82,6 +82,8 @@ class FeatureStore:
             ('###', 'Header 3'),
         ])
         self.enable_ocr = False
+        # single file length cannot exceed 400k
+        self.MAX_SINGLE_FILE_LEN = 400000
 
     def is_chinese_doc(self, text):
         """If the proportion of Chinese in a bilingual document exceeds 0.5%,
@@ -227,11 +229,22 @@ class FeatureStore:
                         "desc": "read fail"
                     }
                     continue
+                text_len = len(text)
+                logger.info('{} content length {}'.format(file, text_len))
+
+                if text_len > self.MAX_SINGLE_FILE_LEN:
+                    state_map[basename] = {
+                        "status": False,
+                        "desc": "TooLong"
+                    }
+                    logger.info('too long, skip {}'.format(file))
+                    continue
+                
+                # add to feature store
                 state_map[basename] = {
                     "status": True,
                     "desc": str(len(text))
                 }
-                logger.info('{} content length {}'.format(file, len(text)))
                 text = basename + text
                 documents += self.get_text_documents(text, file)
 
