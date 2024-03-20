@@ -18,7 +18,7 @@ English | [简体中文](README_zh.md)
     <img alt="YouTube" src="https://img.shields.io/badge/YouTube-black?logo=youtube&logoColor=red" />
   </a>
   <a href="https://www.bilibili.com/video/BV1S2421N7mn" target="_blank">
-    <img alt="YouTube" src="https://img.shields.io/badge/BiliBili-pink?logo=bilibili&logoColor=white" />
+    <img alt="BiliBili" src="https://img.shields.io/badge/BiliBili-pink?logo=bilibili&logoColor=white" />
   </a>
 </div>
 
