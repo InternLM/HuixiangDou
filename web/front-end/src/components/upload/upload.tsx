@@ -3,12 +3,13 @@ import {
 } from 'react';
 import { addDocs, FileState } from '@services/home';
 import Button from '@components/button/button';
-import { message } from 'sea-lion-ui';
+import { Input, message } from 'sea-lion-ui';
 import { useLocale } from '@hooks/useLocale';
 import UploadItem, { UploadItemProps, UploadStatus } from '@components/upload-item';
 import styles from './upload.module.less';
 
 export interface UploadProps {
+    docs?: string[];
     afterUpload?: () => void;
     filesState?: FileState[];
     children?: ReactNode;
@@ -17,6 +18,7 @@ export interface UploadProps {
 const acceptFileTypes = '.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go';
 
 const Upload: FC<UploadProps> = ({
+    docs = [],
     afterUpload,
     filesState = [], children
 }) => {
@@ -26,6 +28,12 @@ const Upload: FC<UploadProps> = ({
     const [loading, setLoading] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]); // 待上传文件列表
     const [pendingStatus, setPendingStatus] = useState<UploadItemProps[]>([]); // 待上传文件列表
+    const [filter, setFilter] = useState('');
+    const [searchValue, setSearchValue] = useState('');
+
+    const handleSearch = () => {
+        setSearchValue(filter);
+    };
 
     const handleClick = () => {
         if (fileInputRef.current) {
@@ -37,8 +45,13 @@ const Upload: FC<UploadProps> = ({
         const _files = e.target.files;
         const _pendingStatus = [...pendingStatus];
         const _pendingFiles = [...pendingFiles];
+        if (_files.length > 200) {
+            message.warning(locales.fileCount);
+            setLoading(false);
+            return;
+        }
         for (let i = 0; i < _files.length; i++) {
-            if (_files[i].size > 1024 * 1024 * 1000) {
+            if (_files[i].size > 1024 * 1024 * 35) {
                 message.warning(locales.fileSize);
                 setLoading(false);
                 return;
@@ -73,14 +86,11 @@ const Upload: FC<UploadProps> = ({
                         if (item.status === UploadStatus.uploading && res.docs.includes(item.name)) {
                             item.status = UploadStatus.done;
                             item.progress = 100;
-                        } else {
+                        } else if (item.status === UploadStatus.uploading) {
                             item.status = UploadStatus.error;
                             item.progress = 0;
                         }
                     });
-                    setTimeout(() => {
-                        setPendingStatus([]);
-                    }, 2000);
                 } else {
                     _pendingStatus.forEach((item) => {
                         if (item.status === UploadStatus.uploading) {
@@ -118,7 +128,6 @@ const Upload: FC<UploadProps> = ({
                     type="file"
                     accept={acceptFileTypes}
                     multiple
-                    max={10}
                     style={{ display: 'none' }}
                 />
                 {children}
@@ -138,21 +147,63 @@ const Upload: FC<UploadProps> = ({
                     {`${locales.total}: ${filesState.length},    `}
                     {`${locales.failed}: ${filesState.filter((file) => !file.status).length}`}
                 </div>
-                {filesState.map((file) => (
-                    <div
-                        key={file.file}
-                        className={styles.fileItem}
-                    >
-                        <span
-                            style={{ color: file.status ? undefined : 'red' }}
-                            className={styles.fileState}
-                            title={file.desc}
+                <div className={styles.fileSearch}>
+                    <Input
+                        placeholder={locales.searchDesc}
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        onPressEnter={handleSearch}
+                    />
+                    <Button onClick={handleSearch}>
+                        {locales.search}
+                    </Button>
+                </div>
+                {docs
+                    .filter((doc) => doc.includes(searchValue))
+                    .filter((doc) => !filesState.find((file) => file.file === doc))
+                    .map((doc) => {
+                        return (
+                            <div
+                                key={doc}
+                                className={styles.fileItem}
+                            >
+                                <span
+                                    style={{ color: '#4e95e6' }}
+                                    className={styles.fileState}
+                                >
+                                    {locales.processing}
+                                </span>
+                                <span
+                                    className={styles.fileName}
+                                    title={doc}
+                                >
+                                    {doc}
+                                </span>
+                            </div>
+                        );
+                    })}
+                {filesState
+                    .filter((file) => file.file.includes(searchValue))
+                    .map((file) => (
+                        <div
+                            key={file.file}
+                            className={styles.fileItem}
                         >
-                            {file.desc || locales.uploadFailed}
-                        </span>
-                        <span className={styles.fileName}>{file.file}</span>
-                    </div>
-                ))}
+                            <span
+                                style={{ color: file.status ? undefined : 'red' }}
+                                className={styles.fileState}
+                                title={file.desc}
+                            >
+                                {file.desc || locales.uploadFailed}
+                            </span>
+                            <span
+                                className={styles.fileName}
+                                title={file.file}
+                            >
+                                {file.file}
+                            </span>
+                        </div>
+                    ))}
             </div>
         </>
     );

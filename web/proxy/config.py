@@ -1,16 +1,24 @@
-import json
+import os
+from loguru import logger
+
 def redis_host():
-    with open('redis.conf') as f:
-        redis_conf = json.load(f)
-    return redis_conf['host']
+    host = os.getenv('REDIS_HOST')
+    if host is None or len(host) < 1:
+        raise Exception('REDIS_HOST not config')
+    return host
 
 def redis_port():
-    return 6379
+    port = os.getenv('REDIS_PORT')
+    if port is None:
+        logger.debug('REDIS_PORT not set, try 6379')
+        port = 6379
+    return port
 
 def redis_passwd():
-    with open('redis.conf') as f:
-        redis_conf = json.load(f)
-    return redis_conf['passwd']
+    passwd = os.getenv('REDIS_PASSWD')
+    if passwd is None or len(passwd) < 1:
+        raise Exception('REDIS_PASSWD not config')
+    return passwd
 
 def feature_store_base_dir():
     return 'feature_stores'

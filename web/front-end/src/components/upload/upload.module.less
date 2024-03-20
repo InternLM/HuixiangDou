@@ -31,13 +31,24 @@
         white-space: nowrap;
         overflow: hidden;
         width: 80px;
-        color: #4e95e6;
+        color: #047600;
     }
     .file-name {
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
         max-width: 280px;
+    }
+}
+.file-search {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 4px 1px;
+    :global {
+        .seal-input-group .seal-input-inner-container:focus-within {
+            outline: 1px solid #59a041;
+        }
     }
 }
 .dragger {

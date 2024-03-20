@@ -272,9 +272,9 @@ class WechatAgent:
         query_infos = ChatCache.mget_query_info(query_id_list, feature_store_id)
         for item in query_infos:
             if item.response:
-                l.append(WechatPollItem(req=item.detail, rsp=item.response))
+                l.append(WechatPollItem(req=WechatRequest.model_validate_json(json.dumps(item.detail)), rsp=item.response))
                 complete_query_id_list.append(item.queryId)
-        ret.list = l
+        ret.root = l
 
         ChatCache.mark_query_id_complete(feature_store_id, complete_query_id_list)
         return ret

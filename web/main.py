@@ -93,6 +93,7 @@ def main():
     default workers: 3
     default port: 23333
     """
+    HuixiangDouEnv.print_env()
     uvicorn.run(
         "web.main:app",
         host='0.0.0.0',
