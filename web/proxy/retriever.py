@@ -34,10 +34,10 @@ class Retriever:
         self.reject_throttle = reject_throttle
         self.rejecter = Vectorstore.load_local(os.path.join(
             work_dir, 'db_reject'),
-                                               embeddings=embeddings)
+            embeddings=embeddings, allow_dangerous_deserialization=True)
         self.retriever = Vectorstore.load_local(
             os.path.join(work_dir, 'db_response'),
-            embeddings=embeddings,
+            embeddings=embeddings, allow_dangerous_deserialization=True,
             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
                 search_type='similarity',
                 search_kwargs={
@@ -46,18 +46,6 @@ class Retriever:
                 })
         self.compression_retriever = ContextualCompressionRetriever(
             base_compressor=reranker, base_retriever=self.retriever)
-
-    def cos_similarity(self, v1: list, v2: list):
-        """Compute cos distance."""
-        num = float(np.dot(v1, v2))
-        denom = np.linalg.norm(v1) * np.linalg.norm(v2)
-        return 0.5 + 0.5 * (num / denom) if denom != 0 else 0
-
-    def distance(self, text1: str, text2: str):
-        """Compute feature distance."""
-        feature1 = self.embeddings.embed_query(text1)
-        feature2 = self.embeddings.embed_query(text2)
-        return self.cos_similarity(feature1, feature2)
 
     def is_reject(self, question, k=30, disable_throttle=False):
         """If no search results below the threshold can be found from the
@@ -87,7 +75,6 @@ class Retriever:
             return reject, [top1]
 
     def update_throttle(self,
-                        work_dir: str,
                         config_path: str = 'config.ini',
                         good_questions=[],
                         bad_questions=[]):
@@ -122,7 +109,10 @@ class Retriever:
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
 
-    def query(self, question: str, context_max_length: int = 16000, tracker: QueryTracker=None):
+    def query(self,
+              question: str,
+              context_max_length: int = 16000,
+              tracker: QueryTracker = None):
         """Processes a query and returns the best match from the vector store
         database. If the question is rejected, returns None.
 
@@ -135,17 +125,15 @@ class Retriever:
         """
         if question is None or len(question) < 1:
             return None, None, []
-        
+
         if len(question) > 512:
             logger.warning('input too long, truncate to 512')
             question = question[0:512]
-        
+
         reject, docs = self.is_reject(question=question)
         assert (len(docs) > 0)
         if reject:
-            return None, None, [
-                os.path.basename(docs[0][0].metadata['source'])
-            ]
+            return None, None, [docs[0][0].metadata['source']]
 
         docs = self.compression_retriever.get_relevant_documents(question)
         if tracker is not None:
@@ -161,13 +149,19 @@ class Retriever:
             chunk = doc.page_content
             chunks.append(chunk)
 
-            source = doc.metadata['source']
-            file_text, error = file_opr.read(source)
+            if 'read' not in doc.metadata:
+                logger.error(
+                    'If you are using the version before 20240319, please rerun `python3 -m huixiangdou.service.feature_store`'
+                )
+                raise Exception('huixiangdou version mismatch')
+            file_text, error = file_opr.read(doc.metadata['read'])
             if error is not None:
                 # read file failed, skip
                 continue
 
-            logger.info('target {} file length {}'.format(source, len(file_text)))
+            source = doc.metadata['source']
+            logger.info('target {} file length {}'.format(
+                source, len(file_text)))
             if len(file_text) + len(context) > context_max_length:
                 if source in references:
                     continue

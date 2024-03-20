@@ -149,7 +149,7 @@ class Worker:
                 tracker=tracker,
                 throttle=3,
                 default=2,
-                backend='puyu'):
+                backend='kimi'):
             # not a question, give LLM response
             response = self.llm.generate_response(prompt=query, history=history, remote=True)
             return ErrorCode.NOT_A_QUESTION, response, []
@@ -199,7 +199,7 @@ class Worker:
                                  tracker=tracker,
                                  throttle=9,
                                  default=0,
-                                 backend='puyu'):
+                                 backend='kimi'):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
                     return ErrorCode.SECURITY, '检测到敏感内容，无法显示', retrieve_ref
