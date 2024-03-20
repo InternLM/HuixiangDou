@@ -84,11 +84,11 @@ class Worker:
         # 安全检查，通过为 true
         if len(response) < 1:
             return True
-        if self.single_judge(self.SECURITY_TEMAPLTE.format(response),
-            tracker=tracker,
-            throttle=3,
-            default=0):
-            return False
+        # if self.single_judge(self.SECURITY_TEMAPLTE.format(response),
+        #     tracker=tracker,
+        #     throttle=3,
+        #     default=0):
+        #     return False
 
         if openxlab_util.security(response):
             return True
@@ -157,7 +157,7 @@ class Worker:
         topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query))
         tracker.log('topic', topic)
 
-        if len(topic) <= 2:
+        if len(topic) < 2:
             return ErrorCode.NO_TOPIC, response, []
 
         chunk, db_context, retrieve_ref = retriever.query(

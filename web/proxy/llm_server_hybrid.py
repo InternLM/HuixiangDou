@@ -177,8 +177,8 @@ class HybridLLMServer:
         url = 'https://puyu.openxlab.org.cn/puyu/api/v1/chat/completion'
 
         now = time.time()
-        if int(now - self.token[1]) >= 3500:
-            logger.debug('refresh token')
+        if int(now - self.token[1]) >= 1800:
+            logger.debug('refresh token {}'.format(time.time()))
             self.token = (os_run('openxlab token'), time.time())
 
         header = {
@@ -212,6 +212,7 @@ class HybridLLMServer:
         else:
             data["top_p"] = 0.9
             data["temperature"] = 0.8
+            data["request_output_len"] = 2000
 
         output_text = ""
         self.wait_time_slot()
@@ -220,7 +221,20 @@ class HybridLLMServer:
         while life < self.retry:
             try:
                 res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
-                logger.error(res_json)
+                logger.debug(res_json)
+
+                # fix token
+                if 'msgCode' in res_json and res_json['msgCode'] == 'A0202':
+                    # token error retry
+                    logger.error('token error, try refresh')
+                    self.token = (os_run('openxlab token'), time.time())
+                    header = {
+                        'Content-Type': 'application/json',
+                        'Authorization': self.token[0]
+                    }
+                    res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
+                    logger.debug(res_json)
+
 
                 res_data = res_json['data']
                 if len(res_data) < 1:
@@ -238,6 +252,12 @@ class HybridLLMServer:
                 with open('badcase{}.txt'.format(life), 'w') as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
                 logger.error(str(e))
+                self.token = (os_run('openxlab token'), time.time())
+                header = {
+                    'Content-Type': 'application/json',
+                    'Authorization': self.token[0]
+                }
+                
                 life += 1
         return output_text
 
