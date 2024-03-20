@@ -98,9 +98,6 @@ class FileOperation:
             for filename in filenames:
                 _type = self.get_type(filename)
                 if _type is not None:
-                    if type(_type) is tuple:
-                        import pdb
-                        pdb.set_trace()
                     files.append(
                         FileName(root=root, filename=filename, _type=_type))
         return files
