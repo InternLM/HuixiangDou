@@ -27,10 +27,10 @@ class Retriever:
         self.reject_throttle = reject_throttle
         self.rejecter = Vectorstore.load_local(os.path.join(
             work_dir, 'db_reject'),
-            embeddings=embeddings, allow_dangerous_deserialization=True)
+                                               embeddings=embeddings)
         self.retriever = Vectorstore.load_local(
             os.path.join(work_dir, 'db_response'),
-            embeddings=embeddings, allow_dangerous_deserialization=True,
+            embeddings=embeddings,
             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
                 search_type='similarity',
                 search_kwargs={
