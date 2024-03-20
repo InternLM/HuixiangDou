@@ -21,6 +21,7 @@ from retriever import Retriever
 from worker import Worker
 from llm_server_hybrid import llm_serve
 from multiprocessing import Process, Value
+from file_operation import FileName, FileOperation
 
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
@@ -243,11 +244,15 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
     #     "path_list": ["STRING"]
     # }
     abs_base = payload.file_abs_base
-    files = payload.file_list
     fs_id = payload.feature_store_id
     path_list = []
-    for filename in files:
-        path_list.append(os.path.join(abs_base, filename))
+    files = []
+
+    file_opr = FileOperation()
+    for filename in payload.file_list:
+        abs_path = os.path.join(abs_base, filename)
+        _type = file_opr.get_type(abs_path)
+        files.append(FileName(root=abs_base, filename=filename, _type=_type))
 
     BASE = feature_store_base_dir()
     # build dir and config.ini if not exist
@@ -273,22 +278,34 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
                          _type=TaskCode.FS_ADD_DOC.value)
 
     # try:
-    counter, state_map = fs.initialize(filepaths=path_list, work_dir=workdir)
+    fs.initialize(files=files, work_dir=workdir)
     files_state = []
-    for k,v in state_map.items():
+
+    success_cnt = 0
+    fail_cnt = 0
+    skip_cnt = 0
+    for file in files:
         files_state.append({
-            'file': k,
-            'status': v['status'],
-            'desc': v['desc']
+            'file': str(file.basename),
+            'status': bool(file.state),
+            'desc': str(file.reason)
         })
-    success_cnt, fail_cnt, skip_cnt = counter
-    if success_cnt == len(path_list):
-        # success
+
+        if file.state:
+            success_cnt += 1
+        elif file.reason == 'skip':
+            skip_cnt += 1
+        else:
+            fail_cnt += 1
+
+    if success_cnt == len(files):
         task_state(code=ErrorCode.SUCCESS.value,
                    state=ErrorCode.SUCCESS.describe(),
                    files_state=files_state)
+
     elif success_cnt == 0:
         task_state(code=ErrorCode.FAILED.value, state='无文件被处理', files_state=files_state)
+
     else:
         state = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
         task_state(code=ErrorCode.SUCCESS.value, state=state, files_state=files_state)
@@ -337,7 +354,6 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
 
     retriever = cache.get(fs_id=fs_id)
     retriever.update_throttle(config_path=configpath,
-                              work_dir=workdir,
                               good_questions=positive,
                               bad_questions=negative)
     del retriever

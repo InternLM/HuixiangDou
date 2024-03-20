@@ -5,53 +5,52 @@ import json
 import os
 import re
 import shutil
-from pathlib import Path
+from multiprocessing import Pool
 
-import numpy as np
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
-from file_operation import FileOperation
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.retrievers import ContextualCompressionRetriever
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
                                      RecursiveCharacterTextSplitter)
 from langchain.vectorstores.faiss import FAISS as Vectorstore
-from langchain_community.document_loaders import (
-    CSVLoader, Docx2txtLoader, PyPDFLoader, UnstructuredExcelLoader,
-    UnstructuredWordDocumentLoader)
-from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_core.documents import Document
 from loguru import logger
-from sklearn.metrics import precision_recall_curve
 from torch.cuda import empty_cache
-from helper import ocr
 
-from multiprocessing import Process
+from file_operation import FileName, FileOperation
+from retriever import Retriever
 
-def ocr_images_async(file_dir, images: list, suffix):
-    for filepath in images:
-        try:
-            text = ocr(filepath=filepath)
-            if text is not None:
-                # image.jpg to image.jpg.text
-                write_filename = '{}{}'.format(os.path.basename(filepath), suffix)
-                logger.info(('ocr_image_async', file_dir, write_filename))
-                with open(os.path.join(file_dir, write_filename), 'w') as f:
-                    f.write(text)
-        except Exception as e:
-            logger.error(str(e))
-            # ocr fail, quit without retry
-            break
+
+def read_and_save(file: FileName):
+    if os.path.exists(file.copypath):
+        # already exists, return
+        logger.info('already exist, skip load')
+        return
+    file_opr = FileOperation()
+    logger.info('reading {}, would save to {}'.format(file.origin,
+                                                      file.copypath))
+    content, error = file_opr.read(file.origin)
+    if error is not None:
+        logger.error('{} load error: {}'.format(file.origin, str(error)))
+        return
+
+    if content is None or len(content) < 1:
+        logger.warning('{} empty, skip save'.format(file.origin))
+        return
+
+    with open(file.copypath, 'w') as f:
+        f.write(content)
+
 
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
 
     def __init__(self,
+                 embeddings: HuggingFaceEmbeddings,
+                 reranker: BCERerank,
                  config_path: str = 'config.ini',
-                 embeddings: HuggingFaceEmbeddings = None,
-                 reranker: BCERerank = None,
                  language: str = 'zh') -> None:
         """Init with model device type and config."""
         self.config_path = config_path
@@ -81,33 +80,6 @@ class FeatureStore:
             ('##', 'Header 2'),
             ('###', 'Header 3'),
         ])
-        self.enable_ocr = False
-        # single file length cannot exceed 400k
-        self.MAX_SINGLE_FILE_LEN = 400000
-
-    def is_chinese_doc(self, text):
-        """If the proportion of Chinese in a bilingual document exceeds 0.5%,
-        it is considered a Chinese document."""
-        chinese_characters = re.findall(r'[\u4e00-\u9fff]', text)
-        total_characters = len(text)
-        ratio = 0
-        if total_characters > 0:
-            ratio = len(chinese_characters) / total_characters
-        if ratio >= 0.005:
-            return True
-        return False
-
-    def cos_similarity(self, v1: list, v2: list):
-        """Compute cos distance."""
-        num = float(np.dot(v1, v2))
-        denom = np.linalg.norm(v1) * np.linalg.norm(v2)
-        return 0.5 + 0.5 * (num / denom) if denom != 0 else 0
-
-    def distance(self, text1: str, text2: str):
-        """Compute feature distance."""
-        feature1 = self.embeddings.embed_query(text1)
-        feature2 = self.embeddings.embed_query(text2)
-        return self.cos_similarity(feature1, feature2)
 
     def split_md(self, text: str, source: None):
         """Split the markdown document in a nested way, first extracting the
@@ -168,170 +140,129 @@ class FeatureStore:
         new_text = new_text.lower()
         return new_text
 
-    def get_md_documents(self, filepath):
+    def get_md_documents(self, file: FileName):
         documents = []
         length = 0
         text = ''
-        with open(filepath, encoding='utf8') as f:
+        with open(file.copypath, encoding='utf8') as f:
             text = f.read()
-        text = os.path.basename(filepath) + '\n' + self.clean_md(text)
+        text = file.prefix + '\n' + self.clean_md(text)
         if len(text) <= 1:
             return [], length
 
-        chunks = self.split_md(text=text, source=os.path.abspath(filepath))
+        chunks = self.split_md(text=text,
+                               source=os.path.abspath(file.copypath))
         for chunk in chunks:
             new_doc = Document(page_content=chunk,
-                               metadata={'source': os.path.abspath(filepath)})
+                               metadata={
+                                   'source': file.basename,
+                                   'read': file.copypath
+                               })
             length += len(chunk)
             documents.append(new_doc)
         return documents, length
 
-    def get_text_documents(self, text: str, filepath: str):
+    def get_text_documents(self, text: str, file: FileName):
         if len(text) <= 1:
             return []
         chunks = self.text_splitter.create_documents([text])
         documents = []
         for chunk in chunks:
-            chunk.metadata = {'source': filepath}
+            # `source` is for return references
+            # `read` is for LLM response
+            chunk.metadata = {'source': file.basename, 'read': file.copypath}
             documents.append(chunk)
         return documents
 
-    def ingress_response(self, file_dir: str, work_dir: str):
+    def ingress_response(self, files: list, work_dir: str):
         """Extract the features required for the response pipeline based on the
         document."""
         feature_dir = os.path.join(work_dir, 'db_response')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        files = [str(x) for x in list(Path(file_dir).glob('*'))]
-        logger.info('glob {} in dir {}'.format(files, file_dir))
+        # logger.info('glob {} in dir {}'.format(files, file_dir))
         file_opr = FileOperation()
         documents = []
-        state_map = {}
 
         for i, file in enumerate(files):
-            basename = os.path.basename(file)
-            if basename.endswith('.text'):
-                basename = '.text'.join(basename.split('.text')[0:-1])
+            logger.debug('{}/{}.. {}'.format(i + 1, len(files), file.basename))
+            if not file.state:
+                continue
 
-            logger.debug('{}/{}.. {}'.format(i+1, len(files), basename))
-            file_type = file_opr.get_type(file)
-
-            if file_type == 'md':
+            if file._type == 'md':
                 md_documents, md_length = self.get_md_documents(file)
                 documents += md_documents
-                state_map[basename] = {'status': True, 'desc': str(md_length)}
-            else:
-                text, error = file_opr.read(file)
-                if error is not None:
-                    state_map[basename] = {
-                        "status": False,
-                        "desc": "read fail"
-                    }
-                    continue
-                text_len = len(text)
-                logger.info('{} content length {}'.format(file, text_len))
+                logger.info('{} content length {}'.format(
+                    file._type, md_length))
+                file.reason = str(md_length)
 
-                if text_len > self.MAX_SINGLE_FILE_LEN:
-                    state_map[basename] = {
-                        "status": False,
-                        "desc": "TooLong"
-                    }
-                    logger.info('too long, skip {}'.format(file))
+            else:
+                # now read pdf/word/excel text
+                text, error = file_opr.read(file.copypath)
+                if error is not None:
+                    file.state = False
+                    file.reason = str(error)
                     continue
-                
-                # add to feature store
-                state_map[basename] = {
-                    "status": True,
-                    "desc": str(len(text))
-                }
-                text = basename + text
+                file.reason = str(len(text))
+                logger.info('{} content length {}'.format(
+                    file._type, len(text)))
+                text = file.prefix + text
                 documents += self.get_text_documents(text, file)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
-        return state_map
 
-    def ingress_reject(self, file_dir: str, work_dir: str):
+    def ingress_reject(self, files: list, work_dir: str):
         """Extract the features required for the reject pipeline based on
         documents."""
         feature_dir = os.path.join(work_dir, 'db_reject')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        files = [str(x) for x in list(Path(file_dir).glob('*'))]
         documents = []
         file_opr = FileOperation()
 
+        logger.debug('ingress reject..')
         for i, file in enumerate(files):
-            logger.debug('{}/{}..'.format(i+1, len(files)))
-            basename = os.path.basename(file)
+            if not file.state:
+                continue
 
-            file_type = file_opr.get_type(file)
-            if file_type == 'md':
+            if file._type == 'md':
                 # reject base not clean md
-                text = basename + '\n'
-                with open(file, encoding='utf8') as f:
+                text = file.basename + '\n'
+                with open(file.copypath, encoding='utf8') as f:
                     text += f.read()
                 if len(text) <= 1:
                     continue
 
-                chunks = self.split_md(text=text, source=os.path.abspath(file))
+                chunks = self.split_md(text=text,
+                                       source=os.path.abspath(file.copypath))
                 for chunk in chunks:
-                    new_doc = Document(
-                        page_content=chunk,
-                        metadata={'source': os.path.abspath(file)})
+                    new_doc = Document(page_content=chunk,
+                                       metadata={
+                                           'source': file.basename,
+                                           'read': file.copypath
+                                       })
                     documents.append(new_doc)
 
             else:
-                text, error = file_opr.read(file)
+                text, error = file_opr.read(file.copypath)
                 if error is not None:
                     continue
-                text = basename + text
+                text = file.basename + text
                 documents += self.get_text_documents(text, file)
 
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
-    def load_feature(self,
-                     work_dir,
-                     feature_response: str = 'db_response',
-                     feature_reject: str = 'db_reject'):
-        """Load extracted feature."""
-        # https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.faiss.FAISS.html#langchain.vectorstores.faiss.FAISS
-
-        resp_dir = os.path.join(work_dir, feature_response)
-        reject_dir = os.path.join(work_dir, feature_reject)
-
-        if not os.path.exists(resp_dir) or not os.path.exists(reject_dir):
-            logger.error(
-                'Please check README.md first and `python3 -m huixiangdou.service.feature_store` to initialize feature database'  # noqa E501
-            )
-            raise Exception(
-                f'{resp_dir} or {reject_dir} not exist, please initialize with feature_store.'  # noqa E501
-            )
-
-        self.rejecter = Vectorstore.load_local(reject_dir,
-                                               embeddings=self.embeddings)
-        self.retriever = Vectorstore.load_local(
-            resp_dir,
-            embeddings=self.embeddings,
-            distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
-                search_type='similarity',
-                search_kwargs={
-                    'score_threshold': 0.2,
-                    'k': 30
-                })
-        self.compression_retriever = ContextualCompressionRetriever(
-            base_compressor=self.reranker, base_retriever=self.retriever)
-
-    def preprocess(self, filepaths: list, work_dir: str):
-        """Preprocesses markdown files in a given directory excluding those
-        containing 'mdb'. Copies each file to 'preprocess' with new name formed
-        by joining all subdirectories with '_'.
+    def preprocess(self, files: list, work_dir: str):
+        """Preprocesses files in a given directory. Copies each file to
+        'preprocess' with new name formed by joining all subdirectories with
+        '_'.
 
         Args:
-            filepaths (list): Directory where the original markdown files reside.
+            files (list): original file list.
             work_dir (str): Working directory where preprocessed files will be stored.  # noqa E501
 
         Returns:
@@ -340,81 +271,56 @@ class FeatureStore:
         Raises:
             Exception: Raise an exception if no markdown files are found in the provided repository directory.  # noqa E501
         """
-        file_dir = os.path.join(work_dir, 'preprocess')
-        if os.path.exists(file_dir):
-            logger.warning(
-                f'{file_dir} already exists, remove and regenerate.')
-            shutil.rmtree(file_dir)
-        os.makedirs(file_dir)
+        preproc_dir = os.path.join(work_dir, 'preprocess')
+        if not os.path.exists(preproc_dir):
+            os.makedirs(preproc_dir)
 
-        success_cnt = 0
-        fail_cnt = 0
-        skip_cnt = 0
-
+        pool = Pool(processes=16)
         file_opr = FileOperation()
-        images = []
-        normals = []
-        ocr_process = None
-        state_map = {}
+        for idx, file in enumerate(files):
+            if file._type == 'image':
+                file.state = False
+                file.reason = 'skip image'
 
-        for filepath in filepaths:
-            _type = file_opr.get_type(filepath)
-            if _type == 'image':
-                images.append(filepath)
-            elif _type in ['pdf', 'md', 'text', 'word', 'excel']:
-                normals.append(filepath)
+            elif file._type in ['pdf', 'word', 'excel']:
+                # read pdf/word/excel file and save to text format
+                md5 = file_opr.md5(file.origin)
+                file.copypath = os.path.join(preproc_dir,
+                                             '{}.text'.format(md5))
+                pool.apply_async(read_and_save, (file, ))
+
+            elif file._type in ['md', 'text']:
+                # rename text files to new dir
+                md5 = file_opr.md5(file.origin)
+                file.copypath = os.path.join(
+                    preproc_dir,
+                    file.origin.replace('/', '_')[-84:])
+                try:
+                    shutil.copy(file.origin, file.copypath)
+                    file.state = True
+                    file.reason = 'preprocessed'
+                except Exception as e:
+                    file.state = False
+                    file.reason = str(e)
+
             else:
-                skip_cnt +=1
+                file.state = False
+                file.reason = 'skip unknown format'
+        pool.close()
+        logger.debug('waiting for preprocess read finish..')
+        pool.join()
 
-        # process images if enable ocr
-        if self.enable_ocr:
-            # start a process to call ocr for images
-            ocr_process = Process(target=ocr_images_async, args=(file_dir, images, '.text'))
-            ocr_process.start()
-        else:
-            for filepath in images:
-                basename = os.path.basename(filepath)
-                state_map[basename] = {
-                    'status': False,
-                    'desc': 'skip'
-                }
-            skip_cnt += len(images)
-
-        # process normal file (pdf, text)
-        for filepath in normals:
-            basename = os.path.basename(filepath)
-            try:
-                shutil.copy(filepath, os.path.join(file_dir, basename))
-                success_cnt += 1
-            except Exception as e:
-                fail_cnt += 1
-                logger.error(str(e))
-                state_map[basename] = {
-                    'status': False,
-                    'desc': 'IO error'
-                }
-
-        if self.enable_ocr:
-            ocr_process.join()
-            # check ocr result
-            for filepath in images:
-                basename = os.path.basename(filepath)
-                converted = os.path.join(file_dir, basename+'.text')
-                if os.path.exists(converted):
-                    success_cnt += 1
+        # check process result
+        for file in files:
+            if file._type in ['pdf', 'word', 'excel']:
+                if os.path.exists(file.copypath):
+                    file.state = True
+                    file.reason = 'preprocessed'
                 else:
-                    state_map[basename] = {
-                        'status': False,
-                        'desc': 'skip'
-                    }
-                    skip_cnt += 1
+                    file.state = False
+                    file.reason = 'read error'
 
-        logger.debug(
-            f'preprocess input {len(filepaths)} files, {success_cnt} success, {fail_cnt} fail, {skip_cnt} skip. '
-        )
-        return file_dir, (success_cnt, fail_cnt, skip_cnt), state_map
-
-    def initialize(self, filepaths: list, work_dir: str):
+    def initialize(self, files: list, work_dir: str):
         """Initializes response and reject feature store.
 
         Only needs to be called once. Also calculates the optimal threshold
@@ -424,26 +330,9 @@ class FeatureStore:
         logger.info(
             'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
-        file_dir, counter, proc_state = self.preprocess(filepaths=filepaths, work_dir=work_dir)
-        success_cnt, _, __ = counter
-        ingress_state = {}
-
-        if success_cnt > 0:
-            ingress_state = self.ingress_response(file_dir=file_dir, work_dir=work_dir)
-            self.ingress_reject(file_dir=file_dir, work_dir=work_dir)
-            empty_cache()
-
-        state_map = proc_state | ingress_state
-        if len(state_map) != len(filepaths):
-            for filepath in filepaths:
-                basename = os.path.basename(filepath)
-                if basename not in state_map:
-                    logger.warning(f'{filepath} no state')
-                    state_map[basename] = {
-                        'status': False,
-                        'desc': 'internal error'
-                    }
-        return counter, state_map
+        self.preprocess(files=files, work_dir=work_dir)
+        self.ingress_response(files=files, work_dir=work_dir)
+        self.ingress_reject(files=files, work_dir=work_dir)
 
 
 def parse_args():
@@ -460,6 +349,10 @@ def parse_args():
         default='repodir',
         help='Root directory where the repositories are located.')
     parser.add_argument(
+        '--config_path',
+        default='config.ini',
+        help='Feature store configuration path. Default value is config.ini')
+    parser.add_argument(
         '--good_questions',
         default='resource/good_questions.json',
         help=  # noqa E251
@@ -472,37 +365,32 @@ def parse_args():
         'Negative examples json path. Default value is resource/bad_questions.json'  # noqa E501
     )
     parser.add_argument(
-        '--config_path',
-        default='config.ini',
-        help='Feature store configuration path. Default value is config.ini')
-    parser.add_argument(
         '--sample', help='Input an json file, save reject and search output.')
     args = parser.parse_args()
     return args
 
 
-def test_reject(sample: str = None):
+def test_reject(retriever: Retriever, sample: str = None):
     """Simple test reject pipeline."""
     if sample is None:
         real_questions = [
-            '请问找不到libmmdeploy.so怎么办',
             'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
             '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
             'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
             '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
-            'mmdeploy 现在支持 mmtrack 模型转换了么',
             '请问 ncnn 全称是什么',
             '有啥中文的 text to speech 模型吗?',
             '今天中午吃什么？',
-            '茴香豆是怎么做的'
+            'huixiangdou 是什么？',
+            'mmpose 如何安装？',
+            '使用科研仪器需要注意什么？'
         ]
     else:
         with open(sample) as f:
             real_questions = json.load(f)
-    fs_query = FeatureStore(config_path=args.config_path)
-    fs_query.load_feature(work_dir=args.work_dir)
+
     for example in real_questions:
-        reject, _ = fs_query.is_reject(example)
+        reject, _ = retriever.is_reject(example)
 
         if reject:
             logger.error(f'reject query: {example}')
@@ -519,11 +407,10 @@ def test_reject(sample: str = None):
                     f.write(example)
                     f.write('\n')
 
-    del fs_query
     empty_cache()
 
 
-def test_query(sample: str = None):
+def test_query(retriever: Retriever, sample: str = None):
     """Simple test response pipeline."""
     if sample is not None:
         with open(sample) as f:
@@ -532,34 +419,41 @@ def test_query(sample: str = None):
     else:
         real_questions = ['mmpose installation']
 
-    fs_query = FeatureStore(config_path=args.config_path)
-    fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
         example = example[0:400]
-        fs_query.query(example)
+        print(retriever.query(example))
         empty_cache()
 
-    del fs_query
     empty_cache()
 
 
 if __name__ == '__main__':
     args = parse_args()
+    cache = CacheRetriever(config_path=args.config_path)
+    fs_init = FeatureStore(embeddings=cache.embeddings,
+                           reranker=cache.reranker,
+                           config_path=args.config_path)
 
-    if args.sample is None:
-        # not test precision, build workdir
-        fs_init = FeatureStore(config_path=args.config_path)
-        with open(args.good_questions, encoding='utf8') as f:
-            good_questions = json.load(f)
-        with open(args.bad_questions, encoding='utf8') as f:
-            bad_questions = json.load(f)
+    # walk all files in repo dir
+    file_opr = FileOperation()
+    files = file_opr.scan_dir(repo_dir=args.repo_dir)
+    fs_init.initialize(files=files, work_dir=args.work_dir)
+    file_opr.summarize(files)
+    del fs_init
 
-        filepaths = list(Path(args.repo_dir).glob('**/*'))
+    # update reject throttle
+    retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
+    with open(os.path.join('resource', 'good_questions.json')) as f:
+        good_questions = json.load(f)
+    with open(os.path.join('resource', 'bad_questions.json')) as f:
+        bad_questions = json.load(f)
+    retriever.update_throttle(config_path=args.config_path,
+                              good_questions=good_questions,
+                              bad_questions=bad_questions)
 
-        fs_init.initialize(filepaths=filepaths, work_dir=args.work_dir)
-        fs_init.update_throttle(good_questions=good_questions,
-                                bad_questions=bad_questions)
-        del fs_init
+    cache.pop('default')
 
-    test_reject(args.sample)
-    test_query(args.sample)
+    # test
+    retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
+    test_reject(retriever, args.sample)
+    test_query(retriever, args.sample)
