@@ -11,10 +11,11 @@ import styles from './import-docs.module.less';
 export interface ImportDocsProps {
     filesState: FileState[];
     refresh: () => void;
+    docs?: string[];
     children?: ReactNode;
 }
 
-const ImportDocs: FC<ImportDocsProps> = ({ refresh, filesState }) => {
+const ImportDocs: FC<ImportDocsProps> = ({ refresh, docs, filesState }) => {
     const locales = useLocale('beanDetail');
     const [openModal, setOpenModal] = useState(false);
 
@@ -28,12 +29,13 @@ const ImportDocs: FC<ImportDocsProps> = ({ refresh, filesState }) => {
                 <IconFont icon="icon-DocOutlined" />
             </Button>
             <Modal
+                maskClosable={false}
                 open={openModal}
                 title={locales.addDocs}
                 footer={(<div />)}
                 onClose={() => setOpenModal(false)}
             >
-                <Upload filesState={filesState} afterUpload={afterUpload}>
+                <Upload docs={docs} filesState={filesState} afterUpload={afterUpload}>
                     <IconFont icon="icon-PlusOutlined" />
                     <div>{locales.upload}</div>
                     <div>{locales.supportFiles}</div>

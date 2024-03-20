@@ -10,6 +10,7 @@ import {
 } from '@services/home';
 import Button from '@components/button/button';
 import { useLocale } from '@hooks/useLocale';
+import CopyCode from '@components/copy-code/copy-code';
 import styles from './integrate-feishu.module.less';
 
 export interface IntegrateFeishuProps {
@@ -86,8 +87,9 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
                 onClose={() => setOpenModal(false)}
             >
                 <div>{locales.larkGuidance}</div>
+                <div className={styles.eventurl}>eventUrl: </div>
                 {eventUrl && (
-                    <div className={styles.eventUrl}>{`eventUrl:\n${eventUrl}`}</div>
+                    <CopyCode code={eventUrl} />
                 )}
                 <Form
                     form={form}
