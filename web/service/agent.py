@@ -6,10 +6,10 @@ from typing import Union
 import lark_oapi as lark
 import requests
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 from lark_oapi import RawRequest, RawResponse
 from lark_oapi.api.im.v1 import GetChatRequest, P2ImMessageReceiveV1, MentionEvent, GetImageRequest, \
     ReplyMessageRequest, ReplyMessageRequestBody
-from starlette.responses import JSONResponse
 
 from web.config.env import HuixiangDouEnv
 from web.constant import biz_constant
