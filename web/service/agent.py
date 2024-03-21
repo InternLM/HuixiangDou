@@ -6,8 +6,7 @@ from typing import Union
 import lark_oapi as lark
 import requests
 from fastapi import Request, Response
-from fastapi.responses import JSONResponse
-from lark_oapi import RawRequest, RawResponse
+from lark_oapi import RawRequest, RawResponse, UTF_8
 from lark_oapi.api.im.v1 import GetChatRequest, P2ImMessageReceiveV1, MentionEvent, GetImageRequest, \
     ReplyMessageRequest, ReplyMessageRequestBody
 
@@ -50,7 +49,8 @@ class LarkAgent:
 
     @classmethod
     def parse_rsp(cls, response: RawResponse) -> Response:
-        return JSONResponse(status_code=response.status_code, content=response.content, headers=response.headers)
+        return Response(status_code=response.status_code, content=str(response.content, UTF_8),
+                        headers=response.headers)
 
     @classmethod
     def get_event_handler(cls):
