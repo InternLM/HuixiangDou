@@ -42,7 +42,7 @@ class LarkAgent:
             headers[k] = v
 
         req = RawRequest()
-        req.uri = request.url
+        req.uri = request.url.path
         req.body = await request.body()
         req.headers = headers
 
