@@ -5,8 +5,11 @@ from typing import Union
 
 import lark_oapi as lark
 import requests
+from fastapi import Request, Response
+from lark_oapi import RawRequest, RawResponse
 from lark_oapi.api.im.v1 import GetChatRequest, P2ImMessageReceiveV1, MentionEvent, GetImageRequest, \
     ReplyMessageRequest, ReplyMessageRequestBody
+from starlette.responses import JSONResponse
 
 from web.config.env import HuixiangDouEnv
 from web.constant import biz_constant
@@ -32,6 +35,23 @@ class LarkContentType(Enum):
 
 
 class LarkAgent:
+    @classmethod
+    def parse_req(cls, request: Request) -> RawRequest:
+        headers = {}
+        for k, v in request.headers.items():
+            headers[k] = v
+
+        req = RawRequest()
+        req.uri = request.url
+        req.body = request.body()
+        req.headers = headers
+
+        return req
+
+    @classmethod
+    def parse_rsp(cls, response: RawResponse) -> Response:
+        return JSONResponse(status_code=response.status_code, content=response.content, headers=response.headers)
+
     @classmethod
     def get_event_handler(cls):
         return lark.EventDispatcherHandler.builder(HuixiangDouEnv.get_lark_encrypt_key(),
@@ -272,15 +292,10 @@ class WechatAgent:
         query_infos = ChatCache.mget_query_info(query_id_list, feature_store_id)
         for item in query_infos:
             if item.response:
-                l.append(WechatPollItem(req=WechatRequest.model_validate_json(json.dumps(item.detail)), rsp=item.response))
+                l.append(
+                    WechatPollItem(req=WechatRequest.model_validate_json(json.dumps(item.detail)), rsp=item.response))
                 complete_query_id_list.append(item.queryId)
         ret.root = l
 
         ChatCache.mark_query_id_complete(feature_store_id, complete_query_id_list)
         return ret
-
-
-
-
-
-
