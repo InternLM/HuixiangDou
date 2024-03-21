@@ -20,7 +20,7 @@ from loguru import logger
 from retriever import Retriever
 from worker import Worker
 from llm_server_hybrid import llm_serve
-from multiprocessing import Process, Value
+from multiprocessing import Process, Value, Pool
 from file_operation import FileName, FileOperation
 
 
@@ -429,7 +429,7 @@ def process():
 
         except Exception as e:
             logger.error(str(e))
-            time.sleep(3)
+            time.sleep(1)
             que = Queue(name='Task')
 
 
@@ -450,4 +450,14 @@ if __name__ == '__main__':
     #         logger.error('start local LLM server failed, quit.')
     #         raise Exception('local LLM path')
     logger.info('Hybrid LLM Server start.')
-    process()
+
+    CNT = 24
+    pool = Pool(processes=CNT)
+
+    for i in range(CNT):
+        logger.info('prepare process {}'.format(i))
+        pool.apply_async(process)
+        time.sleep(3)
+        logger.info('started process {}'.format(i))
+    pool.close()
+    pool.join()
