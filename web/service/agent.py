@@ -36,10 +36,7 @@ class LarkContentType(Enum):
 class LarkAgent:
     @classmethod
     async def parse_req(cls, request: Request) -> RawRequest:
-        headers = {}
-        for k, v in request.headers.items():
-            headers[k] = v
-
+        headers = dict(request.headers)
         req = RawRequest()
         req.uri = request.url.path
         req.body = await request.body()
