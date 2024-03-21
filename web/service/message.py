@@ -12,7 +12,8 @@ class MessageService:
         self.response = response
 
     async def on_lark_message(self):
-        rsp = LarkAgent.get_event_handler().do(LarkAgent.parse_req(self.request))
+        req = await LarkAgent.parse_req(self.request)
+        rsp = LarkAgent.get_event_handler().do(req)
         return LarkAgent.parse_rsp(rsp)
 
     async def on_wechat_message(self, body: WechatRequest, suffix: str):
