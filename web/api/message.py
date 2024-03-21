@@ -8,7 +8,7 @@ message_api = APIRouter()
 
 @message_api.post("/v1/lark")
 async def on_lark_message(request: Request, response: Response):
-    return MessageService(request, response).on_lark_message()
+    return await MessageService(request, response).on_lark_message()
 
 
 @message_api.post("/v1/wechat/{suffix}")
