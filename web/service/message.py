@@ -11,7 +11,7 @@ class MessageService:
         self.request = request
         self.response = response
 
-    def on_lark_message(self):
+    async def on_lark_message(self):
         rsp = LarkAgent.get_event_handler().do(LarkAgent.parse_req(self.request))
         return LarkAgent.parse_rsp(rsp)
 
