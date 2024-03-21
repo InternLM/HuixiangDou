@@ -181,7 +181,7 @@ class Worker:
         #                      tracker=tracker,
         #                      throttle=5,
         #                      default=10,
-        #                      backend='puyu'):
+        #                      backend='internlm'):
         prompt, history = self.llm.build_prompt(
             instruction=query,
             context=db_context,
@@ -189,9 +189,11 @@ class Worker:
             template=self.GENERATE_TEMPLATE)
         response = self.llm.generate_response(prompt=prompt,
                                                 history=history,
-                                                remote=True,
-                                                backend='internlm')
+                                                remote=True)
         tracker.log('feature store doc', [chunk, response])
+        if response is not None and len(response) < 1:
+            # llm error
+            return ErrorCode.INTERNAL_ERROR, "LLM API 没给回复，请点击右上角“反馈问题” qaq", retrieve_ref
 
         if response is not None and len(response) > 0:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
