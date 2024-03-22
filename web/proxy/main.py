@@ -457,7 +457,7 @@ if __name__ == '__main__':
     for i in range(CNT):
         logger.info('prepare process {}'.format(i))
         pool.apply_async(process)
-        time.sleep(3)
+        time.sleep(1)
         logger.info('started process {}'.format(i))
     pool.close()
     pool.join()
