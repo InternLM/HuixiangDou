@@ -32,6 +32,7 @@ def callback_task_state(feature_store_id: str, code: int, _type: str,
         'code': code,
         'type': _type,
         'state': state,
+        'status': state,
         'files_state': files_state
     }
     logger.debug(target)
@@ -454,10 +455,17 @@ if __name__ == '__main__':
     CNT = 24
     pool = Pool(processes=CNT)
 
+    ps = []
+
     for i in range(CNT):
         logger.info('prepare process {}'.format(i))
-        pool.apply_async(process)
+
+        p = Process(target=process, args=())
+        p.daemon = False
+        p.start()
+        ps.append(p)
         time.sleep(1)
         logger.info('started process {}'.format(i))
-    pool.close()
-    pool.join()
+
+    for p in ps:
+        p.join()
