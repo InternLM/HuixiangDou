@@ -32,13 +32,13 @@ English | [简体中文](README_zh.md)
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and [architecture](./docs/architecture_en.md).
 
-Visit our introductory video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
-
 If this helps you, please give it a star ⭐
 
 # 🔆 News
 
 The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can build your own knowledge assistant without any coding experience required, using WeChat and Feishu groups.
+
+Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
 - \[2024/03\] Support `ppt` file format
 - \[2024/03\] Speedup `pdf` and table parsing for higher precision
