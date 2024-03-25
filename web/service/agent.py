@@ -6,7 +6,8 @@ from typing import Union
 import lark_oapi as lark
 import requests
 from fastapi import Request, Response
-from lark_oapi import RawRequest, RawResponse, UTF_8
+from lark_oapi import RawRequest, RawResponse, UTF_8, USER_AGENT, AUTHORIZATION, X_TT_LOGID, X_REQUEST_ID, CONTENT_TYPE, \
+    Content_Disposition, LARK_REQUEST_TIMESTAMP, LARK_REQUEST_NONCE, LARK_REQUEST_SIGNATURE
 from lark_oapi.api.im.v1 import GetChatRequest, P2ImMessageReceiveV1, MentionEvent, GetImageRequest, \
     ReplyMessageRequest, ReplyMessageRequestBody
 
@@ -40,7 +41,27 @@ class LarkAgent:
         req = RawRequest()
         req.uri = request.url.path
         req.body = await request.body()
-        req.headers = headers
+        req.headers = []
+
+        for k,v in headers.items():
+            if USER_AGENT.lower() == k.lower():
+                req.headers[USER_AGENT] = v
+            elif AUTHORIZATION.lower() == k.lower():
+                req.headers[AUTHORIZATION] = v
+            elif X_TT_LOGID.lower() == k.lower():
+                req.headers[X_TT_LOGID] = v
+            elif X_REQUEST_ID.lower() == k.lower():
+                req.headers[X_REQUEST_ID] = v
+            elif CONTENT_TYPE.lower() == k.lower():
+                req.headers[CONTENT_TYPE] = v
+            elif Content_Disposition.lower() == k.lower():
+                req.headers[Content_Disposition] = v
+            elif LARK_REQUEST_TIMESTAMP.lower() == k.lower():
+                req.headers[LARK_REQUEST_TIMESTAMP] = v
+            elif LARK_REQUEST_NONCE.lower() == k.lower():
+                req.headers[LARK_REQUEST_NONCE] = v
+            elif LARK_REQUEST_SIGNATURE.lower() == k.lower():
+                req.headers[LARK_REQUEST_SIGNATURE] = v
 
         return req
 
