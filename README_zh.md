@@ -30,15 +30,15 @@
 2. 提出一套解答技术问题的算法 pipeline
 3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告 arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 
-web 版视频教程见[B站](https://www.bilibili.com/video/BV1S2421N7mn)和[YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
-
 查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
 
 如果对你有用，麻烦 star 一下⭐
 
 # 🔆 新功能
 
-茴香豆 web 版已发布到 [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)，可以创建自己的知识库、更新正反例、开关网络搜索，聊天测试效果后，集成到飞书/微信群。
+茴香豆 Web 版已发布到 [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)，可以创建自己的知识库、更新正反例、开关网络搜索，聊天测试效果后，集成到飞书/微信群。
+
+Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
 - \[2024/03\] 支持 `ppt` 格式
 - \[2024/03\] 优化 `pdf` 和表格解析，改善精度并加速
