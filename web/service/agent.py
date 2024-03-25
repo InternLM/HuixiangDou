@@ -98,6 +98,8 @@ class LarkAgent:
             logger.error(f"[lark] app_id: {app_id}, name: {chat_name} get suffix failed, omit lark message callback")
             return
         feature_store_id = QaLibCache.get_qalib_feature_store_id_by_suffix(suffix)
+        if not feature_store_id:
+            return
         hxd_info = QaLibCache.get_qalib_info(feature_store_id)
         if not hxd_info:
             logger.error(
