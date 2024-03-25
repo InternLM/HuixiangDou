@@ -38,6 +38,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     const [filesState, setFilesState] = useState<FileState[]>([]);
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
+    const [suffix, setSuffix] = useState('');
     const [searchToken, setSearchToken] = useState('');
     const [beanState, setBeanState] = useState(BeanState.created);
     const [refreshFlag, setRefreshFlag] = useState(false);
@@ -78,6 +79,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
             setSearchToken(res.webSearch?.token);
             setFeishuInfo(res.lark);
             setWeChatInfo(res.wechat?.onMessageUrl);
+            setSuffix(res.suffix);
             if (Array.isArray(res.docs)) {
                 setDocs(res.docs);
             }
@@ -129,7 +131,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                     },
                     {
                         title: locales.accessFeishu,
-                        children: <IntegrateFeishu feishu={feishuInfo} refresh={refresh} />,
+                        children: <IntegrateFeishu suffix={suffix} feishu={feishuInfo} refresh={refresh} />,
                         key: 'accessFeishu'
                     },
                     {
@@ -147,7 +149,7 @@ const BeanDetail: FC<BeanDetailProps> = () => {
                 key: 'docs'
             }]
         );
-    }, [locales, searchToken, beanState, feishuInfo, refresh]);
+    }, [locales, searchToken, beanState, feishuInfo, refresh, suffix]);
 
     return (
         <div className={styles.beanDetail}>
