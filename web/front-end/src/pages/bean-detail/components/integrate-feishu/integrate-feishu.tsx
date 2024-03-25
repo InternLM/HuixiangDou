@@ -14,12 +14,14 @@ import CopyCode from '@components/copy-code/copy-code';
 import styles from './integrate-feishu.module.less';
 
 export interface IntegrateFeishuProps {
+    suffix: string;
     feishu: Feishu;
     refresh: () => void;
     children?: ReactNode;
 }
 
 const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
+    suffix,
     feishu,
     refresh,
     children
@@ -29,10 +31,16 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
 
     const [openModal, setOpenModal] = useState(false);
     const [eventUrl, setEventUrl] = useState(feishu?.eventUrl);
+    const [encryptKey, setEncryptKey] = useState(feishu?.encryptKey);
+    const [verificationToken, setVerificationToken] = useState(feishu?.verificationToken);
     const [loading, setLoading] = useState(false);
 
     const handleOpen = () => {
         setOpenModal(true);
+    };
+
+    const closeModal = () => {
+        setOpenModal(false);
     };
 
     const handleSubmit = async () => {
@@ -66,34 +74,20 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
 
     return (
         <div className={styles.integrateFeishu}>
-            {eventUrl ? (
-                <div
-                    className={styles.webhookUrl}
-                    onClick={handleOpen}
-                    title={locales.edit}
-                >
-                    {eventUrl}
-                </div>
-            ) : (
-                <Button onClick={handleOpen}>
-                    {locales.viewDetail}
-                    <IconFont icon="icon-IntroductionOutlined" />
-                </Button>
-            )}
+            <Button onClick={handleOpen}>
+                {locales.viewDetail}
+                <IconFont icon="icon-IntroductionOutlined" />
+            </Button>
             <Modal
+                width={600}
                 open={openModal}
                 title={locales.integrateLark}
                 footer={(<div />)}
-                onClose={() => setOpenModal(false)}
+                onClose={closeModal}
             >
-                <div>{locales.larkGuidance}</div>
-                <div className={styles.eventurl}>eventUrl: </div>
-                {eventUrl && (
-                    <CopyCode code={eventUrl} />
-                )}
+                <div className={styles.title}>{locales.credentials}</div>
                 <Form
                     form={form}
-                    layout="vertical"
                 >
                     <Form.Item
                         name="appId"
@@ -110,10 +104,41 @@ const IntegrateFeishu: FC<IntegrateFeishuProps> = ({
                         <Input placeholder={locales.required} />
                     </Form.Item>
                 </Form>
-                <Button onClick={handleSubmit}>
-                    {
-                        loading ? locales.saving : locales.save
-                    }
+                <div className={styles.flex}>
+                    <Button className={styles.cancel} onClick={() => form.resetFields()}>
+                        {locales.reset}
+                    </Button>
+                    <Button onClick={handleSubmit}>
+                        {loading ? locales.saving : locales.save}
+                    </Button>
+                </div>
+
+                <div className={styles.title}>{locales.encryption}</div>
+                <div className={styles.flex}>
+                    <span>Encrypt Key: </span>
+                    <CopyCode code={encryptKey} />
+                </div>
+                <div className={styles.flex}>
+                    <span>Verification Token: </span>
+                    <CopyCode code={verificationToken} />
+                </div>
+
+                <div className={styles.title}>{locales.suffix}</div>
+                <div className={styles.flex}>
+                    <span>Suffix: </span>
+                    <CopyCode code={suffix} />
+                </div>
+
+                <div className={styles.title}>{locales.larkGuidance}</div>
+                {eventUrl && (
+                    <CopyCode code={eventUrl} />
+                )}
+                <div className={styles.title}>{locales.reference}</div>
+                <Button
+                    onClick={() => window.open('https://aicarrier.feishu.cn/docx/H1AddcFCioR1DaxJklWcLxTDnEc')}
+                >
+                    {locales.viewGuide}
+                    <IconFont icon="icon-GotoOutline" />
                 </Button>
             </Modal>
         </div>

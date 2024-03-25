@@ -36,7 +36,9 @@ export default {
 每句一行，例如：
 今天中午吃日料么？
 快看天上有颗流星，快跑！`,
-        save: '保存',
+        save: '保存凭证',
+        cancel: '取消',
+        reset: '重置',
         saving: '保存中...',
         saveSuccess: '保存成功',
         edit: '点击修改',
@@ -46,7 +48,11 @@ export default {
         noCallback: '暂无回调地址',
         wechatGuidance: '根据下面的教程，完成微信回调地址的配置',
         viewGuide: '查看教程',
-        larkGuidance: '完成下面配置后，可以在飞书群聊中跟茴香豆对话',
+        larkGuidance: '复制下面的飞书事件请求地址:',
+        encryption: '配置你的加密策略:',
+        credentials: '输入你的凭证:',
+        suffix: '给飞书群名加上后缀: ',
+        reference: '参考文档: 根据下面的教程，完成飞书配置:',
         required: '必填',
         isEmpty: '不能为空',
         webSearch: '网络搜索',
