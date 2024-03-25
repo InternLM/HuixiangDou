@@ -36,8 +36,11 @@ web 版视频教程见[B站](https://www.bilibili.com/video/BV1S2421N7mn)和[You
 
 如果对你有用，麻烦 star 一下⭐
 
-# 🆕 新功能
+# 🔆 新功能
 
+茴香豆 web 版已发布到 [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)，可以创建自己的知识库、更新正反例、开关网络搜索，聊天测试效果后，集成到飞书/微信群。
+
+- \[2024/03\] 支持 `ppt` 格式
 - \[2024/03\] 优化 `pdf` 和表格解析，改善精度并加速
 - \[2024/03\] 支持 [zhipuai](https://zhipuai.cn) 和 [xi-api 国内 gpt 代理](https://api.xi-ai.cn)，见 `config.ini`
 - \[2024/03\] 新的[个人微信集成方法](./docs/add_wechat_accessibility_zh.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
@@ -61,7 +64,7 @@ web 版视频教程见[B站](https://www.bilibili.com/video/BV1S2421N7mn)和[You
 
 # 🔥 运行
 
-我们将以 mmpose 和一些 word/excel/pdf 测试文档为例，介绍如何把知识助手部署到飞书群
+我们将以 mmpose 和一些 `word`/`excel`/`pdf`/`ppt` 测试文档为例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
 
