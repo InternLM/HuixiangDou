@@ -41,7 +41,7 @@ class LarkAgent:
         req = RawRequest()
         req.uri = request.url.path
         req.body = await request.body()
-        req.headers = []
+        req.headers = {}
 
         for k,v in headers.items():
             if USER_AGENT.lower() == k.lower():
