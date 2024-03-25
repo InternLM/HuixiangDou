@@ -36,8 +36,11 @@ Visit our introductory video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 
 If this helps you, please give it a star ⭐
 
-# 🆕 What's new
+# 🔆 News
 
+The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can build your own knowledge assistant without any coding experience required, using WeChat and Feishu groups.
+
+- \[2024/03\] Support `ppt` file format
 - \[2024/03\] Speedup `pdf` and table parsing for higher precision
 - \[2024/03\] Support [zhipuai](https://zhipuai.cn) in `config.ini`
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
@@ -59,7 +62,7 @@ The following are the hardware requirements for running. It is suggested to foll
 
 # 🔥 Run
 
-We will take mmpose and some pdf/word/excel examples to explain how to deploy the knowledge assistant to Feishu group chat.
+We will take mmpose and some `pdf`/`word`/`excel`/`ppt` examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
 

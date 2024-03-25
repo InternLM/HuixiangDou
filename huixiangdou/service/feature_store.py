@@ -198,7 +198,7 @@ class FeatureStore:
                 file.reason = str(md_length)
 
             else:
-                # now read pdf/word/excel text
+                # now read pdf/word/excel/ppt text
                 text, error = file_opr.read(file.copypath)
                 if error is not None:
                     file.state = False
@@ -282,7 +282,7 @@ class FeatureStore:
                 file.state = False
                 file.reason = 'skip image'
 
-            elif file._type in ['pdf', 'word', 'excel']:
+            elif file._type in ['pdf', 'word', 'excel', 'ppt']:
                 # read pdf/word/excel file and save to text format
                 md5 = file_opr.md5(file.origin)
                 file.copypath = os.path.join(preproc_dir,

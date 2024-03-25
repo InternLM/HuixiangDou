@@ -9,7 +9,7 @@ from loguru import logger
 
 
 class FileName:
-    """Record file original name, copy to page and state."""
+    """Record file original name, state and copied filepath with text format."""
 
     def __init__(self, root: str, filename: str, _type: str):
         self.root = root
@@ -35,11 +35,12 @@ class FileOperation:
         self.text_suffix = ['.txt', '.text']
         self.excel_suffix = ['.xlsx', '.xls', '.csv']
         self.pdf_suffix = '.pdf'
+        self.ppt_suffix = '.pptx'
         self.word_suffix = ['.docx', '.doc']
         self.normal_suffix = [self.md_suffix
                               ] + self.text_suffix + self.excel_suffix + [
                                   self.pdf_suffix
-                              ] + self.word_suffix
+                              ] + self.word_suffix + [self.ppt_suffix]
 
     def get_type(self, filepath: str):
         if filepath.endswith(self.pdf_suffix):
@@ -47,6 +48,9 @@ class FileOperation:
 
         if filepath.endswith(self.md_suffix):
             return 'md'
+        
+        if filepath.endswith(self.ppt_suffix):
+            return 'ppt'
 
         for suffix in self.image_suffix:
             if filepath.endswith(suffix):
@@ -146,15 +150,16 @@ class FileOperation:
         elif file_type == 'excel':
             text += self.read_excel(filepath)
 
-        elif file_type == 'word':
+        elif file_type == 'word' or file_type == 'ppt':
             # https://stackoverflow.com/questions/36001482/read-doc-file-with-python
             # https://textract.readthedocs.io/en/latest/installation.html
             try:
                 text = textract.process(filepath).decode('utf8')
+                if file_type == 'ppt':
+                    text = text.replace('\n', ' ')
             except Exception as e:
                 logger.error((filepath, str(e)))
                 return '', e
-            # print(len(text))
 
         text = text.replace('\n\n', '\n')
         text = text.replace('\n\n', '\n')
