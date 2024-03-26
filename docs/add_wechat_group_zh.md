@@ -11,9 +11,11 @@
 🤔 OCR。类似原神 AI 辅助工具，很难保证识别精度
 ```
 
-⚠️ **所有非正式途径都有封号等风险，自行承担**。
+⚠️ **所有非正式途径都有封号等风险，自行承担**。 
 
 本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 魔法接入（ipadLogin 方式），限时免费。
+
+需要注意，**wechaty 很早就不维护了**，如果是个人使用，推荐用 [accessibility 方法](./add_wechat_accessibility_zh.md)。
 
 ## 一、准备工作
 
