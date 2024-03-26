@@ -12,7 +12,7 @@
 
 ## 二、运行
 
-从 [这里](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixaingdou-1.0.0.apk) 下载编译好的 apk，按说明做即可。
+从 [这里](https://github.com/InternLM/HuixiangDou/releases) 下载编译好的 apk，按说明做即可。
 
 <img src="./figures/wechat-android-homepage.jpg" width="400">
 
