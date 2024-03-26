@@ -4,15 +4,29 @@
 
 由于没有 Appium/Selenium 框架做中间商，比较稳定。
 
-## 一、准备工作
+## 一、演示视频
+
+这里是 BiliBili 2 分钟演示视频 https://www.bilibili.com/video/BV1S2421N7mn/
+
+## 二、准备工作
 
 - 一个 android 手机，对性能和系统版本都没要求
 - 微信版本 8.0.47，不同版本的 view id 不同可能没效果。[代码里](https://github.com/InternLM/HuixiangDou/blob/main/android/demo/src/main/java/com/carlos/grabredenvelope/demo/WechatConstants.kt)只记了这个版本的 id
 - 一个测试用的微信号
 
-## 二、运行
+## 三、运行
 
-从 [这里](https://github.com/InternLM/HuixiangDou/releases) 下载编译好的 apk，按说明做即可。
+打开 [OpenXLab 茴香豆 web 端](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，创建自己的知识库。
+
+这里是个能直接使用的账号密码：
+```bash
+账号： 20230322发版测试
+密码： 123
+```
+
+点击 “零开发集成微信”，会显示你的服务端回调地址和教程。例如 `http://139.224.198.162:18443/api/v1/message/v1/wechat/oZGh`
+
+从 [这里](https://github.com/InternLM/HuixiangDou/releases) 下载编译好的 apk，填入回调地址，开启服务，跳入微信。
 
 <img src="./figures/wechat-android-homepage.jpg" width="400">
 
