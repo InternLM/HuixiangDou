@@ -502,7 +502,7 @@ def test_query(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
         logger.add('logs/feature_store_query.log', rotation='4MB')
     else:
-        real_questions = ['how to use std::vector ?']
+        real_questions = ['mmpose installation', 'how to use std::vector ?']
 
     for example in real_questions:
         example = example[0:400]
@@ -540,5 +540,5 @@ if __name__ == '__main__':
 
     # test
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
-    # test_reject(retriever, args.sample)
+    test_reject(retriever, args.sample)
     test_query(retriever, args.sample)
