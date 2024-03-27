@@ -40,7 +40,7 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
-- \[2024/03\] Support `ppt` file format
+- \[2024/03\] Support `ppt` and `html` file format
 - \[2024/03\] Speedup `pdf` and table parsing for higher precision
 - \[2024/03\] Support [zhipuai](https://zhipuai.cn) in `config.ini`
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
