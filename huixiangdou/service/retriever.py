@@ -233,7 +233,7 @@ class CacheRetriever:
             # drop the oldest one
             del_key = None
             min_time = time.time()
-            for key, value in enumerate(self.cache):
+            for key, value in self.cache.items():
                 cur_time = value['time']
                 if cur_time < min_time:
                     min_time = cur_time
