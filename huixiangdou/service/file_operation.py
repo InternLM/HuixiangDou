@@ -6,7 +6,7 @@ import fitz
 import pandas as pd
 import textract
 from loguru import logger
-
+from bs4 import BeautifulSoup
 
 class FileName:
     """Record file original name, state and copied filepath with text format."""
@@ -36,11 +36,12 @@ class FileOperation:
         self.excel_suffix = ['.xlsx', '.xls', '.csv']
         self.pdf_suffix = '.pdf'
         self.ppt_suffix = '.pptx'
+        self.html_suffix = ['.html', '.htm', '.shtml', '.xhtml']
         self.word_suffix = ['.docx', '.doc']
         self.normal_suffix = [self.md_suffix
                               ] + self.text_suffix + self.excel_suffix + [
                                   self.pdf_suffix
-                              ] + self.word_suffix + [self.ppt_suffix]
+                              ] + self.word_suffix + [self.ppt_suffix] + self.html_suffix
 
     def get_type(self, filepath: str):
         if filepath.endswith(self.pdf_suffix):
@@ -67,6 +68,10 @@ class FileOperation:
         for suffix in self.excel_suffix:
             if filepath.endswith(suffix):
                 return 'excel'
+
+        for suffix in self.html_suffix:
+            if filepath.endswith(suffix):
+                return 'html'
         return None
 
     def md5(self, filepath: str):
@@ -140,27 +145,34 @@ class FileOperation:
         file_type = self.get_type(filepath)
 
         text = ''
-        if file_type == 'md' or file_type == 'text':
-            with open(filepath) as f:
-                text = f.read()
 
-        elif file_type == 'pdf':
-            text += self.read_pdf(filepath)
+        try:
 
-        elif file_type == 'excel':
-            text += self.read_excel(filepath)
+            if file_type == 'md' or file_type == 'text':
+                with open(filepath) as f:
+                    text = f.read()
 
-        elif file_type == 'word' or file_type == 'ppt':
-            # https://stackoverflow.com/questions/36001482/read-doc-file-with-python
-            # https://textract.readthedocs.io/en/latest/installation.html
-            try:
+            elif file_type == 'pdf':
+                text += self.read_pdf(filepath)
+
+            elif file_type == 'excel':
+                text += self.read_excel(filepath)
+
+            elif file_type == 'word' or file_type == 'ppt':
+                # https://stackoverflow.com/questions/36001482/read-doc-file-with-python
+                # https://textract.readthedocs.io/en/latest/installation.html
                 text = textract.process(filepath).decode('utf8')
                 if file_type == 'ppt':
                     text = text.replace('\n', ' ')
-            except Exception as e:
-                logger.error((filepath, str(e)))
-                return '', e
 
+            elif file_type == 'html':
+                with open(filepath) as f:
+                    soup = BeautifulSoup(f.read(), 'html.parser')
+                    text += soup.text
+
+        except Exception as e:
+            logger.error((filepath, str(e)))
+            return '', e
         text = text.replace('\n\n', '\n')
         text = text.replace('\n\n', '\n')
         text = text.replace('\n\n', '\n')
