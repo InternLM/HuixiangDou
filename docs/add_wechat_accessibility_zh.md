@@ -19,6 +19,7 @@
 打开 [OpenXLab 茴香豆 web 端](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，创建自己的知识库。
 
 这里是个能直接使用的账号密码：
+
 ```bash
 账号： 20230322发版测试
 密码： 123

@@ -1,11 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """LLM server proxy."""
 import argparse
+import json
 import random
 import time
+from datetime import datetime, timedelta
 from multiprocessing import Process, Value
 
 import pytoml
+import requests
 from aiohttp import web
 from loguru import logger
 from openai import OpenAI
@@ -33,6 +36,40 @@ def build_messages(prompt, history, system: str = None):
         messages.append({'role': 'assistant', 'content': item[1]})
     messages.append({'role': 'user', 'content': prompt})
     return messages
+
+
+class RPM:
+
+    def __init__(self, rpm: int = 30):
+        self.rpm = rpm
+        self.record = {'slot': self.get_minute_slot(), 'counter': 0}
+
+    def get_minute_slot(self):
+        current_time = time.time()
+        dt_object = datetime.fromtimestamp(current_time)
+        total_minutes_since_midnight = dt_object.hour * 60 + dt_object.minute
+        return total_minutes_since_midnight
+
+    def wait(self):
+        current = time.time()
+        dt_object = datetime.fromtimestamp(current)
+        minute_slot = self.get_minute_slot()
+
+        if self.record['slot'] == minute_slot:
+            # check RPM exceed
+            if self.record['counter'] >= self.rpm:
+                # wait until next minute
+                next_minute = dt_object.replace(
+                    second=0, microsecond=0) + timedelta(minutes=1)
+                _next = next_minute.timestamp()
+                sleep_time = abs(_next - current)
+                time.sleep(sleep_time)
+
+                self.record = {'slot': self.get_minute_slot(), 'counter': 0}
+        else:
+            self.record = {'slot': self.get_minute_slot(), 'counter': 0}
+        self.record['counter'] += 1
+        logger.debug(self.record)
 
 
 class InferenceWrapper:
@@ -135,6 +172,11 @@ class HybridLLMServer:
         self.remote_type = self.server_config['remote_type']
 
         model_path = self.server_config['local_llm_path']
+
+        _rpm = 500
+        if 'rpm' in self.server_config:
+            _rpm = self.server_config['rpm']
+        self.rpm = RPM(_rpm)
 
         if self.enable_local:
             self.inference = InferenceWrapper(model_path)
@@ -300,6 +342,31 @@ class HybridLLMServer:
                 time.sleep(randval)
         return ''
 
+    def call_alles_apin(self, prompt: str, history: list):
+        self.rpm.wait()
+
+        url = 'https://openxlab.org.cn/gw/alles-apin-hub/v1/openai/v2/text/chat'
+        headers = {
+            'content-type': 'application/json',
+            'alles-apin-token': self.server_config['remote_api_key']
+        }
+
+        messages = build_messages(prompt=prompt, history=history)
+
+        payload = {'model': 'gpt-4-1106-preview', 'messages': messages}
+
+        response = requests.post(url,
+                                 headers=headers,
+                                 data=json.dumps(payload))
+
+        text = ''
+        resp_json = response.json()
+        if resp_json['msgCode'] == '10000':
+            data = resp_json['data']
+            if len(data['choices']) > 0:
+                text = data['choices'][0]['message']['content']
+        return text
+
     def generate_response(self, prompt, history=[], remote=False):
         """Generate a response from the appropriate LLM based on the
         configuration.
@@ -340,6 +407,9 @@ class HybridLLMServer:
                                             history=history,
                                             base_url=base_url,
                                             system=system)
+            elif llm_type == 'alles-apin':
+                output_text = self.call_alles_apin(prompt=prompt,
+                                                   history=history)
             else:
                 logger.error('unknow llm_type {}'.format(llm_type))
 
@@ -418,6 +488,20 @@ def llm_serve(config_path: str, server_ready: Value):
     web.run_app(app, host='0.0.0.0', port=bind_port)
 
 
+def test_rpm():
+    rpm = RPM(30)
+
+    for i in range(40):
+        rpm.wait()
+        print(i)
+
+    time.sleep(10)
+
+    for i in range(40):
+        rpm.wait()
+        print(i)
+
+
 def main():
     """Function to start the server without running a separate process."""
     args = parse_args()
@@ -447,3 +531,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # test_rpm()
