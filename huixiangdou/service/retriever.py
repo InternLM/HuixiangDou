@@ -25,12 +25,14 @@ class Retriever:
                  reject_throttle: float) -> None:
         """Init with model device type and config."""
         self.reject_throttle = reject_throttle
-        self.rejecter = Vectorstore.load_local(os.path.join(
-            work_dir, 'db_reject'),
-            embeddings=embeddings, allow_dangerous_deserialization=True)
+        self.rejecter = Vectorstore.load_local(
+            os.path.join(work_dir, 'db_reject'),
+            embeddings=embeddings,
+            allow_dangerous_deserialization=True)
         self.retriever = Vectorstore.load_local(
             os.path.join(work_dir, 'db_response'),
-            embeddings=embeddings, allow_dangerous_deserialization=True,
+            embeddings=embeddings,
+            allow_dangerous_deserialization=True,
             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
                 search_type='similarity',
                 search_kwargs={

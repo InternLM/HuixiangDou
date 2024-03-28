@@ -5,11 +5,13 @@ import os
 import fitz
 import pandas as pd
 import textract
-from loguru import logger
 from bs4 import BeautifulSoup
+from loguru import logger
+
 
 class FileName:
-    """Record file original name, state and copied filepath with text format."""
+    """Record file original name, state and copied filepath with text
+    format."""
 
     def __init__(self, root: str, filename: str, _type: str):
         self.root = root
@@ -41,7 +43,8 @@ class FileOperation:
         self.normal_suffix = [self.md_suffix
                               ] + self.text_suffix + self.excel_suffix + [
                                   self.pdf_suffix
-                              ] + self.word_suffix + [self.ppt_suffix] + self.html_suffix
+                              ] + self.word_suffix + [self.ppt_suffix
+                                                      ] + self.html_suffix
 
     def get_type(self, filepath: str):
         if filepath.endswith(self.pdf_suffix):
@@ -49,7 +52,7 @@ class FileOperation:
 
         if filepath.endswith(self.md_suffix):
             return 'md'
-        
+
         if filepath.endswith(self.ppt_suffix):
             return 'ppt'
 
