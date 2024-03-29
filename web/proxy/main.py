@@ -197,7 +197,6 @@ def chat_with_featue_store(cache: CacheRetriever,
                          feature_store_id=fs_id,
                          query_id=query_id)
 
-    retriever = cache.get(fs_id=fs_id)
 
     BASE = feature_store_base_dir()
     workdir = os.path.join(BASE, fs_id, 'workdir')
@@ -209,6 +208,7 @@ def chat_with_featue_store(cache: CacheRetriever,
         chat_state(code=ErrorCode.PARAMETER_ERROR.value, text='',state='知识库未建立或建立异常，此时不能 chat。', ref=[])
         return
 
+    retriever = cache.get(fs_id=fs_id)
     worker = Worker(work_dir=workdir, config_path=configpath)
 
     # TODO parse images
