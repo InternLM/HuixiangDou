@@ -136,6 +136,9 @@ class FileOperation:
         file_type = self.get_type(filepath)
 
         text = ''
+        if not os.path.exists(filepath):
+            return text, None
+
         if file_type == 'md' or file_type == 'text':
             with open(filepath) as f:
                 text = f.read()

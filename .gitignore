@@ -25,3 +25,5 @@ web/qa
 redis.conf
 nohup.out
 *.pyc
+start-web.sh
+web/proxy/config-template.ini

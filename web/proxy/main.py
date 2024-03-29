@@ -89,7 +89,7 @@ class CacheRetriever:
             # drop the oldest one
             del_key = None
             min_time = time.time()
-            for key, value in enumerate(self.cache):
+            for key, value in self.cache.items():
                 cur_time = value['time']
                 if cur_time < min_time:
                     min_time = cur_time
@@ -338,6 +338,14 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
                    state='正例为空。请根据真实用户问题，填写正例；同时填写几句场景无关闲聊作负例')
         return
 
+    for idx in range(len(positive)):
+        if len(positive[idx]) < 1:
+            positive[idx] += '.'
+
+    for idx in range(len(negative)):
+        if len(negative[idx]) < 1:
+            negative[idx] += '.'
+
     BASE = feature_store_base_dir()
     fs_id = payload.feature_store_id
     workdir = os.path.join(BASE, fs_id, 'workdir')
@@ -405,33 +413,33 @@ def process():
 
     logger.info('start wait task queue..')
     while True:
-        try:
-            msg_pop = que.get(timeout=16)
-            if msg_pop is None:
-                continue
-            msg, error = parse_json_str(msg_pop)
-            logger.info(msg)
-            if error is not None:
-                raise error
+#        try:
+        msg_pop = que.get(timeout=16)
+        if msg_pop is None:
+            continue
+        msg, error = parse_json_str(msg_pop)
+        logger.info(msg)
+        if error is not None:
+            raise error
 
-            logger.debug(f'process {msg}')
-            if msg.type == TaskCode.FS_ADD_DOC.value:
-                fs_cache.pop(msg.payload.feature_store_id)
-                build_feature_store(fs_cache, msg.payload)
-            elif msg.type == TaskCode.FS_UPDATE_SAMPLE.value:
-                fs_cache.pop(msg.payload.feature_store_id)
-                update_sample(fs_cache, msg.payload)
-            elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
-                update_pipeline(msg.payload)
-            elif msg.type == TaskCode.CHAT.value:
-                chat_with_featue_store(fs_cache, msg.payload)
-            else:
-                logger.warning(f'unknown type {msg}')
+        logger.debug(f'process {msg}')
+        if msg.type == TaskCode.FS_ADD_DOC.value:
+            fs_cache.pop(msg.payload.feature_store_id)
+            build_feature_store(fs_cache, msg.payload)
+        elif msg.type == TaskCode.FS_UPDATE_SAMPLE.value:
+            fs_cache.pop(msg.payload.feature_store_id)
+            update_sample(fs_cache, msg.payload)
+        elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
+            update_pipeline(msg.payload)
+        elif msg.type == TaskCode.CHAT.value:
+            chat_with_featue_store(fs_cache, msg.payload)
+        else:
+            logger.warning(f'unknown type {msg}')
 
-        except Exception as e:
-            logger.error(str(e))
-            time.sleep(1)
-            que = Queue(name='Task')
+#        except Exception as e:
+#            logger.error(str(e))
+#            time.sleep(1)
+#            que = Queue(name='Task')
 
 
 if __name__ == '__main__':
@@ -452,7 +460,9 @@ if __name__ == '__main__':
     #         raise Exception('local LLM path')
     logger.info('Hybrid LLM Server start.')
 
-    CNT = 24
+
+
+    CNT = 16
     pool = Pool(processes=CNT)
 
     ps = []

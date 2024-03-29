@@ -278,6 +278,11 @@ class FeatureStore:
         pool = Pool(processes=16)
         file_opr = FileOperation()
         for idx, file in enumerate(files):
+            if not os.path.exists(file.origin):
+                file.state = False
+                file.reason = 'skip not exist'
+                continue
+
             if file._type == 'image':
                 file.state = False
                 file.reason = 'skip image'
