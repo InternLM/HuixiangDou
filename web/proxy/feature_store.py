@@ -210,6 +210,8 @@ class FeatureStore:
                 text = file.prefix + text
                 documents += self.get_text_documents(text, file)
 
+        if len(documents) < 1:
+            return
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
@@ -253,6 +255,8 @@ class FeatureStore:
                 text = file.basename + text
                 documents += self.get_text_documents(text, file)
 
+        if len(documents) < 1:
+            return
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
