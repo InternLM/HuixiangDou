@@ -97,7 +97,7 @@ class Retriever:
 
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)
-        config['feature_store']['reject_throttle'] = optimal_threshold
+        config['feature_store']['reject_throttle'] = float(optimal_threshold)
         with open(config_path, 'w', encoding='utf8') as f:
             pytoml.dump(config, f)
         logger.info(
