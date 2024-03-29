@@ -4,7 +4,6 @@ auto-gptq
 bcembedding
 beautifulsoup4
 einops
-faiss-gpu
 langchain>=0.1.12
 loguru
 openai>=1.0.0
