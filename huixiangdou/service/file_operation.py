@@ -149,6 +149,9 @@ class FileOperation:
 
         text = ''
 
+        if not os.path.exists(filepath):
+            return text, None
+
         try:
 
             if file_type == 'md' or file_type == 'text':
