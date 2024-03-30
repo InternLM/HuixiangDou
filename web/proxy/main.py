@@ -22,6 +22,7 @@ from worker import Worker
 from llm_server_hybrid import llm_serve
 from multiprocessing import Process, Value, Pool
 from file_operation import FileName, FileOperation
+from huixiangdou.service import CacheRetriever
 
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
@@ -40,80 +41,6 @@ def callback_task_state(feature_store_id: str, code: int, _type: str,
         target,
         ensure_ascii=False,
     ))
-
-
-class CacheRetriever:
-
-    def __init__(self, config_path: str, max_len: int = 4):
-        self.cache = dict()
-        self.max_len = max_len
-        with open(config_path, encoding='utf8') as f:
-            config = pytoml.load(f)['feature_store']
-            embedding_model_path = config['embedding_model_path']
-            reranker_model_path = config['reranker_model_path']
-
-        # load text2vec and rerank model
-        logger.info('loading test2vec and rerank models')
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=embedding_model_path,
-            model_kwargs={'device': 'cuda'},
-            encode_kwargs={
-                'batch_size': 1,
-                'normalize_embeddings': True
-            })
-        self.embeddings.client = self.embeddings.client.half()
-        reranker_args = {
-            'model': reranker_model_path,
-            'top_n': 7,
-            'device': 'cuda',
-            'use_fp16': True
-        }
-        self.reranker = BCERerank(**reranker_args)
-
-    def get(self, fs_id: str):
-        if fs_id in self.cache:
-            self.cache[fs_id]['time'] = time.time()
-            return self.cache[fs_id]['retriever']
-
-        BASE = feature_store_base_dir()
-        workdir = os.path.join(BASE, fs_id, 'workdir')
-        configpath = os.path.join(BASE, fs_id, 'config.ini')
-        if not os.path.exists(workdir) or not os.path.exists(configpath):
-            return None, 'workdir or config.ini not exist'
-
-        with open(configpath, encoding='utf8') as f:
-            reject_throttle = pytoml.load(
-                f)['feature_store']['reject_throttle']
-
-        if len(self.cache) >= self.max_len:
-            # drop the oldest one
-            del_key = None
-            min_time = time.time()
-            for key, value in self.cache.items():
-                cur_time = value['time']
-                if cur_time < min_time:
-                    min_time = cur_time
-                    del_key = key
-
-            if del_key is not None:
-                del_value = self.cache[del_key]
-                self.cache.pop(del_key)
-                del del_value['retriever']
-
-        retriever = Retriever(embeddings=self.embeddings,
-                              reranker=self.reranker,
-                              work_dir=workdir,
-                              reject_throttle=reject_throttle)
-        self.cache[fs_id] = {'retriever': retriever, 'time': time.time()}
-        return retriever
-
-    def pop(self, fs_id: str):
-        if fs_id not in self.cache:
-            return
-        del_value = self.cache[fs_id]
-        self.cache.pop(fs_id)
-        # manually free memory
-        del del_value
 
 
 def callback_chat_state(feature_store_id: str, query_id: str, code: int,
@@ -207,8 +134,8 @@ def chat_with_featue_store(cache: CacheRetriever,
     if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
         chat_state(code=ErrorCode.PARAMETER_ERROR.value, text='',state='知识库未建立或建立异常，此时不能 chat。', ref=[])
         return
+    retriever = cache.get(fs_id=fs_id, config_path=configpath, work_dir=workdir)
 
-    retriever = cache.get(fs_id=fs_id)
     worker = Worker(work_dir=workdir, config_path=configpath)
 
     # TODO parse images
@@ -361,7 +288,7 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
 
     # try:
 
-    retriever = cache.get(fs_id=fs_id)
+    retriever = cache.get(fs_id=fs_id, config_path=configpath, work_dir=workdir)
     retriever.update_throttle(config_path=configpath,
                               good_questions=positive,
                               bad_questions=negative)
@@ -462,7 +389,7 @@ if __name__ == '__main__':
 
 
 
-    CNT = 16
+    CNT = 16 
     pool = Pool(processes=CNT)
 
     ps = []

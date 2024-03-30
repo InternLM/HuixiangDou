@@ -137,10 +137,10 @@ def allow_scheduler(task):
 def start_scheduler():
     if not scheduler.running:
         # ensure only one scheduler task is running
-        if allow_scheduler("sync_hxd_task_response"):
-            logger.info("start scheduler of sync_hxd_task_respone")
-            scheduler.add_job(sync_hxd_task_response, IntervalTrigger(seconds=1))  # 100ms
-            scheduler.add_job(fetch_chat_response, IntervalTrigger(seconds=2))
+        # if allow_scheduler("sync_hxd_task_response"):
+        logger.info("start scheduler of sync_hxd_task_respone")
+        scheduler.add_job(sync_hxd_task_response, IntervalTrigger(seconds=1))  # 100ms
+        scheduler.add_job(fetch_chat_response, IntervalTrigger(seconds=1))
         # more scheduler job can be added here
         scheduler.start()
 

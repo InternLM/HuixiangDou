@@ -6,11 +6,8 @@ import re
 import time
 
 import pytoml
-from feature_store import FeatureStore
-from helper import ErrorCode, QueryTracker
-from llm_client import ChatClient
+from huixiangdou.service import FeatureStore, ErrorCode, QueryTracker, ChatClient, WebSearch
 from loguru import logger
-from web_search import WebSearch
 import openxlab_util
 
 class Worker:
