@@ -15,6 +15,7 @@ pymupdf
 python-docx
 pytoml
 readability-lxml
+redis
 requests
 scikit-learn
 sentence_transformers==2.2.2

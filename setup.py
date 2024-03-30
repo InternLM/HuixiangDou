@@ -20,12 +20,6 @@ def get_version():
     return locals()['__version__']
 
 
-def check_ext_modules():
-    if os.path.exists(os.path.join(pwd, 'lmdeploy', 'lib')):
-        return True
-    return False
-
-
 def get_cuda_pkgs():
     arg_name = '--cuda='
     arg_value = None
@@ -150,7 +144,6 @@ if __name__ == '__main__':
         include_package_data=True,
         setup_requires=parse_requirements('requirements.txt'),
         install_requires=parse_requirements('requirements.txt'),
-        has_ext_modules=check_ext_modules,
         classifiers=[
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',

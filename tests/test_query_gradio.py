@@ -1,13 +1,15 @@
+import argparse
+import json
+import time
+from multiprocessing import Process, Value
+
 import gradio as gr
 import pytoml
-import argparse
-import time
-import json
-
 from loguru import logger
+
 from huixiangdou.frontend import Lark
 from huixiangdou.service import ErrorCode, Worker, llm_serve
-from multiprocessing import Process, Value
+
 
 def parse_args():
     """Parse args."""
@@ -28,13 +30,15 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 args = parse_args()
+
 
 def get_reply(query):
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
     code, reply, references = assistant.generate(query=query,
-                                                    history=[],
-                                                    groupname='')
+                                                 history=[],
+                                                 groupname='')
     ret = dict()
     ret['text'] = str(reply)
     ret['code'] = int(code)
@@ -44,11 +48,11 @@ def get_reply(query):
 
 
 # start service
-if args.standalone:
+if args.standalone is True:
     # hybrid llm serve
     server_ready = Value('i', 0)
     server_process = Process(target=llm_serve,
-                                args=(args.config_path, server_ready))
+                             args=(args.config_path, server_ready))
     server_process.start()
     while True:
         if server_ready.value == 0:
@@ -61,7 +65,6 @@ if args.standalone:
             raise Exception('local LLM path')
     logger.info('Hybrid LLM Server start.')
 
-
 with gr.Blocks() as demo:
     with gr.Row():
         input_question = gr.Textbox(label='输入你的提问')
@@ -70,4 +73,4 @@ with gr.Blocks() as demo:
             run_button = gr.Button()
     run_button.click(fn=get_reply, inputs=input_question, outputs=result)
 
-demo.launch(share=False, server_name="0.0.0.0", debug=True)
+demo.launch(share=False, server_name='0.0.0.0', debug=True)

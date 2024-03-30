@@ -3,7 +3,9 @@ import json
 from enum import Enum
 from types import SimpleNamespace
 
+import redis
 import requests
+from .config import redis_host, redis_passwd, redis_port
 from loguru import logger
 
 
@@ -73,6 +75,51 @@ class ErrorCode(Enum):
         if isinstance(code, cls):
             return {'code': int(code), 'message': code.describe()}
         raise TypeError(f'Expected type {cls}, got {type(code)}')
+
+
+class Queue:
+
+    def __init__(self, name, namespace='HuixiangDou', **redis_kwargs):
+        self.__db = redis.Redis(host=redis_host(),
+                                port=redis_port(),
+                                password=redis_passwd(),
+                                charset='utf-8',
+                                decode_responses=True)
+        self.key = '%s:%s' % (namespace, name)
+
+    def qsize(self):
+        """Return the approximate size of the queue."""
+        return self.__db.llen(self.key)
+
+    def empty(self):
+        """Return True if the queue is empty, False otherwise."""
+        return self.qsize() == 0
+
+    def put(self, item):
+        """Put item into the queue."""
+        self.__db.rpush(self.key, item)
+
+    def peek_tail(self):
+        return self.__db.lrange(self.key, -1, -1)
+
+    def get(self, block=True, timeout=None):
+        """Remove and return an item from the queue.
+
+        If optional args block is true and timeout is None (the default), block
+        if necessary until an item is available.
+        """
+        if block:
+            item = self.__db.blpop(self.key, timeout=timeout)
+        else:
+            item = self.__db.lpop(self.key)
+
+        if item:
+            item = item[1]
+        return item
+
+    def get_nowait(self):
+        """Equivalent to get(False)."""
+        return self.get(False)
 
 
 class QueryTracker:

@@ -300,6 +300,8 @@ class FeatureStore:
                 text = file.prefix + text
                 documents += self.get_text_documents(text, file)
 
+        if len(documents) < 1:
+            return
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
@@ -343,6 +345,8 @@ class FeatureStore:
                 text = file.basename + text
                 documents += self.get_text_documents(text, file)
 
+        if len(documents) < 1:
+            return
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
@@ -368,6 +372,11 @@ class FeatureStore:
         pool = Pool(processes=16)
         file_opr = FileOperation()
         for idx, file in enumerate(files):
+            if not os.path.exists(file.origin):
+                file.state = False
+                file.reason = 'skip not exist'
+                continue
+
             if file._type == 'image':
                 file.state = False
                 file.reason = 'skip image'

@@ -100,7 +100,7 @@ class Worker:
             return False
 
         score = default
-        relation = self.llm.generate_response(prompt=prompt, remote=False)
+        relation = self.llm.generate_response(prompt=prompt, backend='local')
         tracker.log('score', [relation, throttle, default])
         filtered_relation = ''.join([c for c in relation if c.isdigit()])
         try:
@@ -200,7 +200,7 @@ class Worker:
                 template=self.GENERATE_TEMPLATE)
             response = self.llm.generate_response(prompt=prompt,
                                                   history=history,
-                                                  remote=True)
+                                                  backend='remote')
             tracker.log('feature store doc', [chunk, response])
             return ErrorCode.SUCCESS, response, references
 
@@ -241,8 +241,7 @@ class Worker:
                     history_pair=history,
                     template=self.GENERATE_TEMPLATE)
                 response = self.llm.generate_response(prompt=prompt,
-                                                      history=history,
-                                                      remote=False)
+                                                      history=history)
             else:
                 reborn_code = ErrorCode.NO_SEARCH_RESULT
 
@@ -275,7 +274,7 @@ class Worker:
 
                     response = self.llm.generate_response(prompt=prompt,
                                                           history=history,
-                                                          remote=True)
+                                                          backend='remote')
                     tracker.log('source graph', [sg_context, response])
 
                     prompt = self.PERPLESITY_TEMPLATE.format(query, response)

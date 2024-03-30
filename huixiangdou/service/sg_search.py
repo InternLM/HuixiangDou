@@ -113,7 +113,7 @@ class SourceGraphProxy:
             repos[key] = self.sg_config[key]
         prompt += '* none '
         choice = llm_client.generate_response(prompt=prompt,
-                                              remote=True).strip()
+                                              backend='remote').strip()
 
         target_repo_id = None
         for key in repos.keys():
