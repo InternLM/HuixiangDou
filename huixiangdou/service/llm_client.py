@@ -87,7 +87,7 @@ class ChatClient:
         remote = False
         if backend != 'local':
             remote = True
-        
+
         if remote and not enable_remote:
             # if use remote LLM (for example, kimi) and disable enable_remote
             # auto fixed to local LLM
@@ -96,7 +96,8 @@ class ChatClient:
                 'disable remote LLM while choose remote LLM, auto fixed')
         elif not enable_local and not remote:
             remote = True
-            logger.warning('diable local LLM while using local LLM, auto fixed')
+            logger.warning(
+                'diable local LLM while using local LLM, auto fixed')
 
         if remote:
             if backend == 'remote':

@@ -198,7 +198,7 @@ class HybridLLMServer:
 
         logger.info('prompt length {}'.format(len(prompt)))
         history = history[-4:]
-        
+
         messages = []
         for item in history:
             messages.append({'role': 'user', 'text': item[0]})
@@ -212,19 +212,10 @@ class HybridLLMServer:
             'disable_report': False,
             'top_p': 0.9,
             'temperature': 0.8,
-            'request_output_len':
+            'request_output_len': 2048
         }
 
-        if model == "InternLM-API 123B V0.8.14.1":
-            data["request_output_len"] = 128
-            data["top_p"] = 0.1
-            data["temperature"] = 0.1
-        else:
-            data["top_p"] = 0.9
-            data["temperature"] = 0.8
-            data["request_output_len"] = 2000
-
-        output_text = ""
+        output_text = ''
         self.rpm.wait()
 
         life = 0
@@ -255,7 +246,7 @@ class HybridLLMServer:
 
                 logger.info(res_json)
                 if '仩嗨亾笁潪能實験厔' in output_text:
-                    raise Exception('model waterprint')
+                    raise Exception('internlm model waterprint !!!')
                 return output_text
 
             except Exception as e:
@@ -267,7 +258,7 @@ class HybridLLMServer:
                     'Content-Type': 'application/json',
                     'Authorization': self.token[0]
                 }
-                
+
                 life += 1
         return output_text
 
@@ -473,7 +464,7 @@ class HybridLLMServer:
         if backend == 'remote':
             # not specify remote LLM type, use config
             backend = self.server_config['remote_type']
-        
+
         if backend == 'local':
             prompt = prompt[0:self.local_max_length]
             """# Caution: For the results of this software to be reliable and verifiable,  # noqa E501
@@ -481,7 +472,7 @@ class HybridLLMServer:
             must enabled."""
 
             output_text = self.inference.chat(prompt, history)
-        
+
         else:
             prompt = prompt[0:self.remote_max_length]
             if backend == 'kimi':

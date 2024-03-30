@@ -3,10 +3,11 @@ import json
 from enum import Enum
 from types import SimpleNamespace
 
-import requests
 import redis
+import requests
+from config import redis_host, redis_passwd, redis_port
 from loguru import logger
-from config import redis_host, redis_port, redis_passwd
+
 
 class TaskCode(Enum):
     FS_ADD_DOC = 'add_doc'
@@ -75,13 +76,15 @@ class ErrorCode(Enum):
             return {'code': int(code), 'message': code.describe()}
         raise TypeError(f'Expected type {cls}, got {type(code)}')
 
+
 class Queue:
+
     def __init__(self, name, namespace='HuixiangDou', **redis_kwargs):
         self.__db = redis.Redis(host=redis_host(),
-                 port=redis_port(),
-                 password=redis_passwd(),
-                 charset='utf-8',
-                 decode_responses=True)
+                                port=redis_port(),
+                                password=redis_passwd(),
+                                charset='utf-8',
+                                decode_responses=True)
         self.key = '%s:%s' % (namespace, name)
 
     def qsize(self):
@@ -118,14 +121,6 @@ class Queue:
         """Equivalent to get(False)."""
         return self.get(False)
 
-def parse_json_str(json_str: str):
-    try:
-        logger.info(json_str)
-        return json.loads(json_str,
-                          object_hook=lambda d: SimpleNamespace(**d)), None
-    except Exception as e:
-        logger.error(str(e))
-        return None, e
 
 class QueryTracker:
     """A class to track queries and log them into a file.

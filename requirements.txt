@@ -15,6 +15,7 @@ pymupdf
 python-docx
 pytoml
 readability-lxml
+redis
 requests
 scikit-learn
 sentence_transformers==2.2.2
@@ -24,4 +25,3 @@ torch>=2.0.0
 transformers>=4.37.0
 transformers_stream_generator
 unstructured
-redis
