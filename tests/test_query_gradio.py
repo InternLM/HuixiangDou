@@ -48,7 +48,7 @@ def get_reply(query):
 
 
 # start service
-if args.standalone:
+if args.standalone is True:
     # hybrid llm serve
     server_ready = Value('i', 0)
     server_process = Process(target=llm_serve,

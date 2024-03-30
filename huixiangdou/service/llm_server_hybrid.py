@@ -507,7 +507,7 @@ class HybridLLMServer:
         time_finish = time.time()
 
         logger.debug('Q:{} A:{} \t\t remote {} timecost {} '.format(
-            prompt[-100:-1], output_text, remote,
+            prompt[-100:-1], output_text, backend,
             time_finish - time_tokenizer))
         return output_text
 
