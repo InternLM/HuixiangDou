@@ -6,12 +6,55 @@ import re
 import time
 
 import pytoml
-from feature_store import FeatureStore
-from helper import ErrorCode, QueryTracker
-from llm_client import ChatClient
+from huixiangdou.service import FeatureStore, ErrorCode, QueryTracker, ChatClient, WebSearch
 from loguru import logger
-from web_search import WebSearch
-import openxlab_util
+
+# coding=UTF-8
+import requests
+import json
+import time
+import pdb
+import random
+from loguru import logger
+
+def openxlab_security(query: str, retry=2):
+    life = 0
+    while life < retry:
+        try:
+            headers = {"Content-Type": "application/json"}
+            data = {
+                'bizId': str('antiseed' + str(time.time())),
+                'contents': [query],
+                'scopes': [],
+                'vendor': 1,
+            }
+
+            resp = requests.post('https://openxlab.org.cn/gw/checkit/api/v1/audit/text', data=json.dumps(data), headers=headers)
+            logger.debug((resp, resp.content))
+
+            json_obj = json.loads(resp.content)
+            items = json_obj['data']
+
+            block = False
+            for item in items:
+                label = item['label']
+                if label is not None and label in ['porn', 'politics']:
+                    suggestion = item['suggestion']
+                    if suggestion == 'block':
+                        logger.debug(items)
+                        block = True
+                        break
+
+            if block:
+                return False
+            return True
+        except Exception as e:
+            logger.debug(e)
+            life += 1
+
+            randval = random.randint(1, int(pow(2, life)))
+            time.sleep(randval)
+    return False
 
 class Worker:
     """The Worker class orchestrates the logic of handling user queries,
@@ -90,12 +133,12 @@ class Worker:
         #     default=0):
         #     return False
 
-        if openxlab_util.security(response):
+        if openxlab_security(response):
             return True
         return False
 
 
-    def single_judge(self, prompt, tracker, throttle: int, default: int, backend='internlm'):
+    def single_judge(self, prompt, tracker, throttle: int, default: int, backend: str):
         """Generates a score based on the prompt, and then compares it to
         threshold.
 
@@ -112,7 +155,7 @@ class Worker:
             return False
 
         score = default
-        relation = self.llm.generate_response(prompt=prompt, remote=True, backend=backend)
+        relation = self.llm.generate_response(prompt=prompt, backend=backend)
         tracker.log('score' + prompt[0:20], [relation, throttle, default])
         filtered_relation = ''.join([c for c in relation if c.isdigit()])
         try:
@@ -149,12 +192,12 @@ class Worker:
                 tracker=tracker,
                 throttle=3,
                 default=2,
-                backend='kimi'):
+                backend='puyu'):
             # not a question, give LLM response
-            response = self.llm.generate_response(prompt=query, history=history, remote=True)
+            response = self.llm.generate_response(prompt=query, history=history, backend='puyu')
             return ErrorCode.NOT_A_QUESTION, response, []
 
-        topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query))
+        topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query), backend='puyu')
         tracker.log('topic', topic)
 
         if len(topic) < 2:
@@ -181,7 +224,7 @@ class Worker:
         #                      tracker=tracker,
         #                      throttle=5,
         #                      default=10,
-        #                      backend='internlm'):
+        #                      backend='puyu'):
         prompt, history = self.llm.build_prompt(
             instruction=query,
             context=db_context,
@@ -189,7 +232,7 @@ class Worker:
             template=self.GENERATE_TEMPLATE)
         response = self.llm.generate_response(prompt=prompt,
                                                 history=history,
-                                                remote=True)
+                                                backend='puyu')
         tracker.log('feature store doc', [chunk, response])
         if response is not None and len(response) < 1:
             # llm error
@@ -201,7 +244,7 @@ class Worker:
                                  tracker=tracker,
                                  throttle=9,
                                  default=0,
-                                 backend='kimi'):
+                                 backend='puyu'):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
                     return ErrorCode.SECURITY, '检测到敏感内容，无法显示', retrieve_ref
@@ -233,7 +276,8 @@ class Worker:
                                 query, str(article)),
                             tracker=tracker,
                             throttle=5,
-                            default=10):
+                            default=10,
+                            backend='puyu'):
                         web_context += '\n'
                         web_context += str(article)
                         use_ref.append(article.source)
@@ -249,7 +293,7 @@ class Worker:
                     template=self.GENERATE_TEMPLATE)
                 response = self.llm.generate_response(prompt=prompt,
                                                       history=history,
-                                                      remote=False)
+                                                      backend='puyu')
             else:
                 reborn_code = ErrorCode.NO_SEARCH_RESULT
 
@@ -262,7 +306,8 @@ class Worker:
             if self.single_judge(prompt=prompt,
                                  tracker=tracker,
                                  throttle=9,
-                                 default=0):
+                                 default=0,
+                                 backend='puyu'):
                 reborn_code = ErrorCode.BAD_ANSWER
 
         # if response is not None and len(response) >= 800:

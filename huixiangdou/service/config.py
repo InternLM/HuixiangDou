@@ -15,9 +15,9 @@ def redis_port():
     return port
 
 def redis_passwd():
-    passwd = os.getenv('REDIS_PASSWD')
+    passwd = os.getenv('REDIS_PASSWORD')
     if passwd is None or len(passwd) < 1:
-        raise Exception('REDIS_PASSWD not config')
+        raise Exception('REDIS_PASSWORD not config')
     return passwd
 
 def feature_store_base_dir():

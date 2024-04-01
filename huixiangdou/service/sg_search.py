@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """Search enhancement proxy."""
 import argparse
-import ast
 import json
 import os
 
@@ -43,10 +42,10 @@ class SourceGraphProxy:
         self.language = language
         if self.language == 'zh':
             self.CHOICE_TEMPLATE = '“{}”\n请仔细阅读以上问题，请问应该查询以下哪个开源项目：\n'  # noqa E501
-            self.KEYWORDS_TEMPLATE = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字直接用 list 表示，不要解释。'  # noqa E501
+            self.KEYWORDS_TEMPLATE = '“{}”\n请仔细阅读以上问题，提取其中可用作搜索引擎的关键字，关键字之间,分隔，不要解释。'  # noqa E501
         else:
             self.CHOICE_TEMPLATE = '"{}"\nPlease read the above question carefully, which of the following open-source projects should this question refer to: \n'  # noqa E501
-            self.KEYWORDS_TEMPLATE = '"{}"\nPlease read the above question carefully, extract the keywords that can be used for the search engine, list the keywords directly without explaining them.'  # noqa E501
+            self.KEYWORDS_TEMPLATE = '"{}"\nPlease read the above questions carefully, extract the keywords which can be used as search engines, between keywords, separate, do not explain.'  # noqa E501
 
     def command(self, txt: str):
         """Executes a shell command and returns its output.
@@ -114,7 +113,7 @@ class SourceGraphProxy:
             repos[key] = self.sg_config[key]
         prompt += '* none '
         choice = llm_client.generate_response(prompt=prompt,
-                                              remote=True).strip()
+                                              backend='remote').strip()
 
         target_repo_id = None
         for key in repos.keys():
@@ -149,7 +148,7 @@ class SourceGraphProxy:
         entities = []
         try:
             entity_str = llm_client.generate_response(prompt=prompt)
-            entities = ast.literal_eval(entity_str)
+            entities = [item for item in entity_str.split(',') if item.strip()]
         except Exception as e:
             logger.error('parse {} failed {}.'.format(entity_str, str(e)))
             # return ''

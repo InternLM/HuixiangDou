@@ -1,28 +1,21 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """extract feature and search with user query."""
-import argparse
-import json
 import os
-import re
-import shutil
-from pathlib import Path
+import time
 
 import numpy as np
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
-from file_operation import FileOperation
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import ContextualCompressionRetriever
-from langchain.text_splitter import (MarkdownHeaderTextSplitter,
-                                     MarkdownTextSplitter,
-                                     RecursiveCharacterTextSplitter)
 from langchain.vectorstores.faiss import FAISS as Vectorstore
 from langchain_community.vectorstores.utils import DistanceStrategy
-from langchain_core.documents import Document
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
-from torch.cuda import empty_cache
-from helper import QueryTracker
+
+from .file_operation import FileOperation
+from .helper import QueryTracker
+
 
 class Retriever:
     """Tokenize and extract features from the project's documents, for use in
@@ -32,12 +25,14 @@ class Retriever:
                  reject_throttle: float) -> None:
         """Init with model device type and config."""
         self.reject_throttle = reject_throttle
-        self.rejecter = Vectorstore.load_local(os.path.join(
-            work_dir, 'db_reject'),
-            embeddings=embeddings, allow_dangerous_deserialization=True)
+        self.rejecter = Vectorstore.load_local(
+            os.path.join(work_dir, 'db_reject'),
+            embeddings=embeddings,
+            allow_dangerous_deserialization=True)
         self.retriever = Vectorstore.load_local(
             os.path.join(work_dir, 'db_response'),
-            embeddings=embeddings, allow_dangerous_deserialization=True,
+            embeddings=embeddings,
+            allow_dangerous_deserialization=True,
             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
                 search_type='similarity',
                 search_kwargs={
@@ -98,7 +93,6 @@ class Retriever:
         # get the best index for sum(precision, recall)
         sum_precision_recall = precision[:-1] + recall[:-1]
         index_max = np.argmax(sum_precision_recall)
-
         optimal_threshold = max(thresholds[index_max], 0.0)
 
         with open(config_path, encoding='utf8') as f:
@@ -192,3 +186,77 @@ class Retriever:
         return '\n'.join(chunks), context, [
             os.path.basename(r) for r in references
         ]
+
+
+class CacheRetriever:
+
+    def __init__(self, config_path: str, max_len: int = 4):
+        self.cache = dict()
+        self.max_len = max_len
+        with open(config_path, encoding='utf8') as f:
+            config = pytoml.load(f)['feature_store']
+            embedding_model_path = config['embedding_model_path']
+            reranker_model_path = config['reranker_model_path']
+
+        # load text2vec and rerank model
+        logger.info('loading test2vec and rerank models')
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name=embedding_model_path,
+            model_kwargs={'device': 'cuda'},
+            encode_kwargs={
+                'batch_size': 1,
+                'normalize_embeddings': True
+            })
+        self.embeddings.client = self.embeddings.client.half()
+        reranker_args = {
+            'model': reranker_model_path,
+            'top_n': 7,
+            'device': 'cuda',
+            'use_fp16': True
+        }
+        self.reranker = BCERerank(**reranker_args)
+
+    def get(self,
+            fs_id: str = 'default',
+            config_path='config.ini',
+            work_dir='workdir'):
+        if fs_id in self.cache:
+            self.cache[fs_id]['time'] = time.time()
+            return self.cache[fs_id]['retriever']
+
+        if not os.path.exists(work_dir) or not os.path.exists(config_path):
+            return None, 'workdir or config.ini not exist'
+
+        with open(config_path, encoding='utf8') as f:
+            reject_throttle = pytoml.load(
+                f)['feature_store']['reject_throttle']
+
+        if len(self.cache) >= self.max_len:
+            # drop the oldest one
+            del_key = None
+            min_time = time.time()
+            for key, value in self.cache.items():
+                cur_time = value['time']
+                if cur_time < min_time:
+                    min_time = cur_time
+                    del_key = key
+
+            if del_key is not None:
+                del_value = self.cache[del_key]
+                self.cache.pop(del_key)
+                del del_value['retriever']
+
+        retriever = Retriever(embeddings=self.embeddings,
+                              reranker=self.reranker,
+                              work_dir=work_dir,
+                              reject_throttle=reject_throttle)
+        self.cache[fs_id] = {'retriever': retriever, 'time': time.time()}
+        return retriever
+
+    def pop(self, fs_id: str):
+        if fs_id not in self.cache:
+            return
+        del_value = self.cache[fs_id]
+        self.cache.pop(fs_id)
+        # manually free memory
+        del del_value

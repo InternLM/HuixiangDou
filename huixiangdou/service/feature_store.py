@@ -5,30 +5,133 @@ import json
 import os
 import re
 import shutil
-from pathlib import Path
+from multiprocessing import Pool
+from typing import Any, List, Optional
 
-import numpy as np
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.retrievers import ContextualCompressionRetriever
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
                                      RecursiveCharacterTextSplitter)
 from langchain.vectorstores.faiss import FAISS as Vectorstore
-from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_core.documents import Document
 from loguru import logger
-from sklearn.metrics import precision_recall_curve
 from torch.cuda import empty_cache
+
+from .file_operation import FileName, FileOperation
+from .retriever import CacheRetriever, Retriever
+
+
+def read_and_save(file: FileName):
+    if os.path.exists(file.copypath):
+        # already exists, return
+        logger.info('already exist, skip load')
+        return
+    file_opr = FileOperation()
+    logger.info('reading {}, would save to {}'.format(file.origin,
+                                                      file.copypath))
+    content, error = file_opr.read(file.origin)
+    if error is not None:
+        logger.error('{} load error: {}'.format(file.origin, str(error)))
+        return
+
+    if content is None or len(content) < 1:
+        logger.warning('{} empty, skip save'.format(file.origin))
+        return
+
+    with open(file.copypath, 'w') as f:
+        f.write(content)
+
+
+def _split_text_with_regex_from_end(text: str, separator: str,
+                                    keep_separator: bool) -> List[str]:
+    # Now that we have the separator, split the text
+    if separator:
+        if keep_separator:
+            # The parentheses in the pattern keep the delimiters in the result.
+            _splits = re.split(f'({separator})', text)
+            splits = [''.join(i) for i in zip(_splits[0::2], _splits[1::2])]
+            if len(_splits) % 2 == 1:
+                splits += _splits[-1:]
+            # splits = [_splits[0]] + splits
+        else:
+            splits = re.split(separator, text)
+    else:
+        splits = list(text)
+    return [s for s in splits if s != '']
+
+
+# copy from https://github.com/chatchat-space/Langchain-Chatchat/blob/master/text_splitter/chinese_recursive_text_splitter.py
+class ChineseRecursiveTextSplitter(RecursiveCharacterTextSplitter):
+
+    def __init__(
+        self,
+        separators: Optional[List[str]] = None,
+        keep_separator: bool = True,
+        is_separator_regex: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        """Create a new TextSplitter."""
+        super().__init__(keep_separator=keep_separator, **kwargs)
+        self._separators = separators or [
+            '\n\n', '\n', '。|！|？', '\.\s|\!\s|\?\s', '；|;\s', '，|,\s'
+        ]
+        self._is_separator_regex = is_separator_regex
+
+    def _split_text(self, text: str, separators: List[str]) -> List[str]:
+        """Split incoming text and return chunks."""
+        final_chunks = []
+        # Get appropriate separator to use
+        separator = separators[-1]
+        new_separators = []
+        for i, _s in enumerate(separators):
+            _separator = _s if self._is_separator_regex else re.escape(_s)
+            if _s == '':
+                separator = _s
+                break
+            if re.search(_separator, text):
+                separator = _s
+                new_separators = separators[i + 1:]
+                break
+
+        _separator = separator if self._is_separator_regex else re.escape(
+            separator)
+        splits = _split_text_with_regex_from_end(text, _separator,
+                                                 self._keep_separator)
+
+        # Now go merging things, recursively splitting longer texts.
+        _good_splits = []
+        _separator = '' if self._keep_separator else separator
+        for s in splits:
+            if self._length_function(s) < self._chunk_size:
+                _good_splits.append(s)
+            else:
+                if _good_splits:
+                    merged_text = self._merge_splits(_good_splits, _separator)
+                    final_chunks.extend(merged_text)
+                    _good_splits = []
+                if not new_separators:
+                    final_chunks.append(s)
+                else:
+                    other_info = self._split_text(s, new_separators)
+                    final_chunks.extend(other_info)
+        if _good_splits:
+            merged_text = self._merge_splits(_good_splits, _separator)
+            final_chunks.extend(merged_text)
+        return [
+            re.sub(r'\n{2,}', '\n', chunk.strip()) for chunk in final_chunks
+            if chunk.strip() != ''
+        ]
 
 
 class FeatureStore:
-    """Tokenize and extract features from the project's markdown documents, for
-    use in the reject pipeline and response pipeline."""
+    """Tokenize and extract features from the project's documents, for use in
+    the reject pipeline and response pipeline."""
 
     def __init__(self,
-                 device: str = 'cuda',
+                 embeddings: HuggingFaceEmbeddings,
+                 reranker: BCERerank,
                  config_path: str = 'config.ini',
                  language: str = 'zh') -> None:
         """Init with model device type and config."""
@@ -37,73 +140,36 @@ class FeatureStore:
         self.language = language
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)['feature_store']
-            embedding_model_path = config['embedding_model_path']
-            reranker_model_path = config['reranker_model_path']
             self.reject_throttle = config['reject_throttle']
-
-        if embedding_model_path is None or len(embedding_model_path) == 0:
-            raise Exception('embedding_model_path can not be empty')
-
-        if reranker_model_path is None or len(reranker_model_path) == 0:
-            raise Exception('embedding_model_path can not be empty')
 
         logger.warning(
             '!!! If your feature generated by `text2vec-large-chinese` before 20240208, please rerun `python3 -m huixiangdou.service.feature_store`'  # noqa E501
         )
 
         logger.debug('loading text2vec model..')
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=embedding_model_path,
-            model_kwargs={'device': device},
-            encode_kwargs={
-                'batch_size': 1,
-                'normalize_embeddings': True
-            })
-        self.embeddings.client = self.embeddings.client.half()
-        reranker_args = {
-            'model': reranker_model_path,
-            'top_n': 3,
-            'device': device,
-            'use_fp16': True
-        }
-        self.reranker = BCERerank(**reranker_args)
+        self.embeddings = embeddings
+        self.reranker = reranker
         self.compression_retriever = None
         self.rejecter = None
         self.retriever = None
         self.md_splitter = MarkdownTextSplitter(chunk_size=768,
                                                 chunk_overlap=32)
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=768,
-                                                            chunk_overlap=32)
+
+        if language == 'zh':
+            self.text_splitter = ChineseRecursiveTextSplitter(
+                keep_separator=True,
+                is_separator_regex=True,
+                chunk_size=768,
+                chunk_overlap=32)
+        else:
+            self.text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=768, chunk_overlap=32)
 
         self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
             ('#', 'Header 1'),
             ('##', 'Header 2'),
             ('###', 'Header 3'),
         ])
-
-    def is_chinese_doc(self, text):
-        """If the proportion of Chinese in a bilingual document exceeds 0.5%,
-        it is considered a Chinese document."""
-        chinese_characters = re.findall(r'[\u4e00-\u9fff]', text)
-        total_characters = len(text)
-        ratio = 0
-        if total_characters > 0:
-            ratio = len(chinese_characters) / total_characters
-        if ratio >= 0.005:
-            return True
-        return False
-
-    def cos_similarity(self, v1: list, v2: list):
-        """Compute cos distance."""
-        num = float(np.dot(v1, v2))
-        denom = np.linalg.norm(v1) * np.linalg.norm(v2)
-        return 0.5 + 0.5 * (num / denom) if denom != 0 else 0
-
-    def distance(self, text1: str, text2: str):
-        """Compute feature distance."""
-        feature1 = self.embeddings.embed_query(text1)
-        feature2 = self.embeddings.embed_query(text2)
-        return self.cos_similarity(feature1, feature2)
 
     def split_md(self, text: str, source: None):
         """Split the markdown document in a nested way, first extracting the
@@ -164,172 +230,133 @@ class FeatureStore:
         new_text = new_text.lower()
         return new_text
 
-    def ingress_response(self, markdown_dir: str, work_dir: str):
+    def get_md_documents(self, file: FileName):
+        documents = []
+        length = 0
+        text = ''
+        with open(file.copypath, encoding='utf8') as f:
+            text = f.read()
+        text = file.prefix + '\n' + self.clean_md(text)
+        if len(text) <= 1:
+            return [], length
+
+        chunks = self.split_md(text=text,
+                               source=os.path.abspath(file.copypath))
+        for chunk in chunks:
+            new_doc = Document(page_content=chunk,
+                               metadata={
+                                   'source': file.basename,
+                                   'read': file.copypath
+                               })
+            length += len(chunk)
+            documents.append(new_doc)
+        return documents, length
+
+    def get_text_documents(self, text: str, file: FileName):
+        if len(text) <= 1:
+            return []
+        chunks = self.text_splitter.create_documents([text])
+        documents = []
+        for chunk in chunks:
+            # `source` is for return references
+            # `read` is for LLM response
+            chunk.metadata = {'source': file.basename, 'read': file.copypath}
+            documents.append(chunk)
+        return documents
+
+    def ingress_response(self, files: list, work_dir: str):
         """Extract the features required for the response pipeline based on the
-        markdown document."""
+        document."""
         feature_dir = os.path.join(work_dir, 'db_response')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        ps = list(Path(markdown_dir).glob('**/*.md'))
-
+        # logger.info('glob {} in dir {}'.format(files, file_dir))
+        file_opr = FileOperation()
         documents = []
 
-        for i, p in enumerate(ps):
-            logger.debug('{}/{}..'.format(i, len(ps)))
-            text = ''
-            with open(p, encoding='utf8') as f:
-                text = f.read()
-                text = self.clean_md(text)
-            if len(text) <= 1:
+        for i, file in enumerate(files):
+            logger.debug('{}/{}.. {}'.format(i + 1, len(files), file.basename))
+            if not file.state:
                 continue
 
-            chunks = self.split_md(text=text, source=os.path.abspath(p))
-            for chunk in chunks:
-                new_doc = Document(page_content=chunk,
-                                   metadata={'source': os.path.abspath(p)})
-                documents.append(new_doc)
+            if file._type == 'md':
+                md_documents, md_length = self.get_md_documents(file)
+                documents += md_documents
+                logger.info('{} content length {}'.format(
+                    file._type, md_length))
+                file.reason = str(md_length)
 
+            else:
+                # now read pdf/word/excel/ppt text
+                text, error = file_opr.read(file.copypath)
+                if error is not None:
+                    file.state = False
+                    file.reason = str(error)
+                    continue
+                file.reason = str(len(text))
+                logger.info('{} content length {}'.format(
+                    file._type, len(text)))
+                text = file.prefix + text
+                documents += self.get_text_documents(text, file)
+
+        if len(documents) < 1:
+            return
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
-    def ingress_reject(self, markdown_dir: str, work_dir: str):
-        """Extract the features required for the reject pipeline based on the
-        markdown document."""
+    def ingress_reject(self, files: list, work_dir: str):
+        """Extract the features required for the reject pipeline based on
+        documents."""
         feature_dir = os.path.join(work_dir, 'db_reject')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        ps = list(Path(markdown_dir).glob('**/*.md'))
         documents = []
+        file_opr = FileOperation()
 
-        for i, p in enumerate(ps):
-            logger.debug('{}/{}..'.format(i, len(ps)))
-            text = ''
-            with open(p, encoding='utf8') as f:
-                text = f.read()
-            if len(text) <= 1:
+        logger.debug('ingress reject..')
+        for i, file in enumerate(files):
+            if not file.state:
                 continue
 
-            chunks = self.split_md(text=text, source=os.path.abspath(p))
-            for chunk in chunks:
-                new_doc = Document(page_content=chunk,
-                                   metadata={'source': os.path.abspath(p)})
-                documents.append(new_doc)
+            if file._type == 'md':
+                # reject base not clean md
+                text = file.basename + '\n'
+                with open(file.copypath, encoding='utf8') as f:
+                    text += f.read()
+                if len(text) <= 1:
+                    continue
 
+                chunks = self.split_md(text=text,
+                                       source=os.path.abspath(file.copypath))
+                for chunk in chunks:
+                    new_doc = Document(page_content=chunk,
+                                       metadata={
+                                           'source': file.basename,
+                                           'read': file.copypath
+                                       })
+                    documents.append(new_doc)
+
+            else:
+                text, error = file_opr.read(file.copypath)
+                if error is not None:
+                    continue
+                text = file.basename + text
+                documents += self.get_text_documents(text, file)
+
+        if len(documents) < 1:
+            return
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
-    def load_feature(self,
-                     work_dir,
-                     feature_response: str = 'db_response',
-                     feature_reject: str = 'db_reject'):
-        """Load extracted feature."""
-        # https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.faiss.FAISS.html#langchain.vectorstores.faiss.FAISS
-
-        resp_dir = os.path.join(work_dir, feature_response)
-        reject_dir = os.path.join(work_dir, feature_reject)
-
-        if not os.path.exists(resp_dir) or not os.path.exists(reject_dir):
-            logger.error(
-                'Please check README.md first and `python3 -m huixiangdou.service.feature_store` to initialize feature database'  # noqa E501
-            )
-            raise Exception(
-                f'{resp_dir} or {reject_dir} not exist, please initialize with feature_store.'  # noqa E501
-            )
-
-        self.rejecter = Vectorstore.load_local(reject_dir,
-                                               embeddings=self.embeddings)
-        self.retriever = Vectorstore.load_local(
-            resp_dir,
-            embeddings=self.embeddings,
-            distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
-                search_type='similarity',
-                search_kwargs={
-                    'score_threshold': 0.2,
-                    'k': 30
-                })
-        self.compression_retriever = ContextualCompressionRetriever(
-            base_compressor=self.reranker, base_retriever=self.retriever)
-
-    def is_reject(self, question, k=20, disable_throttle=False):
-        """If no search results below the threshold can be found from the
-        database, reject this query."""
-        docs = []
-        if disable_throttle:
-            docs = self.rejecter.similarity_search_with_relevance_scores(
-                question, k=1)
-        else:
-            docs = self.rejecter.similarity_search_with_relevance_scores(
-                question, k=k, score_threshold=self.reject_throttle)
-        if len(docs) < 1:
-            return True, docs
-        return False, docs
-
-    def query(self, question: str, context_max_length: int = 16000):
-        """Processes a query and returns the best match from the vector store
-        database. If the question is rejected, returns None.
+    def preprocess(self, files: list, work_dir: str):
+        """Preprocesses files in a given directory. Copies each file to
+        'preprocess' with new name formed by joining all subdirectories with
+        '_'.
 
         Args:
-            question (str): The question asked by the user.
-
-        Returns:
-            str: The best matching chunk, or None.
-            str: The best matching text, or None
-        """
-        if question is None or len(question) < 1:
-            return None, None
-
-        reject, docs = self.is_reject(question=question)
-        if reject:
-            return None, None
-
-        docs = self.compression_retriever.get_relevant_documents(question)
-        chunks = []
-        context = ''
-        files = []
-        for doc in docs:
-            # logger.debug(('db', doc.metadata, question))
-            chunks.append(doc.page_content)
-            filepath = doc.metadata['source']
-            if filepath not in files:
-                files.append(filepath)
-
-        # add file content to context, within `context_max_length`
-        for idx, doc in enumerate(docs):
-            chunk = doc.page_content
-            file_text = ''
-            with open(doc.metadata['source']) as f:
-                file_text = f.read()
-            if len(file_text) + len(context) > context_max_length:
-                # add and break
-                add_len = context_max_length - len(context)
-                if add_len <= 0:
-                    break
-                chunk_index = file_text.find(chunk)
-                if chunk_index == -1:
-                    # chunk not in file_text
-                    context += chunk
-                    context += '\n'
-                    context += file_text[0:add_len - len(chunk) - 1]
-                else:
-                    start_index = max(0, chunk_index - (add_len - len(chunk)))
-                    context += file_text[start_index:start_index + add_len]
-                break
-            context += '\n'
-            context += file_text
-
-        assert (len(context) <= context_max_length)
-        logger.debug('query:{} top1 file:{}'.format(question, files[0]))
-        return '\n'.join(chunks), context
-
-    def preprocess(self, repo_dir: str, work_dir: str):
-        """Preprocesses markdown files in a given directory excluding those
-        containing 'mdb'. Copies each file to 'preprocess' with new name formed
-        by joining all subdirectories with '_'.
-
-        Args:
-            repo_dir (str): Directory where the original markdown files reside.
+            files (list): original file list.
             work_dir (str): Working directory where preprocessed files will be stored.  # noqa E501
 
         Returns:
@@ -338,38 +365,61 @@ class FeatureStore:
         Raises:
             Exception: Raise an exception if no markdown files are found in the provided repository directory.  # noqa E501
         """
-        markdown_dir = os.path.join(work_dir, 'preprocess')
-        if os.path.exists(markdown_dir):
-            logger.warning(
-                f'{markdown_dir} already exists, remove and regenerate.')
-            shutil.rmtree(markdown_dir)
-        os.makedirs(markdown_dir)
+        preproc_dir = os.path.join(work_dir, 'preprocess')
+        if not os.path.exists(preproc_dir):
+            os.makedirs(preproc_dir)
 
-        # find all .md files except those containing mdb
-        mds = []
-        for root, _, files in os.walk(repo_dir):
-            for file in files:
-                if file.endswith('.md') and 'mdb' not in file:
-                    mds.append(os.path.join(root, file))
+        pool = Pool(processes=16)
+        file_opr = FileOperation()
+        for idx, file in enumerate(files):
+            if not os.path.exists(file.origin):
+                file.state = False
+                file.reason = 'skip not exist'
+                continue
 
-        if len(mds) < 1:
-            raise Exception(
-                f'cannot search any markdown file, please check usage: python3 {__file__} workdir repodir'  # noqa E501
-            )
-        for _file in mds:
-            tmp = _file.replace('/', '_')
-            name = tmp[1:] if tmp.startswith('.') else tmp
-            logger.info(name)
-            shutil.copy(_file, f'{markdown_dir}/{name}')
-        logger.debug(f'preprcessed {len(mds)} files.')
-        return markdown_dir
+            if file._type == 'image':
+                file.state = False
+                file.reason = 'skip image'
 
-    def initialize(self,
-                   repo_dir: str,
-                   work_dir: str,
-                   config_path: str = 'config.ini',
-                   good_questions=[],
-                   bad_questions=[]):
+            elif file._type in ['pdf', 'word', 'excel', 'ppt', 'html']:
+                # read pdf/word/excel file and save to text format
+                md5 = file_opr.md5(file.origin)
+                file.copypath = os.path.join(preproc_dir,
+                                             '{}.text'.format(md5))
+                pool.apply_async(read_and_save, (file, ))
+
+            elif file._type in ['md', 'text']:
+                # rename text files to new dir
+                md5 = file_opr.md5(file.origin)
+                file.copypath = os.path.join(
+                    preproc_dir,
+                    file.origin.replace('/', '_')[-84:])
+                try:
+                    shutil.copy(file.origin, file.copypath)
+                    file.state = True
+                    file.reason = 'preprocessed'
+                except Exception as e:
+                    file.state = False
+                    file.reason = str(e)
+
+            else:
+                file.state = False
+                file.reason = 'skip unknown format'
+        pool.close()
+        logger.debug('waiting for preprocess read finish..')
+        pool.join()
+
+        # check process result
+        for file in files:
+            if file._type in ['pdf', 'word', 'excel']:
+                if os.path.exists(file.copypath):
+                    file.state = True
+                    file.reason = 'preprocessed'
+                else:
+                    file.state = False
+                    file.reason = 'read error'
+
+    def initialize(self, files: list, work_dir: str):
         """Initializes response and reject feature store.
 
         Only needs to be called once. Also calculates the optimal threshold
@@ -379,41 +429,9 @@ class FeatureStore:
         logger.info(
             'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
-        markdown_dir = self.preprocess(repo_dir=repo_dir, work_dir=work_dir)
-        self.ingress_response(markdown_dir=markdown_dir, work_dir=work_dir)
-        self.ingress_reject(markdown_dir=markdown_dir, work_dir=work_dir)
-
-        if len(good_questions) == 0 or len(bad_questions) == 0:
-            raise Exception('good and bad question examples cat not be empty.')
-        self.load_feature(work_dir=work_dir)
-        questions = good_questions + bad_questions
-        predictions = []
-        for question in questions:
-            self.reject_throttle = -1
-            _, docs = self.is_reject(question=question, disable_throttle=True)
-            score = docs[0][1]
-            predictions.append(score)
-
-        labels = [1 for _ in range(len(good_questions))
-                  ] + [0 for _ in range(len(bad_questions))]
-        precision, recall, thresholds = precision_recall_curve(
-            labels, predictions)
-
-        # get the best index for sum(precision, recall)
-        sum_precision_recall = precision[:-1] + recall[:-1]
-        index_max = np.argmax(sum_precision_recall)
-        optimal_threshold = thresholds[index_max]
-
-        with open(config_path, encoding='utf8') as f:
-            config = pytoml.load(f)
-        config['feature_store']['reject_throttle'] = optimal_threshold
-        with open(config_path, 'w', encoding='utf8') as f:
-            pytoml.dump(config, f)
-
-        logger.info(
-            f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
-        )
-        empty_cache()
+        self.preprocess(files=files, work_dir=work_dir)
+        self.ingress_response(files=files, work_dir=work_dir)
+        self.ingress_reject(files=files, work_dir=work_dir)
 
 
 def parse_args():
@@ -430,6 +448,10 @@ def parse_args():
         default='repodir',
         help='Root directory where the repositories are located.')
     parser.add_argument(
+        '--config_path',
+        default='config.ini',
+        help='Feature store configuration path. Default value is config.ini')
+    parser.add_argument(
         '--good_questions',
         default='resource/good_questions.json',
         help=  # noqa E251
@@ -442,37 +464,32 @@ def parse_args():
         'Negative examples json path. Default value is resource/bad_questions.json'  # noqa E501
     )
     parser.add_argument(
-        '--config_path',
-        default='config.ini',
-        help='Feature store configuration path. Default value is config.ini')
-    parser.add_argument(
         '--sample', help='Input an json file, save reject and search output.')
     args = parser.parse_args()
     return args
 
 
-def test_reject(sample: str = None):
+def test_reject(retriever: Retriever, sample: str = None):
     """Simple test reject pipeline."""
     if sample is None:
         real_questions = [
-            '请问找不到libmmdeploy.so怎么办',
             'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
             '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
             'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
             '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
-            'mmdeploy 现在支持 mmtrack 模型转换了么',
             '请问 ncnn 全称是什么',
             '有啥中文的 text to speech 模型吗?',
             '今天中午吃什么？',
-            '茴香豆是怎么做的'
+            'huixiangdou 是什么？',
+            'mmpose 如何安装？',
+            '使用科研仪器需要注意什么？'
         ]
     else:
         with open(sample) as f:
             real_questions = json.load(f)
-    fs_query = FeatureStore(config_path=args.config_path)
-    fs_query.load_feature(work_dir=args.work_dir)
+
     for example in real_questions:
-        reject, _ = fs_query.is_reject(example)
+        reject, _ = retriever.is_reject(example)
 
         if reject:
             logger.error(f'reject query: {example}')
@@ -489,46 +506,53 @@ def test_reject(sample: str = None):
                     f.write(example)
                     f.write('\n')
 
-    del fs_query
     empty_cache()
 
 
-def test_query(sample: str = None):
+def test_query(retriever: Retriever, sample: str = None):
     """Simple test response pipeline."""
     if sample is not None:
         with open(sample) as f:
             real_questions = json.load(f)
         logger.add('logs/feature_store_query.log', rotation='4MB')
     else:
-        real_questions = ['mmpose installation']
+        real_questions = ['mmpose installation', 'how to use std::vector ?']
 
-    fs_query = FeatureStore(config_path=args.config_path)
-    fs_query.load_feature(work_dir=args.work_dir)
     for example in real_questions:
         example = example[0:400]
-        fs_query.query(example)
+        print(retriever.query(example))
         empty_cache()
 
-    del fs_query
     empty_cache()
 
 
 if __name__ == '__main__':
     args = parse_args()
+    cache = CacheRetriever(config_path=args.config_path)
+    fs_init = FeatureStore(embeddings=cache.embeddings,
+                           reranker=cache.reranker,
+                           config_path=args.config_path)
 
-    if args.sample is None:
-        # not test precision, build workdir
-        fs_init = FeatureStore(config_path=args.config_path)
-        with open(args.good_questions, encoding='utf8') as f:
-            good_questions = json.load(f)
-        with open(args.bad_questions, encoding='utf8') as f:
-            bad_questions = json.load(f)
+    # walk all files in repo dir
+    file_opr = FileOperation()
+    files = file_opr.scan_dir(repo_dir=args.repo_dir)
+    fs_init.initialize(files=files, work_dir=args.work_dir)
+    file_opr.summarize(files)
+    del fs_init
 
-        fs_init.initialize(repo_dir=args.repo_dir,
-                           work_dir=args.work_dir,
-                           good_questions=good_questions,
-                           bad_questions=bad_questions)
-        del fs_init
+    # update reject throttle
+    retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
+    with open(os.path.join('resource', 'good_questions.json')) as f:
+        good_questions = json.load(f)
+    with open(os.path.join('resource', 'bad_questions.json')) as f:
+        bad_questions = json.load(f)
+    retriever.update_throttle(config_path=args.config_path,
+                              good_questions=good_questions,
+                              bad_questions=bad_questions)
 
-    test_reject(args.sample)
-    test_query(args.sample)
+    cache.pop('default')
+
+    # test
+    retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
+    test_reject(retriever, args.sample)
+    test_query(retriever, args.sample)
