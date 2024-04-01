@@ -12,18 +12,13 @@ from functools import lru_cache, partial, wraps
 import pytoml
 import redis
 from BCEmbedding.tools.langchain import BCERerank
-from config import feature_store_base_dir, redis_host, redis_port, redis_passwd
-from feature_store import FeatureStore
-from helper import ErrorCode, Queue, TaskCode, parse_json_str, ocr
+from huixiangdou.service import feature_store_base_dir, redis_host, redis_port, redis_passwd, FeatureStore, ErrorCode, Queue, TaskCode, parse_json_str 
 from langchain.embeddings import HuggingFaceEmbeddings
 from loguru import logger
-from retriever import Retriever
-from worker import Worker
-from llm_server_hybrid import llm_serve
 from multiprocessing import Process, Value, Pool
-from file_operation import FileName, FileOperation
-from huixiangdou.service import CacheRetriever
-
+from huixiangdou.service import FileName, FileOperation
+from huixiangdou.service import CacheRetriever, Retriever
+from .worker import Worker
 
 def callback_task_state(feature_store_id: str, code: int, _type: str,
                         state: str, files_state: list=[]):
@@ -388,8 +383,10 @@ if __name__ == '__main__':
     logger.info('Hybrid LLM Server start.')
 
 
+    # process()
 
-    CNT = 16 
+
+    CNT = 6
     pool = Pool(processes=CNT)
 
     ps = []

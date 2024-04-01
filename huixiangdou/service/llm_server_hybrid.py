@@ -6,6 +6,7 @@ import random
 import time
 from datetime import datetime, timedelta
 from multiprocessing import Process, Value
+import os
 
 import pytoml
 import requests
@@ -37,6 +38,10 @@ def build_messages(prompt, history, system: str = None):
     messages.append({'role': 'user', 'content': prompt})
     return messages
 
+def os_run(cmd: str):
+    ret = os.popen(cmd)
+    ret = ret.read().rstrip().lstrip()
+    return ret
 
 class RPM:
 
@@ -177,6 +182,7 @@ class HybridLLMServer:
         if 'rpm' in self.server_config:
             _rpm = self.server_config['rpm']
         self.rpm = RPM(_rpm)
+        self.token = ('', 0)
 
         if self.enable_local:
             self.inference = InferenceWrapper(model_path)
