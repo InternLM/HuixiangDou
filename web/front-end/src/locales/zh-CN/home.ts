@@ -9,7 +9,7 @@ export default {
         cancel: '取消',
         go: '前往',
         bean: '知识库',
-        activeBean: '活跃知识库',
+        activeBean: '月活知识库',
         WeChat: '微信',
         feishu: '飞书',
         users: '服务人次',

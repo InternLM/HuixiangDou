@@ -9,7 +9,7 @@ export default {
         cancel: 'Cancel',
         go: 'Go',
         bean: 'Knowledge Base',
-        activeBean: 'Active Knowledge Base',
+        activeBean: 'Active Base Monthly',
         WeChat: 'WeChat',
         feishu: 'Lark',
         users: 'Serviced Users',
