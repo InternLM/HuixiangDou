@@ -386,7 +386,7 @@ if __name__ == '__main__':
     # process()
 
 
-    CNT = 6
+    CNT = 16
     pool = Pool(processes=CNT)
 
     ps = []
