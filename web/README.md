@@ -1,6 +1,7 @@
 # web
 
 ## environment
+
 ```shell
 # set your service endpoint(open to Internet callback from lark and wechat)
 export HUIXIANGDOU_MESSAGE_ENDPOINT=http://ip:port
@@ -45,7 +46,7 @@ v20.12.0
 python3 -m web.main
 ```
 
-如何不用 https 安全链接，需要 `unset COOKIE_SECURE` 
+如何不用 https 安全链接，需要 `unset COOKIE_SECURE`
 
 4. 运行算法侧
 
@@ -58,3 +59,4 @@ python3 -m web.proxy.main
 ```
 
 5. 测试
+打开服务器 7860 端口，创建知识库测试效果

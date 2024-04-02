@@ -8,20 +8,28 @@ import types
 from datetime import datetime, timedelta
 # implement time lru cache
 from functools import lru_cache, partial, wraps
+from multiprocessing import Pool, Process, Value
 
 import pytoml
 import redis
 from BCEmbedding.tools.langchain import BCERerank
-from huixiangdou.service import feature_store_base_dir, redis_host, redis_port, redis_passwd, FeatureStore, ErrorCode, Queue, TaskCode, parse_json_str 
 from langchain.embeddings import HuggingFaceEmbeddings
 from loguru import logger
-from multiprocessing import Process, Value, Pool
-from huixiangdou.service import FileName, FileOperation
-from huixiangdou.service import CacheRetriever, Retriever
+
+from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,
+                                 FileName, FileOperation, Queue, Retriever,
+                                 TaskCode, feature_store_base_dir,
+                                 parse_json_str, redis_host, redis_passwd,
+                                 redis_port)
+
 from .worker import Worker
 
-def callback_task_state(feature_store_id: str, code: int, _type: str,
-                        state: str, files_state: list=[]):
+
+def callback_task_state(feature_store_id: str,
+                        code: int,
+                        _type: str,
+                        state: str,
+                        files_state: list = []):
     resp = Queue(name='TaskResponse')
     target = {
         'feature_store_id': feature_store_id,
@@ -119,17 +127,23 @@ def chat_with_featue_store(cache: CacheRetriever,
                          feature_store_id=fs_id,
                          query_id=query_id)
 
-
     BASE = feature_store_base_dir()
     workdir = os.path.join(BASE, fs_id, 'workdir')
     configpath = os.path.join(BASE, fs_id, 'config.ini')
     db_reject = os.path.join(workdir, 'db_reject')
     db_response = os.path.join(workdir, 'db_response')
 
-    if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
-        chat_state(code=ErrorCode.PARAMETER_ERROR.value, text='',state='知识库未建立或建立异常，此时不能 chat。', ref=[])
+    if not os.path.exists(workdir) or not os.path.exists(
+            configpath) or not os.path.exists(db_reject) or not os.path.exists(
+                db_response):
+        chat_state(code=ErrorCode.PARAMETER_ERROR.value,
+                   text='',
+                   state='知识库未建立或建立异常，此时不能 chat。',
+                   ref=[])
         return
-    retriever = cache.get(fs_id=fs_id, config_path=configpath, work_dir=workdir)
+    retriever = cache.get(fs_id=fs_id,
+                          config_path=configpath,
+                          work_dir=workdir)
 
     worker = Worker(work_dir=workdir, config_path=configpath)
 
@@ -143,7 +157,8 @@ def chat_with_featue_store(cache: CacheRetriever,
     image_text = '\n'.join(image_texts)
 
     history = format_history(payload.history)
-    error, response, references = worker.generate(query=image_text+payload.content,
+    error, response, references = worker.generate(query=image_text +
+                                                  payload.content,
                                                   history=history,
                                                   retriever=retriever,
                                                   groupname='')
@@ -227,11 +242,15 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
                    files_state=files_state)
 
     elif success_cnt == 0:
-        task_state(code=ErrorCode.FAILED.value, state='无文件被处理', files_state=files_state)
+        task_state(code=ErrorCode.FAILED.value,
+                   state='无文件被处理',
+                   files_state=files_state)
 
     else:
         state = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
-        task_state(code=ErrorCode.SUCCESS.value, state=state, files_state=files_state)
+        task_state(code=ErrorCode.SUCCESS.value,
+                   state=state,
+                   files_state=files_state)
 
     # except Exception as e:
     #     logger.error(str(e))
@@ -276,14 +295,18 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
     db_reject = os.path.join(workdir, 'db_reject')
     db_response = os.path.join(workdir, 'db_response')
 
-    if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
+    if not os.path.exists(workdir) or not os.path.exists(
+            configpath) or not os.path.exists(db_reject) or not os.path.exists(
+                db_response):
         task_state(code=ErrorCode.INTERNAL_ERROR.value,
                    state='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
         return
 
     # try:
 
-    retriever = cache.get(fs_id=fs_id, config_path=configpath, work_dir=workdir)
+    retriever = cache.get(fs_id=fs_id,
+                          config_path=configpath,
+                          work_dir=workdir)
     retriever.update_throttle(config_path=configpath,
                               good_questions=positive,
                               bad_questions=negative)
@@ -335,7 +358,7 @@ def process():
 
     logger.info('start wait task queue..')
     while True:
-#        try:
+        #        try:
         msg_pop = que.get(timeout=16)
         if msg_pop is None:
             continue
@@ -358,11 +381,11 @@ def process():
         else:
             logger.warning(f'unknown type {msg}')
 
+
 #        except Exception as e:
 #            logger.error(str(e))
 #            time.sleep(1)
 #            que = Queue(name='Task')
-
 
 if __name__ == '__main__':
     # start hybrid server
@@ -382,9 +405,7 @@ if __name__ == '__main__':
     #         raise Exception('local LLM path')
     logger.info('Hybrid LLM Server start.')
 
-
     # process()
-
 
     CNT = 16
     pool = Pool(processes=CNT)

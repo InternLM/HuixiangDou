@@ -10,4 +10,4 @@ class IntegrateLarkBody(BaseModel):
 
 class IntegrateWebSearchBody(BaseModel):
     webSearchToken: str
-    vendor: Optional[str] = ""
+    vendor: Optional[str] = ''

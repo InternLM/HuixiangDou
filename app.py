@@ -8,4 +8,4 @@
 import os
 
 # launch the HuixiangDou-WEB
-os.system("python -m web.main")
+os.system('python -m web.main')

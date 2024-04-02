@@ -1,6 +1,6 @@
+import web.constant.biz_constant as biz_const
 from web.model.huixiangdou import HxdTask, HxdTaskType
 from web.orm.redis import r
-import web.constant.biz_constant as biz_const
 from web.service.cache import ChatCache
 from web.util.log import log
 
@@ -8,12 +8,13 @@ logger = log(__name__)
 
 
 class HuixiangDouTask:
+
     def __init__(self):
         pass
 
     def updateTask(self, task: HxdTask) -> bool:
-        """
-        update task into redis
+        """update task into redis.
+
         :param task: HxdTask
         :return: bool: True or False
         """
@@ -28,7 +29,6 @@ class HuixiangDouTask:
         try:
             r.rpush(biz_const.RDS_KEY_HXD_TASK, task.model_dump_json())
         except Exception as e:
-            logger.error(f"{e}")
+            logger.error(f'{e}')
             return False
         return True
-

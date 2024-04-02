@@ -6,16 +6,20 @@ from typing import Union
 import lark_oapi as lark
 import requests
 from fastapi import Request, Response
-from lark_oapi import RawRequest, RawResponse, UTF_8, USER_AGENT, AUTHORIZATION, X_TT_LOGID, X_REQUEST_ID, CONTENT_TYPE, \
-    Content_Disposition, LARK_REQUEST_TIMESTAMP, LARK_REQUEST_NONCE, LARK_REQUEST_SIGNATURE
-from lark_oapi.api.im.v1 import GetChatRequest, P2ImMessageReceiveV1, MentionEvent, GetImageRequest, \
-    ReplyMessageRequest, ReplyMessageRequestBody
+from lark_oapi import (AUTHORIZATION, CONTENT_TYPE, LARK_REQUEST_NONCE,
+                       LARK_REQUEST_SIGNATURE, LARK_REQUEST_TIMESTAMP,
+                       USER_AGENT, UTF_8, X_REQUEST_ID, X_TT_LOGID,
+                       Content_Disposition, RawRequest, RawResponse)
+from lark_oapi.api.im.v1 import (GetChatRequest, GetImageRequest, MentionEvent,
+                                 P2ImMessageReceiveV1, ReplyMessageRequest,
+                                 ReplyMessageRequestBody)
 
 from web.config.env import HuixiangDouEnv
 from web.constant import biz_constant
-from web.model.base import standard_error_response, BaseBody
-from web.model.chat import ChatRequestBody, ChatType, LarkChatDetail, ChatQueryInfo, WechatRequest, WechatType, \
-    WechatPollItem, WechatResponse
+from web.model.base import BaseBody, standard_error_response
+from web.model.chat import (ChatQueryInfo, ChatRequestBody, ChatType,
+                            LarkChatDetail, WechatPollItem, WechatRequest,
+                            WechatResponse, WechatType)
 from web.service import qalib
 from web.service.cache import ChatCache
 from web.service.chat import ChatService
@@ -35,6 +39,7 @@ class LarkContentType(Enum):
 
 
 class LarkAgent:
+
     @classmethod
     async def parse_req(cls, request: Request) -> RawRequest:
         headers = dict(request.headers)
@@ -43,7 +48,7 @@ class LarkAgent:
         req.body = await request.body()
         req.headers = {}
 
-        for k,v in headers.items():
+        for k, v in headers.items():
             if USER_AGENT.lower() == k.lower():
                 req.headers[USER_AGENT] = v
             elif AUTHORIZATION.lower() == k.lower():
@@ -67,15 +72,17 @@ class LarkAgent:
 
     @classmethod
     def parse_rsp(cls, response: RawResponse) -> Response:
-        return Response(status_code=response.status_code, content=str(response.content, UTF_8),
+        return Response(status_code=response.status_code,
+                        content=str(response.content, UTF_8),
                         headers=response.headers)
 
     @classmethod
     def get_event_handler(cls):
-        return lark.EventDispatcherHandler.builder(HuixiangDouEnv.get_lark_encrypt_key(),
-                                                   HuixiangDouEnv.get_lark_verification_token(),
-                                                   lark.LogLevel.DEBUG).register_p2_im_message_receive_v1(
-            cls._on_im_message_received).build()
+        return lark.EventDispatcherHandler.builder(
+            HuixiangDouEnv.get_lark_encrypt_key(),
+            HuixiangDouEnv.get_lark_verification_token(),
+            lark.LogLevel.DEBUG).register_p2_im_message_receive_v1(
+                cls._on_im_message_received).build()
 
     @classmethod
     def _on_im_message_received(cls, data: P2ImMessageReceiveV1):
@@ -84,26 +91,34 @@ class LarkAgent:
         app_id = data.header.app_id
         app_secret = QaLibCache.get_lark_info_by_app_id(app_id)
         if not app_secret:
-            logger.error(f"[lark] app_id: {app_id} not record, omit lark message callback")
+            logger.error(
+                f'[lark] app_id: {app_id} not record, omit lark message callback'
+            )
             return
 
         # get feature store
         client = cls._get_lark_client(app_id, app_secret)
         chat_name = cls._get_chat_name(chat_id, client)
         if not chat_name:
-            logger.error(f"[lark] app_id: {app_id} get group name failed, omit lark message callback")
+            logger.error(
+                f'[lark] app_id: {app_id} get group name failed, omit lark message callback'
+            )
             return
         suffix = qalib.get_suffix_by_name(chat_name)
         if not suffix:
-            logger.error(f"[lark] app_id: {app_id}, name: {chat_name} get suffix failed, omit lark message callback")
+            logger.error(
+                f'[lark] app_id: {app_id}, name: {chat_name} get suffix failed, omit lark message callback'
+            )
             return
-        feature_store_id = QaLibCache.get_qalib_feature_store_id_by_suffix(suffix)
+        feature_store_id = QaLibCache.get_qalib_feature_store_id_by_suffix(
+            suffix)
         if not feature_store_id:
             return
         hxd_info = QaLibCache.get_qalib_info(feature_store_id)
         if not hxd_info:
             logger.error(
-                f"[lark] app_id: {app_id}, name: {chat_name} get feature store failed, omit lark message callback")
+                f'[lark] app_id: {app_id}, name: {chat_name} get feature store failed, omit lark message callback'
+            )
             return
 
         # mark
@@ -114,7 +129,9 @@ class LarkAgent:
         mentions = msg.mentions
         lark_content = cls._parse_lark_content(content, mentions)
         if not lark_content:
-            logger.debug(f"[lark] app_id: {app_id}, name: {chat_name}, content: {content} omit")
+            logger.debug(
+                f'[lark] app_id: {app_id}, name: {chat_name}, content: {content} omit'
+            )
             return
 
         query_id = None
@@ -123,18 +140,24 @@ class LarkAgent:
         if len(lark_content.images) > 0:
             query_id = chat_svc.generate_query_id(lark_content.content)
             for index in range(len(lark_content.images)):
-                image_store_path = chat_svc.gen_image_store_path(query_id, str(index), ChatType.LARK)
-                if cls._store_image(client, lark_content.images[index], image_store_path):
+                image_store_path = chat_svc.gen_image_store_path(
+                    query_id, str(index), ChatType.LARK)
+                if cls._store_image(client, lark_content.images[index],
+                                    image_store_path):
                     # replace image_key with actually store path
                     lark_content.images[index] = image_store_path
 
         # todo cache and fetch history
         # push into chat task queue
-        chat_detail = LarkChatDetail(appId=app_id, appSecret=app_secret, messageId=msg.message_id)
-        chat_svc.chat_by_agent(lark_content, ChatType.LARK, chat_detail, data.event.sender.sender_id.open_id, query_id)
+        chat_detail = LarkChatDetail(appId=app_id,
+                                     appSecret=app_secret,
+                                     messageId=msg.message_id)
+        chat_svc.chat_by_agent(lark_content, ChatType.LARK, chat_detail,
+                               data.event.sender.sender_id.open_id, query_id)
 
     @classmethod
-    def _get_chat_name(cls, chat_id: str, client: lark.client) -> Union[str, None]:
+    def _get_chat_name(cls, chat_id: str,
+                       client: lark.client) -> Union[str, None]:
         request = GetChatRequest.builder() \
             .chat_id(chat_id) \
             .build()
@@ -143,52 +166,60 @@ class LarkAgent:
 
         if not response.success():
             logger.error(
-                f"[lark] get chat: {chat_id} info failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}")
+                f'[lark] get chat: {chat_id} info failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}'
+            )
             return None
 
         try:
             return response.data.name
         except:
-            logger.error(f"[lark] get chat: {chat_id} name failed, data: {response.data}")
+            logger.error(
+                f'[lark] get chat: {chat_id} name failed, data: {response.data}'
+            )
             return None
 
     @classmethod
     def _get_lark_client(cls, app_id: str, app_secret: str) -> lark.client:
-        return lark.Client.builder().app_id(app_id).app_secret(app_secret).log_level(
-            HuixiangDouEnv.get_lark_log_level()).build()
+        return lark.Client.builder().app_id(app_id).app_secret(
+            app_secret).log_level(HuixiangDouEnv.get_lark_log_level()).build()
 
     @classmethod
-    def _parse_lark_content(cls, content: str, mentions: list[MentionEvent]) -> Union[ChatRequestBody, None]:
+    def _parse_lark_content(
+            cls, content: str,
+            mentions: list[MentionEvent]) -> Union[ChatRequestBody, None]:
         if not content or len(content) == 0:
             return None
 
         lark_json = json.loads(content)
         content_type = LarkContentType.NORMAL_TEXT
-        if "text" in lark_json:
-            text = lark_json.get("text")
-            if "@_user" in text:
-                content_type = cls._get_content_type_when_at_user_exists(mentions)
-            elif "@_all" in text:
+        if 'text' in lark_json:
+            text = lark_json.get('text')
+            if '@_user' in text:
+                content_type = cls._get_content_type_when_at_user_exists(
+                    mentions)
+            elif '@_all' in text:
                 content_type = LarkContentType.AT_ALL_TEXT
-        elif len(lark_json) == 1 and "image_key" in lark_json:
+        elif len(lark_json) == 1 and 'image_key' in lark_json:
             content_type = LarkContentType.IMAGE
         else:
             content_type = LarkContentType.OTHER
 
         process_flag = cls._check_should_process(content_type)
         if not process_flag:
-            logger.debug(f"[lark] content: {content} has content_type: {content_type}, omit")
+            logger.debug(
+                f'[lark] content: {content} has content_type: {content_type}, omit'
+            )
             return None
 
         if content_type == LarkContentType.IMAGE:
-            image_key = lark_json.get("image_key")
+            image_key = lark_json.get('image_key')
             return ChatRequestBody(images=[image_key])
         else:
             # replace @user_\d
-            text = lark_json.get("text")
+            text = lark_json.get('text')
             if content_type != LarkContentType.NORMAL_TEXT:
                 text = re.sub(r'@_user_\d+', '', text)
-                text = re.sub(r"@_all\d", '', text)
+                text = re.sub(r'@_all\d', '', text)
             return ChatRequestBody(content=text)
 
     @classmethod
@@ -196,7 +227,8 @@ class LarkAgent:
         return t == LarkContentType.AT_BOT_TEXT or t == LarkContentType.NORMAL_TEXT or t == LarkContentType.AT_ALL_TEXT or t == LarkContentType.IMAGE
 
     @classmethod
-    def _get_content_type_when_at_user_exists(cls, mentions: list[MentionEvent]) -> LarkContentType:
+    def _get_content_type_when_at_user_exists(
+            cls, mentions: list[MentionEvent]) -> LarkContentType:
         if not mentions or len(mentions) == 0:
             return LarkContentType.AT_OTHER_PERSON_TEXT
 
@@ -207,12 +239,14 @@ class LarkAgent:
         return LarkContentType.AT_OTHER_PERSON_TEXT
 
     @classmethod
-    def _store_image(cls, client: lark.client, image_key: str, path: str) -> bool:
+    def _store_image(cls, client: lark.client, image_key: str,
+                     path: str) -> bool:
         body = GetImageRequest.builder().image_key(image_key).build()
         response = client.im.v1.image.get(body)
         if not response.success():
             logger.error(
-                f"[lark] get image: {image_key} info failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}")
+                f'[lark] get image: {image_key} info failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}'
+            )
             return False
 
         if response.file:
@@ -220,58 +254,71 @@ class LarkAgent:
                 fout.write(response.file)
             return True
         logger.error(
-            f"[lark] get image: {image_key} stream empty, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}")
+            f'[lark] get image: {image_key} stream empty, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}'
+        )
         return False
 
     @classmethod
     async def response_callback(cls, chat_info: ChatQueryInfo) -> bool:
         if not chat_info.detail:
-            logger.error(f"[lark] invalid lark detail to send response, chat_info: {chat_info.model_dump()}")
+            logger.error(
+                f'[lark] invalid lark detail to send response, chat_info: {chat_info.model_dump()}'
+            )
             return False
 
         if chat_info.response.code != 0:
-            logger.info(f"[lark] HuixiangDou inference error, detail: {chat_info.response.model_dump()}")
+            logger.info(
+                f'[lark] HuixiangDou inference error, detail: {chat_info.response.model_dump()}'
+            )
             return True
 
         lark_detail = json.dumps(chat_info.detail)
         lark_detail = LarkChatDetail(**json.loads(lark_detail))
 
         client = cls._get_lark_client(lark_detail.appId, lark_detail.appSecret)
-        content_body = ReplyMessageRequestBody.builder().content(json.dumps({
-            "text": chat_info.response.text
-        })).msg_type("text").reply_in_thread(False).build()
-        reply_body = ReplyMessageRequest.builder().message_id(lark_detail.messageId).request_body(content_body).build()
+        content_body = ReplyMessageRequestBody.builder().content(
+            json.dumps({'text': chat_info.response.text
+                        })).msg_type('text').reply_in_thread(False).build()
+        reply_body = ReplyMessageRequest.builder().message_id(
+            lark_detail.messageId).request_body(content_body).build()
         response = await client.im.v1.message.areply(reply_body)
 
         if not response.success():
             logger.error(
-                f"[lark] response: {chat_info.model_dump()} failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}")
+                f'[lark] response: {chat_info.model_dump()} failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}'
+            )
             return False
         return True
 
 
 class WechatAgent:
+
     @classmethod
-    def action(cls, body: WechatRequest, suffix: str) -> Union[BaseBody, WechatResponse]:
-        feature_store_id = QaLibCache.get_qalib_feature_store_id_by_suffix(suffix)
+    def action(cls, body: WechatRequest,
+               suffix: str) -> Union[BaseBody, WechatResponse]:
+        feature_store_id = QaLibCache.get_qalib_feature_store_id_by_suffix(
+            suffix)
         hxd_info = QaLibCache.get_qalib_info(feature_store_id)
         if not hxd_info:
             logger.error(
-                f"[wechat] suffix:{suffix} get feature store failed, omit wechat message callback")
-            return standard_error_response(biz_constant.ERR_QALIB_INFO_NOT_FOUND)
+                f'[wechat] suffix:{suffix} get feature store failed, omit wechat message callback'
+            )
+            return standard_error_response(
+                biz_constant.ERR_QALIB_INFO_NOT_FOUND)
 
         # mark
         ChatCache.mark_agent_used(body.groupname, ChatType.WECHAT)
 
         chat_svc = ChatService(None, None, hxd_info)
-        query_id = ""
+        query_id = ''
         if body.query.type != WechatType.Poll:
             query_id = chat_svc.generate_query_id(body.query.content)
         chat_request_body = None
 
         if body.query.type == WechatType.Image:
             # store image
-            path = chat_svc.gen_image_store_path(query_id, "i", ChatType.WECHAT)
+            path = chat_svc.gen_image_store_path(query_id, 'i',
+                                                 ChatType.WECHAT)
             cls._store_image(path, body.query.content)
             chat_request_body = ChatRequestBody(images=[path])
         elif body.query.type == WechatType.Poll:
@@ -281,7 +328,8 @@ class WechatAgent:
             chat_request_body = ChatRequestBody(content=body.query.content)
 
         # push into chat queue
-        chat_svc.chat_by_agent(chat_request_body, ChatType.WECHAT, body, body.username, query_id)
+        chat_svc.chat_by_agent(chat_request_body, ChatType.WECHAT, body,
+                               body.username, query_id)
         # record query_id
         ChatCache.record_query_id_to_fetch(feature_store_id, query_id)
         return WechatResponse()
@@ -291,7 +339,8 @@ class WechatAgent:
         response = requests.get(url)
         if not response or response.status_code != 200:
             logger.error(
-                f"[wechat] get image: {url} binary failed, code: {response.status_code}, msg: {response.content}")
+                f'[wechat] get image: {url} binary failed, code: {response.status_code}, msg: {response.content}'
+            )
             return False
 
         with open(path, mode='wb') as fout:
@@ -304,18 +353,24 @@ class WechatAgent:
 
         query_id_list = ChatCache.mget_query_id_to_fetch(feature_store_id)
         if len(query_id_list) == 0:
-            logger.debug(f"[wechat] feature_store_id: {feature_store_id} has no response yet")
+            logger.debug(
+                f'[wechat] feature_store_id: {feature_store_id} has no response yet'
+            )
             return ret
 
         complete_query_id_list = []
         l = []
-        query_infos = ChatCache.mget_query_info(query_id_list, feature_store_id)
+        query_infos = ChatCache.mget_query_info(query_id_list,
+                                                feature_store_id)
         for item in query_infos:
             if item.response:
                 l.append(
-                    WechatPollItem(req=WechatRequest.model_validate_json(json.dumps(item.detail)), rsp=item.response))
+                    WechatPollItem(req=WechatRequest.model_validate_json(
+                        json.dumps(item.detail)),
+                                   rsp=item.response))
                 complete_query_id_list.append(item.queryId)
         ret.root = l
 
-        ChatCache.mark_query_id_complete(feature_store_id, complete_query_id_list)
+        ChatCache.mark_query_id_complete(feature_store_id,
+                                         complete_query_id_list)
         return ret

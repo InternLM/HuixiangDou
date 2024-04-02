@@ -2,26 +2,26 @@
 """Pipeline."""
 import argparse
 import datetime
+import json
+import pdb
+import random
 import re
 import time
 
 import pytoml
-from huixiangdou.service import FeatureStore, ErrorCode, QueryTracker, ChatClient, WebSearch
-from loguru import logger
-
 # coding=UTF-8
 import requests
-import json
-import time
-import pdb
-import random
 from loguru import logger
+
+from huixiangdou.service import (ChatClient, ErrorCode, FeatureStore,
+                                 QueryTracker, WebSearch)
+
 
 def openxlab_security(query: str, retry=2):
     life = 0
     while life < retry:
         try:
-            headers = {"Content-Type": "application/json"}
+            headers = {'Content-Type': 'application/json'}
             data = {
                 'bizId': str('antiseed' + str(time.time())),
                 'contents': [query],
@@ -29,7 +29,10 @@ def openxlab_security(query: str, retry=2):
                 'vendor': 1,
             }
 
-            resp = requests.post('https://openxlab.org.cn/gw/checkit/api/v1/audit/text', data=json.dumps(data), headers=headers)
+            resp = requests.post(
+                'https://openxlab.org.cn/gw/checkit/api/v1/audit/text',
+                data=json.dumps(data),
+                headers=headers)
             logger.debug((resp, resp.content))
 
             json_obj = json.loads(resp.content)
@@ -55,6 +58,7 @@ def openxlab_security(query: str, retry=2):
             randval = random.randint(1, int(pow(2, life)))
             time.sleep(randval)
     return False
+
 
 class Worker:
     """The Worker class orchestrates the logic of handling user queries,
@@ -122,7 +126,6 @@ class Worker:
             self.SUMMARIZE_TEMPLATE = '"{}" \n Read the content above carefully, summarize it in a short and powerful way.'  # noqa E501
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
-
     def security_content(self, tracker, response: str):
         # 安全检查，通过为 true
         if len(response) < 1:
@@ -137,8 +140,8 @@ class Worker:
             return True
         return False
 
-
-    def single_judge(self, prompt, tracker, throttle: int, default: int, backend: str):
+    def single_judge(self, prompt, tracker, throttle: int, default: int,
+                     backend: str):
         """Generates a score based on the prompt, and then compares it to
         threshold.
 
@@ -194,10 +197,13 @@ class Worker:
                 default=2,
                 backend='puyu'):
             # not a question, give LLM response
-            response = self.llm.generate_response(prompt=query, history=history, backend='puyu')
+            response = self.llm.generate_response(prompt=query,
+                                                  history=history,
+                                                  backend='puyu')
             return ErrorCode.NOT_A_QUESTION, response, []
 
-        topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query), backend='puyu')
+        topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query),
+                                           backend='puyu')
         tracker.log('topic', topic)
 
         if len(topic) < 2:
@@ -231,20 +237,20 @@ class Worker:
             history_pair=history,
             template=self.GENERATE_TEMPLATE)
         response = self.llm.generate_response(prompt=prompt,
-                                                history=history,
-                                                backend='puyu')
+                                              history=history,
+                                              backend='puyu')
         tracker.log('feature store doc', [chunk, response])
         if response is not None and len(response) < 1:
             # llm error
-            return ErrorCode.INTERNAL_ERROR, "LLM API 没给回复，请点击右上角“反馈问题” qaq", retrieve_ref
+            return ErrorCode.INTERNAL_ERROR, 'LLM API 没给回复，请点击右上角“反馈问题” qaq', retrieve_ref
 
         if response is not None and len(response) > 0:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
             if not self.single_judge(prompt=prompt,
-                                 tracker=tracker,
-                                 throttle=9,
-                                 default=0,
-                                 backend='puyu'):
+                                     tracker=tracker,
+                                     throttle=9,
+                                     default=0,
+                                     backend='puyu'):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
                     return ErrorCode.SECURITY, '检测到敏感内容，无法显示', retrieve_ref

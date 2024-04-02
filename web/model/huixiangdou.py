@@ -29,14 +29,14 @@ class HxdTaskPayload(BaseModel):
     images: Optional[List[str]] = []
     history: Optional[List[HxdTaskChatHistory]] = []
     web_search_token: Optional[str] = None
-    query_id: Optional[str] = ""
+    query_id: Optional[str] = ''
 
 
 class HxdTaskType(Enum):
-    ADD_DOC = "add_doc"
-    UPDATE_PIPELINE = "update_pipeline"
-    UPDATE_SAMPLE = "update_sample"
-    CHAT = "chat"
+    ADD_DOC = 'add_doc'
+    UPDATE_PIPELINE = 'update_pipeline'
+    UPDATE_SAMPLE = 'update_sample'
+    CHAT = 'chat'
 
 
 class HxdTask(BaseModel):
@@ -54,8 +54,8 @@ class HxdTaskResponse(BaseModel):
 
 class ChatResponse(BaseModel):
     code: Optional[int] = -1
-    state: Optional[str] = ""
-    text: Optional[str] = ""
+    state: Optional[str] = ''
+    text: Optional[str] = ''
     references: Optional[list[str]] = []
 
 

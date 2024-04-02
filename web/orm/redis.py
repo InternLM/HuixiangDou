@@ -5,7 +5,7 @@ from web.util.log import log
 
 logger = log(__name__)
 
-logger.info("connecting to redis")
+logger.info('connecting to redis')
 host = HuixiangDouEnv.get_redis_host()
 password = HuixiangDouEnv.get_redis_password()
 port = HuixiangDouEnv.get_redis_port()
@@ -15,9 +15,9 @@ r = redis.Redis(connection_pool=pool)
 try:
     r_res = r.ping()
     if not r_res:
-        logger.error(f"Failed connected to redis, exit with code 1")
+        logger.error(f'Failed connected to redis, exit with code 1')
         exit(1)
 except Exception as e:
-    logger.error(f"Failed connected to redis, error={e}")
+    logger.error(f'Failed connected to redis, error={e}')
     exit(2)
-logger.info("connected to redis")
+logger.info('connected to redis')

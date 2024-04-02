@@ -31,7 +31,6 @@ def test_create_fs():
     print(out)
 
 
-
 def test_update_sample():
     # "payload": {
     #     "name": "STRING",

@@ -1,4 +1,4 @@
-from fastapi import Response, Request
+from fastapi import Request, Response
 
 import web.constant.biz_constant as biz_const
 from web.model.base import BaseBody
@@ -12,6 +12,7 @@ logger = log(__name__)
 
 
 class StatisticService:
+
     def __init__(self, request: Request, response: Response):
         self.request = request
         self.response = response
@@ -24,8 +25,10 @@ class StatisticService:
         total_inference = ChatCache.get_inference_number()
         unique_user = ChatCache.get_unique_inference_user_number()
 
-        data = StatisticTotal(qalibTotal=qalib_total, lastMonthUsed=monthly_active, wechatTotal=wechat_used,
-                              feishuTotal=lark_used, servedTotal=total_inference, realServedTotal=unique_user)
-        return BaseBody(
-            data=data
-        )
+        data = StatisticTotal(qalibTotal=qalib_total,
+                              lastMonthUsed=monthly_active,
+                              wechatTotal=wechat_used,
+                              feishuTotal=lark_used,
+                              servedTotal=total_inference,
+                              realServedTotal=unique_user)
+        return BaseBody(data=data)
