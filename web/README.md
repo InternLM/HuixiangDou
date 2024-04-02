@@ -1,13 +1,10 @@
-# web
+# Web
 
-## environment
+web 版本前后端源码，效果同 https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web
 
-```shell
-# set your service endpoint(open to Internet callback from lark and wechat)
-export HUIXIANGDOU_MESSAGE_ENDPOINT=http://ip:port
-```
+整个服务分 前后端一体 和 算法两部分，中间用 redis queue 生产者/消费者模式通信。
 
-## 启动服务
+## 启动
 
 1. 设置环境变量，启动 redis-server。必须
 
@@ -22,11 +19,13 @@ export JWT_SECRET=${JWT_SEC}
 export SERVER_PORT=7860
 export HUIXIANGDOU_LARK_ENCRYPT_KEY=thisiskey
 export HUIXIANGDOU_LARK_VERIFY_TOKEN=sMzyjKi9vMlEhKCZOVtBMhhl8x23z0AG
+
+# set your service endpoint(open to Internet callback from lark and wechat)
 export HUIXIANGDOU_MESSAGE_ENDPOINT=http://10.1.52.36:18443
 export COOKIE_SECURE=1
 ```
 
-2. 编译&运行前后端
+2. 编译前端 & 运行后端服务
 
 ```bash
 cd front-end
@@ -48,10 +47,10 @@ python3 -m web.main
 
 如何不用 https 安全链接，需要 `unset COOKIE_SECURE`
 
-4. 运行算法侧
+4. 运行算法 pipeline
 
 ```bash
-先开个窗口，启动 LLM
+先开个窗口，启动 LLM hybrid proxy
 python3 -m huixiangdou.service.llm_server_hybrid --config_path config-template.ini
 
 再开个窗口，监听服务
