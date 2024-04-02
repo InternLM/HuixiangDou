@@ -51,7 +51,7 @@ sudo systemctl start redis
 # ECS 上，开个新终端，启动消息监听 6666 端口号
 cd huixiangdou
 python3 -m pip install -r requirements-lark-group.txt
-python3 -m huixiangdou.front-end.lark_group
+python3 -m huixiangdou.frontend.lark_group
 ..
 * Running on all addresses (0.0.0.0)
 * Running on http://127.0.0.1:6666
