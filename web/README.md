@@ -31,7 +31,7 @@ export COOKIE_SECURE=1
 cd front-end
 npm install && npm run build
 
-如果 `node -v` 版本老 （10.x），这么升级 node 版本
+# 如果 `node -v` 版本太老 （10.x），这么升级 node 版本
 sudo npm install n -g
 sudo n stable
 hash -r
@@ -45,12 +45,12 @@ v20.12.0
 python3 -m web.main
 ```
 
-如何不用 https 安全链接，需要 `unset COOKIE_SECURE`
+如果不用 https 安全链接，需要 `unset COOKIE_SECURE`。否则知识库登录会异常
 
 4. 运行算法 pipeline
 
 ```bash
-先开个窗口，启动 LLM hybrid proxy
+先开个终端窗口，启动 LLM hybrid proxy
 python3 -m huixiangdou.service.llm_server_hybrid --config_path config-template.ini
 
 再开个窗口，监听服务
