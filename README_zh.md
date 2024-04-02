@@ -40,7 +40,7 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
-- \[2024/04\] 发布 [web 前后端服务源码](./web)
+- \[2024/04\] 发布 [web 前后端服务源码](./web) 🔷
 - \[2024/03\] 支持 `ppt` 和 `html` 格式
 - \[2024/03\] 优化 `pdf` 和表格解析，改善精度并加速
 - \[2024/03\] 支持 [zhipuai](https://zhipuai.cn) 和 [xi-api 国内 gpt 代理](https://api.xi-ai.cn)，见 `config.ini`
