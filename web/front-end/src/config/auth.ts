@@ -15,7 +15,7 @@ export const ClientIdMap = {
 export const LogURLMap = {
     development: '',
     staging: '',
-    production: 'https://sso.openxlab.org.cn'
+    production: ''
 };
 
 // 注意 Development环境的domain前面必须加 . 因为，本地开发环境和线上开发环境域名不同
@@ -23,7 +23,7 @@ export const LogURLMap = {
 export const TokenCookieDomainMap = {
     development: '',
     staging: '',
-    production: 'opencompass.org.cn'
+    production: ''
 };
 
 export const clientId = ClientIdMap[VITE_NODE];
