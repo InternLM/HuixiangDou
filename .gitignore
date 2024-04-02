@@ -20,3 +20,11 @@ huixiangdou.egg-info/
 commit.id
 resource/wechat_questions.json
 .eggs/
+feature_stores/
+web/qa
+redis.conf
+nohup.out
+*.pyc
+start-web.sh
+web/proxy/config-template.ini
+web/env.sh

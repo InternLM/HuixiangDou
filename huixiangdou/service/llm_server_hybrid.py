@@ -2,6 +2,7 @@
 """LLM server proxy."""
 import argparse
 import json
+import os
 import random
 import time
 from datetime import datetime, timedelta
@@ -36,6 +37,12 @@ def build_messages(prompt, history, system: str = None):
         messages.append({'role': 'assistant', 'content': item[1]})
     messages.append({'role': 'user', 'content': prompt})
     return messages
+
+
+def os_run(cmd: str):
+    ret = os.popen(cmd)
+    ret = ret.read().rstrip().lstrip()
+    return ret
 
 
 class RPM:
@@ -177,6 +184,7 @@ class HybridLLMServer:
         if 'rpm' in self.server_config:
             _rpm = self.server_config['rpm']
         self.rpm = RPM(_rpm)
+        self.token = ('', 0)
 
         if self.enable_local:
             self.inference = InferenceWrapper(model_path)
@@ -221,7 +229,10 @@ class HybridLLMServer:
         life = 0
         while life < self.retry:
             try:
-                res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
+                res_json = requests.post(url,
+                                         headers=header,
+                                         data=json.dumps(data),
+                                         timeout=120).json()
                 logger.debug(res_json)
 
                 # fix token
@@ -233,9 +244,11 @@ class HybridLLMServer:
                         'Content-Type': 'application/json',
                         'Authorization': self.token[0]
                     }
-                    res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
+                    res_json = requests.post(url,
+                                             headers=header,
+                                             data=json.dumps(data),
+                                             timeout=120).json()
                     logger.debug(res_json)
-
 
                 res_data = res_json['data']
                 if len(res_data) < 1:

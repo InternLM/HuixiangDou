@@ -1,0 +1,151 @@
+.chat {
+    border-radius: 8px;
+    border: 1px solid #dcdcdc;
+    padding: 12px;
+    margin-bottom: 100px;
+    .message-list {
+        width: 100%;
+        height: 400px;
+        overflow: auto;
+        scorllbar-width: none;
+        &::-webkit-scrollbar {
+            width: 0;
+        }
+        .avatar {
+            width: 20px;
+            height: 20px;
+            img {
+                width: 20px;
+            }
+        }
+        .message-wrapper {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0;
+        }
+        .message {
+            padding: 8px 12px;
+            border-radius: 0 8px 8px 8px;
+            background: #f4f5f9;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            white-space: pre-wrap;
+            max-width: 80%;
+            position: relative;
+        }
+        .img-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+        .reference-wrapper {
+            border-top: 1px solid #dcdcdc;
+            padding-top: 8px;
+            margin-top: 8px;
+            white-space: pre-wrap;
+        }
+        .reference {
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+            font-size: 14px;
+            position: absolute;
+            top: -10px;
+            left: calc(100% - 10px);
+            overflow: hidden;
+            transition: all 1s ease;
+            .feedback {
+                cursor: pointer;
+                padding: 3px;
+                border-radius: 50%;
+                &:hover {
+                    background-color: #e3e3e3;
+                }
+            }
+        }
+    }
+    .input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 12px;
+        :global {
+            .seal-input-group .seal-input-inner-container:focus-within {
+                outline: 1px solid #59a041;
+            }
+        }
+    }
+    .editor-wrapper {
+        width: 100%;
+        position: relative;
+        text-align: center;
+        border-radius: 12px;
+        margin: auto;
+        padding: 5px 16px;
+        background: #F4F5F9;
+        border: 2px solid transparent;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        &:hover:not(:focus-within) {
+            background: #EBECF0;
+            .prompt-editor:not(:hover) {
+                background: #EBECF0;
+            }
+        }
+        &:focus-within {
+            background: #FFFFFF;
+            border: 2px solid #59a041;
+        }
+    }
+    .prompt-editor {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        max-height: 200px;
+        border-radius: 2px;
+        box-shadow: none;
+        font-size: 14px;
+        line-height: 1.2;
+        box-sizing: border-box;
+        border: none;
+        padding: 0.1rem 0;
+        background: #F4F5F9;
+        resize: none;
+        text-align: left;
+        min-height: calc(1.2 * 0.8rem + 0.2rem);
+        overflow: auto;
+        caret-color: #59a041;
+        white-space: pre-wrap;
+        &[aria-placeholder]:empty::before {
+            color: #666;
+            content: attr(aria-placeholder);
+            position: absolute;
+        }
+        &:hover {
+            background: #EBECF0;
+        }
+        &:focus {
+            background: #FFFFFF;
+        }
+        &:focus-within {
+            background: #FFFFFF;
+        }
+        &:focus-visible {
+            outline-style: none;
+        }
+        &:-webkit-autofill,
+        &:-webkit-autofill:hover,
+        &:-webkit-autofill:focus,
+        &:-webkit-autofill:active {
+            -webkit-transition-delay: 99999s;
+            -webkit-transition: color 99999s ease-out, background-color 99999s ease-out;
+        }
+    }
+}

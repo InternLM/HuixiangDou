@@ -5,8 +5,9 @@ from types import SimpleNamespace
 
 import redis
 import requests
-from .config import redis_host, redis_passwd, redis_port
 from loguru import logger
+
+from .config import redis_host, redis_passwd, redis_port
 
 
 class TaskCode(Enum):

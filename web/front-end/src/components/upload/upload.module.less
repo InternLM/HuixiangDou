@@ -1,0 +1,61 @@
+.upload {
+    border: dashed 2px #ccc;
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.desc {
+    color: #9D9D9D;
+    font-size: 14px;
+}
+.file-list {
+    max-height: 300px;
+    overflow: auto;
+    scorllbar-width: none;
+    &::-webkit-scrollbar {
+        width: 0;
+    }
+    .file-item {
+        border-radius: 4px;
+        padding: 2px 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .file-state {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        width: 80px;
+        color: #047600;
+    }
+    .file-name {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        max-width: 280px;
+    }
+}
+.file-search {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 4px 1px;
+    :global {
+        .seal-input-group .seal-input-inner-container:focus-within {
+            outline: 1px solid #59a041;
+        }
+    }
+}
+.dragger {
+    :global {
+        .ant-upload-list-item-name {
+            max-width: 320px;
+        }
+    }
+}
+

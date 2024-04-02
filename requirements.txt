@@ -7,6 +7,7 @@ einops
 faiss-gpu
 langchain>=0.1.12
 loguru
+lxml_html_clean
 openai>=1.0.0
 openpyxl
 pandas
@@ -25,5 +26,4 @@ torch>=2.0.0
 transformers>=4.37.0
 transformers_stream_generator
 unstructured
-lxml_html_clean
 xlrd>=2.0.1
