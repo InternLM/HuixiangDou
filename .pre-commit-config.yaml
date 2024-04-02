@@ -4,7 +4,7 @@ repos:
     hooks:
       - id: flake8
         exclude: ^(__init__.py)$
-        args: ["--max-line-length=79", "--exclude=service/__init__.py", "--exclude=tests/*"]
+        args: ["--max-line-length=79", "--exclude=service/__init__.py", "--exclude=tests/*", "--exclude=android/*"]
   - repo: https://github.com/PyCQA/isort
     rev: 5.11.5
     hooks:

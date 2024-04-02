@@ -1,6 +1,8 @@
+[English](README.md) | 简体中文
+
 <div align="center">
 
-<img src="resource/logo_black.svg" width="550px"/>
+<img src="resource/logo_black.svg" width="500px"/>
 
 <div align="center">
   <a href="resource/figures/wechat.jpg" target="_blank">
@@ -12,9 +14,13 @@
   <a href="https://pypi.org/project/huixiangdou/" target="_blank">
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
   </a>
+  <a href="https://youtu.be/ylXrT-Tei-Y" target="_blank">
+    <img alt="YouTube" src="https://img.shields.io/badge/YouTube-black?logo=youtube&logoColor=red" />
+  </a>
+  <a href="https://www.bilibili.com/video/BV1S2421N7mn" target="_blank">
+    <img alt="BiliBili" src="https://img.shields.io/badge/BiliBili-pink?logo=bilibili&logoColor=white" />
+  </a>
 </div>
-
-简体中文 | [English](README.md)
 
 </div>
 
@@ -24,10 +30,21 @@
 2. 提出一套解答技术问题的算法 pipeline
 3. 部署成本低，只需要 LLM 模型满足 4 个 trait 即可解答大部分用户问题，见[技术报告 arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 
-查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)
+查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
 
-# 🆕 新功能
+如果对你有用，麻烦 star 一下⭐
 
+# 🔆 新功能
+
+茴香豆 Web 版已发布到 [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)，可以创建自己的知识库、更新正反例、开关网络搜索，聊天测试效果后，集成到飞书/微信群。
+
+Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
+
+- \[2024/03\] 支持 `ppt` 和 `html` 格式
+- \[2024/03\] 优化 `pdf` 和表格解析，改善精度并加速
+- \[2024/03\] 支持 [zhipuai](https://zhipuai.cn) 和 [xi-api 国内 gpt 代理](https://api.xi-ai.cn)，见 `config.ini`
+- \[2024/03\] 新的[个人微信集成方法](./docs/add_wechat_accessibility_zh.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
+- \[2024/03\] 支持 `pdf`/`word`/`excel`，返回引用的文件名或 Web URL
 - \[2024/02\] 用 [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank 提升检索精度 👍
 - \[2024/02\] [支持 deepseek](https://github.com/InternLM/HuixiangDou/blob/main/README_zh.md#step2-%E8%BF%90%E8%A1%8C%E5%9F%BA%E7%A1%80%E7%89%88%E6%8A%80%E6%9C%AF%E5%8A%A9%E6%89%8B) 和 qwen1.5; 按 GPU 显存动态选模型
 - \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
@@ -37,19 +54,21 @@
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
 
-|  版本  | GPU显存需求 |                                                                        描述                                                                        |                             Linux 系统已验证设备                              |
-| :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 体验版 |    2.3GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-| 基础版 |    19GB     |                                                       本地部署 LLM，能回答领域知识的基础问题                                                       | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| 高级版 |    40GB     |                                                    充分利用检索+长文本能力，能够回答源码级问题                                                     | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+|  版本  | GPU显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
+| :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| 体验版 |    1.5GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [kimi](https://kimi.moonshot.cn) 和 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| 基础版 |    19GB     |                                                                         本地部署 LLM，能回答领域知识的基础问题                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 高级版 |    40GB     |                                                                      充分利用检索+长文本能力，能够回答源码级问题                                                                       | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+
+如果你只有 2G 显存，或追求性价比💰，[看这个知乎文档](https://zhuanlan.zhihu.com/p/685205206)。
 
 # 🔥 运行
 
-我们将以 mmpose 为例，介绍如何把知识助手部署到飞书群
+我们将以 mmpose 和一些 `word`/`excel`/`pdf`/`ppt` 测试文档为例，介绍如何把知识助手部署到飞书群
 
 ## STEP1. 建立话题特征库
 
-登录 huggingface，或使用 [hf 国内镜像](https://hf-mirror.com/)。
+由于 [embedding](https://huggingface.co/maidalun1020/bce-embedding-base_v1) 和 [rerank](https://huggingface.co/maidalun1020/bce-reranker-base_v1) 模型需要验证才能获取，你需要登录 huggingface。为了加速下载你可以使用 [hf 国内镜像](https://hf-mirror.com/)。
 
 ```shell
 huggingface-cli login
@@ -64,11 +83,16 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # 下载聊天话题
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
 
-# 建立特征库
-mkdir workdir # 创建工作目录
-python3 -m pip install -r requirements.txt # 安装依赖
-python3 -m huixiangdou.service.feature_store # 把 repodir 的特征保存到 workdir
+# 安装解析 word 文档所需依赖
+apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
+# 安装 python 依赖
+pip install -r requirements.txt
+
+# 把 repodir 的特征保存到 workdir
+mkdir workdir
+python3 -m huixiangdou.service.feature_store
 ```
 
 首次运行将自动下载配置中的 [text2vec 模型](./config.ini)。考虑到 huggingface 连接问题，建议先手动下载到本地，然后在 `config.ini` 设置模型路径。例如：
@@ -78,17 +102,20 @@ python3 -m huixiangdou.service.feature_store # 把 repodir 的特征保存到 wo
 [feature_store]
 ..
 model_path = "/path/to/text2vec-model"
+
+# .github/scripts/config-ci.ini 是一个修改好的示例，用于本项目的 CI
 ```
 
 运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
 ```shell
-# 接受技术话题
-process query: mmdeploy 现在支持 mmtrack 模型转换了么
-process query: 有啥中文的 text to speech 模型吗?
+The optimal threshold is: 0.5447442409012104, saved it..
 # 拒绝闲聊
-reject query: 今天中午吃什么？
-reject query: 茴香豆是怎么做的
+reject query: 有啥中文的 text to speech 模型吗?
+reject query: 今天中午吃什么
+# 接受底库话题
+process query: mmpose 如何安装？
+process query: 使用科研仪器需要注意什么？
 ```
 
 ## STEP2. 运行基础版技术助手
@@ -107,7 +134,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **测试问答效果**
 
-\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 15G），可开启 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照[config-experience.ini](./config-experience.ini)
+\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 15G），可开启 `kimi` 或 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照 [config-experience.ini](./config-experience.ini)
 
 ```ini
 # config.ini
@@ -132,12 +159,16 @@ remote_llm_model = "deepseek-chat"
   python3 -m huixiangdou.main --standalone
   ..
   ErrorCode.SUCCESS,
-  Query: 请教下视频流检测 跳帧  造成框一闪一闪的  有好的优化办法吗
+  Query: 请问如何安装 mmpose ?
   Reply:
-  1. 帧率控制和跳帧策略是优化视频流检测性能的关键，但需要注意跳帧对检测结果的影响。
-  2. 多线程处理和缓存机制可以提高检测效率，但需要注意检测结果的稳定性。
-  3. 使用滑动窗口的方式可以减少跳帧和缓存对检测结果的影响。
+  要安装 mmpose，请按照以下步骤操作：
+  1. **准备环境**：
+  - 安装 Miniconda。
+  - 创建并激活一个名为 openmmlab 的 conda 环境。
+  ..
   ```
+
+  注：如果使用 deepseek 进行 remote llm 调用，出现 400 错误可能是因为安全审查；在 [huixiangdou/main.py](huixiangdou/main.py) 中修改 `queries = ['请问如何安装 mmpose ?']` 为其他问题即可正常运行。
 
 - **docker 用户**。如果你正在使用 docker，`HuixiangDou` 的 Hybrid LLM Service 需要分离部署。
 
@@ -161,7 +192,7 @@ remote_llm_model = "deepseek-chat"
   python3 -m huixiangdou.main
   ..
   ErrorCode.SUCCESS,
-  Query: 请教下视频流检测..
+  Query: 请问如何安装 mmpose..
   ```
 
 ## STEP3.集成飞书/个人微信\[可选\]
@@ -281,7 +312,7 @@ python3 -m huixiangdou.main # docker 用户
 
    基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
 
-3. 如何接入其他 local LLM/ 接入后效果不理想怎么办？
+3. 如何接入其他 local LLM / 接入后效果不理想怎么办？
 
    - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
    - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./huixiangdou/service/worker.py)
@@ -298,7 +329,9 @@ python3 -m huixiangdou.main # docker 用户
 # 🍀 致谢
 
 - [kimi-chat](https://kimi.moonshot.cn/): 长文本 LLM，支持直接上传文件
-- [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): 中英双语特征模型
+- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding): 中英双语特征模型
+- [Langchain-ChatChat](https://github.com/chatchat-space/Langchain-Chatchat): Langchain 和 ChatGLM 的应用
+- [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): 微信抢红包
 
 # 📝 引用
 
