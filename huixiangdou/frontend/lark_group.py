@@ -224,7 +224,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     with open(args.config_path, encoding='utf8') as f:
-        lark_group_config = pytoml.load(f)['front-end']['lark_group']
+        lark_group_config = pytoml.load(f)['frontend']['lark_group']
 
     handler = lark.EventDispatcherHandler.builder(
         lark_group_config['encrypt_key'],
