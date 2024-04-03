@@ -147,18 +147,8 @@ def chat_with_featue_store(cache: CacheRetriever,
 
     worker = Worker(work_dir=workdir, config_path=configpath)
 
-    # TODO parse images
-
-    image_texts = []
-    for image in payload.images:
-        text = ocr(image)
-        if text is not None:
-            image_texts.append(text)
-    image_text = '\n'.join(image_texts)
-
     history = format_history(payload.history)
-    error, response, references = worker.generate(query=image_text +
-                                                  payload.content,
+    error, response, references = worker.generate(query=payload.content,
                                                   history=history,
                                                   retriever=retriever,
                                                   groupname='')
