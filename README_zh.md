@@ -87,6 +87,7 @@ git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
 
 # 安装解析 word 文档所需依赖
+apt update
 apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 # 安装 python 依赖
 pip install -r requirements.txt
