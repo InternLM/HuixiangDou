@@ -24,6 +24,8 @@ export HUIXIANGDOU_LARK_VERIFY_TOKEN=sMzyjKi9vMlEhKCZOVtBMhhl8x23z0AG
 export HUIXIANGDOU_MESSAGE_ENDPOINT=http://10.1.52.36:18443
 export COOKIE_SECURE=1
 ```
+⚠️ 重要事项：  如果不用 https 安全链接，需要 `unset COOKIE_SECURE`（不是设成 0）。否则知识库登录会异常
+
 
 2. 编译前端 & 运行后端服务
 
@@ -44,8 +46,6 @@ v20.12.0
 ```bash
 python3 -m web.main
 ```
-
-如果不用 https 安全链接，需要 `unset COOKIE_SECURE`。否则知识库登录会异常
 
 4. 运行算法 pipeline
 
