@@ -26,6 +26,8 @@ export COOKIE_SECURE=1
 ```
 ⚠️ 重要事项：  如果不用 https 安全链接，需要 `unset COOKIE_SECURE`（不是设成 0）。否则知识库登录会异常
 
+> 怎么算是用 https ？ 就是**你买了域名且能 https 打头， 如果你用的是裸 ip 地址，那就是没有！**
+
 
 2. 编译前端 & 运行后端服务
 
