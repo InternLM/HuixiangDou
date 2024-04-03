@@ -200,7 +200,7 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
 
     configpath = os.path.join(BASE, fs_id, 'config.ini')
     if not os.path.exists(configpath):
-        template_file = 'config-template.ini'
+        template_file = 'config.ini'
         if not os.path.exists(template_file):
             raise Exception(f'{template_file} not exist')
         shutil.copy(template_file, configpath)
@@ -354,7 +354,7 @@ def update_pipeline(payload: types.SimpleNamespace):
 
 def process():
     que = Queue(name='Task')
-    fs_cache = CacheRetriever('config-template.ini')
+    fs_cache = CacheRetriever('config.ini')
 
     logger.info('start wait task queue..')
     while True:
@@ -391,7 +391,7 @@ if __name__ == '__main__':
     # start hybrid server
     # server_ready = Value('i', 0)
     # server_process = Process(target=llm_serve,
-    #                             args=('config-template.ini', server_ready))
+    #                             args=('config.ini', server_ready))
     # server_process.daemon = True
     # server_process.start()
     # while True:
