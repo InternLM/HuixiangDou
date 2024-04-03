@@ -403,24 +403,26 @@ if __name__ == '__main__':
     #     else:
     #         logger.error('start local LLM server failed, quit.')
     #         raise Exception('local LLM path')
-    logger.info('Hybrid LLM Server start.')
+    # logger.info('Hybrid LLM Server start.')
 
-    # process()
+    # single process
+    process()
 
-    CNT = 16
-    pool = Pool(processes=CNT)
+    # multiple process
+    # CNT = 16
+    # pool = Pool(processes=CNT)
 
-    ps = []
+    # ps = []
 
-    for i in range(CNT):
-        logger.info('prepare process {}'.format(i))
+    # for i in range(CNT):
+    #     logger.info('prepare process {}'.format(i))
 
-        p = Process(target=process, args=())
-        p.daemon = False
-        p.start()
-        ps.append(p)
-        time.sleep(1)
-        logger.info('started process {}'.format(i))
+    #     p = Process(target=process, args=())
+    #     p.daemon = False
+    #     p.start()
+    #     ps.append(p)
+    #     time.sleep(1)
+    #     logger.info('started process {}'.format(i))
 
-    for p in ps:
-        p.join()
+    # for p in ps:
+    #     p.join()
