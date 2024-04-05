@@ -2,11 +2,11 @@ English | [简体中文](README_zh.md)
 
 <div align="center">
 
-<img src="resource/logo_black.svg" width="500px"/>
+<img src="resource/logo_black.svg" width="555px"/>
 
 <div align="center">
   <a href="resource/figures/wechat.jpg" target="_blank">
-    <img alt="Wechat" src="https://img.shields.io/badge/wechat-assistant%20inside-brightgreen?logo=wechat&logoColor=white" />
+    <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
   <a href="https://arxiv.org/abs/2401.08772" target="_blank">
     <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
@@ -19,6 +19,9 @@ English | [简体中文](README_zh.md)
   </a>
   <a href="https://www.bilibili.com/video/BV1S2421N7mn" target="_blank">
     <img alt="BiliBili" src="https://img.shields.io/badge/BiliBili-pink?logo=bilibili&logoColor=white" />
+  </a>
+  <a href="https://discord.gg/TW4ZBpZZ" target="_blank">
+    <img alt="discord" src="https://img.shields.io/badge/discord-red?logo=discord&logoColor=white" />
   </a>
 </div>
 
