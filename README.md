@@ -27,11 +27,11 @@ English | [简体中文](README_zh.md)
 
 </div>
 
-"HuixiangDou" is a domain-specific knowledge assistant based on the LLM. Features:
+HuixiangDou is a **group chat** assistant based on the LLM. Advantages:
 
-1. Deal with complex scenarios like group chats, answer user questions without causing message flooding.
-2. Propose an algorithm pipeline for answering technical questions.
-3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
+1. Design a two-stage pipeline of rejection and response to cope with group chat scenario, answer user questions without message flooding, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772)
+2. Low cost, requiring only 1.5GB memory and no need for training
+3. Offers a complete suite of Web, Android, and pipeline source code, which is industrial-grade and commercially viable
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](resource/figures/wechat.jpg) to try AI assistant inside.
 
