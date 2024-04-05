@@ -27,7 +27,9 @@ English | [简体中文](README_zh.md)
 
 </div>
 
-HuixiangDou is a **group chat** assistant based on the LLM. Advantages:
+HuixiangDou is a **group chat** assistant based on LLM (Large Language Model). 
+
+Advantages:
 
 1. Design a two-stage pipeline of rejection and response to cope with group chat scenario, answer user questions without message flooding, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772)
 2. Low cost, requiring only 1.5GB memory and no need for training
