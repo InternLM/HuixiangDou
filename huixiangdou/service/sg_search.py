@@ -146,13 +146,14 @@ class SourceGraphProxy:
 
         prompt = self.KEYWORDS_TEMPLATE.format(question)
         entities = []
+        entity_str = ''
         try:
             entity_str = llm_client.generate_response(prompt=prompt)
             entities = [item for item in entity_str.split(',') if item.strip()]
         except Exception as e:
             logger.error('parse {} failed {}.'.format(entity_str, str(e)))
             # return ''
-            entities = ['视频流']
+            entities = []
 
         search_items = []
         for entity in entities:
