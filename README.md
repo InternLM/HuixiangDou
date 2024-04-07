@@ -321,6 +321,22 @@ The basic version may not perform well. You can enable these features to enhance
 
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
 
+7. `No module named 'faiss.swigfaiss_avx2'` 
+   locate installed `faiss` package
+   
+   ```python
+   import faiss
+   print(faiss.__file__)
+   # /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/__init__.py
+   ```
+   
+   add soft link
+   ```Bash
+   # cd your_python_path/site-packages/faiss
+   cd /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/
+   ln -s swigfaiss.py swigfaiss_avx2.py
+   ```
+
 # 🍀 Acknowledgements
 
 - [kimi-chat](https://kimi.moonshot.cn/): long context LLM
