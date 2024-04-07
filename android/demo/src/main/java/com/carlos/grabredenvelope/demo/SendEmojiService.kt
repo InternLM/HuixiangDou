@@ -174,7 +174,7 @@ class SendEmojiService : AccessibilityService() {
                                 }
                                 // sleep
                                 Thread.sleep(2000)
-                                // then clik send button
+                                // then click send button
                                 if (!send_throttle.pass()) {
                                     Log.d("msg", "click too more")
                                     return
@@ -207,14 +207,19 @@ class SendEmojiService : AccessibilityService() {
 
         var sb: StringBuilder = StringBuilder()
         for (item in reply.data) {
-            sb.append(item.req.query.content)
-            sb.append("\n---\n")
-            if (item.rsp.code == 0) {
-                sb.append(item.rsp.text)
-            } else if (debug){
+            if (debug) {
+                sb.append(item.req.query.content)
+                sb.append("\n---\n")
+                sb.append(item.rsp.code)
+                sb.append("\n")
                 sb.append(item.rsp.state)
+                sb.append("\n")
+                sb.append(item.rsp.text)
+            } else if (item.rsp.code == 0) {
+                sb.append(item.req.query.content)
+                sb.append("\n------\n")
+                sb.append(item.rsp.text)
             }
-            sb.append("\n\n")
         }
         return sb.toString()
     }
@@ -284,7 +289,7 @@ class SendEmojiService : AccessibilityService() {
             firststart = System.currentTimeMillis()
             return
         }
-        if (System.currentTimeMillis() - firststart < 1000 * 5) {
+        if (System.currentTimeMillis() - firststart < 1000 * 3) {
             Log.d("msg", "skip first start time + 5s")
             return
         }
@@ -303,38 +308,28 @@ class SendEmojiService : AccessibilityService() {
             }
         }
 
-        // fetch all messages
-        nodeInfo = rootInActiveWindow.findAccessibilityNodeInfosByViewId(RES_ID_USER_NAME)
-        if (nodeInfo.size < 1) {
-            Log.d("msg", "residUsername not found, return")
-            return
-        }
         var send = false
-        var tv = nodeInfo.last()
-        var sender_idx = nodeInfo.size - 1
-        if (tv.className == TextView::class.java.name) {
-            var username = tv.text.toString()
-            if (!lastusername.equals(username)) {
-                lastusername = username
-                send = true
-            }
-        }
 
-        // filter others' message
+        // fetch all user send content others' message
         nodeInfo = rootInActiveWindow.findAccessibilityNodeInfosByViewId(RES_ID_USER_CONTENT)
         var minLeft = 65535
         var lastTop = -1
+        if (nodeInfo.size < 1){
+            Log.d("msg", "no resid_text, return")
+            return
+        }
         for (tv in nodeInfo) {
             if (tv.className != TextView::class.java.name) {
                 continue
             }
             var bound = Rect(minLeft, minLeft, minLeft, minLeft)
             tv.getBoundsInScreen(bound)
-            if (bound.left < minLeft) {
+            if (bound.left <= minLeft) {
                 minLeft = bound.left
 
                 var top = bound.top
                 if (top > lastTop) {
+                    lastTop = top
                     var content = tv.text.toString()
                     if (!lastcontent.equals(content)) {
                         lastcontent = content
@@ -343,6 +338,26 @@ class SendEmojiService : AccessibilityService() {
                 }
             }
         }
+
+        // fetch all messages
+        nodeInfo = rootInActiveWindow.findAccessibilityNodeInfosByViewId(RES_ID_USER_NAME)
+        if (nodeInfo.size < 1) {
+            Log.d("msg", "resid_username not found, single chat")
+            // take groupname as username
+            lastusername = groupname
+            send = true
+        } else {
+            // group chat, use last username in group
+            var tv = nodeInfo.last()
+            if (tv.className == TextView::class.java.name) {
+                var username = tv.text.toString()
+                if (!lastusername.equals(username)) {
+                    lastusername = username
+                    send = true
+                }
+            }
+        }
+
 
         Log.d("msg", groupname)
         Log.d("msg", lastusername)
