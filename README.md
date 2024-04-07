@@ -301,21 +301,23 @@ The basic version may not perform well. You can enable these features to enhance
 
    Re-run `feature_store` to update thresholds and feature libraries.
 
-2. Launch is normal, but out of memory during runtime?
+   ⚠️ You can directly modify `reject_throttle` in config.ini. Generally speaking, 0.5 is a high value; 0.2 is too low.
+
+3. Launch is normal, but out of memory during runtime?
 
    LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md). Then use docker to independently deploy Hybrid LLM Service.
 
-3. How to access other local LLM / After access, the effect is not ideal?
+4. How to access other local LLM / After access, the effect is not ideal?
 
    - Open [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py), add a new LLM inference implementation.
    - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [worker.py](./huixiangdou/service/worker.py).
 
-4. What if the response is too slow/request always fails?
+5. What if the response is too slow/request always fails?
 
    - Refer to [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) to add exponential backoff and retransmission.
    - Replace local LLM with an inference framework such as [lmdeploy](https://github.com/internlm/lmdeploy), instead of the native huggingface/transformers.
 
-5. What if the GPU memory is too low?
+6. What if the GPU memory is too low?
 
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
 
