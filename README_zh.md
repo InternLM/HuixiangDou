@@ -139,7 +139,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **测试问答效果**
 
-\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 15G），可开启 `kimi` 或 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照 [config-experience.ini](./config-experience.ini)
+\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 15G），可开启 `kimi` 或 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照 [config-2G.ini](./config-2G.ini)
 
 ```ini
 # config.ini
