@@ -20,7 +20,7 @@ export default {
         paramsError: 'Parameters error',
         internalError: 'Internal error',
         upload: 'Select Files, Multiple Selection Allowed',
-        supportFiles: 'pdf/word/markdown/excel formats are allowed',
+        supportFiles: 'pdf/word/markdown/excel/ppt/html/txt formats are allowed',
         logout: 'Log Out',
         refresh: 'Refresh',
         references: 'References: ',
