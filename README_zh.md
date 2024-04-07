@@ -333,9 +333,9 @@ python3 -m huixiangdou.main # docker 用户
 
    此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 
-7. No module named 'faiss.swigfaiss_avx2'问题修复:
+7. `No module named 'faiss.swigfaiss_avx2'` 问题修复:
 
-   找到faiss的位置
+   找到 faiss 的位置
    
    ```python
    import faiss
