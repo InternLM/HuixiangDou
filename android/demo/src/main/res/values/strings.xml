@@ -9,8 +9,8 @@
     <string name="addr_hint">http://139.224.198.162:18443/api/v1/message/v1/wechat/fRHK</string>
     <string name="btn_confirm">确定</string>
     <string name="usage2">第二步：点击下方按钮进入辅助功能，找到（茴香豆）开启或关闭</string>
-    <string name="usage3">第三步：直接进入微信聊天界面，请对方发个消息即可。群聊或单聊都支持。\n注意不要关闭本应用，它默认后台运行。</string>
+    <string name="usage3">第三步：直接进入微信（注意 github 文档中微信版本要求）聊天界面，请对方发个消息被动扫描屏幕、或上滑聊天框主动触发扫描。\n群聊或单聊都支持。\n注意不要关闭本应用，它默认后台运行。</string>
     <string name="tips">tips:助手只回答知识库相关话题，碰到无关闲聊会跳过。adb log 可以看到完整处理日志。</string>
     <string name="usage_go">点我</string>
-    <string name="debug">调试模式，默认开启</string>
+    <string name="debug">调试模式，默认开启。\n确认功能正常后需关闭，否则收到啥都响应</string>
 </resources>
