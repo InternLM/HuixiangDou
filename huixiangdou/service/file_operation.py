@@ -47,6 +47,7 @@ class FileOperation:
                                                       ] + self.html_suffix
 
     def get_type(self, filepath: str):
+        filepath = filepath.lower()
         if filepath.endswith(self.pdf_suffix):
             return 'pdf'
 
