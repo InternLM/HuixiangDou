@@ -22,7 +22,7 @@ from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,
                                  parse_json_str, redis_host, redis_passwd,
                                  redis_port)
 
-from .worker import Worker
+from .web_worker import WebWorker
 
 
 def callback_task_state(feature_store_id: str,
@@ -145,7 +145,7 @@ def chat_with_featue_store(cache: CacheRetriever,
                           config_path=configpath,
                           work_dir=workdir)
 
-    worker = Worker(work_dir=workdir, config_path=configpath)
+    worker = WebWorker(work_dir=workdir, config_path=configpath)
 
     history = format_history(payload.history)
     error, response, references = worker.generate(query=payload.content,
