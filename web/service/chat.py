@@ -4,6 +4,7 @@ import hashlib
 import os
 import time
 from typing import Union
+from typing import List
 
 from fastapi import Request, Response
 
@@ -120,7 +121,7 @@ class ChatService:
         q = h.hexdigest()
         return q[0:8]
 
-    def _store_images(self, images, query_id) -> list[str]:
+    def _store_images(self, images, query_id) -> List[str]:
         feature_store_id = self.hxd_info.featureStoreId
         image_store_dir = get_store_dir(feature_store_id)
         if not image_store_dir:

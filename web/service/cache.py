@@ -1,4 +1,5 @@
 import json
+from typing import List
 from datetime import datetime
 from typing import Union
 
@@ -49,7 +50,7 @@ class ChatCache:
 
     @classmethod
     def mget_query_info(
-            cls, query_id_list: list[str],
+            cls, query_id_list: List[str],
             feature_store_id: str) -> Union[list[ChatQueryInfo], None]:
         key = biz_constant.RDS_KEY_QUERY_INFO + ':' + feature_store_id
         o = r.hmget(key, query_id_list)
@@ -89,7 +90,7 @@ class ChatCache:
         r.expire(key, biz_constant.HXD_CHAT_TTL)
 
     @classmethod
-    def mget_query_id_to_fetch(cls, feature_store_id: str) -> list[str]:
+    def mget_query_id_to_fetch(cls, feature_store_id: str) -> List[str]:
         key = biz_constant.RDS_KEY_QUERY_ID_TO_FETCH + ':' + feature_store_id
         o = r.hgetall(key)
         if not o or len(o) == 0:
@@ -102,7 +103,7 @@ class ChatCache:
 
     @classmethod
     def mark_query_id_complete(cls, feature_store_id: str,
-                               query_id_list: list[str]):
+                               query_id_list: List[str]):
         if len(query_id_list) == 0:
             return
         key = biz_constant.RDS_KEY_QUERY_ID_TO_FETCH + ':' + feature_store_id

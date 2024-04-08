@@ -2,6 +2,7 @@ import json
 import re
 from enum import Enum
 from typing import Union
+from typing import List
 
 import lark_oapi as lark
 import requests
@@ -186,7 +187,7 @@ class LarkAgent:
     @classmethod
     def _parse_lark_content(
             cls, content: str,
-            mentions: list[MentionEvent]) -> Union[ChatRequestBody, None]:
+            mentions: List[MentionEvent]) -> Union[ChatRequestBody, None]:
         if not content or len(content) == 0:
             return None
 
@@ -228,7 +229,7 @@ class LarkAgent:
 
     @classmethod
     def _get_content_type_when_at_user_exists(
-            cls, mentions: list[MentionEvent]) -> LarkContentType:
+            cls, mentions: List[MentionEvent]) -> LarkContentType:
         if not mentions or len(mentions) == 0:
             return LarkContentType.AT_OTHER_PERSON_TEXT
 
