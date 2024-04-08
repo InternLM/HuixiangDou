@@ -54,7 +54,7 @@ cd front-end
 npm install && npm run build
 ```
 
-如果 `node -v` 版本太老 （10.x），这么升级 node 版本
+如果 `node -v` 版本太老 （10.x），则需要升级 node 版本
 ```bash
 sudo npm install n -g
 sudo n stable
