@@ -40,16 +40,26 @@ export COOKIE_SECURE=1
 
 2. 编译前端 & 运行后端服务
 
+安装 Node.js (`npm`)
+
+```bash
+apt update
+apt install nodejs npm
+```
+
+编译项目
+
 ```bash
 cd front-end
 npm install && npm run build
+```
 
-# 如果 `node -v` 版本太老 （10.x），这么升级 node 版本
+如果 `node -v` 版本太老 （10.x），这么升级 node 版本
+```bash
 sudo npm install n -g
 sudo n stable
 hash -r
-node -v
-v20.12.0
+node -v # v20.12.0
 ```
 
 运行
