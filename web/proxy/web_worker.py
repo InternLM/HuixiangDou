@@ -17,7 +17,7 @@ from huixiangdou.service import (ChatClient, ErrorCode, FeatureStore,
                                  QueryTracker, WebSearch)
 
 
-def openxlab_security(query: str, retry=2):
+def openxlab_security(query: str, retry=1):
     life = 0
     while life < retry:
         try:
@@ -60,7 +60,7 @@ def openxlab_security(query: str, retry=2):
     return False
 
 
-class Worker:
+class WebWorker:
     """The Worker class orchestrates the logic of handling user queries,
     generating responses and managing several aspects of a chat assistant. It
     enables feature storage, language model client setup, time scheduling and
@@ -96,14 +96,11 @@ class Worker:
 
         self.context_max_length = -1
         llm_config = self.config['llm']
-        if llm_config['enable_local']:
-            self.context_max_length = llm_config['server'][
-                'local_llm_max_text_length']
-        elif llm_config['enable_remote']:
+        self.context_max_length = llm_config['server']['local_llm_max_text_length']
+
+        if llm_config['enable_remote']:
             self.context_max_length = llm_config['server'][
                 'remote_llm_max_text_length']
-        else:
-            raise Exception('no llm enabled')
 
         # Switch languages according to the scenario.
         if self.language == 'zh':
@@ -128,17 +125,18 @@ class Worker:
 
     def security_content(self, tracker, response: str):
         # 安全检查，通过为 true
-        if len(response) < 1:
-            return True
+        return True
+        # if len(response) < 1:
+        #     return True
         # if self.single_judge(self.SECURITY_TEMAPLTE.format(response),
         #     tracker=tracker,
         #     throttle=3,
         #     default=0):
         #     return False
 
-        if openxlab_security(response):
-            return True
-        return False
+        # if openxlab_security(response):
+        #     return True
+        # return False
 
     def single_judge(self, prompt, tracker, throttle: int, default: int,
                      backend: str):
@@ -195,15 +193,15 @@ class Worker:
                 tracker=tracker,
                 throttle=3,
                 default=2,
-                backend='puyu'):
+                backend='remote'):
             # not a question, give LLM response
             response = self.llm.generate_response(prompt=query,
                                                   history=history,
-                                                  backend='puyu')
+                                                  backend='remote')
             return ErrorCode.NOT_A_QUESTION, response, []
 
         topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query),
-                                           backend='puyu')
+                                           backend='remote')
         tracker.log('topic', topic)
 
         if len(topic) < 2:
@@ -230,7 +228,7 @@ class Worker:
         #                      tracker=tracker,
         #                      throttle=5,
         #                      default=10,
-        #                      backend='puyu'):
+        #                      backend='remote'):
         prompt, history = self.llm.build_prompt(
             instruction=query,
             context=db_context,
@@ -238,7 +236,7 @@ class Worker:
             template=self.GENERATE_TEMPLATE)
         response = self.llm.generate_response(prompt=prompt,
                                               history=history,
-                                              backend='puyu')
+                                              backend='remote')
         tracker.log('feature store doc', [chunk, response])
         if response is not None and len(response) < 1:
             # llm error
@@ -250,7 +248,7 @@ class Worker:
                                      tracker=tracker,
                                      throttle=9,
                                      default=0,
-                                     backend='puyu'):
+                                     backend='remote'):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
                     return ErrorCode.SECURITY, '检测到敏感内容，无法显示', retrieve_ref
@@ -283,7 +281,7 @@ class Worker:
                             tracker=tracker,
                             throttle=5,
                             default=10,
-                            backend='puyu'):
+                            backend='remote'):
                         web_context += '\n'
                         web_context += str(article)
                         use_ref.append(article.source)
@@ -299,7 +297,7 @@ class Worker:
                     template=self.GENERATE_TEMPLATE)
                 response = self.llm.generate_response(prompt=prompt,
                                                       history=history,
-                                                      backend='puyu')
+                                                      backend='remote')
             else:
                 reborn_code = ErrorCode.NO_SEARCH_RESULT
 
@@ -313,7 +311,7 @@ class Worker:
                                  tracker=tracker,
                                  throttle=9,
                                  default=0,
-                                 backend='puyu'):
+                                 backend='remote'):
                 reborn_code = ErrorCode.BAD_ANSWER
 
         # if response is not None and len(response) >= 800:

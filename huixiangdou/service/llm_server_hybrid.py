@@ -209,12 +209,12 @@ class HybridLLMServer:
 
         messages = []
         for item in history:
-            messages.append({'role': 'user', 'text': item[0]})
-            messages.append({'role': 'assistant', 'text': item[1]})
-        messages.append({'role': 'user', 'text': prompt})
+            messages.append({'role': 'user', 'content': item[0]})
+            messages.append({'role': 'assistant', 'content': item[1]})
+        messages.append({'role': 'user', 'content': prompt})
 
         data = {
-            'model': 'ChatPJLM-latest',
+            'model': 'internlm2-20b-latest',
             'messages': messages,
             'n': 1,
             'disable_report': False,
