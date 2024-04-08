@@ -71,10 +71,10 @@ python3 -m web.main
 4. 运行算法 pipeline
 
 ```bash
-先开个终端窗口，启动 LLM hybrid proxy
+# 先开个终端窗口，启动 LLM hybrid proxy
 python3 -m huixiangdou.service.llm_server_hybrid --config_path config.ini
 
-再开个窗口，监听服务
+# 再开个窗口，监听服务
 python3 -m web.proxy.main
 ```
 
