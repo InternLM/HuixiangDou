@@ -9,7 +9,7 @@
 ```bash
 .
 ├── config-advanced.ini
-├── config-2G.ini # 高级版和体验版配置范例，轻微修改了 `config.ini`
+├── config-experience.ini # 高级版和体验版配置范例，轻微修改了 `config.ini`
 ├── config.ini      # 基础配置范例，包含算法所有选项和参数
 ..
 ├── huixiangdou     # python module

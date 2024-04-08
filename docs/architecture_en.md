@@ -9,7 +9,7 @@ The outermost layer of the project contains only the huixiangdou python module a
 ```bash
 .
 ├── config-advanced.ini
-├── config-2G.ini # Advanced and Experience version configuration examples, slightly modified `config.ini`
+├── config-experience.ini # Advanced and Experience version configuration examples, slightly modified `config.ini`
 ├── config.ini # Basic configuration example, containing all options and parameters of the algorithm
 ..
 ├── huixiangdou # python module

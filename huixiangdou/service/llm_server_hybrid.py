@@ -214,7 +214,7 @@ class HybridLLMServer:
         messages.append({'role': 'user', 'text': prompt})
 
         data = {
-            'model': 'internlm2-20b-latest',
+            'model': 'ChatPJLM-latest',
             'messages': messages,
             'n': 1,
             'disable_report': False,
