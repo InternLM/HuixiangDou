@@ -6,7 +6,7 @@ web 版本前后端源码，效果同 https://openxlab.org.cn/apps/detail/tpoiso
 
 ## 启动
 
-1. 设置环境变量，启动 redis-server。必须
+1. 设置环境变量，启动 redis-server（修改 `/etc/redis/redis.conf` 中的 `requirepass` 配置密码）。必须
 
 ```bash
 $ cat env.sh
@@ -26,13 +26,13 @@ export COOKIE_SECURE=1
 ```
 ⚠️ 重要事项：  如果不用 https 安全链接，需要 `unset COOKIE_SECURE`（不是设成 0）。否则知识库登录会异常
 
-> 怎么算是用 https ？ 就是**你买了域名且能 https 打头， 如果你用的是裸 ip 地址，那就是没有！** ，
+> 怎么算是用 https ？ 就是**你买了域名且能 https 打头， 如果你用的是裸 ip 地址，那就是没有！** 
 >
 > 例如：
 > 
 > https://openxlab.com/api    是 https，需要 `export COOKIE_SECURE=1` 
 > 
-> https://10.1.2.22   不是，不要设置 cookie
+> https://10.1.2.22   不是，取消 cookie
 > 
 > http://101.204.1.5  不是
 > 
@@ -64,16 +64,11 @@ cd front-end
 npm install && npm run build
 ```
 
-安装可能需要的其他依赖库
-
-```bash
-pip install passlib jwt
-```
-
-运行
+安装依赖、运行后端
 
 ```bash
 cd ../../ # 从front-end返回到huixiangdou目录下, 该目录内含有web文件夹
+python3 -m pip install -r web/requirements.txt
 python3 -m web.main
 ```
 
