@@ -40,11 +40,21 @@ export COOKIE_SECURE=1
 
 2. 编译前端 & 运行后端服务
 
-安装 Node.js (`npm`)
+安装 Node.js `npm` (需要版本为 20.x , 安装时, 可根据用户权限需要自行添加 sudo + 命令) 
 
 ```bash
 apt update
 apt install nodejs npm
+node -v # v20.12.0
+```
+
+如果 `node -v` 版本太老 （10.x），则需要升级 node 版本
+
+```bash
+npm install n -g
+n stable
+hash -r
+node -v # v20.12.0
 ```
 
 编译项目
@@ -52,14 +62,6 @@ apt install nodejs npm
 ```bash
 cd front-end
 npm install && npm run build
-```
-
-如果 `node -v` 版本太老 （10.x），则需要升级 node 版本
-```bash
-sudo npm install n -g
-sudo n stable
-hash -r
-node -v # v20.12.0
 ```
 
 运行
