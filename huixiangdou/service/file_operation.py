@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import hashlib
 import os
+
 import fitz
 import pandas as pd
 import textract
@@ -116,7 +117,6 @@ class FileOperation:
 
     def read_pdf(self, filepath: str):
         # load pdf and serialize table
-
         text = ''
         with fitz.open(filepath) as pages:
             for page in pages:
@@ -190,34 +190,10 @@ class FileOperation:
 
 
 if __name__ == '__main__':
-    def get_pdf_files(directory):
-        pdf_files = []
-        # 遍历目录
-        for root, dirs, files in os.walk(directory):
-            for file in files:
-                # 检查文件扩展名是否为.pdf
-                if file.lower().endswith('.pdf'):
-                    # 将完整路径添加到列表中
-                    pdf_files.append(os.path.abspath(os.path.join(root, file)))
-        return pdf_files
-
-    # 将你想要搜索的目录替换为下面的路径
-    pdf_list = get_pdf_files('/home/khj/huixiangdou-web-online-data/hxd-bad-file')
-
-    # 打印所有找到的PDF文件的绝对路径
-
-
     opr = FileOperation()
-    for pdf_path in pdf_list:
-        text, error = opr.read(pdf_path)
-        print('processing {}'.format(pdf_path))
-        if error is not None:
-            # pdb.set_trace()
-            print('')
-
-        else:
-            if text is not None:
-                print(len(text))
-            else:
-                # pdb.set_trace()
-                print('')
+    text, error = opr.read('/data2/khj/test-data/test-table.pdf')
+    print(text)
+    # text, error = opr.read('/data2/khj/test-data/工作簿1.csv')
+    # print(text)
+    # text, error = opr.read('/data2/khj/test-data/模型上传表.xlsx')
+    # print(text)

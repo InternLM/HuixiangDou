@@ -181,8 +181,7 @@ class Retriever:
                 context += '\n'
                 references.append(source)
 
-        if len(context) > context_max_length:
-            context = content[0:context_max_length]
+        assert (len(context) <= context_max_length)
         logger.debug('query:{} top1 file:{}'.format(question, references[0]))
         return '\n'.join(chunks), context, [
             os.path.basename(r) for r in references

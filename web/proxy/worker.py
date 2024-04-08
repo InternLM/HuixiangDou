@@ -17,7 +17,7 @@ from huixiangdou.service import (ChatClient, ErrorCode, FeatureStore,
                                  QueryTracker, WebSearch)
 
 
-def openxlab_security(query: str, retry=1):
+def openxlab_security(query: str, retry=2):
     life = 0
     while life < retry:
         try:
@@ -60,8 +60,8 @@ def openxlab_security(query: str, retry=1):
     return False
 
 
-class WebWorker:
-    """The WebWorker class orchestrates the logic of handling user queries,
+class Worker:
+    """The Worker class orchestrates the logic of handling user queries,
     generating responses and managing several aspects of a chat assistant. It
     enables feature storage, language model client setup, time scheduling and
     much more.
@@ -128,19 +128,17 @@ class WebWorker:
 
     def security_content(self, tracker, response: str):
         # 安全检查，通过为 true
-        return True
-        # if len(response) < 1:
-        #     return True
+        if len(response) < 1:
+            return True
         # if self.single_judge(self.SECURITY_TEMAPLTE.format(response),
         #     tracker=tracker,
         #     throttle=3,
-        #     default=0,
-        #     backend='remote'):
+        #     default=0):
         #     return False
 
-        # if openxlab_security(response):
-        #     return True
-        # return False
+        if openxlab_security(response):
+            return True
+        return False
 
     def single_judge(self, prompt, tracker, throttle: int, default: int,
                      backend: str):
