@@ -1,7 +1,6 @@
 # Listen HuiXiangDou:Task queue
 import json
 import os
-import pdb
 import shutil
 import time
 import types

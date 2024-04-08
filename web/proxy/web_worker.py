@@ -3,13 +3,11 @@
 import argparse
 import datetime
 import json
-import pdb
 import random
 import re
 import time
 
 import pytoml
-# coding=UTF-8
 import requests
 from loguru import logger
 
