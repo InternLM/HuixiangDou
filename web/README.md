@@ -64,9 +64,16 @@ cd front-end
 npm install && npm run build
 ```
 
+安装可能需要的其他依赖库
+
+```bash
+pip install passlib jwt
+```
+
 运行
 
 ```bash
+cd ../../ # 从front-end返回到huixiangdou目录下, 该目录内含有web文件夹
 python3 -m web.main
 ```
 
