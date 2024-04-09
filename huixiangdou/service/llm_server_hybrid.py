@@ -163,7 +163,7 @@ class HybridLLMServer:
     def __init__(self,
                  llm_config: dict,
                  device: str = 'cuda',
-                 retry=1) -> None:
+                 retry=2) -> None:
         """Initialize the HybridLLMServer with the given configuration, device,
         and number of retries."""
         self.device = device
@@ -391,7 +391,7 @@ class HybridLLMServer:
 
         messages = build_messages(prompt=prompt, history=history)
 
-        payload = {'model': 'gpt-4-1106-preview', 'messages': messages}
+        payload = {'model': 'gpt-4-1106-preview', 'messages': messages, 'temperature': 0.1}
         text = ''
         response = requests.post(url,
                                 headers=headers,

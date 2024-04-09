@@ -189,7 +189,7 @@ class WebWorker:
         if not self.single_judge(
                 prompt=self.SCORING_QUESTION_TEMPLTE.format(query),
                 tracker=tracker,
-                throttle=3,
+                throttle=6,
                 default=2,
                 backend='remote'):
             # not a question, give LLM response

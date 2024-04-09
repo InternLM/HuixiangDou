@@ -109,13 +109,18 @@ class Worker:
         return False
 
     def work_time(self):
-        """Determines if the current time falls within the scheduled working
+        """If worktime enabled, determines the current time falls within the scheduled working
         hours of the chat assistant.
 
         Returns:
             bool: True if the current time is within working hours, otherwise False.  # noqa E501
         """
+
         time_config = self.config['worker']['time']
+        if 'enable' in time_config:
+            # work time not enabled, start work
+            if not time_config['enable']:
+                return True
 
         beginWork = datetime.datetime.now().strftime(
             '%Y-%m-%d') + ' ' + time_config['start']
