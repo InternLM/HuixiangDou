@@ -56,7 +56,7 @@ class ChatResponse(BaseModel):
     code: Optional[int] = -1
     state: Optional[str] = ''
     text: Optional[str] = ''
-    references: Optional[list[str]] = []
+    references: Optional[List[str]] = []
 
 
 class HxdChatResponse(BaseModel):
