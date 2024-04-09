@@ -3,6 +3,7 @@ package com.carlos.grabredenvelope.demo
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.text.Editable
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
@@ -28,11 +29,13 @@ class MainActivity : CBaseAccessibilityActivity() {
         et_url = findViewById(R.id.et_url)
         sw_debug = findViewById(R.id.sw_debug)
 
-        btn_jump.setOnClickListener {
-            var url = et_url.text.toString()
-            var helper = SharedPreferenceHelper(applicationContext)
-            helper.saveString("URL", url)
+        var helper = SharedPreferenceHelper(applicationContext)
 
+        var default_url = et_url.text.toString()
+        var get_saved_url: String = helper.getString("URL", default_url)
+        et_url.text = Editable.Factory.getInstance().newEditable(get_saved_url)
+
+        btn_jump.setOnClickListener {
             var debug = sw_debug.isChecked()
             helper.saveBoolean("DEBUG", debug)
 
@@ -46,6 +49,9 @@ class MainActivity : CBaseAccessibilityActivity() {
             var url = et_url.text.toString()
             var helper = SharedPreferenceHelper(applicationContext)
             helper.saveString("URL", url)
+
+            Toast.makeText(this@MainActivity, "修改成功", Toast.LENGTH_LONG)
+                .show()
         }
     }
 }
