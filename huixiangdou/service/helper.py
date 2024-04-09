@@ -31,7 +31,7 @@ class ErrorCode(Enum):
     NO_TOPIC = 2, 'The question does not have a topic. It might be a meaningless sentence.'  # noqa E501
     UNRELATED = 3, 'Topics unrelated to the knowledge base. Updating good_questions and bad_questions can improve accuracy.'  # noqa E501
     NO_SEARCH_KEYWORDS = 4, 'Cannot extract keywords.'
-    NO_SEARCH_RESULT = 5, 'Cannot retrieve results.'
+    NO_SEARCH_RESULT = 5, 'No search result.'
     BAD_ANSWER = 6, 'Irrelevant answer.'
     SECURITY = 7, 'Reply has a high relevance to prohibited topics.'
     NOT_WORK_TIME = 8, 'Non-working hours. The config.ini file can be modified to adjust this. **In scenarios where speech may pose risks, let the robot operate under human supervision**'  # noqa E501
@@ -55,6 +55,10 @@ class ErrorCode(Enum):
     def __int__(self):
         """Return the integer representation of the error code."""
         return self.value
+    
+    def __str__(self):
+        """Return the str representation of the error code."""
+        return self.description
 
     def describe(self):
         """Return the description of the error code."""

@@ -58,7 +58,6 @@ class Worker:
             self.context_max_length = llm_config['server'][
                 'remote_llm_max_text_length']
 
-
         # Switch languages according to the scenario.
         if self.language == 'zh':
             self.TOPIC_TEMPLATE = '告诉我这句话的主题，直接说主题不要解释：“{}”'
