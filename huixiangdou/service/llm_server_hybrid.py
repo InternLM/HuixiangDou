@@ -226,53 +226,37 @@ class HybridLLMServer:
         output_text = ''
         self.rpm.wait()
 
-        life = 0
-        while life < self.retry:
-            try:
-                res_json = requests.post(url,
-                                         headers=header,
-                                         data=json.dumps(data),
-                                         timeout=120).json()
-                logger.debug(res_json)
+        res_json = requests.post(url,
+                                    headers=header,
+                                    data=json.dumps(data),
+                                    timeout=120).json()
+        logger.debug(res_json)
 
-                # fix token
-                if 'msgCode' in res_json and res_json['msgCode'] == 'A0202':
-                    # token error retry
-                    logger.error('token error, try refresh')
-                    self.token = (os_run('openxlab token'), time.time())
-                    header = {
-                        'Content-Type': 'application/json',
-                        'Authorization': self.token[0]
-                    }
-                    res_json = requests.post(url,
-                                             headers=header,
-                                             data=json.dumps(data),
-                                             timeout=120).json()
-                    logger.debug(res_json)
+        # fix token
+        if 'msgCode' in res_json and res_json['msgCode'] == 'A0202':
+            # token error retry
+            logger.error('token error, try refresh')
+            self.token = (os_run('openxlab token'), time.time())
+            header = {
+                'Content-Type': 'application/json',
+                'Authorization': self.token[0]
+            }
+            res_json = requests.post(url,
+                                        headers=header,
+                                        data=json.dumps(data),
+                                        timeout=120).json()
+            logger.debug(res_json)
 
-                res_data = res_json['data']
-                if len(res_data) < 1:
-                    logger.error('debug:')
-                    logger.error(res_json)
-                    return output_text
-                output_text = res_data['choices'][0]['text']
+        res_data = res_json['data']
+        if len(res_data) < 1:
+            logger.error('debug:')
+            logger.error(res_json)
+            return output_text
+        output_text = res_data['choices'][0]['text']
 
-                logger.info(res_json)
-                if '仩嗨亾笁潪能實験厔' in output_text:
-                    raise Exception('internlm model waterprint !!!')
-                return output_text
-
-            except Exception as e:
-                with open('badcase{}.txt'.format(life), 'w') as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                logger.error(str(e))
-                self.token = (os_run('openxlab token'), time.time())
-                header = {
-                    'Content-Type': 'application/json',
-                    'Authorization': self.token[0]
-                }
-
-                life += 1
+        logger.info(res_json)
+        if '仩嗨亾笁潪能實験厔' in output_text:
+            raise Exception('internlm model waterprint !!!')
         return output_text
 
     def call_kimi(self, prompt, history):
@@ -295,23 +279,14 @@ class HybridLLMServer:
                                   history=history,
                                   system=SYSTEM)
 
-        life = 0
-        while life < self.retry:
-            try:
-                logger.debug('remote api sending: {}'.format(messages))
-                completion = client.chat.completions.create(
-                    model=self.server_config['remote_llm_model'],
-                    messages=messages,
-                    temperature=0.0,
-                )
-                return completion.choices[0].message.content
-            except Exception as e:
-                logger.error(str(e))
-                # retry
-                life += 1
-                randval = random.randint(1, int(pow(2, life)))
-                time.sleep(randval)
-        return ''
+        logger.debug('remote api sending: {}'.format(messages))
+        completion = client.chat.completions.create(
+            model=self.server_config['remote_llm_model'],
+            messages=messages,
+            temperature=0.0,
+        )
+        return completion.choices[0].message.content
+ 
 
     def call_gpt(self,
                  prompt,
@@ -337,23 +312,14 @@ class HybridLLMServer:
                                   history=history,
                                   system=system)
 
-        life = 0
-        while life < self.retry:
-            try:
-                logger.debug('remote api sending: {}'.format(messages))
-                completion = client.chat.completions.create(
-                    model=self.server_config['remote_llm_model'],
-                    messages=messages,
-                    temperature=0.0,
-                )
-                return completion.choices[0].message.content
-            except Exception as e:
-                logger.error(str(e))
-                # retry
-                life += 1
-                randval = random.randint(1, int(pow(3, life)))
-                time.sleep(randval)
-        return ''
+        logger.debug('remote api sending: {}'.format(messages))
+        completion = client.chat.completions.create(
+            model=self.server_config['remote_llm_model'],
+            messages=messages,
+            temperature=0.0,
+        )
+        return completion.choices[0].message.content
+
 
     def call_deepseek(self, prompt, history):
         """Generate a response from deepseek (a remote LLM).
@@ -375,24 +341,14 @@ class HybridLLMServer:
             history=history,
             system='You are a helpful assistant')  # noqa E501
 
-        life = 0
-        while life < self.retry:
-            try:
-                logger.debug('remote api sending: {}'.format(messages))
-                completion = client.chat.completions.create(
-                    model=self.server_config['remote_llm_model'],
-                    messages=messages,
-                    temperature=0.1,
-                )
-                return completion.choices[0].message.content
-            except Exception as e:
-                logger.error(str(e))
-                # retry
-                life += 1
-                randval = random.randint(1, int(pow(2, life)))
-                time.sleep(randval)
-        return ''
-
+        logger.debug('remote api sending: {}'.format(messages))
+        completion = client.chat.completions.create(
+            model=self.server_config['remote_llm_model'],
+            messages=messages,
+            temperature=0.1,
+        )
+        return completion.choices[0].message.content
+    
     def call_zhipuai(self, prompt, history):
         """Generate a response from zhipuai (a remote LLM).
 
@@ -416,23 +372,13 @@ class HybridLLMServer:
             history=history,
             system='You are a helpful assistant')  # noqa E501
 
-        life = 0
-        while life < self.retry:
-            try:
-                logger.debug('remote api sending: {}'.format(messages))
-                completion = client.chat.completions.create(
-                    model=self.server_config['remote_llm_model'],
-                    messages=messages,
-                    temperature=0.1,
-                )
-                return completion.choices[0].message.content
-            except Exception as e:
-                logger.error(str(e))
-                # retry
-                life += 1
-                randval = random.randint(1, int(pow(2, life)))
-                time.sleep(randval)
-        return ''
+        logger.debug('remote api sending: {}'.format(messages))
+        completion = client.chat.completions.create(
+            model=self.server_config['remote_llm_model'],
+            messages=messages,
+            temperature=0.1,
+        )
+        return completion.choices[0].message.content
 
     def call_alles_apin(self, prompt: str, history: list):
         self.rpm.wait()
@@ -445,23 +391,24 @@ class HybridLLMServer:
 
         messages = build_messages(prompt=prompt, history=history)
 
-        payload = {'model': 'gpt-4-1106-preview', 'messages': messages}
-
-        response = requests.post(url,
-                                 headers=headers,
-                                 data=json.dumps(payload))
-
+        payload = {'model': 'gpt-4-1106-preview', 'messages': messages, 'temperature': 0.1}
         text = ''
+        response = requests.post(url,
+                                headers=headers,
+                                data=json.dumps(payload))
+        
+        logger.debug(response.text)
         resp_json = response.json()
         if resp_json['msgCode'] == '10000':
             data = resp_json['data']
             if len(data['choices']) > 0:
                 text = data['choices'][0]['message']['content']
+  
         return text
 
     def generate_response(self, prompt, history=[], backend='local'):
         """Generate a response from the appropriate LLM based on the
-        configuration.
+        configuration. If failed, use exponential backoff.
 
         Args:
             prompt (str): The prompt to send to the LLM.
@@ -472,6 +419,7 @@ class HybridLLMServer:
             str: Generated response from the LLM.
         """
         output_text = ''
+        error = ''
         time_tokenizer = time.time()
 
         if backend == 'remote':
@@ -488,41 +436,66 @@ class HybridLLMServer:
 
         else:
             prompt = prompt[0:self.remote_max_length]
-            if backend == 'kimi':
-                output_text = self.call_kimi(prompt=prompt, history=history)
-            elif backend == 'deepseek':
-                output_text = self.call_deepseek(prompt=prompt,
-                                                 history=history)
-            elif backend == 'zhipuai':
-                output_text = self.call_zhipuai(prompt=prompt, history=history)
 
-            elif backend == 'xi-api' or backend == 'gpt':
-                base_url = None
-                system = None
-                if backend == 'xi-api':
-                    base_url = 'https://api.xi-ai.cn/v1'
-                    system = 'You are a helpful assistant.'
-                output_text = self.call_gpt(prompt=prompt,
-                                            history=history,
-                                            base_url=base_url,
-                                            system=system)
+            life = 0
+            while life < self.retry:
 
-            elif backend == 'puyu':
-                output_text = self.call_puyu(prompt=prompt, history=history)
+                try:
+                    if backend == 'kimi':
+                        output_text = self.call_kimi(prompt=prompt, history=history)
+                    elif backend == 'deepseek':
+                        output_text = self.call_deepseek(prompt=prompt,
+                                                        history=history)
+                    elif backend == 'zhipuai':
+                        output_text = self.call_zhipuai(prompt=prompt, history=history)
 
-            elif backend == 'alles-apin':
-                output_text = self.call_alles_apin(prompt=prompt,
-                                                   history=history)
-            else:
-                logger.error('unknow backend {}'.format(backend))
+                    elif backend == 'xi-api' or backend == 'gpt':
+                        base_url = None
+                        system = None
+                        if backend == 'xi-api':
+                            base_url = 'https://api.xi-ai.cn/v1'
+                            system = 'You are a helpful assistant.'
+                        output_text = self.call_gpt(prompt=prompt,
+                                                    history=history,
+                                                    base_url=base_url,
+                                                    system=system)
+
+                    elif backend == 'puyu':
+                        output_text = self.call_puyu(prompt=prompt, history=history)
+
+                    elif backend == 'alles-apin':
+                        output_text = self.call_alles_apin(prompt=prompt,
+                                                        history=history)
+                    else:
+                        error = 'unknown backend {}'.format(backend)
+                        logger.error(error)
+
+                    # skip retry
+                    break
+
+                except Exception as e:
+                    # exponential backoff
+                    error = str(e)
+                    logger.error(error)
+
+                    if 'Error code: 401' in error or 'invalid api_key' in error:
+                        break
+                    
+                    life += 1
+                    randval = random.randint(1, int(pow(2, life)))
+                    time.sleep(randval)
+
+                    if backend == 'puyu':
+                        # for puyu API, refresh token
+                        self.token = (os_run('openxlab token'), time.time())
 
         logger.info((prompt, output_text))
         time_finish = time.time()
 
-        logger.debug('Q:{} A:{} \t\t remote {} timecost {} '.format(
+        logger.debug('Q:{} A:{} \t\t backend {} timecost {} '.format(
             prompt[-100:-1], output_text, backend,
             time_finish - time_tokenizer))
-        return output_text
+        return output_text, error
 
 
 def parse_args():
@@ -571,28 +544,15 @@ def llm_serve(config_path: str, server_ready: Value):
         history = input_json['history']
         backend = input_json['backend']
         # logger.debug(f'history: {history}')
-        text = server.generate_response(prompt=prompt,
+        text, error = server.generate_response(prompt=prompt,
                                         history=history,
                                         backend=backend)
-        return web.json_response({'text': text})
+        return web.json_response({'text': text, 'error': error})
 
     app = web.Application()
     app.add_routes([web.post('/inference', inference)])
     web.run_app(app, host='0.0.0.0', port=bind_port)
 
-
-def test_rpm():
-    rpm = RPM(30)
-
-    for i in range(40):
-        rpm.wait()
-        print(i)
-
-    time.sleep(10)
-
-    for i in range(40):
-        rpm.wait()
-        print(i)
 
 
 def main():
@@ -624,4 +584,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # test_rpm()
