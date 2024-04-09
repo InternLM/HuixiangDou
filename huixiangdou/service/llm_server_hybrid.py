@@ -419,6 +419,7 @@ class HybridLLMServer:
             str: Generated response from the LLM.
         """
         output_text = ''
+        error = ''
         time_tokenizer = time.time()
 
         if backend == 'remote':
@@ -437,7 +438,6 @@ class HybridLLMServer:
             prompt = prompt[0:self.remote_max_length]
 
             life = 0
-            error = ''
             while life < self.retry:
 
                 try:
@@ -475,7 +475,12 @@ class HybridLLMServer:
 
                 except Exception as e:
                     # exponential backoff
-                    logger.error(str(e))
+                    error = str(e)
+                    logger.error(error)
+
+                    if 'Error code: 401' in error or 'invalid api_key' in error:
+                        break
+                    
                     life += 1
                     randval = random.randint(1, int(pow(2, life)))
                     time.sleep(randval)
@@ -549,19 +554,6 @@ def llm_serve(config_path: str, server_ready: Value):
     web.run_app(app, host='0.0.0.0', port=bind_port)
 
 
-def test_rpm():
-    rpm = RPM(30)
-
-    for i in range(40):
-        rpm.wait()
-        print(i)
-
-    time.sleep(10)
-
-    for i in range(40):
-        rpm.wait()
-        print(i)
-
 
 def main():
     """Function to start the server without running a separate process."""
@@ -592,4 +584,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # test_rpm()
