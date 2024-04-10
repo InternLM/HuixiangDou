@@ -6,11 +6,11 @@ web 版本前后端源码，效果同 https://openxlab.org.cn/apps/detail/tpoiso
 
 ## 启动
 
-1、先安装Redis，如果你已经安装Redis服务，并且配置好了Redis密码，启动了Redis服务，直接跳过这一步即可。
+1. 先安装 Redis，如果你已经安装 Redis 服务，并且配置好了 Redis 密码，启动了 Redis 服务，直接跳过这一步即可。
 
 ```bash
-# 以Ubantu系统为例
-# 安装redis服务和redis客户端
+# 以 Ubuntu 系统为例
+# 安装 Redis 服务和客户端
 sudo apt install redis-server redis-tools
 
 # 设置 Redis 密码（默认配置文件在/etc/redis/redis.conf），比如设置为：redis123
@@ -22,34 +22,33 @@ requirepass redis123
 sudo redis-server /etc/redis/redis.conf
 # 查看redis是否启动成功
 netstat -nlpt | grep redis
-
 ```
 
-2. 设置环境变量，需要配置的环境变量如下（你可以将这些环境变量添加到~/.bashrc文件的末尾，然后source ~/.bashrc刷新配置即可）：
+2. 设置环境变量，需要配置的环境变量如下（你可以将这些环境变量添加到~/.bashrc文件的末尾，然后 `source ~/.bashrc` 刷新配置）
 
 ```bash
 $ cat env.sh
 
 export PYTHONUNBUFFERED=1
-# Redis的IP地址
+# Redis 的 IP 地址
 export REDIS_HOST=10.1.52.22
-# Redis的密码
+# Redis 的密码
 export REDIS_PASSWORD=${REDIS_PASSWORD}
-# Redis的端口，默认为6379
+# Redis 的端口，默认为 6379
 export REDIS_PORT=6380
-# 一个JWT_SECRET是指用于签名JSON Web Token (JWT) 的密钥或密钥对，可以使用'openssl rand -base64 32'命令生成
+# JWT_SECRET 是指用于签名 JSON Web Token (JWT) 的密钥或密钥对，可以使用 `openssl rand -base64 32` 命令生成
 export JWT_SECRET=${JWT_SEC}
 # 茴香豆的后台服务端口，可以自定义
 export SERVER_PORT=7860
-# 飞书的LARK_ENCRYPT_KEY，参考地址：https://open.larksuite.com/document/server-docs/event-subscription/event-subscription-configure-/request-url-configuration-case
+# 飞书的 LARK_ENCRYPT_KEY，参考地址：https://open.larksuite.com/document/server-docs/event-subscription/event-subscription-configure-/request-url-configuration-case
 # 如果不需要接通飞书忽略即可
 export HUIXIANGDOU_LARK_ENCRYPT_KEY=thisiskey
 export HUIXIANGDOU_LARK_VERIFY_TOKEN=sMzyjKi9vMlEhKCZOVtBMhhl8x23z0AG
 
 # set your service endpoint(open to Internet callback from lark and wechat)
-# 回调地址端口，建议填写127.0.0.1:7860，然后将7860端口通过公网IP代理出去，例如http://10.1.52.36:18443
+# 回调地址端口，建议填写 127.0.0.1:7860，然后将 7860 端口通过公网 IP 代理出去，例如 http://10.1.52.36:18443
 export HUIXIANGDOU_MESSAGE_ENDPOINT=http://10.1.52.36:18443
-# https安全连接设置为1，如果不是，则将'export COOKIE_SECURE=1' 替换为：'unset COOKIE_SECURE'
+# 如果使用 https 安全连接就把 COOKIE_SECURE 设置为 1；如果不是，则将 `export COOKIE_SECURE=1` 替换为 `unset COOKIE_SECURE`
 export COOKIE_SECURE=1
 ```
 ⚠️ 重要事项：  如果不用 https 安全链接，需要 `unset COOKIE_SECURE`（不是设成 0）。否则知识库登录会异常
@@ -63,7 +62,6 @@ export COOKIE_SECURE=1
 > https://10.1.2.22   不是，取消 cookie
 > 
 > http://101.204.1.5  不是
-> 
 
 
 3. 编译前端 & 运行后端服务
