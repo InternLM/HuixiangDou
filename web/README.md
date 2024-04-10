@@ -6,9 +6,9 @@ web 版本前后端源码，效果同 https://openxlab.org.cn/apps/detail/tpoiso
 
 * 中间用 redis queue 通信，可以视做**消息总线**
 * 后端接受所有业务侧消息，例如微信、飞书、浏览器等
-* 算法无状态，只关心算法相关的任务。可以扩展以应对高并发
+* 算法无状态，只关心算法相关的任务。可分布式扩展以应对高吞吐需求
 
-<img src="web-architecture.png" width="400">
+<img src="web-architecture.png" width="600">
 
 
 ## 启动
