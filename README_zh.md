@@ -176,8 +176,8 @@ remote_llm_model = "deepseek-chat"
 
   注：
   * 如果报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
-    1. 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。ctrl-c 关闭。
-    2. 检查 `config.ini` 中各种 TOKEN 书写正确，`${}` 不要带进去！！！
+    1. 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。检查结束后按 ctrl-c 关掉。
+    2. 检查 `config.ini` 中各种 TOKEN 书写正确。`${}` 不要带进 TOKEN ！！！
   
   * 如果使用 `deepseek` 进行 remote llm 调用，出现 400 错误可能是因为安全审查；在 [huixiangdou/main.py](huixiangdou/main.py) 中修改 `queries = ['请问如何安装 mmpose ?']` 为其他问题即可正常运行。
 
