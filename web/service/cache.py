@@ -51,7 +51,7 @@ class ChatCache:
     @classmethod
     def mget_query_info(
             cls, query_id_list: List[str],
-            feature_store_id: str) -> Union[list[ChatQueryInfo], None]:
+            feature_store_id: str) -> Union[List[ChatQueryInfo], None]:
         key = biz_constant.RDS_KEY_QUERY_INFO + ':' + feature_store_id
         o = r.hmget(key, query_id_list)
         if not o or len(o) == 0:
