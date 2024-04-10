@@ -2,7 +2,14 @@
 
 web 版本前后端源码，效果同 https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web
 
-整个服务分 前后端一体 和 算法两部分，中间用 redis queue 生产者/消费者模式通信。
+整个服务分 **前后端** 和 **算法** 两部分：
+
+* 中间用 redis queue 通信，可以视做**消息总线**
+* 后端接受所有业务侧消息，例如微信、飞书、浏览器等
+* 算法无状态，只关心算法相关的任务。可分布式扩展以应对高吞吐需求
+
+<img src="web-architecture.png" width="600">
+
 
 ## 启动
 
