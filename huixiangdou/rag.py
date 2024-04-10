@@ -69,11 +69,12 @@ def rag(process_id: int, task: list, output_dir: str):
     """Extract structured ouput with RAG."""
 
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
-    assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'
+    # assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'
     
     output_path = os.path.join(output_dir, 'output{}.json'.format(process_id))
     for item in task:
         query = item.query
+
         code, response, refs = assistant.generate(query=query, history=[], groupname='')
         item.rag_reply = response
         item.code = int(code)
@@ -99,7 +100,7 @@ def split_tasks(json_path: str, processes: int):
         start = idx * step
         tasks.append(_all[start: start+step])
 
-    # check and assert
+    # check task number and assert
     _sum = 0
     for task in tasks:
         _sum += len(task)
@@ -113,11 +114,12 @@ if __name__ == '__main__':
 
     tasks = split_tasks(args.input, args.processes)
 
-    rag(0, tasks[0], args.output_dir)
-
-    # pool = Pool(args.processes)
-    # for process_id in range(args.processes):
-    #     pool.apply_async(rag, (process_id, tasks[process_id]))
-    # pool.close()
-    # logger.debug('waiting for preprocess read finish..')
-    # pool.join()
+    if args.processes == 1:
+        rag(0, tasks[0], args.output_dir)
+    else:
+        pool = Pool(args.processes)
+        for process_id in range(args.processes):
+            pool.apply_async(rag, (process_id, tasks[process_id], args.output_dir))
+        pool.close()
+        logger.debug('waiting for preprocess read finish..')
+        pool.join()

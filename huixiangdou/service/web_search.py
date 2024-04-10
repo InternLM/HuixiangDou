@@ -205,6 +205,22 @@ class WebSearch:
         except Exception as e:
             logger.warning(f'error while saving search result {str(e)}')
 
+    def logging_search_query(self, query: str):
+        """Logging search query to txt file."""
+
+        save_dir = self.load_save_dir()
+        if save_dir is None:
+            return
+
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        filepath = os.path.join(save_dir, 'search_query.txt')
+        with open(filepath, 'a') as f:
+            f.write(query)
+            f.write('\n')
+
+
     def get(self, query: str, max_article=1):
         """Executes a google search with cache.
 
@@ -214,7 +230,10 @@ class WebSearch:
         """
         query = query.strip()
         query = query[0:32]
+        
         try:
+            self.logging_search_query(query=query)
+            
             articles = self.google(query=query, max_article=max_article)
             self.save_search_result(query=query, articles=articles)
             return articles, None
@@ -255,6 +274,9 @@ def fetch_web_content(target_link: str):
 
 
 if __name__ == '__main__':
+    # https://developer.aliyun.com/article/679591 failed
+    # print(fetch_web_content('https://www.volcengine.com/theme/4222537-R-7-1'))
+
     parser = parse_args()
     s = WebSearch(config_path=parser.config_path)
 
