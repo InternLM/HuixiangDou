@@ -1,8 +1,7 @@
 import json
 import re
 from enum import Enum
-from typing import Union
-from typing import List
+from typing import List, Union
 
 import lark_oapi as lark
 import requests

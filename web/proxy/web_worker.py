@@ -94,7 +94,8 @@ class WebWorker:
 
         self.context_max_length = -1
         llm_config = self.config['llm']
-        self.context_max_length = llm_config['server']['local_llm_max_text_length']
+        self.context_max_length = llm_config['server'][
+            'local_llm_max_text_length']
 
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server'][
