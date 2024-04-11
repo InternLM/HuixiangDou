@@ -17,6 +17,10 @@ export interface UploadProps {
 
 const acceptFileTypes = '.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go';
 
+const getBytesLength = (str) => {
+    return new Blob([str]).size;
+};
+
 const Upload: FC<UploadProps> = ({
     docs = [],
     afterUpload,
@@ -51,6 +55,13 @@ const Upload: FC<UploadProps> = ({
             return;
         }
         for (let i = 0; i < _files.length; i++) {
+            // Validate file name's byte length
+            if (getBytesLength(_files[i].name) > 255) {
+                message.warning(locales.nameSize);
+                setLoading(false);
+                return;
+            }
+            // Validate file size
             if (_files[i].size > 1024 * 1024 * 35) {
                 message.warning(locales.fileSize);
                 setLoading(false);
