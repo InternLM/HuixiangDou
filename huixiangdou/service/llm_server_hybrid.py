@@ -416,6 +416,7 @@ class HybridLLMServer:
             prompt (str): The prompt to send to the LLM.
             history (list, optional): List of previous interactions. Defaults to [].  # noqa E501
             remote (bool, optional): Flag to determine whether to use a remote server. Defaults to False.  # noqa E501
+            backend (str): LLM type to call. Support 'local', 'remote' and specfied LLM name ('kimi', 'deepseek' and so on) 
 
         Returns:
             str: Generated response from the LLM.
