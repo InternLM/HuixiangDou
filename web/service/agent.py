@@ -153,8 +153,9 @@ class LarkAgent:
         chat_detail = LarkChatDetail(appId=app_id,
                                      appSecret=app_secret,
                                      messageId=msg.message_id)
+        unique_id = data.event.sender.sender_id.open_id + "@" + chat_id
         chat_svc.chat_by_agent(lark_content, ChatType.LARK, chat_detail,
-                               data.event.sender.sender_id.open_id, query_id)
+                               unique_id, query_id)
 
     @classmethod
     def _get_chat_name(cls, chat_id: str,
@@ -328,8 +329,9 @@ class WechatAgent:
             chat_request_body = ChatRequestBody(content=body.query.content)
 
         # push into chat queue
+        unique_id = body.username + "@" + body.groupname
         chat_svc.chat_by_agent(chat_request_body, ChatType.WECHAT, body,
-                               body.username, query_id)
+                               unique_id, query_id)
         # record query_id
         ChatCache.record_query_id_to_fetch(feature_store_id, query_id)
         return WechatResponse()
