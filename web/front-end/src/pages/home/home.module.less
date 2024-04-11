@@ -58,8 +58,17 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            .password {
+            .show-psw {
+                -webkit-text-security: none;
+            }
+            .hide-psw {
                 -webkit-text-security: disc;
+            }
+            .eye {
+                width: 24px;
+                cursor: pointer;
+                line-height: 20px;
+                -webkit-text-security: none;
             }
         }
         .btn-wrapper {
