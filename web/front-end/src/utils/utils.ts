@@ -12,6 +12,12 @@ export const loadLang = () => {
     if (storeLang) {
         return storeLang === 'en-US' ? 'en-US' : 'zh-CN';
     }
+    // auto detect system language
+    const systemLang = window.navigator.language;
+    if (systemLang.includes('zh')) {
+        localStorage.setItem(LanguageKey, 'zh-CN');
+        return 'zh-CN';
+    }
     // default lang: English
     localStorage.setItem(LanguageKey, 'en-US');
     return 'en-US';

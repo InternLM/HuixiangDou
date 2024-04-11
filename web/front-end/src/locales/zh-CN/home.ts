@@ -1,6 +1,6 @@
 export default {
     home: {
-        slogan: '行业知识助手，零开发接入飞书微信',
+        slogan: '行业知识助手，零开发接入飞书个微群',
         beanName: '请输入知识库名称，不存在则自动创建。不少于 8 个字符',
         validateMsg: '知识库名称至少需要 8 个字符',
         createBean: '创建知识库',
@@ -9,11 +9,11 @@ export default {
         cancel: '取消',
         go: '前往',
         bean: '知识库',
-        activeBean: '活跃知识库',
+        activeBean: '月活知识库',
         WeChat: '微信',
         feishu: '飞书',
-        users: '服务人次',
-        uniqueUsers: '去重服务人次',
+        users: '回答次数',
+        uniqueUsers: '去重次数',
         pwdError: '密码错误',
         feedback: '问题反馈',
         welcome: 'Welcome, grateful',

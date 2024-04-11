@@ -1,11 +1,11 @@
-from typing import Optional, List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
 
 class Lark(BaseModel):
-    appId: Optional[str] = ""
-    appSecret: Optional[str] = ""
+    appId: Optional[str] = ''
+    appSecret: Optional[str] = ''
     encryptKey: str
     verificationToken: str
     eventUrl: str

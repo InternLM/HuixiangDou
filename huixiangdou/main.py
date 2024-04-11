@@ -59,17 +59,32 @@ def check_env(args):
         os.makedirs(args.work_dir)
 
 
+def build_reply_text(reply: str, references: list):
+    if len(references) < 1:
+        return reply
+
+    ret = reply
+    for ref in references:
+        ret += '\n'
+        ret += ref
+    return ret
+
+
 def lark_send_only(assistant, fe_config: dict):
     queries = ['请问如何安装 mmpose ?']
     for query in queries:
-        code, reply = assistant.generate(query=query, history=[], groupname='')
-        logger.info(f'{code}, {query}, {reply}')
+        code, reply, references = assistant.generate(query=query,
+                                                     history=[],
+                                                     groupname='')
+        logger.info(f'{code}, {query}, {reply}, {references}')
+        reply_text = build_reply_text(reply=reply, references=references)
+
         if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
             # send message to lark group
             from .frontend import Lark
             lark = Lark(webhook=fe_config['webhook_url'])
-            logger.info(f'send {reply} to lark group.')
-            lark.send_text(msg=reply)
+            logger.info(f'send {reply} and {references} to lark group.')
+            lark.send_text(msg=reply_text)
 
 
 def lark_group_recv_and_send(assistant, fe_config: dict):
@@ -106,9 +121,12 @@ def lark_group_recv_and_send(assistant, fe_config: dict):
             sent_msg_ids = []
             continue
 
-        code, reply = assistant.generate(query=query, history=[], groupname='')
+        code, reply, references = assistant.generate(query=query,
+                                                     history=[],
+                                                     groupname='')
         if code == ErrorCode.SUCCESS:
-            json_obj['reply'] = reply
+            json_obj['reply'] = build_reply_text(reply=reply,
+                                                 references=references)
             error, msg_id = send_to_lark_group(
                 json_obj=json_obj,
                 app_id=lark_group_config['app_id'],
@@ -128,8 +146,16 @@ def wechat_personal_run(assistant, fe_config: dict):
         logger.debug(input_json)
 
         query = input_json['query']
-        code, reply = assistant.generate(query=query, history=[], groupname='')
-        return web.json_response({'code': int(code), 'reply': reply})
+
+        if type(query) is dict:
+            query = query['content']
+
+        code, reply, references = assistant.generate(query=query,
+                                                     history=[],
+                                                     groupname='')
+        reply_text = build_reply_text(reply=reply, references=references)
+
+        return web.json_response({'code': int(code), 'reply': reply_text})
 
     bind_port = fe_config['wechat_personal']['bind_port']
     app = web.Application()
@@ -142,7 +168,7 @@ def run():
     args = parse_args()
     check_env(args)
 
-    if args.standalone:
+    if args.standalone is True:
         # hybrid llm serve
         server_ready = Value('i', 0)
         server_process = Process(target=llm_serve,
@@ -162,7 +188,7 @@ def run():
 
     # query by worker
     with open(args.config_path, encoding='utf8') as f:
-        fe_config = pytoml.load(f)['front-end']
+        fe_config = pytoml.load(f)['frontend']
     logger.info('Config loaded.')
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
 

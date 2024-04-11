@@ -1,36 +1,41 @@
 # Listen HuiXiangDou:Task queue
 import json
 import os
-import pdb
 import shutil
 import time
 import types
 from datetime import datetime, timedelta
 # implement time lru cache
 from functools import lru_cache, partial, wraps
+from multiprocessing import Pool, Process, Value
 
 import pytoml
 import redis
 from BCEmbedding.tools.langchain import BCERerank
-from config import feature_store_base_dir, redis_host, redis_port, redis_passwd
-from feature_store import FeatureStore
-from helper import ErrorCode, Queue, TaskCode, parse_json_str, ocr
 from langchain.embeddings import HuggingFaceEmbeddings
 from loguru import logger
-from retriever import Retriever
-from worker import Worker
-from llm_server_hybrid import llm_serve
-from multiprocessing import Process, Value
+
+from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,
+                                 FileName, FileOperation, Queue, Retriever,
+                                 TaskCode, feature_store_base_dir,
+                                 parse_json_str, redis_host, redis_passwd,
+                                 redis_port)
+
+from .web_worker import WebWorker
 
 
-def callback_task_state(feature_store_id: str, code: int, _type: str,
-                        state: str, files_state: list=[]):
+def callback_task_state(feature_store_id: str,
+                        code: int,
+                        _type: str,
+                        state: str,
+                        files_state: list = []):
     resp = Queue(name='TaskResponse')
     target = {
         'feature_store_id': feature_store_id,
         'code': code,
         'type': _type,
         'state': state,
+        'status': state,
         'files_state': files_state
     }
     logger.debug(target)
@@ -38,80 +43,6 @@ def callback_task_state(feature_store_id: str, code: int, _type: str,
         target,
         ensure_ascii=False,
     ))
-
-
-class CacheRetriever:
-
-    def __init__(self, config_path: str, max_len: int = 4):
-        self.cache = dict()
-        self.max_len = max_len
-        with open(config_path, encoding='utf8') as f:
-            config = pytoml.load(f)['feature_store']
-            embedding_model_path = config['embedding_model_path']
-            reranker_model_path = config['reranker_model_path']
-
-        # load text2vec and rerank model
-        logger.info('loading test2vec and rerank models')
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=embedding_model_path,
-            model_kwargs={'device': 'cuda'},
-            encode_kwargs={
-                'batch_size': 1,
-                'normalize_embeddings': True
-            })
-        self.embeddings.client = self.embeddings.client.half()
-        reranker_args = {
-            'model': reranker_model_path,
-            'top_n': 7,
-            'device': 'cuda',
-            'use_fp16': True
-        }
-        self.reranker = BCERerank(**reranker_args)
-
-    def get(self, fs_id: str):
-        if fs_id in self.cache:
-            self.cache[fs_id]['time'] = time.time()
-            return self.cache[fs_id]['retriever']
-
-        BASE = feature_store_base_dir()
-        workdir = os.path.join(BASE, fs_id, 'workdir')
-        configpath = os.path.join(BASE, fs_id, 'config.ini')
-        if not os.path.exists(workdir) or not os.path.exists(configpath):
-            return None, 'workdir or config.ini not exist'
-
-        with open(configpath, encoding='utf8') as f:
-            reject_throttle = pytoml.load(
-                f)['feature_store']['reject_throttle']
-
-        if len(self.cache) >= self.max_len:
-            # drop the oldest one
-            del_key = None
-            min_time = time.time()
-            for key, value in enumerate(self.cache):
-                cur_time = value['time']
-                if cur_time < min_time:
-                    min_time = cur_time
-                    del_key = key
-
-            if del_key is not None:
-                del_value = self.cache[del_key]
-                self.cache.pop(del_key)
-                del del_value['retriever']
-
-        retriever = Retriever(embeddings=self.embeddings,
-                              reranker=self.reranker,
-                              work_dir=workdir,
-                              reject_throttle=reject_throttle)
-        self.cache[fs_id] = {'retriever': retriever, 'time': time.time()}
-        return retriever
-
-    def pop(self, fs_id: str):
-        if fs_id not in self.cache:
-            return
-        del_value = self.cache[fs_id]
-        self.cache.pop(fs_id)
-        # manually free memory
-        del del_value
 
 
 def callback_chat_state(feature_store_id: str, query_id: str, code: int,
@@ -195,31 +126,28 @@ def chat_with_featue_store(cache: CacheRetriever,
                          feature_store_id=fs_id,
                          query_id=query_id)
 
-    retriever = cache.get(fs_id=fs_id)
-
     BASE = feature_store_base_dir()
     workdir = os.path.join(BASE, fs_id, 'workdir')
     configpath = os.path.join(BASE, fs_id, 'config.ini')
     db_reject = os.path.join(workdir, 'db_reject')
     db_response = os.path.join(workdir, 'db_response')
 
-    if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
-        chat_state(code=ErrorCode.PARAMETER_ERROR.value, text='',state='知识库未建立或建立异常，此时不能 chat。', ref=[])
+    if not os.path.exists(workdir) or not os.path.exists(
+            configpath) or not os.path.exists(db_reject) or not os.path.exists(
+                db_response):
+        chat_state(code=ErrorCode.PARAMETER_ERROR.value,
+                   text='',
+                   state='知识库未建立或建立异常，此时不能 chat。',
+                   ref=[])
         return
+    retriever = cache.get(fs_id=fs_id,
+                          config_path=configpath,
+                          work_dir=workdir)
 
-    worker = Worker(work_dir=workdir, config_path=configpath)
-
-    # TODO parse images
-
-    image_texts = []
-    for image in payload.images:
-        text = ocr(image)
-        if text is not None:
-            image_texts.append(text)
-    image_text = '\n'.join(image_texts)
+    worker = WebWorker(work_dir=workdir, config_path=configpath)
 
     history = format_history(payload.history)
-    error, response, references = worker.generate(query=image_text+payload.content,
+    error, response, references = worker.generate(query=payload.content,
                                                   history=history,
                                                   retriever=retriever,
                                                   groupname='')
@@ -243,11 +171,15 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
     #     "path_list": ["STRING"]
     # }
     abs_base = payload.file_abs_base
-    files = payload.file_list
     fs_id = payload.feature_store_id
     path_list = []
-    for filename in files:
-        path_list.append(os.path.join(abs_base, filename))
+    files = []
+
+    file_opr = FileOperation()
+    for filename in payload.file_list:
+        abs_path = os.path.join(abs_base, filename)
+        _type = file_opr.get_type(abs_path)
+        files.append(FileName(root=abs_base, filename=filename, _type=_type))
 
     BASE = feature_store_base_dir()
     # build dir and config.ini if not exist
@@ -257,7 +189,7 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
 
     configpath = os.path.join(BASE, fs_id, 'config.ini')
     if not os.path.exists(configpath):
-        template_file = 'config-template.ini'
+        template_file = 'config.ini'
         if not os.path.exists(template_file):
             raise Exception(f'{template_file} not exist')
         shutil.copy(template_file, configpath)
@@ -273,25 +205,41 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
                          _type=TaskCode.FS_ADD_DOC.value)
 
     # try:
-    counter, state_map = fs.initialize(filepaths=path_list, work_dir=workdir)
+    fs.initialize(files=files, work_dir=workdir)
     files_state = []
-    for k,v in state_map.items():
+
+    success_cnt = 0
+    fail_cnt = 0
+    skip_cnt = 0
+    for file in files:
         files_state.append({
-            'file': k,
-            'status': v['status'],
-            'desc': v['desc']
+            'file': str(file.basename),
+            'status': bool(file.state),
+            'desc': str(file.reason)
         })
-    success_cnt, fail_cnt, skip_cnt = counter
-    if success_cnt == len(path_list):
-        # success
+
+        if file.state:
+            success_cnt += 1
+        elif file.reason == 'skip':
+            skip_cnt += 1
+        else:
+            fail_cnt += 1
+
+    if success_cnt == len(files):
         task_state(code=ErrorCode.SUCCESS.value,
                    state=ErrorCode.SUCCESS.describe(),
                    files_state=files_state)
+
     elif success_cnt == 0:
-        task_state(code=ErrorCode.FAILED.value, state='无文件被处理', files_state=files_state)
+        task_state(code=ErrorCode.FAILED.value,
+                   state='无文件被处理',
+                   files_state=files_state)
+
     else:
         state = f'完成{success_cnt}个文件，跳过{skip_cnt}个，{fail_cnt}个处理异常。请确认文件格式。'
-        task_state(code=ErrorCode.SUCCESS.value, state=state, files_state=files_state)
+        task_state(code=ErrorCode.SUCCESS.value,
+                   state=state,
+                   files_state=files_state)
 
     # except Exception as e:
     #     logger.error(str(e))
@@ -320,6 +268,14 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
                    state='正例为空。请根据真实用户问题，填写正例；同时填写几句场景无关闲聊作负例')
         return
 
+    for idx in range(len(positive)):
+        if len(positive[idx]) < 1:
+            positive[idx] += '.'
+
+    for idx in range(len(negative)):
+        if len(negative[idx]) < 1:
+            negative[idx] += '.'
+
     BASE = feature_store_base_dir()
     fs_id = payload.feature_store_id
     workdir = os.path.join(BASE, fs_id, 'workdir')
@@ -328,16 +284,19 @@ def update_sample(cache: CacheRetriever, payload: types.SimpleNamespace):
     db_reject = os.path.join(workdir, 'db_reject')
     db_response = os.path.join(workdir, 'db_response')
 
-    if not os.path.exists(workdir) or not os.path.exists(configpath) or not os.path.exists(db_reject) or not os.path.exists(db_response):
+    if not os.path.exists(workdir) or not os.path.exists(
+            configpath) or not os.path.exists(db_reject) or not os.path.exists(
+                db_response):
         task_state(code=ErrorCode.INTERNAL_ERROR.value,
                    state='知识库未建立或中途异常，已自动反馈研发。请重新建立知识库。')
         return
 
     # try:
 
-    retriever = cache.get(fs_id=fs_id)
+    retriever = cache.get(fs_id=fs_id,
+                          config_path=configpath,
+                          work_dir=workdir)
     retriever.update_throttle(config_path=configpath,
-                              work_dir=workdir,
                               good_questions=positive,
                               bad_questions=negative)
     del retriever
@@ -384,44 +343,44 @@ def update_pipeline(payload: types.SimpleNamespace):
 
 def process():
     que = Queue(name='Task')
-    fs_cache = CacheRetriever('config-template.ini')
+    fs_cache = CacheRetriever('config.ini')
 
     logger.info('start wait task queue..')
     while True:
-        try:
-            msg_pop = que.get(timeout=16)
-            if msg_pop is None:
-                continue
-            msg, error = parse_json_str(msg_pop)
-            logger.info(msg)
-            if error is not None:
-                raise error
+        #        try:
+        msg_pop = que.get(timeout=16)
+        if msg_pop is None:
+            continue
+        msg, error = parse_json_str(msg_pop)
+        logger.info(msg)
+        if error is not None:
+            raise error
 
-            logger.debug(f'process {msg}')
-            if msg.type == TaskCode.FS_ADD_DOC.value:
-                fs_cache.pop(msg.payload.feature_store_id)
-                build_feature_store(fs_cache, msg.payload)
-            elif msg.type == TaskCode.FS_UPDATE_SAMPLE.value:
-                fs_cache.pop(msg.payload.feature_store_id)
-                update_sample(fs_cache, msg.payload)
-            elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
-                update_pipeline(msg.payload)
-            elif msg.type == TaskCode.CHAT.value:
-                chat_with_featue_store(fs_cache, msg.payload)
-            else:
-                logger.warning(f'unknown type {msg}')
+        logger.debug(f'process {msg}')
+        if msg.type == TaskCode.FS_ADD_DOC.value:
+            fs_cache.pop(msg.payload.feature_store_id)
+            build_feature_store(fs_cache, msg.payload)
+        elif msg.type == TaskCode.FS_UPDATE_SAMPLE.value:
+            fs_cache.pop(msg.payload.feature_store_id)
+            update_sample(fs_cache, msg.payload)
+        elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
+            update_pipeline(msg.payload)
+        elif msg.type == TaskCode.CHAT.value:
+            chat_with_featue_store(fs_cache, msg.payload)
+        else:
+            logger.warning(f'unknown type {msg}')
 
-        except Exception as e:
-            logger.error(str(e))
-            time.sleep(3)
-            que = Queue(name='Task')
 
+#        except Exception as e:
+#            logger.error(str(e))
+#            time.sleep(1)
+#            que = Queue(name='Task')
 
 if __name__ == '__main__':
     # start hybrid server
     # server_ready = Value('i', 0)
     # server_process = Process(target=llm_serve,
-    #                             args=('config-template.ini', server_ready))
+    #                             args=('config.ini', server_ready))
     # server_process.daemon = True
     # server_process.start()
     # while True:
@@ -433,5 +392,26 @@ if __name__ == '__main__':
     #     else:
     #         logger.error('start local LLM server failed, quit.')
     #         raise Exception('local LLM path')
-    logger.info('Hybrid LLM Server start.')
+    # logger.info('Hybrid LLM Server start.')
+
+    # single process
     process()
+
+    # multiple process
+    # CNT = 16
+    # pool = Pool(processes=CNT)
+
+    # ps = []
+
+    # for i in range(CNT):
+    #     logger.info('prepare process {}'.format(i))
+
+    #     p = Process(target=process, args=())
+    #     p.daemon = False
+    #     p.start()
+    #     ps.append(p)
+    #     time.sleep(1)
+    #     logger.info('started process {}'.format(i))
+
+    # for p in ps:
+    #     p.join()

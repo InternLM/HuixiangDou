@@ -1,7 +1,7 @@
 import benepar
+import nltk
 
 benepar.download('benepar_en3_large')
-import nltk
 
 nltk.download('punkt')
 # 创建解析器

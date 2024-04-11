@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+
+        <TextView
+            android:id="@+id/tv_step0"
+            android:layout_width="wrap_content"
+            android:padding="8dp"
+            android:text="@string/usage0"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tv_step1"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:padding="8dp"
+            android:text="@string/usage1"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="120dp"
+            android:weightSum="10"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/et_url"
+                android:layout_weight="8"
+                android:layout_width="wrap_content"
+                android:minWidth="120dp"
+                android:text="@string/addr_hint"
+                android:layout_height="match_parent"/>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_url"
+                android:layout_weight="2"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:hint="@string/btn_confirm"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_step2"
+            android:layout_width="wrap_content"
+            android:padding="8dp"
+            android:text="@string/usage2"
+            android:textStyle="bold"
+            android:layout_height="wrap_content"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_jump"
+            android:text="@string/usage_go"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tv_step3"
+            android:layout_width="wrap_content"
+            android:padding="8dp"
+            android:textStyle="bold"
+            android:text="@string/usage3"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/sw_debug"
+                android:layout_width="wrap_content"
+                android:enabled="true"
+                android:checked="true"
+                android:text="@string/debug"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</RelativeLayout>

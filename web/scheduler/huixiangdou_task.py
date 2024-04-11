@@ -6,8 +6,8 @@ from redis.lock import Lock
 
 import web.constant.biz_constant as biz_const
 from web.model.chat import ChatType
-from web.model.huixiangdou import HxdTaskResponse, HxdTaskType, HxdChatResponse
-from web.model.qalib import QalibInfo, QalibSample, Pipeline
+from web.model.huixiangdou import HxdChatResponse, HxdTaskResponse, HxdTaskType
+from web.model.qalib import Pipeline, QalibInfo, QalibSample
 from web.orm.redis import r
 from web.service.agent import LarkAgent
 from web.service.cache import ChatCache
@@ -18,12 +18,12 @@ scheduler = AsyncIOScheduler()
 
 
 def handle_task_add_doc_response(response: HxdTaskResponse):
-    """
-    update qalib's status from huixiangdou response's code
+    """update qalib's status from huixiangdou response's code.
+
     :param response:
     :return:
     """
-    logger.info("do task: add doc")
+    logger.info('do task: add doc')
     fid = response.feature_store_id
     name = biz_const.RDS_KEY_QALIB_INFO
     files_state = response.files_state
@@ -38,16 +38,18 @@ def handle_task_add_doc_response(response: HxdTaskResponse):
     qalib_info.filesState = files_state
 
     r.hset(name=name, key=fid, value=qalib_info.model_dump_json())
-    logger.info(f"do task={response.type} with fid={response.feature_store_id}'s result: {response.code}-{response.status}")
+    logger.info(
+        f"do task={response.type} with fid={response.feature_store_id}'s result: {response.code}-{response.status}"
+    )
 
 
 def handle_task_update_sample_response(response: HxdTaskResponse):
-    """
-    update sample's confirm status from response's code
+    """update sample's confirm status from response's code.
+
     :param response:
     :return:
     """
-    logger.info("do task: update sample")
+    logger.info('do task: update sample')
     name = biz_const.RDS_KEY_SAMPLE_INFO
     fid = response.feature_store_id
     o = r.hget(name=name, key=fid)
@@ -60,7 +62,7 @@ def handle_task_update_sample_response(response: HxdTaskResponse):
 
 
 def handle_task_update_pipeline_response(response: HxdTaskResponse):
-    logger.info("do task: update pipeline")
+    logger.info('do task: update pipeline')
     name = biz_const.RDS_KEY_PIPELINE
     o = r.hget(name=name, key=response.feature_store_id)
     if not o:
@@ -71,7 +73,9 @@ def handle_task_update_pipeline_response(response: HxdTaskResponse):
     pipeline.code = response.code
     pipeline.confirmed = True
     pipeline.success = True if response.code == 0 else False
-    r.hset(name=name, key=response.feature_store_id, value=pipeline.model_dump_json())
+    r.hset(name=name,
+           key=response.feature_store_id,
+           value=pipeline.model_dump_json())
 
 
 async def sync_hxd_task_response() -> None:
@@ -81,11 +85,13 @@ async def sync_hxd_task_response() -> None:
     """
     o = r.lpop(biz_const.RDS_KEY_HXD_TASK_RESPONSE)
     if not o:
-        logger.debug(f"lpop from {biz_const.RDS_KEY_HXD_TASK_RESPONSE} is empty")
+        logger.debug(
+            f'lpop from {biz_const.RDS_KEY_HXD_TASK_RESPONSE} is empty')
         return
     hxd_task_response = HxdTaskResponse(**json.loads(o))
     if not hxd_task_response:
-        logger.error(f"deserializing huixiangdou task response failed, raw: {o}")
+        logger.error(
+            f'deserializing huixiangdou task response failed, raw: {o}')
         return
     task_type = hxd_task_response.type
     if task_type == HxdTaskType.ADD_DOC.value:
@@ -95,7 +101,7 @@ async def sync_hxd_task_response() -> None:
     elif task_type == HxdTaskType.UPDATE_PIPELINE.value:
         handle_task_update_pipeline_response(hxd_task_response)
     else:
-        logger.error(f"unrecognized task type: {task_type}")
+        logger.error(f'unrecognized task type: {task_type}')
     return
 
 
@@ -109,12 +115,15 @@ async def fetch_chat_response():
         length -= 1
         o = r.lpop(name)
         if not o:
-            logger.debug(f"lpop for {name} is empty, omit")
+            logger.debug(f'lpop for {name} is empty, omit')
             continue
         chat_response = HxdChatResponse(**json.loads(o))
         logger.info(
-            f"[chat-response] feature_store_id: {chat_response.feature_store_id}, content: {chat_response.response.model_dump_json()}, query_id: {chat_response.query_id}")
-        query_info = ChatCache.set_query_response(chat_response.query_id, chat_response.feature_store_id, chat_response.response)
+            f'[chat-response] feature_store_id: {chat_response.feature_store_id}, content: {chat_response.response.model_dump_json()}, query_id: {chat_response.query_id}'
+        )
+        query_info = ChatCache.set_query_response(
+            chat_response.query_id, chat_response.feature_store_id,
+            chat_response.response)
 
         if not query_info:
             continue
@@ -127,9 +136,9 @@ async def fetch_chat_response():
 
 
 def allow_scheduler(task):
-    lock = Lock(r, f"{biz_const.RDS_KEY_SCHEDULER}-{task}")
+    lock = Lock(r, f'{biz_const.RDS_KEY_SCHEDULER}-{task}')
     if lock.acquire(blocking=False):
-        logger.info(f"{biz_const.RDS_KEY_SCHEDULER}-{task} is locked")
+        logger.info(f'{biz_const.RDS_KEY_SCHEDULER}-{task} is locked')
         return True
     return False
 
@@ -137,23 +146,26 @@ def allow_scheduler(task):
 def start_scheduler():
     if not scheduler.running:
         # ensure only one scheduler task is running
-        if allow_scheduler("sync_hxd_task_response"):
-            logger.info("start scheduler of sync_hxd_task_respone")
-            scheduler.add_job(sync_hxd_task_response, IntervalTrigger(seconds=1))  # 100ms
-            scheduler.add_job(fetch_chat_response, IntervalTrigger(seconds=2))
+        # if allow_scheduler("sync_hxd_task_response"):
+        logger.info('start scheduler of sync_hxd_task_respone')
+        scheduler.add_job(sync_hxd_task_response,
+                          IntervalTrigger(seconds=1))  # 100ms
+        scheduler.add_job(fetch_chat_response, IntervalTrigger(seconds=1))
         # more scheduler job can be added here
         scheduler.start()
 
 
 def release_scheduler_lock(task) -> bool:
-    key = f"{biz_const.RDS_KEY_SCHEDULER}-{task}"
+    key = f'{biz_const.RDS_KEY_SCHEDULER}-{task}'
     r.delete(key)
     return False if r.exists(key) else True
 
 
 def stop_scheduler():
-    task_1 = "sync_hxd_task_response"
+    task_1 = 'sync_hxd_task_response'
     if release_scheduler_lock(task_1):
-        logger.info(f"release scheduler lock of {task_1} successfully.")
+        logger.info(f'release scheduler lock of {task_1} successfully.')
     else:
-        logger.error(f"release scheduler lock of {task_1} failed. you should delete this key from redis manually.")
+        logger.error(
+            f'release scheduler lock of {task_1} failed. you should delete this key from redis manually.'
+        )

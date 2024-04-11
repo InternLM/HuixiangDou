@@ -1,33 +1,56 @@
+English | [简体中文](README_zh.md)
+
 <div align="center">
 
-<img src="resource/logo_blue.svg" width="550px"/>
+<img src="resource/logo_black.svg" width="555px"/>
 
 <div align="center">
   <a href="resource/figures/wechat.jpg" target="_blank">
-    <img alt="Wechat" src="https://img.shields.io/badge/wechat-assistant%20inside-brightgreen?logo=wechat&logoColor=white" />
+    <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
   <a href="https://arxiv.org/abs/2401.08772" target="_blank">
     <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
   </a>
-  <a href="https://pypi.org/project/huixiangdou/" target="_blank">
+  <a href="https://pypi.org/project/huixiangdou" target="_blank">
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
+  </a>
+  <a href="https://youtu.be/ylXrT-Tei-Y" target="_blank">
+    <img alt="YouTube" src="https://img.shields.io/badge/YouTube-black?logo=youtube&logoColor=red" />
+  </a>
+  <a href="https://www.bilibili.com/video/BV1S2421N7mn" target="_blank">
+    <img alt="BiliBili" src="https://img.shields.io/badge/BiliBili-pink?logo=bilibili&logoColor=white" />
+  </a>
+  <a href="https://discord.gg/TW4ZBpZZ" target="_blank">
+    <img alt="discord" src="https://img.shields.io/badge/discord-red?logo=discord&logoColor=white" />
   </a>
 </div>
 
-[简体中文](README_zh.md) | English
-
 </div>
 
-"HuixiangDou" is a domain-specific knowledge assistant based on the LLM. Features:
+HuixiangDou is a **group chat** assistant based on LLM (Large Language Model).
 
-1. Deal with complex scenarios like group chats, answer user questions without causing message flooding.
-2. Propose an algorithm pipeline for answering technical questions.
-3. Low deployment cost, only need the LLM model to meet 4 traits can answer most of the user's questions, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772).
+Advantages:
 
-Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
+1. Design a two-stage pipeline of rejection and response to cope with group chat scenario, answer user questions without message flooding, see [arxiv2401.08772](https://arxiv.org/abs/2401.08772)
+2. Low cost, requiring only 1.5GB memory and no need for training
+3. Offers a complete suite of Web, Android, and pipeline source code, which is industrial-grade and commercially viable
 
-# 🆕 What's new
+Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](resource/figures/wechat.jpg) to try AI assistant inside.
 
+If this helps you, please give it a star ⭐
+
+# 🔆 News
+
+The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can build your own knowledge assistant without any coding, using WeChat and Feishu groups.
+
+Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
+
+- \[2024/04\] Release [web server](./web) source code 🔷
+- \[2024/03\] Support `ppt` and `html` file format
+- \[2024/03\] Speedup `pdf` and table parsing for higher precision
+- \[2024/03\] Support [zhipuai](https://zhipuai.cn) in `config.ini`
+- \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
+- \[2024/03\] Support `pdf`/`word`/`excel` file format; reply referenced filename or web URL
 - \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank for higher precision 👍
 - \[2024/02\] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
 - \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
@@ -37,15 +60,15 @@ Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md)
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
-|      Version       | GPU Memory Requirements |                                                                            Features                                                                             |                                Tested on Linux                                |
-| :----------------: | :---------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| Experience Version |          2.3GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-|   Basic Version    |          19GB           |                                                           Deploy local LLM can answer basic questions                                                           | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|  Advanced Version  |          40GB           |                                             Fully utilizing search + long-text, answer source code-level questions                                              | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+|      Version       | GPU Memory Requirements |                                                                                               Features                                                                                               |                                Tested on Linux                                |
+| :----------------: | :---------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| Experience Version |          1.5GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [kimi](https://kimi.moonshot.cn) and [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|   Basic Version    |          19GB           |                                                                             Deploy local LLM can answer basic questions                                                                              | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|  Advanced Version  |          40GB           |                                                                Fully utilizing search + long-text, answer source code-level questions                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
 
-We will take mmpose as examples to explain how to deploy the knowledge assistant to Feishu group chat.
+We will take mmpose and some `pdf`/`word`/`excel`/`ppt` examples to explain how to deploy the knowledge assistant to Feishu group chat.
 
 ## STEP1. Establish Topic Feature Repository
 
@@ -64,11 +87,18 @@ git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
 # Download chatting topics
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
 
-# Build a feature store
-mkdir workdir # create a working directory
-python3 -m pip install -r requirements.txt # install dependencies
-python3 -m huixiangdou.service.feature_store # save the features of repodir to workdir
+
+# parsing `word` requirements
+apt update
+apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
+# python requirements
+pip install -r requirements.txt
+
+# save the features of repodir to workdir
+mkdir workdir
+python3 -m huixiangdou.service.feature_store
 ```
 
 The first run will automatically download [text2vec model](./config.ini), you can also manually download it and update model path in `config.ini`.
@@ -76,12 +106,13 @@ The first run will automatically download [text2vec model](./config.ini), you ca
 After running, HuixiangDou can distinguish which user topics should be dealt with and which chitchats should be rejected. Please edit [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, finance, electricity, etc.).
 
 ```shell
-# Accept technical topics
-process query: Does mmdeploy support mmtrack model conversion now?
-process query: Are there any Chinese text to speech models?
 # Reject chitchat
 reject query: What to eat for lunch today?
 reject query: How to make HuixiangDou?
+
+# Accept technical topics
+process query: How to install mmpose ?
+process query: What should I pay attention to when using research instruments?
 ```
 
 ## STEP2. Run Basic Technical Assistant
@@ -100,7 +131,7 @@ x_api_key = "${YOUR-X-API-KEY}"
 
 **Test Q&A Effect**
 
-\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 15GB), try deepseek for [30 million free token](https://platform.deepseek.com/). See [config-experience.ini](./config-experience.ini)
+\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 15GB), try `kimi` or `deepseek` for [30 million free token](https://platform.deepseek.com/). See [config-2G.ini](./config-2G.ini)
 
 ```
 # config.ini
@@ -270,6 +301,8 @@ The basic version may not perform well. You can enable these features to enhance
 
    Re-run `feature_store` to update thresholds and feature libraries.
 
+   ⚠️ You can directly modify `reject_throttle` in config.ini. Generally speaking, 0.5 is a high value; 0.2 is too low.
+
 2. Launch is normal, but out of memory during runtime?
 
    LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md). Then use docker to independently deploy Hybrid LLM Service.
@@ -288,10 +321,29 @@ The basic version may not perform well. You can enable these features to enhance
 
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
 
+6. `No module named 'faiss.swigfaiss_avx2'`
+   locate installed `faiss` package
+
+   ```python
+   import faiss
+   print(faiss.__file__)
+   # /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/__init__.py
+   ```
+
+   add soft link
+
+   ```Bash
+   # cd your_python_path/site-packages/faiss
+   cd /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/
+   ln -s swigfaiss.py swigfaiss_avx2.py
+   ```
+
 # 🍀 Acknowledgements
 
 - [kimi-chat](https://kimi.moonshot.cn/): long context LLM
-- [BCEmbeding](https://github.com/netease-youdao/BCEmbedding): Bilingual and Crosslingual Embedding (BCEmbedding) in English and Chinese
+- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding): Bilingual and Crosslingual Embedding (BCEmbedding) in English and Chinese
+- [Langchain-ChatChat](https://github.com/chatchat-space/Langchain-Chatchat): ChatGLM Application based on Langchain
+- [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): Grab Wechat RedEnvelope
 
 # 📝 Citation
 

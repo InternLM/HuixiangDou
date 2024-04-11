@@ -15,7 +15,7 @@ export interface UploadProps {
     children?: ReactNode;
 }
 
-const acceptFileTypes = '.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go';
+const acceptFileTypes = '.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go,.html,.pptx';
 
 const Upload: FC<UploadProps> = ({
     docs = [],

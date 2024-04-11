@@ -88,6 +88,8 @@ def main(args):
                                                     seed=5120 + j)
 
         try:
+            response = generate(prompt='hello')
+            print(response)
             response = generate(prompt=prompt)
         except Exception as e:
             print(e)
@@ -101,4 +103,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_config()
+    main(args)

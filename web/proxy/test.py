@@ -1,5 +1,4 @@
 import json
-import pdb
 from pathlib import Path
 
 from config import feature_store_base_dir
@@ -30,9 +29,6 @@ def test_create_fs():
     out = task_out.get()
     print(out)
 
-    out = task_out.get()
-    print(out)
-
 
 def test_update_sample():
     # "payload": {
@@ -49,7 +45,7 @@ def test_update_sample():
             'feature_store_id': '9527',
             'positive':
             ['请问如何申请公寓？我是实习生但名下有房还行么？', '几十万的科研仪器不小心打碎了，我得自己付钱赔偿么'],
-            'negative': ['今天中文吃什么', 'ncnn 的作者是谁']
+            'negative': ['今天中午吃什么', 'ncnn 的作者是谁']
         }
     }
     print(target)
@@ -124,7 +120,7 @@ def test_chat():
 
 
 if __name__ == '__main__':
-    # test_create_fs()
-    # test_update_sample()
-    # test_update_pipeline()
+    test_create_fs()
+    test_update_sample()
+    test_update_pipeline()
     test_chat()
