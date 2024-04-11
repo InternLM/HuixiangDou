@@ -227,9 +227,9 @@ class HybridLLMServer:
         self.rpm.wait()
 
         res_json = requests.post(url,
-                                    headers=header,
-                                    data=json.dumps(data),
-                                    timeout=120).json()
+                                 headers=header,
+                                 data=json.dumps(data),
+                                 timeout=120).json()
         logger.debug(res_json)
 
         # fix token
@@ -242,9 +242,9 @@ class HybridLLMServer:
                 'Authorization': self.token[0]
             }
             res_json = requests.post(url,
-                                        headers=header,
-                                        data=json.dumps(data),
-                                        timeout=120).json()
+                                     headers=header,
+                                     data=json.dumps(data),
+                                     timeout=120).json()
             logger.debug(res_json)
 
         res_data = res_json['data']
@@ -286,7 +286,6 @@ class HybridLLMServer:
             temperature=0.0,
         )
         return completion.choices[0].message.content
- 
 
     def call_gpt(self,
                  prompt,
@@ -320,7 +319,6 @@ class HybridLLMServer:
         )
         return completion.choices[0].message.content
 
-
     def call_deepseek(self, prompt, history):
         """Generate a response from deepseek (a remote LLM).
 
@@ -348,7 +346,7 @@ class HybridLLMServer:
             temperature=0.1,
         )
         return completion.choices[0].message.content
-    
+
     def call_zhipuai(self, prompt, history):
         """Generate a response from zhipuai (a remote LLM).
 
@@ -391,19 +389,23 @@ class HybridLLMServer:
 
         messages = build_messages(prompt=prompt, history=history)
 
-        payload = {'model': 'gpt-4-1106-preview', 'messages': messages, 'temperature': 0.1}
+        payload = {
+            'model': 'gpt-4-1106-preview',
+            'messages': messages,
+            'temperature': 0.1
+        }
         text = ''
         response = requests.post(url,
-                                headers=headers,
-                                data=json.dumps(payload))
-        
+                                 headers=headers,
+                                 data=json.dumps(payload))
+
         logger.debug(response.text)
         resp_json = response.json()
         if resp_json['msgCode'] == '10000':
             data = resp_json['data']
             if len(data['choices']) > 0:
                 text = data['choices'][0]['message']['content']
-  
+
         return text
 
     def generate_response(self, prompt, history=[], backend='local'):
@@ -421,6 +423,12 @@ class HybridLLMServer:
         output_text = ''
         error = ''
         time_tokenizer = time.time()
+
+        if backend == 'local' and self.inference is None:
+            logger.error(
+                "!!! fatal error.  !!! \n Detect `enable_local=0` in `config.ini` while backend='local', please immediately stop the service and check it. \n For this request, autofix the backend to '{}' and proceed."
+                .format(self.server_config['remote_type']))
+            backend = self.server_config['remote_type']
 
         if backend == 'remote':
             # not specify remote LLM type, use config
@@ -442,12 +450,14 @@ class HybridLLMServer:
 
                 try:
                     if backend == 'kimi':
-                        output_text = self.call_kimi(prompt=prompt, history=history)
+                        output_text = self.call_kimi(prompt=prompt,
+                                                     history=history)
                     elif backend == 'deepseek':
                         output_text = self.call_deepseek(prompt=prompt,
-                                                        history=history)
+                                                         history=history)
                     elif backend == 'zhipuai':
-                        output_text = self.call_zhipuai(prompt=prompt, history=history)
+                        output_text = self.call_zhipuai(prompt=prompt,
+                                                        history=history)
 
                     elif backend == 'xi-api' or backend == 'gpt':
                         base_url = None
@@ -461,11 +471,12 @@ class HybridLLMServer:
                                                     system=system)
 
                     elif backend == 'puyu':
-                        output_text = self.call_puyu(prompt=prompt, history=history)
+                        output_text = self.call_puyu(prompt=prompt,
+                                                     history=history)
 
                     elif backend == 'alles-apin':
                         output_text = self.call_alles_apin(prompt=prompt,
-                                                        history=history)
+                                                           history=history)
                     else:
                         error = 'unknown backend {}'.format(backend)
                         logger.error(error)
@@ -480,7 +491,7 @@ class HybridLLMServer:
 
                     if 'Error code: 401' in error or 'invalid api_key' in error:
                         break
-                    
+
                     life += 1
                     randval = random.randint(1, int(pow(2, life)))
                     time.sleep(randval)
@@ -545,14 +556,13 @@ def llm_serve(config_path: str, server_ready: Value):
         backend = input_json['backend']
         # logger.debug(f'history: {history}')
         text, error = server.generate_response(prompt=prompt,
-                                        history=history,
-                                        backend=backend)
+                                               history=history,
+                                               backend=backend)
         return web.json_response({'text': text, 'error': error})
 
     app = web.Application()
     app.add_routes([web.post('/inference', inference)])
     web.run_app(app, host='0.0.0.0', port=bind_port)
-
 
 
 def main():

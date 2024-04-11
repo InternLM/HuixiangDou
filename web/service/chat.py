@@ -3,8 +3,7 @@ import binascii
 import hashlib
 import os
 import time
-from typing import Union
-from typing import List
+from typing import List, Union
 
 from fastapi import Request, Response
 

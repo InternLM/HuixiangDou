@@ -52,7 +52,8 @@ class Worker:
             raise Exception('worker config can not be None')
 
         llm_config = self.config['llm']
-        self.context_max_length = llm_config['server']['local_llm_max_text_length']
+        self.context_max_length = llm_config['server'][
+            'local_llm_max_text_length']
 
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server'][
@@ -109,8 +110,8 @@ class Worker:
         return False
 
     def work_time(self):
-        """If worktime enabled, determines the current time falls within the scheduled working
-        hours of the chat assistant.
+        """If worktime enabled, determines the current time falls within the
+        scheduled working hours of the chat assistant.
 
         Returns:
             bool: True if the current time is within working hours, otherwise False.  # noqa E501

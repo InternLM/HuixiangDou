@@ -88,7 +88,7 @@ def main(args):
                                                     seed=5120 + j)
 
         try:
-            response = generate(prompt="hello")
+            response = generate(prompt='hello')
             print(response)
             response = generate(prompt=prompt)
         except Exception as e:

@@ -58,12 +58,14 @@ class ChatClient:
 
         return instruction, real_history
 
-    
     def auto_fix(self, backend):
-        """Choose real backend according to config.ini"""
+        """Choose real backend according to config.ini."""
 
-        enable_local, enable_remote = (self.llm_config['enable_local'], self.llm_config['enable_remote'])
-        local_len, remote_len = (self.llm_config['server']['local_llm_max_text_length'], self.llm_config['server']['remote_llm_max_text_length'])
+        enable_local, enable_remote = (self.llm_config['enable_local'],
+                                       self.llm_config['enable_remote'])
+        local_len, remote_len = (
+            self.llm_config['server']['local_llm_max_text_length'],
+            self.llm_config['server']['remote_llm_max_text_length'])
 
         max_length = local_len
         if enable_remote:
@@ -75,7 +77,7 @@ class ChatClient:
         elif backend != 'local' and not enable_remote:
             backend = 'local'
             max_length = local_len
-        
+
         return backend, max_length
 
     def generate_response(self, prompt, history=[], backend='local'):
