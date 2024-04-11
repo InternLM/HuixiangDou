@@ -189,6 +189,7 @@ class HybridLLMServer:
         if self.enable_local:
             self.inference = InferenceWrapper(model_path)
         else:
+            self.inference = None
             logger.warning('local LLM disabled.')
 
     def call_puyu(self, prompt, history):
