@@ -44,16 +44,9 @@
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
 - \[2024/04\] 发布 [web 前后端服务源码](./web) 🔷
-- \[2024/03\] 支持 `ppt` 和 `html` 格式
-- \[2024/03\] 优化 `pdf` 和表格解析，改善精度并加速
-- \[2024/03\] 支持 [zhipuai](https://zhipuai.cn) 和 [xi-api 国内 gpt 代理](https://api.xi-ai.cn)，见 `config.ini`
 - \[2024/03\] 新的[个人微信集成方法](./docs/add_wechat_accessibility_zh.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
-- \[2024/03\] 支持 `pdf`/`word`/`excel`，返回引用的文件名或 Web URL
-- \[2024/02\] 用 [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank 提升检索精度 👍
-- \[2024/02\] [支持 deepseek](https://github.com/InternLM/HuixiangDou/blob/main/README_zh.md#step2-%E8%BF%90%E8%A1%8C%E5%9F%BA%E7%A1%80%E7%89%88%E6%8A%80%E6%9C%AF%E5%8A%A9%E6%89%8B) 和 qwen1.5; 按 GPU 显存动态选模型
 - \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
-- \[2024/01\] 实现[个人微信接入](./docs/add_wechat_group_zh.md); [飞书群收发和撤回](./docs/add_lark_group_zh.md)
-
+  
 # 📦 硬件要求
 
 以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
@@ -65,6 +58,57 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 | 高级版 |    40GB     |                                                                      充分利用检索+长文本能力，能够回答源码级问题                                                                       | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 如果你只有 2G 显存，或追求性价比💰，[看这个知乎文档](https://zhuanlan.zhihu.com/p/685205206)。
+
+# 📖 支持情况
+
+<table align="center">
+  <tbody>
+    <tr align="center" valign="bottom">
+      <td>
+        <b>已支持的 LLM</b>
+      </td>
+      <td>
+        <b>支持的文件格式</b>
+      </td>
+      <td>
+        <b>即时通讯软件</b>
+      </td>
+    </tr>
+    <tr valign="top">
+      <td>
+
+- [InternLM2](https://github.com/InternLM/InternLM)
+- [Qwen](https://github.com/facebookresearch/llama)
+- [KIMI](https://kimi.moonshot.cn)
+- [DeepSeek](https://www.deepseek.com)
+- [ChatGLM (ZHIPU)](https://www.zhipuai.cn)
+- [Xi-Api](https://api.xi-ai.cn)
+- [OpenAOE](https://github.com/InternLM/OpenAOE)
+
+</td>
+<td>
+
+- pdf
+- word
+- excel
+- ppt
+- html
+- markdown
+- txt
+
+</td>
+
+<td>
+
+- WeChat
+- Lark
+- ..
+
+</td>
+
+</tr>
+  </tbody>
+</table>
 
 # 🔥 运行
 
