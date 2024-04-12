@@ -45,17 +45,10 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
-- \[2024/04\] Release [web server](./web) source code 🔷
-- \[2024/03\] Support `ppt` and `html` file format
-- \[2024/03\] Speedup `pdf` and table parsing for higher precision
-- \[2024/03\] Support [zhipuai](https://zhipuai.cn) in `config.ini`
+- \[2024/04\] Update [technical report](./resource/HuixiangDou.pdf)
+- \[2024/04\] Release [web server](./web) source code 👍
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
-- \[2024/03\] Support `pdf`/`word`/`excel` file format; reply referenced filename or web URL
-- \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank for higher precision 👍
-- \[2024/02\] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
 - \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
-- \[2024/01\] Support [personal wechat](./docs/add_wechat_group_zh.md) and [lark group](./docs/add_lark_group_zh.md)
-
 # 📦 Hardware Requirements
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
@@ -65,6 +58,57 @@ The following are the hardware requirements for running. It is suggested to foll
 | Experience Version |          1.5GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [kimi](https://kimi.moonshot.cn) and [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 |   Basic Version    |          19GB           |                                                                             Deploy local LLM can answer basic questions                                                                              | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |  Advanced Version  |          40GB           |                                                                Fully utilizing search + long-text, answer source code-level questions                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+
+# 📖 Datasheet
+
+<table align="center">
+  <tbody>
+    <tr align="center" valign="bottom">
+      <td>
+        <b>Model Support</b>
+      </td>
+      <td>
+        <b>File Format Support</b>
+      </td>
+      <td>
+        <b>IM Application Support</b>
+      </td>
+    </tr>
+    <tr valign="top">
+      <td>
+
+- [InternLM2](https://github.com/InternLM/InternLM)
+- [Qwen](https://github.com/facebookresearch/llama)
+- [KIMI](https://kimi.moonshot.cn)
+- [DeepSeek](https://www.deepseek.com)
+- [ChatGLM (ZHIPU)](https://www.zhipuai.cn)
+- [Xi-Api](https://api.xi-ai.cn)
+- [OpenAOE](https://github.com/InternLM/OpenAOE)
+
+</td>
+<td>
+
+- pdf
+- word
+- excel
+- ppt
+- html
+- markdown
+- txt
+
+</td>
+
+<td>
+
+- WeChat
+- Lark
+- ..
+
+</td>
+
+</tr>
+  </tbody>
+</table>
 
 # 🔥 Run
 
