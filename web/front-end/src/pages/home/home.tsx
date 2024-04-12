@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { useLocale } from '@hooks/useLocale';
-import { Input, message } from 'sea-lion-ui';
+import { IconFont, Input, message } from 'sea-lion-ui';
 import { useEffect, useMemo, useState } from 'react';
 import logo from '@assets/imgs/logo.png';
+import bean from '@assets/imgs/bean1.png';
 import {
     getStatistic, loginBean, MsgCode, StatisticDto
 } from '@services/home';
@@ -13,6 +14,8 @@ const Home = () => {
     const [beanName, setBeanName] = useState('');
     const [beanPwd, setBeanPwd] = useState('');
     const [statistic, setStatistic] = useState<StatisticDto>(null);
+    const [showPsw, setShowPsw] = useState(false);
+
     const locales = useLocale('home');
 
     const resetInput = () => {
@@ -98,14 +101,29 @@ const Home = () => {
                         value={beanName}
                         max={500}
                         onChange={(e) => setBeanName(e.target.value)}
+                        prefix={(
+                            <img
+                                style={{ width: 15, padding: '1px 4px' }}
+                                src={bean}
+                                alt="bean"
+                            />
+                        )}
                     />
                     <Input
                         placeholder={locales.beanPwd}
                         value={beanPwd}
                         max={500}
-                        className={styles.password}
+                        className={showPsw ? styles.showPsw : styles.hidePsw}
                         onChange={(e) => setBeanPwd(e.target.value)}
                         onPressEnter={handleConfirm}
+                        prefix={(
+                            <div
+                                className={styles.eye}
+                                onClick={() => setShowPsw(!showPsw)}
+                            >
+                                <IconFont icon={showPsw ? 'icon-show-annotation' : 'icon-ConcealOutlined'} />
+                            </div>
+                        )}
                     />
                 </div>
                 <div className={styles.btnWrapper}>

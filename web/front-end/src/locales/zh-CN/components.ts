@@ -5,6 +5,7 @@ export default {
         hide4ever: '不再显示',
         goStar: '前往鼓励',
         fileSize: '单个文件大小不能超过 35M',
+        nameSize: '文件名太长',
         fileCount: '单次最多上传 200 个文件',
         pendingFiles: '待上传文档',
         confirmUpload: '确认上传',
