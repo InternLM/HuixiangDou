@@ -14,7 +14,7 @@ from web.model.huixiangdou import (HxdTask, HxdTaskPayload, HxdTaskType,
                                    HxdToken)
 from web.model.integrate import IntegrateLarkBody, IntegrateWebSearchBody
 from web.model.qalib import (Lark, QalibInfo, QalibPositiveNegative,
-                             QalibSample, WebSearch, Wechat)
+                             QalibSample, WebSearch, Wechat, AddDocsRes, AddDocError)
 from web.mq.hxd_task import HuixiangDouTask
 from web.orm.redis import r
 from web.util.log import log
@@ -97,7 +97,10 @@ class QaLibService:
         store_dir = get_store_dir(feature_store_id)
         if not files or not store_dir:
             return BaseBody()
+
+        ret = AddDocsRes(errors=[])
         docs = self.get_existed_docs(feature_store_id)
+
         total_bytes = int(self.request.headers.get('content-length'))
         if total_bytes > biz_const.HXD_ADD_DOCS_ONCE_MAX:
             return standard_error_response(
@@ -105,6 +108,11 @@ class QaLibService:
         write_size = 0
         # store files
         for file in files:
+            if file.filename and len(file.filename.encode("utf-8")) > 255:
+                logger.error(f"filename: {file.filename} too long, maximum 255 bytes, omit current filename")
+                ret.errors.append(AddDocError(fileName=file.filename, reason="filename is too long"))
+                continue
+
             with open(os.path.join(store_dir, file.filename), 'wb') as f:
                 while True:
                     chunk = await file.read(32768)  # 64KB
@@ -132,7 +140,9 @@ class QaLibService:
                             file_abs_base=store_dir))):
             return BaseBody()
 
-        return BaseBody(data={'docBase': store_dir, 'docs': docs})
+        ret.docBase = store_dir
+        ret.docs = docs
+        return BaseBody(data=ret)
 
     async def get_sample_info(self):
         sample_info = QaLibCache.get_sample_info(self.hxd_info.featureStoreId)
