@@ -49,15 +49,6 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 - \[2024/04\] Release [web server](./web) source code 👍
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
 - \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
-# 📦 Hardware Requirements
-
-The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
-
-|      Version       | GPU Memory Requirements |                                                                                               Features                                                                                               |                                Tested on Linux                                |
-| :----------------: | :---------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| Experience Version |          1.5GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [kimi](https://kimi.moonshot.cn) and [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-|   Basic Version    |          19GB           |                                                                             Deploy local LLM can answer basic questions                                                                              | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|  Advanced Version  |          40GB           |                                                                Fully utilizing search + long-text, answer source code-level questions                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 📖 Datasheet
 
@@ -109,6 +100,16 @@ The following are the hardware requirements for running. It is suggested to foll
 </tr>
   </tbody>
 </table>
+
+# 📦 Hardware Requirements
+
+The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
+
+|      Version       | GPU Memory Requirements |                                                                                               Features                                                                                               |                                Tested on Linux                                |
+| :----------------: | :---------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| Experience Version |          1.5GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [kimi](https://kimi.moonshot.cn) and [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|   Basic Version    |          19GB           |                                                                             Deploy local LLM can answer basic questions                                                                              | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|  Advanced Version  |          40GB           |                                                                Fully utilizing search + long-text, answer source code-level questions                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
 
