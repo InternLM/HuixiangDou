@@ -52,7 +52,7 @@ export HUIXIANGDOU_LARK_ENCRYPT_KEY=thisiskey
 export HUIXIANGDOU_LARK_VERIFY_TOKEN=sMzyjKi9vMlEhKCZOVtBMhhl8x23z0AG
 
 # set your service endpoint(open to Internet callback from lark and wechat)
-# 回调地址端口，建议填写 127.0.0.1:7860，然后将 7860 端口通过公网 IP 代理出去，例如 http://10.1.52.36:18443
+# 回调端口，建议填写 7860，然后将 7860 端口通过公网 IP 代理出去，例如 http://10.1.52.36:18443
 export HUIXIANGDOU_MESSAGE_ENDPOINT=http://10.1.52.36:18443
 # 如果使用 https 安全连接就把 COOKIE_SECURE 设置为 1；如果不是，则将 `export COOKIE_SECURE=1` 替换为 `unset COOKIE_SECURE`
 export COOKIE_SECURE=1
