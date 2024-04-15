@@ -14,7 +14,7 @@ from .service import ErrorCode, Worker, llm_serve
 
 class Task:
     def __init__(self, id: int, query: str, direct_reply: str = ''):
-        """Build rag task, direct_reply is original LLM reponse"""
+        """Build rag task, direct_reply is original LLM response"""
         self.id = id
         self.query = query
         self.direct_reply = direct_reply
@@ -66,7 +66,7 @@ def parse_args():
     return args
 
 def rag(process_id: int, task: list, output_dir: str):
-    """Extract structured ouput with RAG."""
+    """Extract structured output with RAG."""
 
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
     # assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'

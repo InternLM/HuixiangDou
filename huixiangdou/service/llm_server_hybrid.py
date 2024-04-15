@@ -422,6 +422,7 @@ class HybridLLMServer:
         error = ''
         time_tokenizer = time.time()
 
+
         if backend == 'remote':
             # not specify remote LLM type, use config
             backend = self.server_config['remote_type']
