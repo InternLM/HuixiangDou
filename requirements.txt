@@ -4,7 +4,7 @@ auto-gptq
 bcembedding
 beautifulsoup4
 einops
-faiss-gpu
+faiss
 langchain>=0.1.12
 loguru
 lxml_html_clean
@@ -20,7 +20,8 @@ redis
 requests
 scikit-learn
 sentence_transformers==2.2.2
-textract
+# See https://github.com/deanmalmgren/textract/issues/461
+textract @ git+https://github.com/tpoisonooo/textract@master
 tiktoken
 torch>=2.0.0
 transformers>=4.37.0
