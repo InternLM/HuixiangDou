@@ -94,7 +94,8 @@ class WebWorker:
 
         self.context_max_length = -1
         llm_config = self.config['llm']
-        self.context_max_length = llm_config['server']['local_llm_max_text_length']
+        self.context_max_length = llm_config['server'][
+            'local_llm_max_text_length']
 
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server'][
@@ -238,7 +239,7 @@ class WebWorker:
         tracker.log('feature store doc', [chunk, response])
         if response is not None and len(response) < 1:
             # llm error
-            return ErrorCode.INTERNAL_ERROR, 'LLM API 没给回复，请点击右上角“反馈问题” qaq', retrieve_ref
+            return ErrorCode.INTERNAL_ERROR, "LLM API 没给回复，见 https://github.com/InternLM/HuixiangDou/issues/214 ", retrieve_ref
 
         if response is not None and len(response) > 0:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)

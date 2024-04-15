@@ -2,19 +2,22 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """HuixiangDou binary."""
 import argparse
+import json
 import os
 import time
-from multiprocessing import Process, Value
-import json
+from multiprocessing import Pool, Process, Value
+
 import pytoml
 import requests
 from loguru import logger
-from multiprocessing import Pool
+
 from .service import ErrorCode, Worker, llm_serve
 
+
 class Task:
+
     def __init__(self, id: int, query: str, direct_reply: str = ''):
-        """Build rag task, direct_reply is original LLM response"""
+        """Build rag task, direct_reply is original LLM response."""
         self.id = id
         self.query = query
         self.direct_reply = direct_reply
@@ -24,7 +27,7 @@ class Task:
         self.refs = []
 
     def to_json_str(self):
-        obj =  {
+        obj = {
             'id': int(self.id),
             'query': str(self.query),
             'direct_reply': str(self.direct_reply),
@@ -34,6 +37,7 @@ class Task:
             'refs': self.refs
         }
         return json.dumps(obj, indent=2, ensure_ascii=False)
+
 
 def parse_args():
     """Parse args."""
@@ -51,7 +55,9 @@ def parse_args():
         '--input',
         default='sft-data/input.json',
         type=str,
-        help='JSON filepath for user queries. Default value is `sft-data/input.json`')
+        help=
+        'JSON filepath for user queries. Default value is `sft-data/input.json`'
+    )
     parser.add_argument(
         '--output-dir',
         default='sft-data',
@@ -65,10 +71,12 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 def rag(process_id: int, task: list, output_dir: str):
     """Extract structured output with RAG."""
 
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
+
     # assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'
     
     output_path = os.path.join(output_dir, 'output{}.json'.format(process_id))
@@ -76,14 +84,16 @@ def rag(process_id: int, task: list, output_dir: str):
         query = item.query
 
         code, response, refs = assistant.generate(query=query, history=[], groupname='')
+
         item.rag_reply = response
         item.code = int(code)
         item.reason = str(code)
         item.refs = refs
-        
+
         with open(output_path, 'a') as f:
             f.write(item.to_json_str())
             f.write('\n')
+
 
 def split_tasks(json_path: str, processes: int):
     queries = []
@@ -98,7 +108,7 @@ def split_tasks(json_path: str, processes: int):
     step = (len(_all) + processes - 1) // processes
     for idx in range(processes):
         start = idx * step
-        tasks.append(_all[start: start+step])
+        tasks.append(_all[start:start + step])
 
     # check task number and assert
     _sum = 0

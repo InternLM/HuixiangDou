@@ -57,3 +57,14 @@ class Pipeline(BaseModel):
     success: bool
     code: int
     status: str
+
+
+class AddDocError(BaseModel):
+    fileName: Optional[str]
+    reason: Optional[str]
+
+
+class AddDocsRes(BaseModel):
+    docBase: Optional[str] = ""
+    docs: Optional[List[str]] = []
+    errors: Optional[List[AddDocError]] = []
