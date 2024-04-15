@@ -1,7 +1,6 @@
 import json
-from typing import List
 from datetime import datetime
-from typing import Union
+from typing import List, Union
 
 from web.constant import biz_constant
 from web.model.chat import ChatCaseType, ChatQueryInfo, ChatType

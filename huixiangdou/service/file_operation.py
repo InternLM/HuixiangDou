@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import hashlib
 import os
+
 import fitz
 import pandas as pd
 import textract
@@ -190,6 +191,7 @@ class FileOperation:
 
 
 if __name__ == '__main__':
+
     def get_pdf_files(directory):
         pdf_files = []
         # 遍历目录
@@ -202,10 +204,10 @@ if __name__ == '__main__':
         return pdf_files
 
     # 将你想要搜索的目录替换为下面的路径
-    pdf_list = get_pdf_files('/home/khj/huixiangdou-web-online-data/hxd-bad-file')
+    pdf_list = get_pdf_files(
+        '/home/khj/huixiangdou-web-online-data/hxd-bad-file')
 
     # 打印所有找到的PDF文件的绝对路径
-
 
     opr = FileOperation()
     for pdf_path in pdf_list:

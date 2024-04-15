@@ -1,5 +1,6 @@
 from huixiangdou.service.llm_client import ChatClient
 
+
 def test_auto_fix():
     remote_only_config = 'config-2G.ini'
     local_only_config = 'config.ini'

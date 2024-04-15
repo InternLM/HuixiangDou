@@ -27,7 +27,7 @@ English | [简体中文](README_zh.md)
 
 </div>
 
-HuixiangDou is a **group chat** assistant based on LLM (Large Language Model). 
+HuixiangDou is a **group chat** assistant based on LLM (Large Language Model).
 
 Advantages:
 
@@ -45,16 +45,61 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
-- \[2024/04\] Release [web server](./web) source code 🔷
-- \[2024/03\] Support `ppt` and `html` file format
-- \[2024/03\] Speedup `pdf` and table parsing for higher precision
-- \[2024/03\] Support [zhipuai](https://zhipuai.cn) in `config.ini`
+- \[2024/04\] Update [technical report](./resource/HuixiangDou.pdf)
+- \[2024/04\] Release [web server](./web) source code 👍
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
-- \[2024/03\] Support `pdf`/`word`/`excel` file format; reply referenced filename or web URL
-- \[2024/02\] Add [BCEmbedding](https://github.com/netease-youdao/BCEmbedding) rerank for higher precision 👍
-- \[2024/02\] [Support deepseek](https://github.com/InternLM/HuixiangDou/tree/main?tab=readme-ov-file#step2-run-basic-technical-assistant) and qwen1.5; automatically choose model depending on GPU
 - \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
-- \[2024/01\] Support [personal wechat](./docs/add_wechat_group_zh.md) and [lark group](./docs/add_lark_group_zh.md)
+
+# 📖 Datasheet
+
+<table align="center">
+  <tbody>
+    <tr align="center" valign="bottom">
+      <td>
+        <b>Model Support</b>
+      </td>
+      <td>
+        <b>File Format Support</b>
+      </td>
+      <td>
+        <b>IM Application Support</b>
+      </td>
+    </tr>
+    <tr valign="top">
+      <td>
+
+- [InternLM2](https://github.com/InternLM/InternLM)
+- [Qwen](https://github.com/facebookresearch/llama)
+- [KIMI](https://kimi.moonshot.cn)
+- [DeepSeek](https://www.deepseek.com)
+- [ChatGLM (ZHIPU)](https://www.zhipuai.cn)
+- [Xi-Api](https://api.xi-ai.cn)
+- [OpenAOE](https://github.com/InternLM/OpenAOE)
+
+</td>
+<td>
+
+- pdf
+- word
+- excel
+- ppt
+- html
+- markdown
+- txt
+
+</td>
+
+<td>
+
+- WeChat
+- Lark
+- ..
+
+</td>
+
+</tr>
+  </tbody>
+</table>
 
 # 📦 Hardware Requirements
 
@@ -303,34 +348,35 @@ The basic version may not perform well. You can enable these features to enhance
 
    ⚠️ You can directly modify `reject_throttle` in config.ini. Generally speaking, 0.5 is a high value; 0.2 is too low.
 
-3. Launch is normal, but out of memory during runtime?
+2. Launch is normal, but out of memory during runtime?
 
    LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md). Then use docker to independently deploy Hybrid LLM Service.
 
-4. How to access other local LLM / After access, the effect is not ideal?
+3. How to access other local LLM / After access, the effect is not ideal?
 
    - Open [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py), add a new LLM inference implementation.
    - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [worker.py](./huixiangdou/service/worker.py).
 
-5. What if the response is too slow/request always fails?
+4. What if the response is too slow/request always fails?
 
    - Refer to [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) to add exponential backoff and retransmission.
    - Replace local LLM with an inference framework such as [lmdeploy](https://github.com/internlm/lmdeploy), instead of the native huggingface/transformers.
 
-6. What if the GPU memory is too low?
+5. What if the GPU memory is too low?
 
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
 
-7. `No module named 'faiss.swigfaiss_avx2'` 
+6. `No module named 'faiss.swigfaiss_avx2'`
    locate installed `faiss` package
-   
+
    ```python
    import faiss
    print(faiss.__file__)
    # /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/__init__.py
    ```
-   
+
    add soft link
+
    ```Bash
    # cd your_python_path/site-packages/faiss
    cd /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/

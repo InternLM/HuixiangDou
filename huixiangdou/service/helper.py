@@ -58,7 +58,7 @@ class ErrorCode(Enum):
     def __int__(self):
         """Return the integer representation of the error code."""
         return self.value
-    
+
     def __str__(self):
         """Return the str representation of the error code."""
         return self.description
