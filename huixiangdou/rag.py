@@ -53,16 +53,16 @@ def parse_args():
         help='Worker configuration path. Default value is config.ini')
     parser.add_argument(
         '--input',
-        default='sft-data/input.json',
+        default='resource/rag_example_input.json',
         type=str,
         help=
-        'JSON filepath for user queries. Default value is `sft-data/input.json`'
+        'JSON filepath for user queries. Default value is `resource/rag_example_input.json`'
     )
     parser.add_argument(
         '--output-dir',
-        default='sft-data',
+        default='resource',
         type=str,
-        help='Formatted JSON output dir, use `sft-data/` by default')
+        help='Formatted JSON output dir, use `resource/` by default')
     parser.add_argument(
         '--processes',
         default=1,
@@ -90,12 +90,16 @@ def rag(process_id: int, task: list, output_dir: str):
         item.reason = str(code)
         item.refs = refs
 
+        if item.code == 0:
+            item.direct_reply = assistant.direct_chat(query=query)
+
         with open(output_path, 'a') as f:
             f.write(item.to_json_str())
             f.write('\n')
 
 
 def split_tasks(json_path: str, processes: int):
+    """Split queries for multiple prcesses"""
     queries = []
     tasks = []
     _all = []

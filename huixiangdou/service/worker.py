@@ -80,8 +80,12 @@ class Worker:
             self.SUMMARIZE_TEMPLATE = '"{}" \n Read the content above carefully, summarize it in a short and powerful way.'  # noqa E501
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
+    def direct_chat(self, query: str):
+        """"Generate reply with LLM"""
+        return self.llm.generate_response(prompt=query, backend='remote')
+
     def single_judge(self, prompt, tracker, throttle: int, default: int):
-        """Generates a score based on the prompt, and then compares it to
+        """Generate a score based on the prompt, and then compares it to
         threshold.
 
         Args:
