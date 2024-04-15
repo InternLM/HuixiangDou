@@ -53,16 +53,16 @@ def parse_args():
         help='Worker configuration path. Default value is config.ini')
     parser.add_argument(
         '--input',
-        default='sft-data/input.json',
+        default='resource/rag_example_input.json',
         type=str,
         help=
-        'JSON filepath for user queries. Default value is `sft-data/input.json`'
+        'JSON filepath for user queries. Default value is `resource/rag_example_input.json`'
     )
     parser.add_argument(
         '--output-dir',
-        default='sft-data',
+        default='resource',
         type=str,
-        help='Formatted JSON output dir, use `sft-data/` by default')
+        help='Formatted JSON output dir, use `resource/` by default')
     parser.add_argument(
         '--processes',
         default=1,
@@ -76,18 +76,22 @@ def rag(process_id: int, task: list, output_dir: str):
     """Extract structured output with RAG."""
 
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
-    assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'
 
+    # assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'
+    
     output_path = os.path.join(output_dir, 'output{}.json'.format(process_id))
     for item in task:
         query = item.query
-        code, response, refs = assistant.generate(query=query,
-                                                  history=[],
-                                                  groupname='')
+
+        code, response, refs = assistant.generate(query=query, history=[], groupname='')
+
         item.rag_reply = response
         item.code = int(code)
         item.reason = str(code)
         item.refs = refs
+
+        if item.code == 0:
+            item.direct_reply = assistant.direct_chat(query=query)
 
         with open(output_path, 'a') as f:
             f.write(item.to_json_str())
@@ -95,6 +99,7 @@ def rag(process_id: int, task: list, output_dir: str):
 
 
 def split_tasks(json_path: str, processes: int):
+    """Split queries for multiple prcesses"""
     queries = []
     tasks = []
     _all = []
@@ -109,7 +114,7 @@ def split_tasks(json_path: str, processes: int):
         start = idx * step
         tasks.append(_all[start:start + step])
 
-    # check and assert
+    # check task number and assert
     _sum = 0
     for task in tasks:
         _sum += len(task)
@@ -123,11 +128,12 @@ if __name__ == '__main__':
 
     tasks = split_tasks(args.input, args.processes)
 
-    rag(0, tasks[0], args.output_dir)
-
-    # pool = Pool(args.processes)
-    # for process_id in range(args.processes):
-    #     pool.apply_async(rag, (process_id, tasks[process_id]))
-    # pool.close()
-    # logger.debug('waiting for preprocess read finish..')
-    # pool.join()
+    if args.processes == 1:
+        rag(0, tasks[0], args.output_dir)
+    else:
+        pool = Pool(args.processes)
+        for process_id in range(args.processes):
+            pool.apply_async(rag, (process_id, tasks[process_id], args.output_dir))
+        pool.close()
+        logger.debug('waiting for preprocess read finish..')
+        pool.join()

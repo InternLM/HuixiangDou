@@ -43,7 +43,10 @@ class ErrorCode(Enum):
     FAILED = 12, 'fail'
     BAD_PARAMETER = 13, 'bad parameter'
     INTERNAL_ERROR = 14, 'internal error'
-    SEARCH_FAIL = 15, 'Search fail, please check TOKEN and quota'
+    SEARCH_FAIL = 15, 'Web search fail, please check TOKEN and quota'
+    SG_SEARCH_FAIL = 16, 'SourceGraph search fail, please check TOKEN'
+    LLM_NOT_RESPONSE_SG = 17, 'LLM not response query with sg search'
+
 
     def __new__(cls, value, description):
         """Create new instance of ErrorCode."""
