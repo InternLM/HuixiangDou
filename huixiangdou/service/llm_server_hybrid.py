@@ -281,8 +281,23 @@ class HybridLLMServer:
                                   system=SYSTEM)
 
         logger.debug('remote api sending: {}'.format(messages))
+
+        model = self.server_config['remote_llm_model']
+
+        if model == 'auto':
+            prompt_len = len(prompt)
+            if prompt_len <= int(8192 * 1.5) - 1024:
+                model = 'moonshot-v1-8k'
+            elif prompt_len <= int(32768 * 1.5) - 1024:
+                model = 'moonshot-v1-32k'
+            else:
+                prompt = prompt[0: int(128000 * 1.5) -1024]
+                model = 'moonshot-v1-128k'
+
+        logger.info('choose kimi model {}'.format(model))
+
         completion = client.chat.completions.create(
-            model=self.server_config['remote_llm_model'],
+            model=model,
             messages=messages,
             temperature=0.0,
         )
