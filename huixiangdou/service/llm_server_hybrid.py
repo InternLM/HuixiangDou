@@ -406,7 +406,7 @@ class HybridLLMServer:
         messages = build_messages(prompt=prompt, history=history)
 
         payload = {
-            'model': 'gpt-4-1106-preview',
+            'model': self.server_config['remote_llm_model'],
             'messages': messages,
             'temperature': 0.1
         }
