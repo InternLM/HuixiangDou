@@ -65,6 +65,6 @@ class AddDocError(BaseModel):
 
 
 class AddDocsRes(BaseModel):
-    docBase: Optional[str] = ""
+    docBase: Optional[str] = ''
     docs: Optional[List[str]] = []
     errors: Optional[List[AddDocError]] = []

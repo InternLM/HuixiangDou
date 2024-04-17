@@ -13,8 +13,9 @@ from web.model.base import BaseBody, standard_error_response
 from web.model.huixiangdou import (HxdTask, HxdTaskPayload, HxdTaskType,
                                    HxdToken)
 from web.model.integrate import IntegrateLarkBody, IntegrateWebSearchBody
-from web.model.qalib import (Lark, QalibInfo, QalibPositiveNegative,
-                             QalibSample, WebSearch, Wechat, AddDocsRes, AddDocError)
+from web.model.qalib import (AddDocError, AddDocsRes, Lark, QalibInfo,
+                             QalibPositiveNegative, QalibSample, WebSearch,
+                             Wechat)
 from web.mq.hxd_task import HuixiangDouTask
 from web.orm.redis import r
 from web.util.log import log
@@ -108,9 +109,13 @@ class QaLibService:
         write_size = 0
         # store files
         for file in files:
-            if file.filename and len(file.filename.encode("utf-8")) > 255:
-                logger.error(f"filename: {file.filename} too long, maximum 255 bytes, omit current filename")
-                ret.errors.append(AddDocError(fileName=file.filename, reason="filename is too long"))
+            if file.filename and len(file.filename.encode('utf-8')) > 255:
+                logger.error(
+                    f'filename: {file.filename} too long, maximum 255 bytes, omit current filename'
+                )
+                ret.errors.append(
+                    AddDocError(fileName=file.filename,
+                                reason='filename is too long'))
                 continue
 
             with open(os.path.join(store_dir, file.filename), 'wb') as f:

@@ -112,7 +112,6 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 如果你只有 2G 显存，或追求性价比💰，[看这个知乎文档](https://zhuanlan.zhihu.com/p/685205206)。
 
-
 # 🔥 运行
 
 我们将以 mmpose 和一些 `word`/`excel`/`pdf`/`ppt` 测试文档为例，介绍如何把知识助手部署到飞书群

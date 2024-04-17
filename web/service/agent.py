@@ -1,21 +1,25 @@
 import json
 import re
 from enum import Enum
-from typing import Union, List
+from typing import List, Union
 
 import lark_oapi as lark
 import requests
 from fastapi import Request, Response
-from lark_oapi import RawRequest, RawResponse, UTF_8, USER_AGENT, AUTHORIZATION, X_TT_LOGID, X_REQUEST_ID, CONTENT_TYPE, \
-    Content_Disposition, LARK_REQUEST_TIMESTAMP, LARK_REQUEST_NONCE, LARK_REQUEST_SIGNATURE
-from lark_oapi.api.im.v1 import GetChatRequest, P2ImMessageReceiveV1, MentionEvent, ReplyMessageRequest, \
-    ReplyMessageRequestBody, GetMessageResourceRequest
+from lark_oapi import (AUTHORIZATION, CONTENT_TYPE, LARK_REQUEST_NONCE,
+                       LARK_REQUEST_SIGNATURE, LARK_REQUEST_TIMESTAMP,
+                       USER_AGENT, UTF_8, X_REQUEST_ID, X_TT_LOGID,
+                       Content_Disposition, RawRequest, RawResponse)
+from lark_oapi.api.im.v1 import (GetChatRequest, GetMessageResourceRequest,
+                                 MentionEvent, P2ImMessageReceiveV1,
+                                 ReplyMessageRequest, ReplyMessageRequestBody)
 
 from web.config.env import HuixiangDouEnv
 from web.constant import biz_constant
-from web.model.base import standard_error_response, BaseBody
-from web.model.chat import ChatRequestBody, ChatType, LarkChatDetail, ChatQueryInfo, WechatRequest, WechatType, \
-    WechatPollItem, WechatResponse
+from web.model.base import BaseBody, standard_error_response
+from web.model.chat import (ChatQueryInfo, ChatRequestBody, ChatType,
+                            LarkChatDetail, WechatPollItem, WechatRequest,
+                            WechatResponse, WechatType)
 from web.service import qalib
 from web.service.cache import ChatCache
 from web.service.chat import ChatService
@@ -79,7 +83,7 @@ class LarkAgent:
             HuixiangDouEnv.get_lark_encrypt_key(),
             HuixiangDouEnv.get_lark_verification_token(),
             lark.LogLevel.DEBUG).register_p2_im_message_receive_v1(
-            cls._on_im_message_received).build()
+                cls._on_im_message_received).build()
 
     @classmethod
     def _on_im_message_received(cls, data: P2ImMessageReceiveV1):
@@ -123,7 +127,9 @@ class LarkAgent:
         ChatCache.mark_agent_used(app_id, ChatType.LARK)
 
         if msg.root_id or msg.parent_id:
-            logger.debug(f"[lark] app_id: {app_id}, name: {chat_name} got reply message, omit")
+            logger.debug(
+                f'[lark] app_id: {app_id}, name: {chat_name} got reply message, omit'
+            )
             return
 
         # parse lark content
@@ -142,8 +148,11 @@ class LarkAgent:
         if len(lark_content.images) > 0:
             query_id = chat_svc.generate_query_id(lark_content.content)
             for index in range(len(lark_content.images)):
-                image_store_path = chat_svc.gen_image_store_path(query_id, str(index), ChatType.LARK)
-                if cls._store_image(client, message_id, lark_content.images[index], image_store_path):
+                image_store_path = chat_svc.gen_image_store_path(
+                    query_id, str(index), ChatType.LARK)
+                if cls._store_image(client, message_id,
+                                    lark_content.images[index],
+                                    image_store_path):
                     # replace image_key with actually store path
                     lark_content.images[index] = image_store_path
 
@@ -153,7 +162,7 @@ class LarkAgent:
         chat_detail = LarkChatDetail(appId=app_id,
                                      appSecret=app_secret,
                                      messageId=msg.message_id)
-        unique_id = data.event.sender.sender_id.open_id + "@" + chat_id
+        unique_id = data.event.sender.sender_id.open_id + '@' + chat_id
         chat_svc.chat_by_agent(lark_content, ChatType.LARK, chat_detail,
                                unique_id, query_id)
 
@@ -241,8 +250,10 @@ class LarkAgent:
         return LarkContentType.AT_OTHER_PERSON_TEXT
 
     @classmethod
-    def _store_image(cls, client: lark.client, message_id: str, image_key: str, path: str) -> bool:
-        body = GetMessageResourceRequest.builder().message_id(message_id).file_key(image_key).build()
+    def _store_image(cls, client: lark.client, message_id: str, image_key: str,
+                     path: str) -> bool:
+        body = GetMessageResourceRequest.builder().message_id(
+            message_id).file_key(image_key).build()
         response = client.im.v1.message_resource.get(body)
         if not response.success():
             logger.error(
@@ -329,7 +340,7 @@ class WechatAgent:
             chat_request_body = ChatRequestBody(content=body.query.content)
 
         # push into chat queue
-        unique_id = body.username + "@" + body.groupname
+        unique_id = body.username + '@' + body.groupname
         chat_svc.chat_by_agent(chat_request_body, ChatType.WECHAT, body,
                                unique_id, query_id)
         # record query_id
@@ -369,7 +380,7 @@ class WechatAgent:
                 l.append(
                     WechatPollItem(req=WechatRequest.model_validate_json(
                         json.dumps(item.detail)),
-                        rsp=item.response))
+                                   rsp=item.response))
                 complete_query_id_list.append(item.queryId)
         ret.root = l
 

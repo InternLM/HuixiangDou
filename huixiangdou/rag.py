@@ -78,12 +78,14 @@ def rag(process_id: int, task: list, output_dir: str):
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
 
     # assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'
-    
+
     output_path = os.path.join(output_dir, 'output{}.json'.format(process_id))
     for item in task:
         query = item.query
 
-        code, response, refs = assistant.generate(query=query, history=[], groupname='')
+        code, response, refs = assistant.generate(query=query,
+                                                  history=[],
+                                                  groupname='')
 
         item.rag_reply = response
         item.code = int(code)
@@ -99,7 +101,7 @@ def rag(process_id: int, task: list, output_dir: str):
 
 
 def split_tasks(json_path: str, processes: int):
-    """Split queries for multiple prcesses"""
+    """Split queries for multiple processes."""
     queries = []
     tasks = []
     _all = []
@@ -133,7 +135,8 @@ if __name__ == '__main__':
     else:
         pool = Pool(args.processes)
         for process_id in range(args.processes):
-            pool.apply_async(rag, (process_id, tasks[process_id], args.output_dir))
+            pool.apply_async(rag,
+                             (process_id, tasks[process_id], args.output_dir))
         pool.close()
         logger.debug('waiting for preprocess read finish..')
         pool.join()

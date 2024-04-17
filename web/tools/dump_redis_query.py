@@ -1,7 +1,9 @@
-from redis import Redis
-import os
-from loguru import logger
 import json
+import os
+
+from loguru import logger
+from redis import Redis
+
 
 def redis_host():
     host = os.getenv('REDIS_HOST')
@@ -29,7 +31,11 @@ def feature_store_base_dir():
     return 'feature_stores'
 
 
-db = Redis(host=redis_host(), port=redis_port(), password=redis_passwd(), charset='utf-8', decode_responses=True)
+db = Redis(host=redis_host(),
+           port=redis_port(),
+           password=redis_passwd(),
+           charset='utf-8',
+           decode_responses=True)
 keys = db.keys('HuixiangDou:query:*')
 
 with open('query.jsonl', 'a') as f:

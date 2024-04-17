@@ -81,7 +81,7 @@ class Worker:
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
     def direct_chat(self, query: str):
-        """"Generate reply with LLM"""
+        """"Generate reply with LLM."""
         return self.llm.generate_response(prompt=query, backend='remote')
 
     def single_judge(self, prompt, tracker, throttle: int, default: int):
@@ -219,7 +219,8 @@ class Worker:
             search_prompt = self.llm.generate_response(prompt)
             tracker.log('search prompt', search_prompt)
 
-            articles, error = web_search.get(query=search_prompt, max_article=2)
+            articles, error = web_search.get(query=search_prompt,
+                                             max_article=2)
             if error is not None:
                 return ErrorCode.SEARCH_FAIL, response, references
 
@@ -280,9 +281,15 @@ class Worker:
                     return ErrorCode.SG_SEARCH_FAIL, response, references
 
                 if sg_context is not None and len(sg_context) > 2:
-                    prompt, _ = self.llm.build_prompt(instruction=query, context=sg_context, history_pair=history, template=self.GENERATE_TEMPLATE)
+                    prompt, _ = self.llm.build_prompt(
+                        instruction=query,
+                        context=sg_context,
+                        history_pair=history,
+                        template=self.GENERATE_TEMPLATE)
 
-                    response = self.llm.generate_response(prompt=prompt, history=history, backend='remote')
+                    response = self.llm.generate_response(prompt=prompt,
+                                                          history=history,
+                                                          backend='remote')
                     tracker.log('source graph', [sg_context, response])
 
                     if response is None or len(response) < 1:
