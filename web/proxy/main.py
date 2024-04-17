@@ -147,6 +147,9 @@ def chat_with_featue_store(cache: CacheRetriever,
     worker = WebWorker(work_dir=workdir, config_path=configpath)
 
     history = format_history(payload.history)
+    query_log = "{} {}\n".format(fs_id, payload.content)
+    with open('query.log', 'a') as f:
+        f.write(query_log)
     error, response, references = worker.generate(query=payload.content,
                                                   history=history,
                                                   retriever=retriever,
