@@ -19,6 +19,7 @@ def get_version():
         exec(compile(f.read(), version_file, 'exec'))
     return locals()['__version__']
 
+
 def read_requirements():
     lines = []
     with open('requirements.txt', 'r') as f:
@@ -30,6 +31,7 @@ def read_requirements():
             if len(line) > 0:
                 lines.append(line)
     return lines
+
 
 install_packages = read_requirements()
 

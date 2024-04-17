@@ -239,7 +239,7 @@ class WebWorker:
         tracker.log('feature store doc', [chunk, response])
         if response is not None and len(response) < 1:
             # llm error
-            return ErrorCode.INTERNAL_ERROR, "LLM API 没给回复，见 https://github.com/InternLM/HuixiangDou/issues/214 ", retrieve_ref
+            return ErrorCode.INTERNAL_ERROR, 'LLM API 没给回复，见 https://github.com/InternLM/HuixiangDou/issues/214 ', retrieve_ref
 
         if response is not None and len(response) > 0:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
