@@ -30,7 +30,6 @@ def redis_passwd():
 def feature_store_base_dir():
     return 'feature_stores'
 
-
 db = Redis(host=redis_host(),
            port=redis_port(),
            password=redis_passwd(),
@@ -38,8 +37,8 @@ db = Redis(host=redis_host(),
            decode_responses=True)
 keys = db.keys('HuixiangDou:query:*')
 
-with open('query.jsonl', 'a') as f:
+with open('query.jsonl', 'w') as f:
     for key in keys:
         value = db.hgetall(key)
-        f.write(json.dumps(value, indent=2, ensure_ascii=False))
+        f.write(json.dumps(value, ensure_ascii=False))
         f.write('\n')

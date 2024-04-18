@@ -31,3 +31,5 @@ web/env.sh
 sft-data
 config-alignment.ini
 logs/work.txt
+web/tools/query.jsonl
+query.jsonl
