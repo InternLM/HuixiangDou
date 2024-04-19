@@ -8,7 +8,8 @@ import pytoml
 from BCEmbedding.tools.langchain import BCERerank
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import ContextualCompressionRetriever
-from langchain.vectorstores.faiss import FAISS as Vectorstore
+# from langchain.vectorstores.faiss import FAISS as Vectorstore
+from .vector_store import Vectorstore
 from langchain_community.vectorstores.utils import DistanceStrategy
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
@@ -118,6 +119,9 @@ class Retriever:
             str: The best matching chunk, or None.
             str: The best matching text, or None
         """
+        
+        import time 
+        start_time=time.time()
         if question is None or len(question) < 1:
             return None, None, []
 
@@ -183,6 +187,7 @@ class Retriever:
 
         context = context[0:context_max_length]
         logger.debug('query:{} top1 file:{}'.format(question, references[0]))
+        logger.debug(f"query total time:{time.time()-start_time}")
         return '\n'.join(chunks), context, [
             os.path.basename(r) for r in references
         ]
