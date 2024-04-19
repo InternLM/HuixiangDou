@@ -153,15 +153,85 @@ def parse_args():
     parser.add_argument('--action',
                         type=str,
                         # default='split',
-                        # default='visualize',
                         default='intention',
-                        help='"split"): split raw input into group messages; "visualize"): visualize a group messges; "intention"): decide which query being a question')
+                        help='"split"): split raw input into group messages; "intention"): decide which query being a question')
     
     args = parser.parse_args()
     return args
 
+def remove_at_name(text):
+    pattern = r'@[\w\.-]+\s+'
+    text = re.sub(pattern, '', text)
+    pos = text.find('@')
+    if pos != -1:
+        text = text[0:pos]
+    return text
+
+def simplify_wx_object(json_obj):
+    msg_type = json_obj['messageType']
+    show_type = ''
+
+    text = json_obj['content']
+    sender = json_obj['fromUser']
+    recvs = []
+
+    # get show_type and content text
+    if msg_type in [5, 9, '80001']:
+        show_type = 'normal'
+        if 'atlist' in json_obj:
+            show_type = 'normal_at'
+            atlist = json_obj['atlist']
+            for at in atlist:
+                if len(at) > 0:
+                    recvs.append(at)
+
+    if msg_type in [6, '80002']:
+        show_type = 'image'
+        text = '[图片]'
+
+    elif msg_type == '80009':
+        show_type = 'file'
+        content = json_obj['pushContent']
+
+    elif msg_type in [14, '80014']:
+        # ref revert msg
+        show_type = 'ref'
+        if 'title' in json_obj:
+            content = json_obj['title']
+        else:
+            content = 'unknown'
+        
+        if 'toUser' in json_obj:
+            recvs.append(json_obj['toUser'])
+
+    else:
+        show_type = 'other'
+        # print('other type {}'.format(msg_type))
+
+    if '<?xml version="1.0"?>' in text:
+        text = 'xml msg'
+    if '<sysmsg' in text:
+        text = 'sys msg'
+    if '<msg><emoji' in text:
+        text = 'emoji'
+    if '<msg>' in text and '<op id' in text:
+        text = 'app msg' 
+
+    text = remove_at_name(text)
+    
+    obj = {
+        'show': show_type,
+        'sender': sender, 
+        'text': text,
+        'recvs': recvs,
+        'timestamp': json_obj['timestamp']
+    }
+    return obj
 
 def split(_input, output_dir):
+    """
+    把一个完整的聊天日志，简化、划成不同群的群聊记录。
+    """
     if not os.path.exists(_input):
         logger.error('{} not exist'.format(_input))
         return
@@ -218,120 +288,24 @@ def split(_input, output_dir):
     for group_id, message_list in groups.items():
         msg_sum += len(message_list)
         logger.info('{} {}'.format(group_id, len(message_list)))
-        filepath = os.path.join(output_dir, "{}.jsonl".format(group_id))
-        with open(filepath, 'w') as f:
-            for message in message_list:
-                msg_json_str = json.dumps(message, ensure_ascii=False)
-                f.write(msg_json_str)
-                f.write('\n')
-    logger.info('sum message {}'.format(msg_sum))
 
-def remove_at_name(text):
-    pattern = r'@[\w\.-]+\s+'
-    text = re.sub(pattern, '', text)
-    pos = text.find('@')
-    if pos != -1:
-        text = text[0:pos]
-    return text
-
-def visualize(output_dir):
-    if not os.path.exists(output_dir):
-        logger.error('{} not exist'.format(output_dir))
-        return
-    
-    sender_cnt = {}
-
-    files = os.listdir(output_dir)
-    for file in files:
-        filepath = os.path.join(output_dir, file)
-        if not filepath.endswith('@chatroom.jsonl'):
+        if len(message_list) < 1000:
+            logger.debug('msg count number too small, skip dump')
             continue
 
-        name = os.path.basename(filepath).split('.')[0]
-        idx = 0
-        with open(filepath) as f:
-            with open(os.path.join(output_dir, '{}@reconstruct.txt'.format(name)), 'w') as fout:
-                while True:
-                    line = f.readline()
-                    if not line:
-                        break
-                    if len(line) < 2:
-                        continue
-                    json_obj = json.loads(line)
-
-                    msg_type = json_obj['messageType']
-                    show_type = ''
-
-                    text = json_obj['content']
-                    sender = json_obj['fromUser']
-                    recvs = []
-
-                    # get show_type and content text
-                    if msg_type in [5, 9, '80001']:
-                        show_type = 'normal'
-                        if 'atlist' in json_obj:
-                            show_type = 'normal_at'
-                            atlist = json_obj['atlist']
-                            for at in atlist:
-                                if len(at) > 0:
-                                    recvs.append(at)
-
-                    if msg_type in [6, '80002']:
-                        show_type = 'image'
-                        text = '[图片]'
-
-                    elif msg_type == '80009':
-                        show_type = 'file'
-                        content = json_obj['pushContent']
-
-                    elif msg_type in [14, '80014']:
-                        # ref revert msg
-                        show_type = 'ref'
-                        if 'title' in json_obj:
-                            content = json_obj['title']
-                        else:
-                            content = 'unknown'
-                        
-                        if 'toUser' in json_obj:
-                            recvs.append(json_obj['toUser'])
-
-                    else:
-                        show_type = 'other'
-                        # print('other type {}'.format(msg_type))
-
-                    if sender not in sender_cnt:
-                        sender_cnt[sender] = 1
-                    else:
-                        sender_cnt[sender] += 1
+        filepath = os.path.join(output_dir, "{}@reconstruct.txt".format(group_id))
+        with open(filepath, 'w') as fout:
+            idx = 0
+            for json_obj in message_list:
                 
-                    if '<?xml version="1.0"?>' in text:
-                        text = 'xml msg'
-                    if '<sysmsg' in text:
-                        text = 'sys msg'
-                    if '<msg><emoji' in text:
-                        text = 'emoji'
-                    if '<msg>' in text and '<op id' in text:
-                        text = 'app msg' 
+                obj = simplify_wx_object(json_obj)
+                obj['id'] = idx
+                idx += 1
 
-                    text = remove_at_name(text)
-                    
-                    obj = {
-                        'id': idx,
-                        'show': show_type,
-                        'sender': sender, 
-                        'text': text,
-                        'recvs': recvs
-                    }
-                    idx += 1
-                    formatted_str = json.dumps(obj, ensure_ascii=False)
-                    fout.write(formatted_str)
-                    fout.write('\n')
-                    # formatted_str = '{}\t {}\t {}\t {}\n'.format(show_type, sender, text, recvs)
-                    # fout.write(r"%s" % formatted_str)
+                fout.write(json.dumps(obj, ensure_ascii=False))
+                fout.write('\n')
 
-        # for k, v in sender_cnt.items():
-        #     if v > 2000:
-        #         print((k, v))
+    logger.info('sum message {}'.format(msg_sum))
 
 
 def is_question(query):
@@ -354,7 +328,9 @@ def is_question(query):
     return False
 
 def coref_res(target: object, window: list, group_intro: str):
-    logger.debug('input window {}'.format(window))
+    llm = ChatClient('config.ini')
+
+    # logger.debug('input window {}'.format(window))
     name_map = dict()
     name_int = ord('A')
     # chr(start_ascii + i)
@@ -380,23 +356,40 @@ def coref_res(target: object, window: list, group_intro: str):
         "content": target['text']
     }, indent=2, ensure_ascii=False)
 
-    PROMPT_TEMPLATE = """请完成群聊场景中的指代消解任务。
-群描述：{}
+    BASE_PROMPT_TEMPLATE = '''请完成群聊场景中的指代消解任务。
+"{}"
 以下是历史对话，可能有多个人的发言：
 {}
 
 输入内容：
-{}
-content 指代消解后的结果是？如果不需要消解就返回空白。直接返回消解后的完整文本不要解释"""
-    prompt = PROMPT_TEMPLATE.format(group_intro, json.dumps(format_history, ensure_ascii=False), target_str)
+"{}"'''
+    prompt_base = BASE_PROMPT_TEMPLATE.format(group_intro, json.dumps(format_history, ensure_ascii=False), target['text'])
 
-    logger.debug('output prompt {}'.format(prompt))
-    llm = ChatClient('config.ini')
-    response = llm.generate_response(prompt=prompt, backend='puyu')
-    print(prompt, response)
-    
+    prompt = "{}\n输入是否需要指代消解？ A：需要  B不需要 C不知道".format(prompt_base)
+    need_cr = llm.generate_response(prompt=prompt, backend='puyu').lower()
+    logger.debug('{} {}'.format(prompt, need_cr))
+
+    response = ""
+    if 'a' in need_cr:
+        prompt = "{}\n指代消解输入后的结果是？直接返回消解后的完整文本不要解释原因；直接返回最终结果不要解释过程。".format(prompt_base)
+        response = llm.generate_response(prompt=prompt, backend='puyu').lower()
+    else:
+        return '', False
+
+    keywords = ['指代消解后的文本是：', '指代消解后是：', '指代消解后：', '指代消解后的文本为：']
+    for keyword in keywords:
+        if keyword in response:
+            response = response.split(keyword)[-1]
+    response = response.strip()
+    if response.startswith('"') and response.endswith('"'):
+        response = response[1:-1]
+    logger.debug('return response {}'.format(response))
+    return response, True
 
 def intention(output_dir):
+    """
+    扫描一个群的流式聊天记录，把同一个人 18 秒内发的连续内容合并
+    """
     if not os.path.exists(output_dir):
         logger.error('{} not exist'.format(output_dir))
         return
@@ -404,8 +397,7 @@ def intention(output_dir):
     sender_cnt = {}
 
     group_intros = {
-        '18356748488': """请完成群聊场景中的指代消解任务。
-
+        '18356748488': """
 名词解释：        
 HuixiangDou，中文名 茴香豆。
 茴香豆是一个基于 LLM 的群聊知识助手，优势：
@@ -437,6 +429,9 @@ HuixiangDou，中文名 茴香豆。
 
         window_history = []
         MAX_WINDOW_SIZE = 8
+        STME_SPAN = 18
+
+        raw_chats = []
         with open(filepath) as f:
             while True:
                 line = f.readline()
@@ -447,37 +442,77 @@ HuixiangDou，中文名 茴香豆。
                 json_obj = json.loads(line)
                 if json_obj['show'] == 'ref':
                     continue
-                
-                text = json_obj['text']
-                if len(text) < 1:
-                    continue
+                raw_chats.append(json_obj)
+            
+        # concat successive chat to one and save them
+        idx = 0
+        concat_chats = []
+        target = None
+        target_timestamp = 0
+        while idx < len(raw_chats):
+            chat = raw_chats[idx]
+            idx += 1
 
-                window_history.append(json_obj)
-                if is_question(text):
-                    json_obj['is_question'] = True
-                    # 是问题，格式化历史消息，消解
-                    window_history = window_history[-MAX_WINDOW_SIZE:-1]
-                    cr_text = coref_res(json_obj, window=window_history, group_intro=introduction)
+            if chat['timestamp'] == target_timestamp:
+                continue
+
+            if target is None:
+                target = chat
+                target_timestamp = target['timestamp']
+            elif target['sender'] == chat['sender'] and abs(chat['timestamp'] - target_timestamp) < STME_SPAN:
+                target_timestamp = chat['timestamp']
+                # print('{} merge {}'.format(target['id'], chat['id']))
+                target['text'] += '\n'
+                target['text'] += chat['text']
+
+            else:
+                concat_chats.append(target)
+                target = None
+        
+        if target is not None:
+            concat_chats.append(target)
+
+        outfilepath = filepath + '.concat'
+        with open(outfilepath, 'w') as f:
+            f.write(json.dumps(concat_chats, indent=2, ensure_ascii=False))
+
+        logger.info('concat {} to {} msg'.format(len(raw_chats), len(concat_chats)))
+
+        # check a query is question, and coref res
+        for json_obj in concat_chats:
+            text = json_obj['text']
+            if len(text) < 1:
+                continue
+
+            window_history.append(json_obj)
+            if is_question(text):
+                json_obj['is_question'] = True
+                # 是问题，格式化历史消息，消解
+                window_history = window_history[-MAX_WINDOW_SIZE:-1]
+                cr_text, success = coref_res(json_obj, window=window_history, group_intro=introduction)
+
+                json_obj['cr_window'] = window_history
+                if success:
                     json_obj['cr_text'] = cr_text
-
+                    json_obj['cr_need'] = True
                 else:
-                    json_obj['is_question'] = False
+                    json_obj['cr_need'] = False
+            else:
+                json_obj['is_question'] = False
 
-                # 判断是否问题
-                # 如果是，尝试指代消解 & 意图划分
+            # 判断是否问题
+            # 如果是，尝试指代消解 & 意图划分
 
-                outfilepath = filepath+'.1'
-                with open(outfilepath, 'a') as fout:
-                    json_text = json.dumps(json_obj, ensure_ascii=False)
-                    fout.write(json_text)
-                    fout.write('\n') 
+            outfilepath = filepath+'.llm'
+            with open(outfilepath, 'a') as fout:
+                json_text = json.dumps(json_obj, ensure_ascii=False)
+                fout.write(json_text)
+                fout.write('\n') 
 
 def main():
     args = parse_args()
     if args.action == 'split':
         split(args.input, args.output_dir)
-    elif args.action == 'visualize':
-        visualize(args.output_dir)
     elif args.action == 'intention':
         intention(args.output_dir)
 
