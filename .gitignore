@@ -35,3 +35,4 @@ web/tools/query.jsonl
 query.jsonl
 web/tools/groups/
 tests/history_recv_send.txt
+web/tools/chat.txt
