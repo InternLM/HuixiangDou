@@ -33,3 +33,7 @@ config-alignment.ini
 logs/work.txt
 web/tools/query.jsonl
 query.jsonl
+web/tools/groups/
+tests/history_recv_send.txt
+web/tools/chat.txt
+web/tools/filter.jsonl
