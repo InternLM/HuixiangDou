@@ -396,19 +396,34 @@ def intention(output_dir):
 
     sender_cnt = {}
 
-    group_intros = {
-        '18356748488': """
-名词解释：        
-HuixiangDou，中文名 茴香豆。
-茴香豆是一个基于 LLM 的群聊知识助手，优势：
+#     group_intros = {
+#         '18356748488': """
+# 名词解释：        
+# HuixiangDou，中文名 茴香豆。
+# 茴香豆是一个基于 LLM 的群聊知识助手，优势：
 
-设计拒答、响应两阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见技术报告
-成本低至 1.5G 显存，无需训练适用各行业
-提供一整套前后端 web、android、算法源码，工业级开源可商用
-查看茴香豆已运行在哪些场景；加入微信群直接体验群聊助手效果。
+# 设计拒答、响应两阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见技术报告
+# 成本低至 1.5G 显存，无需训练适用各行业
+# 提供一整套前后端 web、android、算法源码，工业级开源可商用
+# 查看茴香豆已运行在哪些场景；加入微信群直接体验群聊助手效果。
+
+# 群描述：
+# 这是 HuixiangDou (茴香豆) 的微信体验群。用户会发一些相关技术疑问。""",
+#     }
+    group_intros = {
+        '20814553575': """
+名词解释：
+open-compass/opencompass : 用于评测大型语言模型（LLM）. 它提供了完整的开源可复现的评测框架，支持大语言模型、多模态模型的一站式评测，基于分布式技术，对大参数量模型亦能实现高效评测。评测方向汇总为知识、语言、理解、推理、考试五大能力维度，整合集纳了超过70个评测数据集，合计提供了超过40万个模型评测问题，并提供长文本、安全、代码3类大模型特色技术能力评测。
+openmmlab/mmpose is an open-source toolbox for pose estimation based on PyTorch
+openmmlab/mmdeploy is an open-source deep learning model deployment toolset
+openmmlab/mmdetection is an open source object detection toolbox based on PyTorch.
+lmdeploy 是一个用于压缩、部署和服务 LLM（Large Language Model）的工具包。是一个服务端场景下，transformer 结构 LLM 部署工具，支持 GPU 服务端部署，速度有保障，支持 Tensor Parallel，多并发优化，功能全面，包括模型转换、缓存历史会话的 cache feature 等. 它还提供了 WebUI、命令行和 gRPC 客户端接入。
+茴香豆（HuixiangDou）是一个基于 LLM 的群聊知识助手。设计拒答、响应两阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。
+xtuner is an efficient, flexible and full-featured toolkit for fine-tuning large models.
+mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,YOLOv5, YOLOv6, YOLOv7, YOLOv8,YOLOX, PPYOLOE, etc.
 
 群描述：
-这是 HuixiangDou (茴香豆) 的微信体验群。用户会发一些相关技术疑问。""",
+这是 openmmlab 贡献者和用户群。用户会发一些相关技术疑问。""",
     }
 
     files = os.listdir(output_dir)
@@ -428,7 +443,7 @@ HuixiangDou，中文名 茴香豆。
             continue
 
         window_history = []
-        MAX_WINDOW_SIZE = 8
+        MAX_WINDOW_SIZE = 12
         STME_SPAN = 18
 
         raw_chats = []
