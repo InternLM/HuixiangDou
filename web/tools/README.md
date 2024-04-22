@@ -4,3 +4,4 @@
 - get_puyu_model_list.py  获取 puyu 所有 model list
 - update_fs_max_len.py  更新所有用户的 remote LLM 最大长度
 - reconstruct_wechat_group.py 结构化重建群聊内容
+- reconstruct_filter_annotate.py 用 puyu+kimi 过滤数据，再手工标注，最后 check
