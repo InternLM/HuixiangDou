@@ -169,7 +169,7 @@ mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-> **NOTE**
+> [!NOTE]
 >
 > <div align="center">
 > If restarting LLM every time is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>, then open a new terminal, and only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
@@ -239,7 +239,7 @@ remote_type = "kimi"
 remote_api_key = "${YOUR-API-KEY}"
 ```
 
-> **NOTE**
+> [!NOTE]
 >
 > <div align="center">
 > The worst case for each Q&A is to call the LLM 7 times, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
