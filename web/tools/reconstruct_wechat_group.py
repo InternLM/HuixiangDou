@@ -1,15 +1,9 @@
 import argparse
+import json
 import os
-import time
 import pdb
-import pytoml
-import requests
-import json
-from loguru import logger
 import re
-
-import argparse
-import json
+import time
 
 import pytoml
 import requests
@@ -139,6 +133,7 @@ class ChatClient:
             )
             return ''
 
+
 def parse_args():
     """Parse args."""
     parser = argparse.ArgumentParser(description='Reconstruct group chat.')
@@ -146,18 +141,23 @@ def parse_args():
                         type=str,
                         default='groups',
                         help='Splitted group messages.')
-    parser.add_argument('--input',
-                        type=str,
-                        default='/home/khj/github/huixiangdou/tests/history_recv_send.txt',
-                        help='Raw input messages.')
-    parser.add_argument('--action',
-                        type=str,
-                        # default='split',
-                        default='intention',
-                        help='"split"): split raw input into group messages; "intention"): decide which query being a question')
-    
+    parser.add_argument(
+        '--input',
+        type=str,
+        default='/home/khj/github/huixiangdou/tests/history_recv_send.txt',
+        help='Raw input messages.')
+    parser.add_argument(
+        '--action',
+        type=str,
+        # default='split',
+        default='intention',
+        help=
+        '"split"): split raw input into group messages; "intention"): decide which query being a question'
+    )
+
     args = parser.parse_args()
     return args
+
 
 def remove_at_name(text):
     pattern = r'@[\w\.-]+\s+'
@@ -166,6 +166,7 @@ def remove_at_name(text):
     if pos != -1:
         text = text[0:pos]
     return text
+
 
 def simplify_wx_object(json_obj):
     msg_type = json_obj['messageType']
@@ -200,7 +201,7 @@ def simplify_wx_object(json_obj):
             content = json_obj['title']
         else:
             content = 'unknown'
-        
+
         if 'toUser' in json_obj:
             recvs.append(json_obj['toUser'])
 
@@ -215,30 +216,29 @@ def simplify_wx_object(json_obj):
     if '<msg><emoji' in text:
         text = 'emoji'
     if '<msg>' in text and '<op id' in text:
-        text = 'app msg' 
+        text = 'app msg'
 
     text = remove_at_name(text)
-    
+
     obj = {
         'show': show_type,
-        'sender': sender, 
+        'sender': sender,
         'text': text,
         'recvs': recvs,
         'timestamp': json_obj['timestamp']
     }
     return obj
 
+
 def split(_input, output_dir):
-    """
-    把一个完整的聊天日志，简化、划成不同群的群聊记录。
-    """
+    """把一个完整的聊天日志，简化、划成不同群的群聊记录。"""
     if not os.path.exists(_input):
         logger.error('{} not exist'.format(_input))
         return
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    
+
     groups = {}
     json_str = ''
     with open(_input) as f:
@@ -254,7 +254,7 @@ def split(_input, output_dir):
                         # normal message
                         data = json_obj['data']
                         data['messageType'] = json_obj['messageType']
-                        
+
                         if 'fromGroup' in data:
                             group_id = data['fromGroup']
                             if group_id in groups:
@@ -263,10 +263,10 @@ def split(_input, output_dir):
                                 groups[group_id] = [data]
                             json_str = ''
                             continue
-                        
+
                         logger.error((json_str, 'no fromGroup'))
 
-                    if "answer" in json_obj:
+                    if 'answer' in json_obj:
                         # assistant message
                         if 'groupId' in json_obj:
                             group_id = json_obj['groupId']
@@ -276,7 +276,7 @@ def split(_input, output_dir):
                                 groups[group_id] = [data]
                             json_str = ''
                             continue
-                        
+
                         logger.error((json_str, 'has answer but no groupId'))
 
                 except Exception as e:
@@ -293,11 +293,12 @@ def split(_input, output_dir):
             logger.debug('msg count number too small, skip dump')
             continue
 
-        filepath = os.path.join(output_dir, "{}@reconstruct.txt".format(group_id))
+        filepath = os.path.join(output_dir,
+                                '{}@reconstruct.txt'.format(group_id))
         with open(filepath, 'w') as fout:
             idx = 0
             for json_obj in message_list:
-                
+
                 obj = simplify_wx_object(json_obj)
                 obj['id'] = idx
                 idx += 1
@@ -327,6 +328,7 @@ def is_question(query):
         return True
     return False
 
+
 def coref_res(target: object, window: list, group_intro: str):
     llm = ChatClient('config.ini')
 
@@ -337,7 +339,7 @@ def coref_res(target: object, window: list, group_intro: str):
     format_history = []
     for item in window:
         sender = item['sender']
-        if sender not  in name_map:
+        if sender not in name_map:
             name_map[sender] = chr(name_int)
             name_int += 1
 
@@ -347,14 +349,17 @@ def coref_res(target: object, window: list, group_intro: str):
         })
 
     target_sender = target['sender']
-    if target_sender not  in name_map:
+    if target_sender not in name_map:
         name_map[target_sender] = chr(name_int)
         name_int += 1
 
-    target_str = json.dumps({
-        "username": name_map[target_sender],
-        "content": target['text']
-    }, indent=2, ensure_ascii=False)
+    target_str = json.dumps(
+        {
+            'username': name_map[target_sender],
+            'content': target['text']
+        },
+        indent=2,
+        ensure_ascii=False)
 
     BASE_PROMPT_TEMPLATE = '''请完成群聊场景中的指代消解任务。
 "{}"
@@ -363,15 +368,18 @@ def coref_res(target: object, window: list, group_intro: str):
 
 输入内容：
 "{}"'''
-    prompt_base = BASE_PROMPT_TEMPLATE.format(group_intro, json.dumps(format_history, ensure_ascii=False), target['text'])
+    prompt_base = BASE_PROMPT_TEMPLATE.format(
+        group_intro, json.dumps(format_history, ensure_ascii=False),
+        target['text'])
 
-    prompt = "{}\n输入是否需要指代消解？ A：需要  B不需要 C不知道".format(prompt_base)
+    prompt = '{}\n输入是否需要指代消解？ A：需要  B不需要 C不知道'.format(prompt_base)
     need_cr = llm.generate_response(prompt=prompt, backend='puyu').lower()
     logger.debug('{} {}'.format(prompt, need_cr))
 
-    response = ""
+    response = ''
     if 'a' in need_cr:
-        prompt = "{}\n指代消解输入后的结果是？直接返回消解后的完整文本不要解释原因；直接返回最终结果不要解释过程。".format(prompt_base)
+        prompt = '{}\n指代消解输入后的结果是？直接返回消解后的完整文本不要解释原因；直接返回最终结果不要解释过程。'.format(
+            prompt_base)
         response = llm.generate_response(prompt=prompt, backend='puyu').lower()
     else:
         return '', False
@@ -386,32 +394,32 @@ def coref_res(target: object, window: list, group_intro: str):
     logger.debug('return response {}'.format(response))
     return response, True
 
+
 def intention(output_dir):
-    """
-    扫描一个群的流式聊天记录，把同一个人 18 秒内发的连续内容合并
-    """
+    """扫描一个群的流式聊天记录，把同一个人 18 秒内发的连续内容合并."""
     if not os.path.exists(output_dir):
         logger.error('{} not exist'.format(output_dir))
         return
 
     sender_cnt = {}
 
-#     group_intros = {
-#         '18356748488': """
-# 名词解释：        
-# HuixiangDou，中文名 茴香豆。
-# 茴香豆是一个基于 LLM 的群聊知识助手，优势：
+    #     group_intros = {
+    #         '18356748488': """
+    # 名词解释：
+    # HuixiangDou，中文名 茴香豆。
+    # 茴香豆是一个基于 LLM 的群聊知识助手，优势：
 
-# 设计拒答、响应两阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见技术报告
-# 成本低至 1.5G 显存，无需训练适用各行业
-# 提供一整套前后端 web、android、算法源码，工业级开源可商用
-# 查看茴香豆已运行在哪些场景；加入微信群直接体验群聊助手效果。
+    # 设计拒答、响应两阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见技术报告
+    # 成本低至 1.5G 显存，无需训练适用各行业
+    # 提供一整套前后端 web、android、算法源码，工业级开源可商用
+    # 查看茴香豆已运行在哪些场景；加入微信群直接体验群聊助手效果。
 
-# 群描述：
-# 这是 HuixiangDou (茴香豆) 的微信体验群。用户会发一些相关技术疑问。""",
-#     }
+    # 群描述：
+    # 这是 HuixiangDou (茴香豆) 的微信体验群。用户会发一些相关技术疑问。""",
+    #     }
     group_intros = {
-        '20814553575': """
+        '20814553575':
+        """
 名词解释：
 open-compass/opencompass : 用于评测大型语言模型（LLM）. 它提供了完整的开源可复现的评测框架，支持大语言模型、多模态模型的一站式评测，基于分布式技术，对大参数量模型亦能实现高效评测。评测方向汇总为知识、语言、理解、推理、考试五大能力维度，整合集纳了超过70个评测数据集，合计提供了超过40万个模型评测问题，并提供长文本、安全、代码3类大模型特色技术能力评测。
 openmmlab/mmpose is an open-source toolbox for pose estimation based on PyTorch
@@ -438,7 +446,7 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
         group_id = group_id.split('@')[0]
         if group_id in group_intros:
             introduction = group_intros[group_id]
-        
+
         if len(introduction) < 1:
             continue
 
@@ -458,7 +466,7 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
                 if json_obj['show'] == 'ref':
                     continue
                 raw_chats.append(json_obj)
-            
+
         # concat successive chat to one and save them
         idx = 0
         concat_chats = []
@@ -474,7 +482,8 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
             if target is None:
                 target = chat
                 target_timestamp = target['timestamp']
-            elif target['sender'] == chat['sender'] and abs(chat['timestamp'] - target_timestamp) < STME_SPAN:
+            elif target['sender'] == chat['sender'] and abs(
+                    chat['timestamp'] - target_timestamp) < STME_SPAN:
                 target_timestamp = chat['timestamp']
                 # print('{} merge {}'.format(target['id'], chat['id']))
                 target['text'] += '\n'
@@ -483,7 +492,7 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
             else:
                 concat_chats.append(target)
                 target = None
-        
+
         if target is not None:
             concat_chats.append(target)
 
@@ -491,7 +500,8 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
         with open(outfilepath, 'w') as f:
             f.write(json.dumps(concat_chats, indent=2, ensure_ascii=False))
 
-        logger.info('concat {} to {} msg'.format(len(raw_chats), len(concat_chats)))
+        logger.info('concat {} to {} msg'.format(len(raw_chats),
+                                                 len(concat_chats)))
 
         # check a query is question, and coref res
         for json_obj in concat_chats:
@@ -504,7 +514,9 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
                 json_obj['is_question'] = True
                 # 是问题，格式化历史消息，消解
                 window_history = window_history[-MAX_WINDOW_SIZE:-1]
-                cr_text, success = coref_res(json_obj, window=window_history, group_intro=introduction)
+                cr_text, success = coref_res(json_obj,
+                                             window=window_history,
+                                             group_intro=introduction)
 
                 json_obj['cr_window'] = window_history
                 if success:
@@ -518,18 +530,24 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
             # 判断是否问题
             # 如果是，尝试指代消解 & 意图划分
 
-            outfilepath = filepath+'.llm'
+            outfilepath = filepath + '.llm'
             with open(outfilepath, 'a') as fout:
                 json_text = json.dumps(json_obj, ensure_ascii=False)
                 fout.write(json_text)
-                fout.write('\n') 
+                fout.write('\n')
+
 
 def main():
+    """
+    split: 把单个群聊文件，划分成多个。
+    itention: 用 LLM 计算 is_question cr_need
+    """
     args = parse_args()
     if args.action == 'split':
         split(args.input, args.output_dir)
     elif args.action == 'intention':
         intention(args.output_dir)
+
 
 if __name__ == '__main__':
     main()
