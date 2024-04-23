@@ -179,15 +179,6 @@ python3 -m huixiangdou.main --standalone
 
 Please adjust the `repodir` documents, [good_questions](./resource/good_questions.json), and [bad_questions](./resource/bad_questions.json) to try your own domain knowledge (medical, financial, power, etc.).
 
-```shell
-The optimal threshold is: 0.5447442409012104, saved it..
-# Reject casual chats
-reject query: Are there any Chinese text to speech models?
-reject query: What should I have for lunch today?
-# Accept knowledge base topics
-process query: How to install mmpose?
-process query: What should I pay attention to when using scientific research instruments?
-```
 
 **STEP3.** Test sending messages to Feishu group (optional)
 

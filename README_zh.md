@@ -175,7 +175,7 @@ python3 -m huixiangdou.service.feature_store
 
 ```bash
 python3 -m huixiangdou.main --standalone
-..success, 请问如何安装 mmpose ?, 要安装 mmpose，请按照以下步骤进行：
+..success, 请问如何安装 mmpose ?, 要安装 mmpose，请按照以下步骤进行..
 ..Topics unrelated to the knowledge base..请问明天天气如何？
 ```
 
@@ -187,15 +187,6 @@ python3 -m huixiangdou.main --standalone
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
-```shell
-The optimal threshold is: 0.5447442409012104, saved it..
-# 拒绝闲聊
-reject query: 有啥中文的 text to speech 模型吗?
-reject query: 今天中午吃什么
-# 接受底库话题
-process query: mmpose 如何安装？
-process query: 使用科研仪器需要注意什么？
-```
 
 **STEP3.** 测试发消息给飞书群\[可选\]
 
