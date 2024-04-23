@@ -30,6 +30,7 @@ def redis_passwd():
 def feature_store_base_dir():
     return 'feature_stores'
 
+
 db = Redis(host=redis_host(),
            port=redis_port(),
            password=redis_passwd(),
