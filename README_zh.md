@@ -55,10 +55,10 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
   <tbody>
     <tr align="center" valign="bottom">
       <td>
-        <b>已支持的 LLM</b>
+        <b>LLM</b>
       </td>
       <td>
-        <b>支持的文件格式</b>
+        <b>文件格式</b>
       </td>
       <td>
         <b>即时通讯软件</b>
@@ -106,58 +106,84 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 |  版本  | GPU显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 体验版 |    1.5GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [kimi](https://kimi.moonshot.cn) 和 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-| 基础版 |    19GB     |                                                                         本地部署 LLM，能回答领域知识的基础问题                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| 高级版 |    40GB     |                                                                      充分利用检索+长文本能力，能够回答源码级问题                                                                       | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
-
-如果你只有 2G 显存，或追求性价比💰，[看这个知乎文档](https://zhuanlan.zhihu.com/p/685205206)。
+| 实惠版 |    1.5GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [kimi](https://kimi.moonshot.cn) 和 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| 标准版 |    19GB     |                                                                         本地部署 LLM，能回答领域知识的基础问题                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 完整版 |    40GB     |                                                                      充分利用检索+长文本能力，能够回答源码级问题                                                                       | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 运行
 
-我们将以 mmpose 和一些 `word`/`excel`/`pdf`/`ppt` 测试文档为例，介绍如何把知识助手部署到飞书群
-
-## STEP1. 建立话题特征库
-
-由于 [embedding](https://huggingface.co/maidalun1020/bce-embedding-base_v1) 和 [rerank](https://huggingface.co/maidalun1020/bce-reranker-base_v1) 模型需要验证才能获取，你需要登录 huggingface。为了加速下载你可以使用 [hf 国内镜像](https://hf-mirror.com/)。
+首先[点击同意 BCE 模型协议](https://huggingface.co/maidalun1020/bce-embedding-base_v1)，命令行登录 huggingface
 
 ```shell
 huggingface-cli login
 ```
 
+安装依赖
+
+```bash
+# parsing `word` format requirements
+apt update
+apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
+# python requirements
+pip install -r requirements.txt
+```
+
+茴香豆是基于 `config.ini` 配置实现的，按机器显存可以分成标准版（19G）、实惠版（1.5G）和完整版（40G）。
+
+## 一、标准版
+
+标准版会在本地运行 text2vec、rerank 和 7B 模型。
+
+**STEP1.** 先不使用拒答流，直接运行一些测试用例：
+
+```shell
+# standalone 模式
+# main 创建子进程运行 LLM API，然后向子进程发请求
+python3 -m huixiangdou.main --standalone
+..
+ErrorCode.SUCCESS,
+Query: 请问如何安装 mmpose ?
+Reply:
+要安装 mmpose，请按照以下步骤操作：
+1. **准备环境**：
+- 安装 Miniconda。
+- 创建并激活一个名为 openmmlab 的 conda 环境。
+..
+```
+
+> \[!NOTE\]
+>
+> <div align="center">
+> 如果 huggingface 下载太慢，可以用国内镜像 <a href="https://hf-mirror.com">hf-mirror</a> 下载到本地。然后修改 <b>config.ini</b> 配置中模型的路径
+> </div>
+
+可以看到 `main.py` 示例问题处理结果相同，无论问深度学习相关的 mmpose 还是 `今天天气如何`。
+
+**STEP2.** 用 mmpose 和测试文档构建知识库，开启拒答流
+
 复制下面所有命令（包含 '#' 符号）执行。
 
 ```shell
-# 下载 repo
-git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
-
-# 下载聊天话题
+# 下载知识库文档
+cd HuixiangDou
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
-
-# 安装解析 word 文档所需依赖
-apt update
-apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
-# 安装 python 依赖
-pip install -r requirements.txt
 
 # 把 repodir 的特征保存到 workdir
 mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-首次运行将自动下载配置中的 [text2vec 模型](./config.ini)。考虑到 huggingface 连接问题，建议先手动下载到本地，然后在 `config.ini` 设置模型路径。例如：
+> \[!NOTE\]
+>
+> <div align="center">
+> 如果每次重启 LLM 太慢，先 <b>python3 -m huixiangdou.service.llm_server_hybrid</b>；然后开新窗口，每次只执行 <b>python3 -m huixiangdou.main</b> 不重启 LLM。
+> </div>
 
-```shell
-# config.ini
-[feature_store]
-..
-model_path = "/path/to/text2vec-model"
+运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。
 
-# .github/scripts/config-ci.ini 是一个修改好的示例，用于本项目的 CI
-```
-
-运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。请编辑 [good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
+请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
 ```shell
 The optimal threshold is: 0.5447442409012104, saved it..
@@ -169,92 +195,7 @@ process query: mmpose 如何安装？
 process query: 使用科研仪器需要注意什么？
 ```
 
-## STEP2. 运行基础版技术助手
-
-**配置免费 TOKEN**
-
-茴香豆使用了搜索引擎，点击 [Serper 官网](https://serper.dev/api-key)获取限额 TOKEN，填入 `config.ini`
-
-```shell
-# config.ini
-..
-[web_search]
-x_api_key = "${YOUR-X-API-KEY}"
-..
-```
-
-**测试问答效果**
-
-\[仅体验版需要这步\] 如果你的机器显存不足以本地运行 7B LLM（低于 15G），可开启 `kimi` 或 `deepseek` [白嫖 3kw 限免 token](https://platform.deepseek.com/)。参照 [config-2G.ini](./config-2G.ini)
-
-```ini
-# config.ini
-[llm]
-enable_local = 0
-enable_remote = 1
-..
-[llm.server]
-..
-remote_type = "deepseek"
-remote_api_key = "YOUR-API-KEY"
-remote_llm_max_text_length = 16000
-remote_llm_model = "deepseek-chat"
-```
-
-默认配置中 `enable_local=1`，首次运行将根据显存大小，自动下载不同的 LLM，请保证网络畅通。建议先手动下载到本地，再修改 `config.ini` 中模型路径。
-
-- **非 docker 用户**。如果你**不**使用 docker 环境，可以一次启动所有服务。
-
-  ```shell
-  # standalone 模式
-  # main 创建子进程运行 LLM API，然后向子进程发请求
-  python3 -m huixiangdou.main --standalone
-  ..
-  ErrorCode.SUCCESS,
-  Query: 请问如何安装 mmpose ?
-  Reply:
-  要安装 mmpose，请按照以下步骤操作：
-  1. **准备环境**：
-  - 安装 Miniconda。
-  - 创建并激活一个名为 openmmlab 的 conda 环境。
-  ..
-  ```
-
-  注：
-
-  - 如果报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
-
-    1. 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。检查结束后按 ctrl-c 关掉。
-    2. 检查 `config.ini` 中各种 TOKEN 书写正确。`${}` 不要带进 TOKEN ！！！
-
-  - 如果使用 `deepseek` 进行 remote llm 调用，出现 400 错误可能是因为安全审查；在 [huixiangdou/main.py](huixiangdou/main.py) 中修改 `queries = ['请问如何安装 mmpose ?']` 为其他问题即可正常运行。
-
-- **docker 用户**。如果你正在使用 docker，`HuixiangDou` 的 Hybrid LLM Service 需要分离部署。
-
-  ```shell
-  # 首先启动 LLM 服务，监听 8888 端口
-  python3 -m huixiangdou.service.llm_server_hybrid
-  ..
-  ======== Running on http://0.0.0.0:8888 ========
-  (Press CTRL+C to quit)
-  ```
-
-  然后运行新容器，把宿主机的 IP (注意不是 docker 容器内的 IP) 配置进 `config.ini`，运行
-
-  ```shell
-  # config.ini
-  [llm]
-  ..
-  client_url = "http://10.140.24.142:9999/inference" # 举例，这里需要你换成宿主机 IP
-
-  # 执行 main
-  python3 -m huixiangdou.main
-  ..
-  ErrorCode.SUCCESS,
-  Query: 请问如何安装 mmpose..
-  ```
-
-## STEP3.集成飞书/个人微信\[可选\]
+**STEP3.** 测试发消息给飞书群\[可选\]
 
 点击[创建飞书自定义机器人](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot)，获取回调 WEBHOOK_URL，填写到 config.ini
 
@@ -266,7 +207,7 @@ type = "lark"
 webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
 ```
 
-运行。结束后，技术助手的答复将发送到飞书群。
+运行。结束后，技术助手的答复将**单向**发送到飞书群。
 
 ```shell
 python3 -m huixiangdou.main --standalone # 非 docker 用户
@@ -275,88 +216,54 @@ python3 -m huixiangdou.main # docker 用户
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-- [运行完整的飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)
-- [个人微信接入示例](./docs/add_wechat_group_zh.md)
-- 还可以参考[钉钉开放平台-自定义机器人接入](https://open.dingtalk.com/document/robots/custom-robot-access)
+- [算法 pipeline 集成飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)
+- [算法 pipeline 个人微信接入示例](./docs/add_wechat_group_zh.md)
 
-## STEP4.高级版\[可选\]
+**STEP4.** WEB 前后端
 
-基础版可能效果不佳，可开启以下特性来提升效果。配置模板请参照 [config-advanced.ini](./config-advanced.ini)
+我们提供了完整的前端 UI 和后端服务，支持：
 
-1. 使用更高精度 local LLM
+- 多租户管理
+- 零编程接入飞书、微信群
 
-   把 config.ini 中的`llm.local` 模型调整为 `internlm2-chat-20b`。
-   此选项效果显著，但需要更大的 GPU 显存。
+效果见 [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，请阅读[web部署文档](./web/README.md)。
 
-2. Hybrid LLM Service
+## 二、实惠版
 
-   对于支持 [openai](https://pypi.org/project/openai/) 接口的 LLM 服务，茴香豆可以发挥它的 Long Context 能力。
-   以 [kimi](https://platform.moonshot.cn/) 为例，以下是 `config.ini` 配置示例：
+如果你的机器显存只有 2G，或追求性价比，只需要看[这个知乎文档](https://zhuanlan.zhihu.com/p/685205206)。
 
-   ```ini
-   # config.ini
-   [llm]
-   enable_local = 1
-   enable_remote = 1
-   ..
-   [llm.server]
-   ..
-   # open https://platform.moonshot.cn/
-   remote_type = "kimi"
-   remote_api_key = "YOUR-KIMI-API-KEY"
-   remote_llm_max_text_length = 128000
-   remote_llm_model = "moonshot-v1-128k"
-   ```
+实惠版仅扔掉了本地 LLM，使用 remote LLM 代替，其他功能和标准版相同。
 
-   我们同样支持 chatgpt API。注意此特性会增加响应耗时和运行成本。
+以 kimi 为例，把[官网申请](https://platform.moonshot.cn/) 的 API TOKEN 填入 `config-2G.ini`
 
-3. repo 搜索增强
+```bash
+# config-2G.ini
+[llm]
+enable_local = 0
+enable_remote = 1
+..
+remote_type = "kimi"
+remote_api_key = "${YOUR-API-KEY}"
+```
 
-   此特性适合处理疑难问题，需要基础开发能力调整 prompt。
+> \[!NOTE\]
+>
+> <div align="center">
+> 每次问答最坏情况要调用 7 次 LLM，受免费用户 RPM 限制，可修改 config.ini 中 <b>rpm</b> 参数
+> </div>
 
-   - 点击 [sourcegraph-account-access](https://sourcegraph.com/users/tpoisonooo/settings/tokens) 获取 token
+执行命令获取问答结果
 
-     ```shell
-     # open https://github.com/sourcegraph/src-cli#installation
-     sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && chmod +x /usr/local/bin/src
+```shell
+python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启动所有服务
+```
 
-     # 开启 sg 搜索，并且把 token 填入 config.ini
-     [worker]
-     enable_sg_search = 1 # first enable sg search
-     ..
-     [sg_search]
-     ..
-     src_access_token = "${YOUR_ACCESS_TOKEN}"
-     ```
+## 三、完整版
 
-   - 编辑 repo 的名字和简介，我们以 opencompass 为例
+微信群里部署的 “豆哥” 是完全体，40G 显存时可使用长文本 + 检索能力提升精度，请阅读以下话题
 
-     ```ini
-     # config.ini
-     # add your repo here, we just take opencompass and lmdeploy as example
-     [sg_search.opencompass]
-     github_repo_id = "open-compass/opencompass"
-     introduction = "用于评测大型语言模型（LLM）.."
-     ```
-
-   - 使用 `python3 -m huixiangdou.service.sg_search` 单测，返回内容应包含 opencompass 源码和文档
-
-     ```shell
-     python3 -m huixiangdou.service.sg_search
-     ..
-     "filepath": "opencompass/datasets/longbench/longbench_trivia_qa.py",
-     "content": "from datasets import Dataset..
-     ```
-
-   运行 `main.py`，茴香豆将在合适的时机，启用搜索增强。
-
-4. 调参
-
-   针对业务场景调参往往不可避免。
-
-   - 参照 [data.json](./tests/data.json) 增加真实数据，运行 [test_intention_prompt.py](./tests/test_intention_prompt.py) 得到合适的 prompt 和阈值，更新进 [worker](./huixiangdou/service/worker.py)
-   - 根据模型支持的最大长度，调整[搜索结果个数](./huixiangdou/service/worker.py)
-   - 按照场景偏好，修改 config.ini 中的 `web_search.domain_partial_order`，即搜索结果偏序
+- [参照 config-advanced.ini 配置提升效果](./docs/full_dev_zh.md)
+- [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
 
 # 🛠️ FAQ
 
@@ -405,9 +312,16 @@ python3 -m huixiangdou.main # docker 用户
    ln -s swigfaiss.py swigfaiss_avx2.py
    ```
 
+7. 报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
+
+   - 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。检查结束后按 ctrl-c 关掉。
+   - 检查 `config.ini` 中各种 TOKEN 书写正确。`${}` 不要带进 TOKEN ！！！
+
+8. 如果使用 `deepseek` 进行 remote llm 调用，出现 400 错误可能是因为安全审查；在 [huixiangdou/main.py](huixiangdou/main.py) 中修改 `queries = ['请问如何安装 mmpose ?']` 为其他问题即可正常运行。
+
 # 🍀 致谢
 
-- [kimi-chat](https://kimi.moonshot.cn/): 长文本 LLM，支持直接上传文件
+- [KIMI](https://kimi.moonshot.cn/): 长文本 LLM，支持直接上传文件
 - [BCEmbedding](https://github.com/netease-youdao/BCEmbedding): 中英双语特征模型
 - [Langchain-ChatChat](https://github.com/chatchat-space/Langchain-Chatchat): Langchain 和 ChatGLM 的应用
 - [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): 微信抢红包
