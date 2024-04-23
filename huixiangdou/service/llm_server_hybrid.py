@@ -291,7 +291,7 @@ class HybridLLMServer:
             elif prompt_len <= int(32768 * 1.5) - 1024:
                 model = 'moonshot-v1-32k'
             else:
-                prompt = prompt[0: int(128000 * 1.5) -1024]
+                prompt = prompt[0:int(128000 * 1.5) - 1024]
                 model = 'moonshot-v1-128k'
 
         logger.info('choose kimi model {}'.format(model))
@@ -432,7 +432,7 @@ class HybridLLMServer:
             prompt (str): The prompt to send to the LLM.
             history (list, optional): List of previous interactions. Defaults to [].  # noqa E501
             remote (bool, optional): Flag to determine whether to use a remote server. Defaults to False.  # noqa E501
-            backend (str): LLM type to call. Support 'local', 'remote' and specfied LLM name ('kimi', 'deepseek' and so on) 
+            backend (str): LLM type to call. Support 'local', 'remote' and specified LLM name ('kimi', 'deepseek' and so on)
 
         Returns:
             str: Generated response from the LLM.

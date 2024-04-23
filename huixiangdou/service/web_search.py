@@ -220,7 +220,6 @@ class WebSearch:
             f.write(query)
             f.write('\n')
 
-
     def get(self, query: str, max_article=1):
         """Executes a google search with cache.
 
@@ -230,10 +229,10 @@ class WebSearch:
         """
         query = query.strip()
         query = query[0:32]
-        
+
         try:
             self.logging_search_query(query=query)
-            
+
             articles = self.google(query=query, max_article=max_article)
             self.save_search_result(query=query, articles=articles)
             return articles, None

@@ -2,8 +2,8 @@
 
 RAG 标注训练数据是否有用，请参考论文：
 
-* [Reformatted Alignment](https://arxiv.org/abs/2402.12219)
-* [CherryLLM](https://arxiv.org/abs/2308.12032)
+- [Reformatted Alignment](https://arxiv.org/abs/2402.12219)
+- [CherryLLM](https://arxiv.org/abs/2308.12032)
 
 本文介绍如何使用 HuixiangDou 在脏数据上标注 openmmlab+internlm 知识类问题，使用 10 个 repo（见配置文件）的文档做知识库。
 
@@ -55,10 +55,10 @@ python3 -m huixiangdou.rag --config_path config-alignment-example.ini
   }
 ```
 
-* code 是错误码，所有错误见 service/helper.py
-* direct_reply 是 LLM 原本回复，当 code 为 0 时才调用
-* reason 是错误的原因
-* refs 是参考文档
+- code 是错误码，所有错误见 service/helper.py
+- direct_reply 是 LLM 原本回复，当 code 为 0 时才调用
+- reason 是错误的原因
+- refs 是参考文档
 
 下面是个示例，`rag_reply` 更具体，不会像原始的 `direct_reply` 更“务虚”。可以进入下一阶段清洗流程。
 
