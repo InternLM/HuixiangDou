@@ -140,18 +140,12 @@ The standard edition runs [text2vec](https://huggingface.co/maidalun1020/bce-emb
 # Standalone mode
 # main creates a subprocess to run the LLM API, then sends requests to the subprocess
 python3 -m huixiangdou.main --standalone
-...
-ErrorCode.SUCCESS,
-Query: How to install mmpose?
-Reply:
-To install mmpose, please follow these steps:
-1. **Prepare the environment**:
-  - Install Miniconda.
-  - Create and activate a conda environment named openmmlab.
-  ...
+..
+..Topics unrelated to the knowledge base.."How to install mmpose?"
+..Topics unrelated to the knowledge base.."How's the weather tomorrow?"
 ```
 
-You can see that the result of handling the example question in `main.py` is the same, whether it's about mmpose related to deep learning or "How's the weather today?"
+You can see that the result of handling the example question in `main.py` is the same, whether it's about mmpose related to deep learning or "How's the weather tomorrow?"
 
 **STEP2.** Use mmpose and test documents to build a knowledge base and enable the rejection pipeline
 
@@ -175,7 +169,13 @@ python3 -m huixiangdou.service.feature_store
 > If restarting LLM every time is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>, then open a new terminal, and only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
 > </div>
 
-After running, Huixiangdou will be able to distinguish which user topics to process and which casual chats to reject.
+Then rerun `main`, Huixiangdou will be able to answer mmpose installation and reject casual chats.
+
+```bash
+python3 -m huixiangdou.main --standalone
+..success.. To install mmpose, you should..
+..Topics unrelated to the knowledge base.."How's the weather tomorrow?"
+```
 
 Please adjust the `repodir` documents, [good_questions](./resource/good_questions.json), and [bad_questions](./resource/bad_questions.json) to try your own domain knowledge (medical, financial, power, etc.).
 

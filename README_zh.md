@@ -141,14 +141,9 @@ pip install -r requirements.txt
 # main 创建子进程运行 LLM API，然后向子进程发请求
 python3 -m huixiangdou.main --standalone
 ..
-ErrorCode.SUCCESS,
-Query: 请问如何安装 mmpose ?
-Reply:
-要安装 mmpose，请按照以下步骤操作：
-1. **准备环境**：
-- 安装 Miniconda。
-- 创建并激活一个名为 openmmlab 的 conda 环境。
+Topics unrelated to the knowledge base.. 请问如何安装 mmpose ?, , []
 ..
+Topics unrelated to the knowledge base.. 请问明天天气如何？, , []
 ```
 
 > \[!NOTE\]
@@ -170,9 +165,18 @@ mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
 
-# 把 repodir 的特征保存到 workdir
+# 把 repodir 的特征保存到 workdir，把正反例阈值更新进 `config.ini`
 mkdir workdir
 python3 -m huixiangdou.service.feature_store
+```
+
+运行结束后再次测试 main
+，茴香豆能够回答 mmpose 问题，同时拒答天气问题。
+
+```bash
+python3 -m huixiangdou.main --standalone
+..success, 请问如何安装 mmpose ?, 要安装 mmpose，请按照以下步骤进行：
+..Topics unrelated to the knowledge base..请问明天天气如何？
 ```
 
 > \[!NOTE\]
@@ -180,8 +184,6 @@ python3 -m huixiangdou.service.feature_store
 > <div align="center">
 > 如果每次重启 LLM 太慢，先 <b>python3 -m huixiangdou.service.llm_server_hybrid</b>；然后开新窗口，每次只执行 <b>python3 -m huixiangdou.main</b> 不重启 LLM。
 > </div>
-
-运行结束后，茴香豆能够区分应该处理哪些用户话题，哪些闲聊应该拒绝。
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 

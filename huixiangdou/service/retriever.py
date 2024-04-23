@@ -25,12 +25,23 @@ class Retriever:
                  reject_throttle: float) -> None:
         """Init with model device type and config."""
         self.reject_throttle = reject_throttle
+        self.rejecter = None
+        self.retriever = None
+        self.compression_retriever = None
+
+        rejection_path = os.path.join(work_dir, 'db_reject')
+        retriever_path = os.path.join(work_dir, 'db_response')
+
+        if not os.path.exists(rejection_path) or not os.path.exists(retriever_path):
+            logger.warning('!!!warning, feature db not exist.!!!')
+            return
+
         self.rejecter = Vectorstore.load_local(
-            os.path.join(work_dir, 'db_reject'),
+            rejection_path,
             embeddings=embeddings,
             allow_dangerous_deserialization=True)
         self.retriever = Vectorstore.load_local(
-            os.path.join(work_dir, 'db_response'),
+            retriever_path,
             embeddings=embeddings,
             allow_dangerous_deserialization=True,
             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
@@ -45,6 +56,10 @@ class Retriever:
     def is_reject(self, question, k=30, disable_throttle=False):
         """If no search results below the threshold can be found from the
         database, reject this query."""
+
+        if self.rejecter is None:
+            return True, []
+
         if disable_throttle:
             # for searching throttle during update sample
             docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
@@ -125,17 +140,20 @@ class Retriever:
             logger.warning('input too long, truncate to 512')
             question = question[0:512]
 
+        chunks = []
+        context = ''
+        references = []
+
         reject, docs = self.is_reject(question=question)
-        assert (len(docs) > 0)
         if reject:
-            return None, None, [docs[0][0].metadata['source']]
+            if len(docs) > 0:
+                references.append(docs[0][0].metadata['source'])
+            return None, None, references
 
         docs = self.compression_retriever.get_relevant_documents(question)
         if tracker is not None:
             tracker.log('retrieve', [doc.metadata['source'] for doc in docs])
-        chunks = []
-        context = ''
-        references = []
+
 
         # add file text to context, until exceed `context_max_length`
 

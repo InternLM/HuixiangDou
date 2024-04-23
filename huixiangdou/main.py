@@ -71,12 +71,12 @@ def build_reply_text(reply: str, references: list):
 
 
 def lark_send_only(assistant, fe_config: dict):
-    queries = ['请问如何安装 mmpose ?']
+    queries = ['请问如何安装 mmpose ?', '请问明天天气如何？']
     for query in queries:
         code, reply, references = assistant.generate(query=query,
                                                      history=[],
                                                      groupname='')
-        logger.info(f'{code}, {query}, {reply}, {references}')
+        logger.warning(f'{code}, {query}, {reply}, {references}')
         reply_text = build_reply_text(reply=reply, references=references)
 
         if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
@@ -166,7 +166,6 @@ def wechat_personal_run(assistant, fe_config: dict):
 def run():
     """Automatically download config, start llm server and run examples."""
     args = parse_args()
-    check_env(args)
 
     if args.standalone is True:
         # hybrid llm serve

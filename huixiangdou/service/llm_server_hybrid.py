@@ -517,7 +517,7 @@ class HybridLLMServer:
                         # for puyu API, refresh token
                         self.token = (os_run('openxlab token'), time.time())
 
-        logger.info((prompt, output_text))
+        # logger.debug((prompt, output_text))
         time_finish = time.time()
 
         logger.debug('Q:{} A:{} \t\t backend {} timecost {} '.format(
