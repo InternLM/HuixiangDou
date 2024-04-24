@@ -177,7 +177,9 @@ def human_annotate(kimi_file_path:str, gt_file_path):
 
 def human_check(gt_file_path):
     bad = []
+    bad_text_sum = 0
     good = []
+    good_text_sum = 0
     with open(gt_file_path) as f:
         for idx, line in enumerate(f):
             data = json.loads(line)
@@ -187,12 +189,21 @@ def human_check(gt_file_path):
 
             if data['cr_need_gt']:
                 bad.append(repr(data['text']))
+                bad_text_sum += len(data['text'])
             else:
                 good.append(repr(data['text']))
+                good_text_sum += len(data['text'])
+
 
     print(json.dumps(bad, indent=2, ensure_ascii=False))
     print(json.dumps(good, indent=2, ensure_ascii=False))
-    print('bad count {}, good count {}'.format(len(bad), len(good)))
+    print('bad count {}, avg text len {}; good count {}, avg text len {}'.format(len(bad), bad_text_sum / len(bad), len(good), good_text_sum / len(good)))
+
+    with open('groups/good.json', 'w') as f:
+        f.write(json.dumps(good, ensure_ascii=False, indent=2))
+
+    with open('groups/bad.json', 'w') as f:
+        f.write(json.dumps(bad, ensure_ascii=False, indent=2))
 
 
 def metric(llm_type:str, filepath:str = 'groups/output.jsonl'):
@@ -217,7 +228,8 @@ def metric(llm_type:str, filepath:str = 'groups/output.jsonl'):
     logger.info('{} {} {}'.format(precision, recall, f1))
 
 
-def coref_res(target: object, llm_type:str):
+def qwen_coref_res(llm_type: str, target: object):
+    model = '/workspace/models/{}'.format(llm_type)
     client = OpenAI(
         base_url="http://10.140.24.142:29999/v1",
         api_key="token-abc123",
@@ -233,9 +245,8 @@ lmdeploy 是一个用于压缩、部署和服务 LLM（Large Language Model）�
 茴香豆（HuixiangDou）是一个基于 LLM 的群聊知识助手。设计拒答、响应两阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。
 xtuner is an efficient, flexible and full-featured toolkit for fine-tuning large models.
 mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,YOLOv5, YOLOv6, YOLOv7, YOLOv8,YOLOX, PPYOLOE, etc.
-
-群描述：
-这是 openmmlab 贡献者和用户群。用户会发一些相关技术疑问。"""
+ncnn is a high-performance neural network inference framework optimized for the mobile platform
+"""
 
     window = target['cr_window']
     # logger.debug('input window {}'.format(window))
@@ -267,22 +278,21 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
         indent=2,
         ensure_ascii=False)
 
-    BASE_PROMPT_TEMPLATE = '''请完成群聊场景中的指代消解任务。
-"{}"
+    BASE_PROMPT_TEMPLATE = '''群聊场景中“这”、“它”、“哪”等代词需要查看上下文和其他用户的回复才能确定具体指什么，请完成群聊场景代词替换任务。
+
 以下是历史对话，可能有多个人的发言：
 {}
 
 输入内容：
 "{}"'''
     prompt_base = BASE_PROMPT_TEMPLATE.format(
-        group_intro, json.dumps(format_history, ensure_ascii=False),
-        target['text'])
+        json.dumps(format_history, ensure_ascii=False),
+        target_str)
 
-    prompt = '{}\n输入是否需要指代消解，直接选择不要解释。 A：不需要  B：需要  C：不知道'.format(prompt_base)
-
+    prompt = '{}\n输入内容中的 content 信息是否完整，是否需要从历史对话中提取代词或宾语来替代 content 中的一部分词汇？ A：不需要提取，信息完整  B：需要  C：不知道 \n一步步分析，首先历史消息包含哪些话题；其次哪个话题与问题最相关；如果都不相关就不提取。 '.format(prompt_base)
 
     completion = client.chat.completions.create(
-        model="/workspace/models/qwen1.5-moe-2.7B-chat",
+        model=model,
         messages=[
             {"role": "user", "content": prompt}
         ]
@@ -293,25 +303,41 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
 
     response = ''
 
+    prompt = """请判断用户意图，这位用户在做单选题，单选题答案有 3 个， A：不需要提取，信息完整  B：需要  C：不知道。
+用户输入：
+{}
+
+用户的答案是？不要解释，直接给 ABC 选项结果。
+""".format(need_cr)
+
+    completion = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+    need_cr = completion.choices[0].message.content.lower()
+    need_cr = need_cr.strip()
+
+    logger.warning('final choose {}'.format(need_cr))
+
     if need_cr.startswith('a') or need_cr == '不需要' or '因此不需要' in need_cr or 'a：不需要' in need_cr or '不需要进行指代消解' in need_cr or '选项 a' in need_cr:
-        return '', False
+        return '', 'no'
     elif need_cr.startswith('b') or need_cr == '需要' or '因此需要' in need_cr or '因此选择b' in need_cr or '需要进行指代消解' in need_cr or '需要指代消解' in need_cr or 'b：需要' in need_cr:
-        prompt = '{}\n指代消解输入后的结果是？直接返回消解后的完整文本不要解释原因；直接返回最终结果不要解释过程。'.format(
+        prompt = '{}\n指代消解输入内容中 content 后的文本是？直接返回消解后的完整文本不要解释原因；直接返回最终结果不要解释过程。'.format(
             prompt_base)
     
         completion = client.chat.completions.create(
-            model="/workspace/models/qwen1.5-moe-2.7B-chat",
+            model=model,
             messages=[
                 {"role": "user", "content": prompt}
             ]
         )
         response = completion.choices[0].message.content.lower()
-    elif '不知道' in need_cr:
-        return '', False
+    elif need_cr.startswith('c') or '不知道' in need_cr:
+        return '', 'unknown'
     else:
-        ret = False
-        print(need_cr)
-        return '', ret
+        return '', 'exception {}'.format(need_cr)
 
 
     keywords = ['指代消解后的文本是：', '指代消解后是：', '指代消解后：', '指代消解后的文本为：']
@@ -321,8 +347,8 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
     response = response.strip()
     if response.startswith('"') and response.endswith('"'):
         response = response[1:-1]
-    logger.debug('return response {}'.format(response))
-    return response, True
+    logger.warning('coref response {}'.format(response))
+    return response, 'yes'
 
 
 def llm_annotate(llm_type: str, input_filepath:str = 'groups/input.jsonl', output_filepath = 'groups/output.jsonl'):
@@ -336,9 +362,9 @@ def llm_annotate(llm_type: str, input_filepath:str = 'groups/input.jsonl', outpu
                 continue
 
             idx += 1
-            if idx < 569:
-                continue
-            cr_text, state = coref_res(target=json_obj, llm_type=llm_type)
+
+            if 'qwen' in llm_type.lower():
+                cr_text, state = qwen_coref_res(llm_type=llm_type, target=json_obj)
             json_obj['{}_cr_text'.format(llm_type)] = cr_text
             json_obj['{}_cr_need'.format(llm_type)] = state
 
@@ -371,7 +397,8 @@ def parse_args():
         '--llm-type',
         type=str,
         # default='split',
-        default='qwen-moe-2.7B-chat',
+        # default='qwen-moe-2.7B-chat',
+        default='Qwen1.5-14B-Chat',
         help='LLM type, use qwen moe by default.'
     )
     args = parser.parse_args()
@@ -398,8 +425,9 @@ if __name__ == '__main__':
         gt_file_path = 'groups/{}@chatroom@gt.jsonl'.format(group_id)
         kimi_annotate()
         human_annotate()
-        human_check()
-
+    elif args.action == 'check':
+        human_check('groups/input.jsonl')
     elif args.action == 'metric':
-        llm_annotate(llm_type=args.llm_type)
-        metric(llm_type=args.llm_type)
+        output_filepath = 'groups/qwen32B.jsonl'
+        llm_annotate(llm_type=args.llm_type, output_filepath=output_filepath)
+        metric(llm_type=args.llm_type, filepath=output_filepath)
