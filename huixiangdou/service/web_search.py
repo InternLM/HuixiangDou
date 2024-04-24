@@ -9,13 +9,17 @@ import requests
 from bs4 import BeautifulSoup as BS
 from loguru import logger
 from readability import Document
-
+from duckduckgo_search import DDGS
 
 class Article:
 
-    def __init__(self, content: str = '', source=''):
+    def __init__(self, content: str = '', source='', brief=''):
         self.content = content
         self.source = source
+        if len(brief) < 1:
+            self.brief = content
+        else:
+            self.brief = brief
 
     def __str__(self):
         return self.content
@@ -35,7 +39,6 @@ class WebSearch:
         retry (int): Number of times to retry a request before giving up.
 
     Methods:
-        load_urls(): Loads URLs from config file.
         load_key(): Retrieves API key from the config file.
         load_save_dir(): Gets the directory path for saving results.
         google(query: str, max_article:int): Performs Google search for the given query and returns top max_article results.  # noqa E501
@@ -43,37 +46,15 @@ class WebSearch:
         get(query: str, max_article=1): Searches with cache. If the query already exists in the cache, return the cached result.  # noqa E501
     """
 
-    def __init__(self, config_path: dict, retry: int = 2) -> None:
+    def __init__(self, config_path: dict, retry: int = 1) -> None:
         """Initializes the WebSearch object with the given config path and
         retry count."""
-        self.config_path = config_path
-        self.retry = retry
-
-    def load_urls(self):
-        """Reads the configuration file and fetches the ordered URLs.
-
-        In case of an error, logs the exception and returns an empty list.
-        """
-        try:
-            with open(self.config_path, encoding='utf8') as f:
-                config = pytoml.load(f)
-                return config['web_search']['domain_partial_order']
-        except Exception as e:
-            logger.error(str(e))
-        return []
-
-    def load_key(self):
-        """Attempts to load the API key from the configuration file.
-
-        Raises an Exception if it fails to find a valid API key.
-        """
+        
+        self.search_config = None
         with open(self.config_path, encoding='utf8') as f:
             config = pytoml.load(f)
-            api_key = config['web_search']['x_api_key']
-            # if len(api_key) > 0 and 'YOUR-API-KEY' not in api_key:
-            return api_key
-        raise Exception(
-            'web_search X-API-KEY not found, please input your API key')
+            self.search_config = types.SimpleNamespace(**config['web_search'])
+        self.retry = retry
 
     def load_save_dir(self):
         """Attempts to read the directory where the search results are stored
@@ -89,7 +70,7 @@ class WebSearch:
             pass
         return None
 
-    def fetch_url(self, query: str, target_link: str):
+    def fetch_url(self, query: str, target_link: str, brief: str=""):
         if not target_link.startswith('http'):
             return None
 
@@ -109,12 +90,33 @@ class WebSearch:
             content = content.replace('\n\n', '\n')
             content = content.replace('  ', ' ')
 
-            return Article(content=content, source=target_link)
+            return Article(content=content, source=target_link, brief=brief)
         except Exception as e:
             logger.error('fetch_url {}'.format(str(e)))
         return None
 
-    def google(self, query: str, max_article):
+    def ddgs(self, query: str, max_article: int):
+        """Run DDGS search based on query."""
+        results = DDGS().text(query, max_results=20)
+        filter_results = []
+
+        for domain in self.search_config.domain_partial_order:
+            for result in results:
+                if domain in result['href']:
+                    filter_results.append(result)
+                    break
+        
+        logger.debug("filter results: {}".format(filter_results))
+        articles = []
+        for result in filter_results:
+            a = self.fetch_url(query=query, target_link=result['href'], brief=result['brief'])
+            if a is not None and len(a) > 0:
+                articles.append(a)
+            if len(articles) > max_article:
+                break
+        return articles
+
+    def google(self, query: str, max_article: int):
         """Executes a google search based on the provided query.
 
         Parses the response and extracts the relevant URLs based on the
@@ -126,7 +128,7 @@ class WebSearch:
 
         payload = json.dumps({'q': f'{query}', 'hl': 'zh-cn'})
         headers = {
-            'X-API-KEY': self.load_key(),
+            'X-API-KEY': self.search_config.serper_api_key,
             'Content-Type': 'application/json'
         }
         response = requests.request('POST',
@@ -136,7 +138,7 @@ class WebSearch:
                                     timeout=15)  # noqa E501
         jsonobj = json.loads(response.text)
 
-        keys = self.load_urls()
+        keys = self.search_config.domain_partial_order
         urls = {}
         normal_urls = []
 
@@ -233,8 +235,16 @@ class WebSearch:
         try:
             self.logging_search_query(query=query)
 
-            articles = self.google(query=query, max_article=max_article)
+            articles = []
+            engine = self.search_config.engine.lower()
+            if engine == 'ddgs':
+                articles = self.ddgs(query=query, max_article=max_article)
+
+            elif engine == 'serper':
+                articles = self.google(query=query, max_article=max_article)
+
             self.save_search_result(query=query, articles=articles)
+
             return articles, None
         except Exception as e:
             logger.error(('web_search exception', query, str(e)))

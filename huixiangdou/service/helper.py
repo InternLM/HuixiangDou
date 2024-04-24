@@ -46,6 +46,7 @@ class ErrorCode(Enum):
     SEARCH_FAIL = 15, 'Web search fail, please check TOKEN and quota'
     SG_SEARCH_FAIL = 16, 'SourceGraph search fail, please check TOKEN'
     LLM_NOT_RESPONSE_SG = 17, 'LLM not response query with sg search'
+    QUESTION_TOO_SHORT = 18, 'query length too short'
 
     def __new__(cls, value, description):
         """Create new instance of ErrorCode."""
