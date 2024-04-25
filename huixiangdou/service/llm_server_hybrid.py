@@ -517,7 +517,7 @@ class HybridLLMServer:
                         # for puyu API, refresh token
                         self.token = (os_run('openxlab token'), time.time())
 
-        logger.info((prompt, output_text))
+        # logger.debug((prompt, output_text))
         time_finish = time.time()
 
         logger.debug('Q:{} A:{} \t\t backend {} timecost {} '.format(
@@ -581,26 +581,33 @@ def llm_serve(config_path: str, server_ready: Value):
     app.add_routes([web.post('/inference', inference)])
     web.run_app(app, host='0.0.0.0', port=bind_port)
 
+def start_llm_server(config_path: str):
+    server_ready = Value('i', 0)
+    server_process = Process(target=llm_serve, args=(config_path, server_ready))
+    server_process.daemon = True
+    server_process.start()
+    while True:
+        if server_ready.value == 0:
+            logger.info('waiting for server to be ready..')
+            time.sleep(2)
+        elif server_ready.value == 1:
+            break
+        else:
+            logger.error('start local LLM server failed, quit.')
+            raise Exception('local LLM path')
+    logger.info('Hybrid LLM Server start.')
 
 def main():
     """Function to start the server without running a separate process."""
     args = parse_args()
-    server_ready = Value('i', 0)
 
     if not args.unittest:
         llm_serve(args.config_path, server_ready)
     else:
-        server_process = Process(target=llm_serve,
-                                 args=(args.config_path, server_ready))
-        server_process.daemon = True
-        server_process.start()
+        start_llm_server(config_path=args.config_path)
 
         from .llm_client import ChatClient
         client = ChatClient(config_path=args.config_path)
-        while server_ready.value == 0:
-            logger.info('waiting for server to be ready..')
-            time.sleep(2)
-
         queries = ['今天天气如何？']
         for query in queries:
             print(

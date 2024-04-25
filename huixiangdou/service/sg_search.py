@@ -14,7 +14,7 @@ class SourceGraphProxy:
     """A class to serve as a proxy for interacting with the Source Graph.
 
     Args:
-        config_path (dict): Path to the configuration file.
+        config_path (str): Path to the configuration file.
         topk (int, optional): Top K results to consider from the search. Defaults to 1.  # noqa E501
         language (str, optional): Language for the system prompts - 'zh' for Chinese and 'en' for English. Defaults to 'zh'.  # noqa E501
 
@@ -28,7 +28,7 @@ class SourceGraphProxy:
     """
 
     def __init__(self,
-                 config_path: dict,
+                 config_path: str,
                  topk=1,
                  language: str = 'zh') -> None:
         """Init searcher with config."""
