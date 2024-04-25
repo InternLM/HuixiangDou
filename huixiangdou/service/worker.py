@@ -10,7 +10,7 @@ from loguru import logger
 
 from .helper import ErrorCode, QueryTracker
 from .llm_client import ChatClient
-from .retriever import CacheRetriever
+from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
 from .web_search import WebSearch
 from .primitive import is_truth
@@ -345,7 +345,7 @@ class Worker:
                 check.process(sess)
             
             # check success, return
-            if sess.code == ErrorCode.SUCCESS
+            if sess.code == ErrorCode.SUCCESS:
                 break
 
         return sess.code, sess.response, sess.references

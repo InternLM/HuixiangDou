@@ -3,7 +3,7 @@
 import argparse
 import json
 import os
-
+import types
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS
@@ -46,29 +46,15 @@ class WebSearch:
         get(query: str, max_article=1): Searches with cache. If the query already exists in the cache, return the cached result.  # noqa E501
     """
 
-    def __init__(self, config_path: dict, retry: int = 1) -> None:
+    def __init__(self, config_path: str, retry: int = 1) -> None:
         """Initializes the WebSearch object with the given config path and
         retry count."""
         
         self.search_config = None
-        with open(self.config_path, encoding='utf8') as f:
+        with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             self.search_config = types.SimpleNamespace(**config['web_search'])
         self.retry = retry
-
-    def load_save_dir(self):
-        """Attempts to read the directory where the search results are stored
-        from the configuration file.
-
-        Returns None if it fails.
-        """
-        try:
-            with open(self.config_path, encoding='utf8') as f:
-                config = pytoml.load(f)
-                return config['web_search']['save_dir']
-        except Exception:
-            pass
-        return None
 
     def fetch_url(self, query: str, target_link: str, brief: str=""):
         if not target_link.startswith('http'):
@@ -109,7 +95,7 @@ class WebSearch:
         logger.debug("filter results: {}".format(filter_results))
         articles = []
         for result in filter_results:
-            a = self.fetch_url(query=query, target_link=result['href'], brief=result['brief'])
+            a = self.fetch_url(query=query, target_link=result['href'], brief=result['body'])
             if a is not None and len(a) > 0:
                 articles.append(a)
             if len(articles) > max_article:
@@ -128,7 +114,7 @@ class WebSearch:
 
         payload = json.dumps({'q': f'{query}', 'hl': 'zh-cn'})
         headers = {
-            'X-API-KEY': self.search_config.serper_api_key,
+            'X-API-KEY': self.search_config.serper_x_api_key,
             'Content-Type': 'application/json'
         }
         response = requests.request('POST',
@@ -189,7 +175,7 @@ class WebSearch:
         logs a warning message.
         """
         try:
-            save_dir = self.load_save_dir()
+            save_dir = self.search_config.save_dir
             if save_dir is None:
                 return
 
@@ -210,7 +196,7 @@ class WebSearch:
     def logging_search_query(self, query: str):
         """Logging search query to txt file."""
 
-        save_dir = self.load_save_dir()
+        save_dir = self.search_config.save_dir
         if save_dir is None:
             return
 
