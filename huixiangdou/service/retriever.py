@@ -29,6 +29,10 @@ class Retriever:
         self.retriever = None
         self.compression_retriever = None
 
+        if not os.path.exists(work_dir):
+            logger.warning('!!!warning, workdir not exist.!!!')
+            return
+
         rejection_path = os.path.join(work_dir, 'db_reject')
         retriever_path = os.path.join(work_dir, 'db_response')
 
@@ -241,9 +245,6 @@ class CacheRetriever:
         if fs_id in self.cache:
             self.cache[fs_id]['time'] = time.time()
             return self.cache[fs_id]['retriever']
-
-        if not os.path.exists(work_dir) or not os.path.exists(config_path):
-            return None, 'workdir or config.ini not exist'
 
         with open(config_path, encoding='utf8') as f:
             reject_throttle = pytoml.load(

@@ -24,6 +24,7 @@ def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int):
     relation = llm.generate_response(prompt=prompt, backend='local')
     logs['relation'] = relation
     filtered_relation = ''.join([c for c in relation if c.isdigit()])
+    
     try:
         score_str = re.sub(r'[^\d]', ' ', filtered_relation).strip()
         score = int(score_str.split(' ')[0])

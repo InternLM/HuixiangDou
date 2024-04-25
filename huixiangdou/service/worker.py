@@ -14,7 +14,6 @@ from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
 from .web_search import WebSearch
 from .primitive import is_truth
-
 class Session:
     """
     For compute graph, `session` takes all parameter.
@@ -24,10 +23,10 @@ class Session:
         self.history = history
         self.groupname = groupname
         # init
-        self.reborn_code = ErrorCode.SUCCESS
         self.response = ''
         self.references = []
         self.topic = ''
+        self.code = ErrorCode.INIT
 
         # text2vec results
         self.chunk = ''
@@ -38,6 +37,9 @@ class Session:
 
         # source graph search results
         self.sg_knowledge = ''
+
+        # debug logs
+        self.debug = dict()
 
     
 class Node(ABC):
@@ -57,7 +59,7 @@ class BCENode(Node):
         self.context_max_length = llm_config['server']['local_llm_max_text_length']
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server']['remote_llm_max_text_length']
-        if self.language == 'zh':
+        if language == 'zh':
             self.TOPIC_TEMPLATE = '告诉我这句话的主题，直接说主题不要解释：“{}”'
             self.SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'  # noqa E501
             self.SCORING_RELAVANCE_TEMPLATE = '问题：“{}”\n材料：“{}”\n请仔细阅读以上内容，判断问题和材料的关联度，用0～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n'  # noqa E501
@@ -75,19 +77,19 @@ class BCENode(Node):
         """
 
         # check input
-        if sess.query is None or len(query) < 6:
+        if sess.query is None or len(sess.query) < 6:
             sess.code = ErrorCode.QUESTION_TOO_SHORT
             return
 
         prompt = self.SCORING_QUESTION_TEMPLTE.format(sess.query)
-        truth, log = is_truth(llm=self.llm, prompt=prompt, throttle=6, default=3)
-
-        if truth:
+        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=6, default=3)
+        sess.debug['BCENODE_truth'] = logs
+        if not truth:
             sess.code = ErrorCode.NOT_A_QUESTION
             return
         
         # get query topic
-        prompt = self.TOPIC_TEMPLATE.format(query)
+        prompt = self.TOPIC_TEMPLATE.format(sess.query)
         sess.topic = self.llm.generate_response(prompt)
         if len(sess.topic) < 2:
             # topic too short, return
@@ -95,23 +97,28 @@ class BCENode(Node):
             return
 
         # retrieve from knowledge base
-        sess.chunk, sess.knowledge, sess.references = self.retriever.query(session.topic, context_max_length=self.max_length)
-
+        sess.chunk, sess.knowledge, sess.references = self.retriever.query(sess.topic, context_max_length=self.max_length)
+        
         if sess.knowledge is None:
             sess.code = ErrorCode.UNRELATED
             return
 
-        # answer the question
+        # get relavance between query and knowledge base
         prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query, sess.chunk)
         truth, log = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10)
     
-        if truth:
-            prompt = self.GENERATE_TEMPLATE.format(sess.knowledge, sess.query)
-            response = self.llm.generate_response(prompt=prompt, history=history, backend='remote')
-            
-            sess.code = ErrorCode.SUCCESS
-            sess.response = response
+        if not truth:
+            sess.code = ErrorCode.UNRELATED
+            return
 
+        # answer the question
+        prompt = self.GENERATE_TEMPLATE.format(sess.knowledge, sess.query)
+        response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='remote')
+        
+        sess.code = ErrorCode.SUCCESS
+        sess.response = response
+        return
+    
 
 class WebSearchNode(Node):
     """
@@ -125,7 +132,7 @@ class WebSearchNode(Node):
         self.context_max_length = llm_config['server']['local_llm_max_text_length']
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server']['remote_llm_max_text_length']
-        if self.language == 'zh':
+        if language == 'zh':
             self.SCORING_RELAVANCE_TEMPLATE = '问题：“{}”\n材料：“{}”\n请仔细阅读以上内容，判断问题和材料的关联度，用0～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n'  # noqa E501
             self.KEYWORDS_TEMPLATE = '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。搜索参数类型 string， 内容是短语或关键字，以空格分隔。\n你现在是{}交流群里的助手，用户问“{}”，你打算通过谷歌搜索查询相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'  # noqa E501
             self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
@@ -139,13 +146,14 @@ class WebSearchNode(Node):
     def process(self, sess: Session):
         """Try web search"""
         if not self.enable:
+            logger.debug('disable web_search')
             return
 
         engine = WebSearch(config_path=self.config_path)
 
         prompt = self.KEYWORDS_TEMPLATE.format(sess.groupname, sess.query)
         search_keywords = self.llm.generate_response(prompt)
-        articles, error = web_search.get(query=search_keywords, max_article=2)
+        articles, error = engine.get(query=search_keywords, max_article=2)
 
         if error is not None:
             sess.code = ErrorCode.SEARCH_FAIL
@@ -155,6 +163,7 @@ class WebSearchNode(Node):
                 article.cut(0, self.max_length)
                 prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query, article.brief)
                 truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10)
+                
                 if truth:
                     sess.web_knowledge += '\n'
                     sess.web_knowledge += article.content
@@ -174,14 +183,13 @@ class SGSearchNode(Node):
     """
     SGSearchNode is for retrieve from source graph
     """
-    def __init__(self, config:dict, llm: ChatClient, language: str):
+    def __init__(self, config:dict, config_path: str, llm: ChatClient, language: str):
         self.llm = llm
-        self.retriever = retriever
-        llm_config = config['llm']
-        self.context_max_length = llm_config['server']['local_llm_max_text_length']
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server']['remote_llm_max_text_length']
-        if self.language == 'zh':
+        self.language = language
+        self.enable = config['worker']['enable_sg_search']
+        self.config_path = config_path
+
+        if language == 'zh':
             self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
         else:
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
@@ -191,10 +199,12 @@ class SGSearchNode(Node):
         Try get reply with source graph
         """
 
-        if not self.config['worker']['enable_sg_search']:
+        if not self.enable:
+            logger.debug('disable sg_search')
             return
 
-        if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT:  # noqa E501
+        # if exit for other status (SECURITY or SEARCH_FAIL), still quit `sg_search`
+        if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT:
             return
 
         sg = SourceGraphProxy(config_path=self.config_path, language=self.language)
@@ -206,7 +216,7 @@ class SGSearchNode(Node):
 
         prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge, sess.query)
         sess.response = self.llm.generate_response(prompt=prompt, history=sess.history)
-        if response is None or len(response) < 1:
+        if sess.response is None or len(sess.response) < 1:
             sess.code = ErrorCode.LLM_NOT_RESPONSE_SG
             return
         sess.code = ErrorCode.SUCCESS
@@ -218,7 +228,7 @@ class SecurityNode(Node):
     """
     def __init__(self, llm: ChatClient, language: str):
         self.llm = llm
-        if self.language == 'zh':
+        if language == 'zh':
             self.PERPLESITY_TEMPLATE = '“question:{} answer:{}”\n阅读以上对话，answer 是否在表达自己不知道，回答越全面得分越少，用0～10表示，不要解释直接给出得分。\n判断标准：准确回答问题得 0 分；答案详尽得 1 分；知道部分答案但有不确定信息得 8 分；知道小部分答案但推荐求助其他人得 9 分；不知道任何答案直接推荐求助别人得 10 分。直接打分不要解释。'  # noqa E501
             self.SECURITY_TEMAPLTE = '判断以下句子是否涉及政治、辱骂、色情、恐暴、宗教、网络暴力、种族歧视等违禁内容，结果用 0～10 表示，不要解释直接给出得分。判断标准：涉其中任一问题直接得 10 分；完全不涉及得 0 分。直接给得分不要解释：“{}”'  # noqa E501
         else:
@@ -230,12 +240,12 @@ class SecurityNode(Node):
         Check result with security.
         """
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query, sess.response)
-        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=7, default=0)
+        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=9, default=0)
         if truth:
             sess.code = ErrorCode.BAD_ANSWER
             return
 
-        prompt = self.SECURITY_TEMAPLTE.format(response)
+        prompt = self.SECURITY_TEMAPLTE.format(sess.response)
         truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=8, default=0)
         if truth:
             sess.code = ErrorCode.SECURITY
@@ -334,13 +344,19 @@ class Worker:
         # build pipeline
         text2vec = BCENode(self.config, self.llm, self.retriever, self.language)
         websearch = WebSearchNode(self.config, self.config_path, self.llm, self.language)
-        sgsearch = SGSearchNode(self.llm, self.language)
+        sgsearch = SGSearchNode(self.config, self.config_path, self.llm, self.language)
         check = SecurityNode(self.llm, self.language)
         pipeline = [text2vec, websearch, sgsearch]
 
         # run
+        exit_states = [ErrorCode.QUESTION_TOO_SHORT, ErrorCode.NOT_A_QUESTION, ErrorCode.NO_TOPIC, ErrorCode.UNRELATED]
         for node in pipeline:
             node.process(sess)
+            
+            # unrelated to knowledge base or bad input, exit
+            if sess.code in exit_states:
+                break
+
             if sess.code == ErrorCode.SUCCESS:
                 check.process(sess)
             
@@ -348,6 +364,7 @@ class Worker:
             if sess.code == ErrorCode.SUCCESS:
                 break
 
+        logger.debug(sess.debug)
         return sess.code, sess.response, sess.references
 
 

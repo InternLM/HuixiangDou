@@ -24,7 +24,7 @@
    remote_type = "kimi"
    remote_api_key = "YOUR-KIMI-API-KEY"
    remote_llm_max_text_length = 128000
-   remote_llm_model = "moonshot-v1-128k"
+   remote_llm_model = "auto"
    ```
 
    注意此特性会增加响应耗时和运行成本。

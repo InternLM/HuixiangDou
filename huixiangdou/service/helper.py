@@ -39,14 +39,15 @@ class ErrorCode(Enum):
     PARAMETER_ERROR = 9, "HTTP interface parameter error. Query cannot be empty; the format of history is list of lists, like [['question1', 'reply1'], ['question2'], ['reply2']]"  # noqa E501
     PARAMETER_MISS = 10, 'Missing key in http json input parameters.'
 
-    WORK_IN_PROGRESS = 11, 'not finish'
-    FAILED = 12, 'fail'
-    BAD_PARAMETER = 13, 'bad parameter'
-    INTERNAL_ERROR = 14, 'internal error'
+    WORK_IN_PROGRESS = 11, 'Not finish'
+    FAILED = 12, 'Fail'
+    BAD_PARAMETER = 13, 'Bad parameter'
+    INTERNAL_ERROR = 14, 'Internal error'
     SEARCH_FAIL = 15, 'Web search fail, please check TOKEN and quota'
-    SG_SEARCH_FAIL = 16, 'SourceGraph search fail, please check TOKEN'
+    SG_SEARCH_FAIL = 16, 'SourceGraph not result, please check token or input query'
     LLM_NOT_RESPONSE_SG = 17, 'LLM not response query with sg search'
-    QUESTION_TOO_SHORT = 18, 'query length too short'
+    QUESTION_TOO_SHORT = 18, 'Query length too short'
+    INIT = 19, 'Init state'
 
     def __new__(cls, value, description):
         """Create new instance of ErrorCode."""

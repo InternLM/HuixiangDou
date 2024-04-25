@@ -25,7 +25,7 @@ The basic version may not perform well. You can enable these features to enhance
    remote_type = "kimi"
    remote_api_key = "YOUR-KIMI-API-KEY"
    remote_llm_max_text_length = 128000
-   remote_llm_model = "moonshot-v1-128k"
+   remote_llm_model = "auto"
    ```
 
    Note that this feature will increase response time and operating costs.
