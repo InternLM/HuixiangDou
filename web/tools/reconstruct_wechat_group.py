@@ -27,39 +27,6 @@ class ChatClient:
             config = pytoml.load(f)
             self.llm_config = config['llm']
 
-    def build_prompt(self,
-                     history_pair,
-                     instruction: str,
-                     template: str,
-                     context: str = '',
-                     reject: str = '<reject>'):
-        """Build a prompt for interaction.
-
-        Args:
-            history_pair (list): List of previous interactions.
-            instruction (str): Instruction for the current interaction.
-            template (str): Template for constructing the interaction.
-            context (str, optional): Context of the interaction. Defaults to ''.  # noqa E501
-            reject (str, optional): Text that indicates a rejected interaction. Defaults to '<reject>'.  # noqa E501
-
-        Returns:
-            tuple: A tuple containing the constructed instruction and real history.
-        """
-        if context is not None and len(context) > 0:
-            instruction = template.format(context, instruction)
-
-        real_history = []
-        for pair in history_pair:
-            if pair[1] == reject:
-                continue
-            if pair[0] is None or pair[1] is None:
-                continue
-            if len(pair[0]) < 1 or len(pair[1]) < 1:
-                continue
-            real_history.append(pair)
-
-        return instruction, real_history
-
     def auto_fix(self, backend):
         """Choose real backend according to config.ini."""
 
@@ -540,7 +507,7 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
 def main():
     """
     split: 把单个群聊文件，划分成多个。
-    itention: 用 LLM 计算 is_question cr_need
+    intention: 用 LLM 计算 is_question cr_need
     """
     args = parse_args()
     if args.action == 'split':

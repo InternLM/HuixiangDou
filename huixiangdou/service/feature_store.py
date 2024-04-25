@@ -10,7 +10,7 @@ from typing import Any, List, Optional
 
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
                                      RecursiveCharacterTextSplitter)

@@ -8,7 +8,7 @@ import pytoml
 from loguru import logger
 
 from huixiangdou.frontend import Lark
-from huixiangdou.service import ErrorCode, Worker, llm_serve
+from huixiangdou.service import ErrorCode, Worker, llm_serve, start_llm_server
 
 
 def parse_args():
@@ -50,20 +50,7 @@ def get_reply(query):
 # start service
 if args.standalone is True:
     # hybrid llm serve
-    server_ready = Value('i', 0)
-    server_process = Process(target=llm_serve,
-                             args=(args.config_path, server_ready))
-    server_process.start()
-    while True:
-        if server_ready.value == 0:
-            logger.info('waiting for server to be ready..')
-            time.sleep(3)
-        elif server_ready.value == 1:
-            break
-        else:
-            logger.error('start local LLM server failed, quit.')
-            raise Exception('local LLM path')
-    logger.info('Hybrid LLM Server start.')
+    start_llm_server(config_path=args.config_path)
 
 with gr.Blocks() as demo:
     with gr.Row():
