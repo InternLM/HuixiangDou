@@ -102,7 +102,7 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
   </tbody>
 </table>
 
-# 📦 Hardware Requirements
+# 📦 Hardware
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
@@ -145,7 +145,7 @@ python3 -m huixiangdou.main --standalone
 ..Topics unrelated to the knowledge base.."How's the weather tomorrow?"
 ```
 
-You can see that the result of handling the example question in `main.py` is the same, whether it's about mmpose related to deep learning or "How's the weather tomorrow?"
+You can see that the result of handling the example question in `main.py` is the same, whether it's about `mmpose installation` or `How's the weather tomorrow?`
 
 **STEP2.** Use mmpose and test documents to build a knowledge base and enable the rejection pipeline
 
@@ -166,10 +166,10 @@ python3 -m huixiangdou.service.feature_store
 > [!NOTE]
 >
 > <div align="center">
-> If restarting LLM every time is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>, then open a new terminal, and only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
+> If restarting local LLM is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>, then open a new terminal, and only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
 > </div>
 
-Then rerun `main`, Huixiangdou will be able to answer mmpose installation and reject casual chats.
+Then rerun `main`, Huixiangdou will be able to answer `mmpose installation` and reject casual chats.
 
 ```bash
 python3 -m huixiangdou.main --standalone
@@ -181,6 +181,8 @@ Please adjust the `repodir` documents, [good_questions](./resource/good_question
 
 
 **STEP3.** Test sending messages to Feishu group (optional)
+
+This step is just for testing algorithm pipeline, `STEP4` also support IM applications.
 
 Click [Create Feishu Custom Bot](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot) to obtain the callback WEBHOOK_URL and fill it in config.ini
 
@@ -203,7 +205,7 @@ python3 -m huixiangdou.main --standalone
 - [Integrate Feishu group receiving, sending, and withdrawal functions](./docs/add_lark_group_zh.md)
 - [Integrate personal WeChat access example](./docs/add_wechat_group_zh.md)
 
-**STEP4.** WEB Frontend and Backend
+**STEP4.** WEB service and IM applications
 
 We provide a complete front-end UI and backend service that supports:
 
@@ -218,7 +220,7 @@ If your machine only has 2G of video memory, or if you are pursuing cost-effecti
 
 The cost-effective version only discards the local LLM and uses the remote LLM instead, and other functions are the same as the standard version.
 
-Take kimi as an example, fill in the API TOKEN applied from the [official website](https://platform.moonshot.cn/) into `config-2G.ini`
+Take kimi as an example, fill in the API KEY applied from the [official website](https://platform.moonshot.cn/) into `config-2G.ini`
 
 ```bash
 # config-2G.ini
@@ -246,7 +248,9 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all
 
 The HuixiangDou deployed in the WeChat group is the complete version.
 
-When 40G of GPU memory is available, long text + retrieval capabilities can be used to improve accuracy. Please read the following topics
+When 40G of GPU memory is available, long text + retrieval capabilities can be used to improve accuracy. 
+
+Please read following topics
 
 - [Refer to config-advanced.ini to improve precision](./docs/full_dev_en.md)
 - [Use rag.py to annotate SFT training data](./docs/rag_annotate_sft_data_zh.md)

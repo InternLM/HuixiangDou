@@ -190,6 +190,8 @@ python3 -m huixiangdou.main --standalone
 
 **STEP3.** 测试发消息给飞书群\[可选\]
 
+这一步主要是验证算法 pipeline 可靠，**STEP4** 同样支持即时通讯软件。
+
 点击[创建飞书自定义机器人](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot)，获取回调 WEBHOOK_URL，填写到 config.ini
 
 ```ini
@@ -253,7 +255,9 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 ## 三、完整版
 
-微信群里部署的 “豆哥” 是完全体，40G 显存时可使用长文本 + 检索能力提升精度，请阅读以下话题
+微信群里部署的 “豆哥” 是完全体，40G 显存时可使用长文本 + 检索能力提升精度。
+
+请阅读以下话题：
 
 - [参照 config-advanced.ini 配置提升效果](./docs/full_dev_zh.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
