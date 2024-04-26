@@ -507,7 +507,7 @@ mmyolo : YOLO series toolbox and benchmark. Implemented RTMDet, RTMDet-Rotated,Y
 def main():
     """
     split: 把单个群聊文件，划分成多个。
-    itention: 用 LLM 计算 is_question cr_need
+    intention: 用 LLM 计算 is_question cr_need
     """
     args = parse_args()
     if args.action == 'split':

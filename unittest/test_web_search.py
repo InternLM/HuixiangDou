@@ -1,0 +1,47 @@
+import time
+import tempfile
+import pytoml
+from loguru import logger
+import json
+import os
+from huixiangdou.service.web_search import WebSearch
+
+def load_secret():
+    kimi_token = ""
+    serper_token = ""
+    with open('unittest/token.json') as f:
+        json_obj = json.load(f)
+        kimi_token = json_obj['kimi']
+        serper_token = json_obj['serper']
+    return kimi_token, serper_token
+
+def test_ddgs():
+    config_path = 'config-2G.ini'
+    engine = WebSearch(config_path=config_path)
+    articles, error = engine.get(query='mmpose installation')
+    assert error is None
+    assert len(articles[0]) > 100
+
+def test_serper():
+    config_path = 'config-2G.ini'
+    _, serper_token = load_secret()
+    config = None
+    with open(config_path) as f:
+        config = pytoml.load(f)
+        config['web_search']['engine'] = 'serper'
+        config['web_search']['serper_x_api_key'] = serper_token
+
+    config_path = None
+    with tempfile.NamedTemporaryFile(delete=False, mode='w+b') as temp_file:
+        tomlstr = pytoml.dumps(config)
+        temp_file.write(tomlstr.encode('utf8'))
+
+        config_path = temp_file.name
+    
+    engine = WebSearch(config_path=config_path)
+    articles, error = engine.get(query='mmpose installation')
+    assert error is None
+    assert len(articles[0]) > 100
+    assert articles[0].brief == articles[0].content
+    # 删除临时文件，因为delete=False，所以需要手动删除
+    os.remove(temp_file.name)

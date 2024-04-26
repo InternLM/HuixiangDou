@@ -51,19 +51,19 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
 - \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
 
-# 📖 Datasheet
+# 📖 Support
 
 <table align="center">
   <tbody>
     <tr align="center" valign="bottom">
       <td>
-        <b>Model Support</b>
+        <b>Model</b>
       </td>
       <td>
-        <b>File Format Support</b>
+        <b>File Format</b>
       </td>
       <td>
-        <b>IM Application Support</b>
+        <b>IM Application</b>
       </td>
     </tr>
     <tr valign="top">
@@ -102,241 +102,158 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
   </tbody>
 </table>
 
-# 📦 Hardware Requirements
+# 📦 Hardware
 
 The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
 
-|      Version       | GPU Memory Requirements |                                                                                               Features                                                                                               |                                Tested on Linux                                |
-| :----------------: | :---------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| Experience Version |          1.5GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [kimi](https://kimi.moonshot.cn) and [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-|   Basic Version    |          19GB           |                                                                             Deploy local LLM can answer basic questions                                                                              | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|  Advanced Version  |          40GB           |                                                                Fully utilizing search + long-text, answer source code-level questions                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+|        Version         | GPU Memory Requirements |                                                                                               Features                                                                                               |                                Tested on Linux                                |
+| :--------------------: | :---------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| Cost-effective Edition |          1.5GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [kimi](https://kimi.moonshot.cn) and [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|    Standard Edition    |          19GB           |                                                                             Deploy local LLM can answer basic questions                                                                              | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|    Complete Edition    |          40GB           |                                                                Fully utilizing search + long-text, answer source code-level questions                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Run
 
-We will take mmpose and some `pdf`/`word`/`excel`/`ppt` examples to explain how to deploy the knowledge assistant to Feishu group chat.
-
-## STEP1. Establish Topic Feature Repository
-
-Huggingface login
+First [agree BCE license](https://huggingface.co/maidalun1020/bce-embedding-base_v1) and login huggingface.
 
 ```shell
 huggingface-cli login
 ```
 
-Execute all the commands below (including the '#' symbol).
+Then install requirements.
 
-```shell
-# Download the repo
-git clone https://github.com/internlm/huixiangdou --depth=1 && cd huixiangdou
-
-# Download chatting topics
-mkdir repodir
-git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
-
-
-# parsing `word` requirements
+```bash
+# parsing `word` format requirements
 apt update
 apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 # python requirements
 pip install -r requirements.txt
+```
 
-# save the features of repodir to workdir
+## Standard Edition
+
+The standard edition runs [text2vec](https://huggingface.co/maidalun1020/bce-embedding-base_v1), rerank and a 7B model locally.
+
+**STEP1.** First, without rejection pipeline, run test cases:
+
+```shell
+# Standalone mode
+# main creates a subprocess to run the LLM API, then sends requests to the subprocess
+python3 -m huixiangdou.main --standalone
+..
+..Topics unrelated to the knowledge base.."How to install mmpose?"
+..Topics unrelated to the knowledge base.."How's the weather tomorrow?"
+```
+
+You can see that the result of handling the example question in `main.py` is the same, whether it's about `mmpose installation` or `How's the weather tomorrow?`
+
+**STEP2.** Use mmpose and test documents to build a knowledge base and enable the rejection pipeline
+
+Copy all the commands below (including the '#' symbol) and execute them.
+
+```shell
+# Download knowledge base documents
+cd HuixiangDou
+mkdir repodir
+git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
+
+# Save the features of repodir to workdir
 mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-The first run will automatically download [text2vec model](./config.ini), you can also manually download it and update model path in `config.ini`.
+> [!NOTE]
+>
+> <div align="center">
+> If restarting local LLM is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>, then open a new terminal, and only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
+> </div>
 
-After running, HuixiangDou can distinguish which user topics should be dealt with and which chitchats should be rejected. Please edit [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, finance, electricity, etc.).
+Then rerun `main`, Huixiangdou will be able to answer `mmpose installation` and reject casual chats.
 
-```shell
-# Reject chitchat
-reject query: What to eat for lunch today?
-reject query: How to make HuixiangDou?
-
-# Accept technical topics
-process query: How to install mmpose ?
-process query: What should I pay attention to when using research instruments?
+```bash
+python3 -m huixiangdou.main --standalone
+..success.. To install mmpose, you should..
+..Topics unrelated to the knowledge base.."How's the weather tomorrow?"
 ```
 
-## STEP2. Run Basic Technical Assistant
+Please adjust the `repodir` documents, [good_questions](./resource/good_questions.json), and [bad_questions](./resource/bad_questions.json) to try your own domain knowledge (medical, financial, power, etc.).
 
-**Configure free TOKEN**
 
-HuixiangDou uses a search engine. Click [Serper](https://serper.dev/api-key) to obtain a quota-limited TOKEN and fill it in `config.ini`.
+**STEP3.** Test sending messages to Feishu group (optional)
+
+This step is just for testing algorithm pipeline, `STEP4` also support IM applications.
+
+Click [Create Feishu Custom Bot](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot) to obtain the callback WEBHOOK_URL and fill it in config.ini
 
 ```ini
 # config.ini
-..
-[web_search]
-x_api_key = "${YOUR-X-API-KEY}"
-..
-```
-
-**Test Q&A Effect**
-
-\[Experience Version\] If your GPU memory is insufficient to locally run the 7B LLM (less than 15GB), try `kimi` or `deepseek` for [30 million free token](https://platform.deepseek.com/). See [config-2G.ini](./config-2G.ini)
-
-```
-# config.ini
-
-[llm]
-enable_local = 0
-enable_remote = 1
-..
-[llm.server]
-..
-remote_type = "deepseek"
-remote_api_key = "YOUR-API-KEY"
-remote_llm_max_text_length = 16000
-remote_llm_model = "deepseek-chat"
-```
-
-By default, with `enable_local=1`, the LLM will be automatically downloaded on your first run depending on GPU.
-
-- **Non-docker users**. If you **don't** use docker, you can start all services at once.
-
-  ```shell
-  # standalone
-  python3 -m huixiangdou.main --standalone
-  ..
-  ErrorCode.SUCCESS,
-  Query: Could you please advise if there is any good optimization method for video stream detection flickering caused by frame skipping?
-  Reply:
-  1. Frame rate control and frame skipping strategy are key to optimizing video stream detection performance, but you need to pay attention to the impact of frame skipping on detection results.
-  2. Multithreading processing and caching mechanism can improve detection efficiency, but you need to pay attention to the stability of detection results.
-  3. The use of sliding window method can reduce the impact of frame skipping and caching on detection results.
-  ```
-
-- **Docker users**. If you are using docker, HuixiangDou's Hybrid LLM Service needs to be deployed separately.
-
-  ```shell
-  # First start LLM service listening the port 8888
-  python3 -m huixiangdou.service.llm_server_hybrid
-  ..
-  ======== Running on http://0.0.0.0:8888 ========
-  (Press CTRL+C to quit)
-  ```
-
-  Then open a new docker container, configure the host IP (**not** container IP) in `config.ini`, and run `python3 -m huixiangdou.main`
-
-  ```ini
-  # config.ini
-  [llm]
-  ..
-  client_url = "http://10.140.24.142:8888/inference" # example, use your real host IP here
-
-  # run
-  python3 -m huixiangdou.main
-  ..
-  ErrorCode.SUCCESS
-  ```
-
-## STEP3. Send to Feishu/Personal Wechat \[Optional\]
-
-Click [Create a Feishu Custom Robot](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot) to get the WEBHOOK_URL callback, and fill it in the config.ini.
-
-```ini
-# config.ini
-..
+...
 [frontend]
 type = "lark"
 webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
 ```
 
-Run. After it ends, the technical assistant's reply will be sent to the Feishu group chat.
+Run. After the end, the technical assistant's response will be sent to Feishu group.
 
 ```shell
-python3 -m huixiangdou.main --standalone # for non-docker users
-python3 -m huixiangdou.main # for docker users
+python3 -m huixiangdou.main --standalone
 ```
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-- [How to use the HuixiangDou Lark group chat to send and revert messages](./docs/add_lark_group_zh.md)
-- Refer to the guide for [Personal Wechat Example](./docs/add_wechat_group_zh.md)
-- You can also check [DingTalk Open Platform-Custom Robot Access](https://open.dingtalk.com/document/robots/custom-robot-access)
+- [Integrate Feishu group receiving, sending, and withdrawal functions](./docs/add_lark_group_zh.md)
+- [Integrate personal WeChat access example](./docs/add_wechat_group_zh.md)
 
-## STEP4. Advanced Version \[Optional\]
+**STEP4.** WEB service and IM applications
 
-The basic version may not perform well. You can enable these features to enhance performance. The more features you turn on, the better.
+We provide a complete front-end UI and backend service that supports:
 
-1. Use higher accuracy local LLM
+- Multi-tenant management
+- Zero-programming access to Feishu, WeChat groups
 
-   Adjust the `llm.local` model in config.ini to `internlm2-chat-20b`.
-   This option has a significant effect, but requires more GPU memory.
+See the effect at [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), please read the [web deployment document](./web/README.md).
 
-2. Hybrid LLM Service
+## Cost-effective Edition
 
-   For LLM services that support the [openai](https://pypi.org/project/openai/) interface, HuixiangDou can utilize its Long Context ability.
-   Using [kimi](https://platform.moonshot.cn/) as an example, below is an example of `config.ini` configuration:
+If your machine only has 2G of video memory, or if you are pursuing cost-effectiveness, you only need to read [this Zhihu document](https://zhuanlan.zhihu.com/p/685205206).
 
-   ```ini
-   # config.ini
-   [llm]
-   enable_local = 1
-   enable_remote = 1
-   ..
-   [llm.server]
-   ..
-   # open https://platform.moonshot.cn/
-   remote_type = "kimi"
-   remote_api_key = "YOUR-KIMI-API-KEY"
-   remote_llm_max_text_length = 128000
-   remote_llm_model = "moonshot-v1-128k"
-   ```
+The cost-effective version only discards the local LLM and uses the remote LLM instead, and other functions are the same as the standard version.
 
-   We also support chatgpt. Note that this feature will increase response time and operating costs.
+Take kimi as an example, fill in the API KEY applied from the [official website](https://platform.moonshot.cn/) into `config-2G.ini`
 
-3. Repo search enhancement
+```bash
+# config-2G.ini
+[llm]
+enable_local = 0
+enable_remote = 1
+...
+remote_type = "kimi"
+remote_api_key = "${YOUR-API-KEY}"
+```
 
-   This feature is suitable for handling difficult questions and requires basic development capabilities to adjust the prompt.
+> [!NOTE]
+>
+> <div align="center">
+> The worst case for each Q&A is to call the LLM 7 times, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
+> </div>
 
-   - Click [sourcegraph-account-access](https://sourcegraph.com/users/tpoisonooo/settings/tokens) to get token
+Execute the command to get the Q&A result
 
-     ```shell
-     # open https://github.com/sourcegraph/src-cli#installation
-     sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && chmod +x /usr/local/bin/src
+```shell
+python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all services at once
+```
 
-     # Enable search and fill the token
-     [worker]
-     enable_sg_search = 1
-     ..
-     [sg_search]
-     ..
-     src_access_token = "${YOUR_ACCESS_TOKEN}"
-     ```
+## Complete Edition
 
-   - Edit the name and introduction of the repo, we take opencompass as an example
+The HuixiangDou deployed in the WeChat group is the complete version.
 
-     ```ini
-     # config.ini
-     # add your repo here, we just take opencompass and lmdeploy as example
-     [sg_search.opencompass]
-     github_repo_id = "open-compass/opencompass"
-     introduction = "Used for evaluating large language models (LLM) .."
-     ```
+When 40G of GPU memory is available, long text + retrieval capabilities can be used to improve accuracy. 
 
-   - Use `python3 -m huixiangdou.service.sg_search` for unit test, the returned content should include opencompass source code and documentation
+Please read following topics
 
-     ```shell
-     python3 -m huixiangdou.service.sg_search
-     ..
-     "filepath": "opencompass/datasets/longbench/longbench_trivia_qa.py",
-     "content": "from datasets import Dataset..
-     ```
-
-   Run `main.py`, HuixiangDou will enable search enhancement when appropriate.
-
-4. Tune Parameters
-
-   It is often unavoidable to adjust parameters with respect to business scenarios.
-
-   - Refer to [data.json](./tests/data.json) to add real data, run [test_intention_prompt.py](./tests/test_intention_prompt.py) to get suitable prompts and thresholds, and update them into [worker](./huixiangdou/service/worker.py).
-   - Adjust the [number of search results](./huixiangdou/service/worker.py) based on the maximum length supported by the model.
-   - Update `web_search.domain_partial_order` in `config.ini` according to your scenarios.
+- [Refer to config-advanced.ini to improve precision](./docs/full_dev_en.md)
+- [Use rag.py to annotate SFT training data](./docs/rag_annotate_sft_data_zh.md)
 
 # 🛠️ FAQ
 
@@ -386,7 +303,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 # 🍀 Acknowledgements
 
-- [kimi-chat](https://kimi.moonshot.cn/): long context LLM
+- [KIMI](https://kimi.moonshot.cn/): long context LLM
 - [BCEmbedding](https://github.com/netease-youdao/BCEmbedding): Bilingual and Crosslingual Embedding (BCEmbedding) in English and Chinese
 - [Langchain-ChatChat](https://github.com/chatchat-space/Langchain-Chatchat): ChatGLM Application based on Langchain
 - [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): Grab Wechat RedEnvelope
