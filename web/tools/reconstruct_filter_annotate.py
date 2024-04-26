@@ -206,27 +206,55 @@ def human_check(gt_file_path):
         f.write(json.dumps(bad, ensure_ascii=False, indent=2))
 
 
-def metric(llm_type:str, filepath:str = 'groups/output.jsonl'):
+def metric(llm_type:str, gt_filepath:str = 'groups/input.jsonl', dt_filepath:str = 'groups/output.jsonl'):
     gts = []
     dts = []
+    unknow_count = 0
 
-    with open(filepath) as gt:
+    with open(gt_filepath) as gt:
         for line in gt:
             json_obj = json.loads(line)
             if 'cr_need_gt' not in json_obj:
                 continue
 
             cr_need_gt = json_obj['cr_need_gt']
-
             gts.append(cr_need_gt)
-            dts.append(json_obj['{}_cr_need'.format(llm_type)])
 
+    with open(dt_filepath) as dt:
+        for line in dt:
+            json_obj = json.loads(line)
+            if 'cr_need_gt' not in json_obj:
+                continue
+
+            dt = json_obj['{}_cr_need'.format(llm_type)]
+            if 'yes' == dt:
+                dts.append(True)
+            elif 'no' == dt:
+                dts.append(False)
+            else:
+                dt = dt.replace(' ', '')
+                dt = dt.replace('\n', '')
+                
+                if 'ab' in dt or 'abc' in dt:
+                    unknow_count += 1
+
+                    dts.append(bool(1 - cr_need_gt))
+                elif '答案：b' in dt or '选：b' in dt or '答案是：b' in dt:
+                    dts.append(True)
+                elif '答案是：a' in dt or '答案是"不需要"' in dt or '答案是：不需要' in dt or '答案：不需要' in dt or '选项结果：不需要' in dt or '结果选项：不需要':
+                    dts.append(False)
+                else:
+                    unknow_count += 1
+                    print(dt)
+                    pdb.set_trace()
+                    dts.append(bool(1 - cr_need_gt))
+
+    assert len(gts) == len(dts)
     precision = precision_score(gts, dts)
     recall = recall_score(gts, dts)
     f1 = f1_score(gts, dts)
 
-    logger.info('{} {} {}'.format(precision, recall, f1))
-
+    logger.info('{}: {} {} {} {}'.format(llm_type, precision, recall, f1, unknow_count))
 
 def qwen_coref_res(llm_type: str, target: object):
     model = '/workspace/models/{}'.format(llm_type)
@@ -351,7 +379,7 @@ ncnn is a high-performance neural network inference framework optimized for the 
     return response, 'yes'
 
 
-def llm_annotate(llm_type: str, input_filepath:str = 'groups/input.jsonl', output_filepath = 'groups/output.jsonl'):
+def llm_annotate(llm_type: str, input_filepath:str = 'groups/input.jsonl', output_filepath:str = 'groups/output.jsonl'):
     idx = 0
     with open(input_filepath) as fin, open(output_filepath, 'a') as fout:
         for line in fin:
@@ -397,8 +425,13 @@ def parse_args():
         '--llm-type',
         type=str,
         # default='split',
-        # default='qwen-moe-2.7B-chat',
-        default='Qwen1.5-14B-Chat',
+        # default='Qwen1.5-0.5B-Chat',
+        default='Qwen1.5-1.8B-Chat',
+        # default='qwen1.5-moe-2.7B-chat',
+        # default='Qwen1.5-4B-Chat',
+        # default='Qwen1.5-7B-Chat',
+        # default='Qwen1.5-14B-Chat',
+        # default='Qwen1.5-32B-Chat',
         help='LLM type, use qwen moe by default.'
     )
     args = parser.parse_args()
@@ -422,12 +455,16 @@ if __name__ == '__main__':
         group_id = args.group_id
         puyu_file_path = 'groups/{}@chatroom@reconstruct.txt.llm'.format(group_id)
         kimi_file_path = 'groups/{}@chatroom@reconstruct.txt.kimi'.format(group_id)
-        gt_file_path = 'groups/{}@chatroom@gt.jsonl'.format(group_id)
+        gt_filepath = 'groups/{}@chatroom@gt.jsonl'.format(group_id)
         kimi_annotate()
         human_annotate()
     elif args.action == 'check':
         human_check('groups/input.jsonl')
     elif args.action == 'metric':
-        output_filepath = 'groups/qwen32B.jsonl'
+        output_filepath = 'groups/{}.jsonl'.format(args.llm_type)
         llm_annotate(llm_type=args.llm_type, output_filepath=output_filepath)
         metric(llm_type=args.llm_type, filepath=output_filepath)
+
+        # for llm_type in ['Qwen1.5-0.5B-Chat','Qwen1.5-1.8B-Chat', 'qwen1.5-moe-2.7B-chat', 'Qwen1.5-4B-Chat', 'Qwen1.5-7B-Chat', 'Qwen1.5-14B-Chat', 'Qwen1.5-32B-Chat']:
+        #     input_filepath = 'groups/{}.jsonl'.format(llm_type)
+        #     metric(llm_type=llm_type, gt_filepath='groups/input.jsonl', dt_filepath=input_filepath)
