@@ -29,7 +29,7 @@ def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int):
         score_str = re.sub(r'[^\d]', ' ', filtered_relation).strip()
         score = int(score_str.split(' ')[0])
     except Exception as e:
-        logger.error(str(e))
+        logger.warning('primitive is_truth: {}, use default value {}'.format(str(e), default))
     logs['throttle'] = throttle
     logs['output'] = score
     
