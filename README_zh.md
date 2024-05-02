@@ -327,8 +327,8 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
-      author={Huanjun Kong and Songyang Zhang and Kai Chen},
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
       archivePrefix={arXiv},
