@@ -45,6 +45,7 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
+- \[2024/05\] Add [Coreference Resolution fine-tune](./sft)
 - \[2024/04\] Add [SFT data annotation and examples](./docs/rag_annotate_sft_data_zh.md)
 - \[2024/04\] Update [technical report](./resource/HuixiangDou.pdf)
 - \[2024/04\] Release [web server](./web) source code 👍
