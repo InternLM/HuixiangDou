@@ -43,6 +43,7 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
+- \[2024/05\] 增加[指代消歧微调](./sft/)
 - \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/rag_annotate_sft_data_zh.md)
 - \[2024/04\] 更新 [技术报告](./resource/HuixiangDou.pdf)
 - \[2024/04\] 发布 [web 前后端服务源码](./web) 👍

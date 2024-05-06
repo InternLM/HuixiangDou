@@ -1,7 +1,6 @@
-# 运维工具
+# **SFT tools have moved to [sft directory](../../sft/)**
 
-- dump_redis_query.py   保存所有问题，无答复
-- get_puyu_model_list.py  获取 puyu 所有 model list
-- update_fs_max_len.py  更新所有用户的 remote LLM 最大长度
-- reconstruct_wechat_group.py 结构化重建群聊内容
-- reconstruct_filter_annotate.py 用 puyu+kimi 过滤数据，再手工标注，最后 check
+# Devops tools
+- dump_redis_query.py   # for web version, dump all question from redis to `query.jsonl`
+- update_fs_max_len.py  #  for web version, update all users' max text length config of remote LLM
+- get_puyu_model_list.py  # for inner API, get all puyu API model list
