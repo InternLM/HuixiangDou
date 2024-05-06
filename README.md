@@ -45,7 +45,7 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
-- \[2024/05\] Add [Coreference Resolution fine-tune](./sft) and [paper](./resource/HuixiangDou-CR.pdf)
+- \[2024/05\] Add [Coreference Resolution fine-tune](./sft)
 
   <table>
       <tr>
@@ -53,6 +53,7 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
           <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>
           <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>
           <td><a href="https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/tree/main">alpaca data</a></td>
+          <td><a href="./resource/HuixiangDou-CR.pdf">paper</a></td>
       </tr>
   </table>
 
