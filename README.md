@@ -53,7 +53,7 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
           <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>
           <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>
           <td><a href="https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/tree/main">alpaca data</a></td>
-          <td><a href="./resource/HuixiangDou-CR.pdf">paper</a></td>
+          <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
       </tr>
   </table>
 
@@ -328,6 +328,15 @@ Please read following topics
       author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
+
+@misc{kong2024huixiangdoucr,
+      title={HuixiangDou-CR: Coreference Resolution in Group Chats}, 
+      author={Huanjun Kong},
+      year={2024},
+      eprint={2405.02817},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }
