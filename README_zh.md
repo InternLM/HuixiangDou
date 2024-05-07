@@ -43,6 +43,16 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
+- \[2024/05\] 增加[指代消歧微调](./sft/)
+  <table>
+      <tr>
+          <td>🤗</td>
+          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>
+          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>
+          <td><a href="https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/tree/main">alpaca 数据</a></td>
+          <td><a href="https://arxiv.org/abs/2405.02817">论文</a></td>
+      </tr>
+  </table>
 - \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/rag_annotate_sft_data_zh.md)
 - \[2024/04\] 更新 [技术报告](./resource/HuixiangDou.pdf)
 - \[2024/04\] 发布 [web 前后端服务源码](./web) 👍
@@ -327,10 +337,19 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
-      author={Huanjun Kong and Songyang Zhang and Kai Chen},
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
+
+@misc{kong2024huixiangdoucr,
+      title={HuixiangDou-CR: Coreference Resolution in Group Chats}, 
+      author={Huanjun Kong},
+      year={2024},
+      eprint={2405.02817},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }

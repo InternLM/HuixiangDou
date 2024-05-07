@@ -45,6 +45,18 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
+- \[2024/05\] Add [Coreference Resolution fine-tune](./sft)
+
+  <table>
+      <tr>
+          <td>🤗</td>
+          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>
+          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>
+          <td><a href="https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/tree/main">alpaca data</a></td>
+          <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
+      </tr>
+  </table>
+
 - \[2024/04\] Add [SFT data annotation and examples](./docs/rag_annotate_sft_data_zh.md)
 - \[2024/04\] Update [technical report](./resource/HuixiangDou.pdf)
 - \[2024/04\] Release [web server](./web) source code 👍
@@ -312,10 +324,19 @@ Please read following topics
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
-      author={Huanjun Kong and Songyang Zhang and Kai Chen},
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
+
+@misc{kong2024huixiangdoucr,
+      title={HuixiangDou-CR: Coreference Resolution in Group Chats}, 
+      author={Huanjun Kong},
+      year={2024},
+      eprint={2405.02817},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }
