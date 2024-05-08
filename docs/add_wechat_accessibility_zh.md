@@ -11,7 +11,7 @@
 ## 二、准备工作
 
 - 一个 android 手机，对性能和系统版本都没要求
-- 微信版本 8.0.47，不同版本的 view id 没效果。[代码里](https://github.com/InternLM/HuixiangDou/blob/main/android/demo/src/main/java/com/carlos/grabredenvelope/demo/WechatConstants.kt)只记了这个版本的 id
+- 微信版本 8.0.47 / 8.0.48 / 8.0.49，其他版本的 view id 可能变化。[代码里](https://github.com/InternLM/HuixiangDou/blob/main/android/demo/src/main/java/com/carlos/grabredenvelope/demo/WechatConstants.kt)只测了这些版本的 id
 - 一个测试用的微信号
 
 ## 三、运行
