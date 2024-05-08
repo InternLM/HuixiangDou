@@ -271,6 +271,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 - [参照 config-advanced.ini 配置提升效果](./docs/full_dev_zh.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
+- [群聊场景指代消歧训练](./sft)
 
 # 🛠️ FAQ
 

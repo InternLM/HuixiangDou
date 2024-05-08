@@ -126,6 +126,17 @@ class Queue:
             item = item[1]
         return item
 
+    def get_all(self):
+        """Get add messages in queue without block.
+        """
+        ret = []
+        while True:
+            item = self.__db.lpop(self.key)
+            if not item:
+                break
+            ret.append(item)
+        return ret
+
     def get_nowait(self):
         """Equivalent to get(False)."""
         return self.get(False)
