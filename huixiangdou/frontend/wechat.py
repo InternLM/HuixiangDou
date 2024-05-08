@@ -72,9 +72,10 @@ class Message:
         self.type = None
         self.query = ''
         self.group_id = ''
-        self.user_id = ''
+        self.global_user_id = ''
         self.timestamp = -1
         self.status = ''
+        self.index = -1
 
     def parse(self, wx_msg: dict):
         data = wx_msg['data']
@@ -98,33 +99,46 @@ class Message:
         self.data = data
         self.type = _type
         self.group_id = data['fromGroup']
-        self.user_id = data['fromUser']
+        self.global_user_id = '{}|{}'.format(self.group_id, self.group_id data['fromUser'])
         self.timestamp = time.time()
+
 
 class User:
     def __init__(self):
-        # class Message
-        self.messages = []
-        # [(send, recv, refs)]
+        # [(query, reply, refs)]
         self.history = []
         # meta
-        self.last_msg_time = -1
+        self.last_msg_time = time.time()
         self.last_response_time = -1
         # groupid+userid
         self._id = ""
 
+    def feed(self, msg: Message):
+        self.history.append((msg.query, None, None))
+        self.last_msg_time = time.time()
+        self._id = msg.global_user_id
+
     def concat(self):
         # concat un-responsed query
+        # 整理历史消息，把没有回复的消息合并
+        if len(self.history) < 2:
+            return
+        ret = []
+        merge_list = []
+        for item in self.history:
+            answer = item[1]
+            if answer is not None and len(answer) > 0:
+                ret.append(item)
+            else:
+                merge_list.append(item[0])
+        ret.append(('。'.join(merge_list), ''))
+        self.history = ret
 
+    def update_history(self, query, reply, refs):
+        item = (query, reply, refs)
+        self.history[-1] = item
+        self.last_response_time = time.time()
 
-class Group:
-    def __init__(self):
-        # class Message
-        self.messages = []
-        # users
-        self.users = dict()
-        # id
-        self._id = ""
 
 class WkteamManager:
 """
@@ -141,7 +155,8 @@ class WkteamManager:
         self.wcId = ""
         self.qrCodeUrl = ""
         self.wkteam_config = dict()
-        self.groups = dict()
+        self.users = dict()
+        self.messages = []
 
         with open(config_path) as f:
             config = pytoml.load(f)
@@ -281,6 +296,22 @@ class WkteamManager:
         logger.info(json_str)
         return None
 
+    def send_message(self, groupId: str, text: str)
+        headers = {"Content-Type": "application/json", "Authorization": self.auth}
+        data = {"wId": self.wId, "wcId": groupId, "content": text}
+
+        resp = requests.post('http://{}/sendText'.format(self.WKTEAM_IP_PORT), data=json.dumps(data), headers=headers)
+        json_str = resp.content.decode('utf8')
+        if resp.status_code != 200:
+            return Exception('wkteam set callback fail {}'.format(json_str))
+
+        sent = json.loads(json_str)
+        sent['wId'] = self.wId
+        if groupId not in self.sent_msg:
+            self.sent_msg[groupId] = [sent]
+        else:
+            self.sent_msg[groupId].append(sent)
+            
     def serve_async(self):
         """
         Start a process to listen wechat message callback port
@@ -291,11 +322,10 @@ class WkteamManager:
     def serve(self):
         bind(self.record_path, self.wkteam_config.callback_port)
 
-    def loop(self):
+    def loop(self, worker):
         """
         Fetch all messeges from redis, split it by groupId; concat by timestamp
         """
-
         while True:
             time.sleep(2)
             # react to revert msg first
@@ -304,13 +334,51 @@ class WkteamManager:
                 if 'fromGroup' in msg['data']:
                     self.revert(groupId = msg['data']['fromGroup'])
 
-            # parse and add wx_msg 
+            # parse wx_msg, add it to group 
             que = Queue(name='wechat')
             for wx_msg in que.get_all():
                 msg = Message()
                 msg.parse(wx_msg)
+                msg.index = len(self.messages)
+                self.messages.append(msg)
 
+                if msg.global_user_id not in self.users:
+                    self.users[msg.global_user_id] = User()
+                user = self.users[msg.global_user_id]
+                user.feed(msg)
+            
+            # try concat all msgs in groups, fetch one to process
+            for user in self.users.values():
+                user.concat()
+                now = time.time()
+                # if a user not send new message in 18 seconds, process and mark it
+                if now - user.last_msg_time >= 18 and user.last_response_time < user.last_msg_time:
+                    assert len(user.history) > 0
+                    item = user.history[-1]
+                    assert item[1] is None
+                    query = item[0]
 
+                    code = ErrorCode.QUESTION_TOO_SHORT
+                    resp = ''
+                    refs = []
+                    if len(query) >= 9:
+                        code, resp, refs = worker.generate(query=query, history=user.history, groupname='')
+
+                    # user history may affact normal conversation, so delete last query
+                    if code in [ErrorCode.NOT_A_QUESTION, ErrorCode.SECURITY, ErrorCode.NO_SEARCH_RESULT, ErrorCode.NO_TOPIC]:
+                        del user.history[-1]           
+                    else:
+                        user.update_history(query=query, reply=reply, refs=refs)
+                    
+                    send = False
+                    if code == ErrorCode.SUCCESS:
+                        # save sent and send reply to WeChat group
+                        formatted_reply = ''
+                        if len(query) > 30:
+                            formatted_reply = '{}..\n---\n{}'.format(query[0:30], resp)
+                        else:
+                            formatted_reply = '{}\n---\n{}'.format(query, answer)
+                        self.send_message(groupId=user.group_id, text=formatted_reply)
 
 if __name__ == '__main__':
     manager = WkteamManager('config.ini')
