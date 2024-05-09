@@ -9,6 +9,7 @@ import string
 import pytoml
 import types
 import process
+import argparse
 from loguru import logger
 import xml.etree.ElementTree as ET
 from aiohttp import web
@@ -366,7 +367,7 @@ class WkteamManager:
 
                     # user history may affact normal conversation, so delete last query
                     if code in [ErrorCode.NOT_A_QUESTION, ErrorCode.SECURITY, ErrorCode.NO_SEARCH_RESULT, ErrorCode.NO_TOPIC]:
-                        del user.history[-1]           
+                        del user.history[-1]
                     else:
                         user.update_history(query=query, reply=reply, refs=refs)
                     
@@ -380,7 +381,37 @@ class WkteamManager:
                             formatted_reply = '{}\n---\n{}'.format(query, answer)
                         self.send_message(groupId=user.group_id, text=formatted_reply)
 
+
+def parse_args():
+    """Parse args."""
+    parser = argparse.ArgumentParser(description='Worker.')
+    parser.add_argument('--work_dir',
+                        type=str,
+                        default='workdir',
+                        help='Working directory.')
+    parser.add_argument(
+        '--config_path',
+        default='config.ini',
+        type=str,
+        help='Configuration path. Default value is config.ini')
+    parser.add_argument('--login',
+                        action='store_true',
+                        default=True,
+                        help='Login wkteam')
+    parser.add_argument('--serve',
+                        action='store_true',
+                        default=True,
+                        help='Bind port and listen WeChat message callback')
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == '__main__':
-    manager = WkteamManager('config.ini')
-    manager.login()
-    manager.serve()
+    args = parse_args()
+    manager = WkteamManager(args.config_path)
+
+    if args.login:
+        manager.login()
+
+    if args.servce:
+        manager.serve()
