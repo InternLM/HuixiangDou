@@ -8,19 +8,104 @@ import random
 import string
 import pytoml
 import types
-import process
 import argparse
 from loguru import logger
 import xml.etree.ElementTree as ET
 from aiohttp import web
-from helper import Queue
+# from helper import Queue
 import time
+from multiprocessing import Pool, Process, Value
+import os
+from loguru import logger
+
+def redis_host():
+    host = os.getenv('REDIS_HOST')
+    if host is None or len(host) < 1:
+        raise Exception('REDIS_HOST not config')
+    return host
+
+
+def redis_port():
+    port = os.getenv('REDIS_PORT')
+    if port is None:
+        logger.debug('REDIS_PORT not set, try 6379')
+        port = 6379
+    return port
+
+
+def redis_passwd():
+    passwd = os.getenv('REDIS_PASSWORD')
+    if passwd is None or len(passwd) < 1:
+        raise Exception('REDIS_PASSWORD not config')
+    return passwd
+
+
+def feature_store_base_dir():
+    return 'feature_stores'
+
+
+class Queue:
+
+    def __init__(self, name, namespace='HuixiangDou', **redis_kwargs):
+        self.__db = redis.Redis(host=redis_host(),
+                                port=redis_port(),
+                                password=redis_passwd(),
+                                charset='utf-8',
+                                decode_responses=True)
+        self.key = '%s:%s' % (namespace, name)
+
+    def qsize(self):
+        """Return the approximate size of the queue."""
+        return self.__db.llen(self.key)
+
+    def empty(self):
+        """Return True if the queue is empty, False otherwise."""
+        return self.qsize() == 0
+
+    def put(self, item):
+        """Put item into the queue."""
+        self.__db.rpush(self.key, item)
+
+    def peek_tail(self):
+        return self.__db.lrange(self.key, -1, -1)
+
+    def get(self, block=True, timeout=None):
+        """Remove and return an item from the queue.
+
+        If optional args block is true and timeout is None (the default), block
+        if necessary until an item is available.
+        """
+        if block:
+            item = self.__db.blpop(self.key, timeout=timeout)
+        else:
+            item = self.__db.lpop(self.key)
+
+        if item:
+            item = item[1]
+        return item
+
+    def get_all(self):
+        """Get add messages in queue without block.
+        """
+        ret = []
+        while True:
+            item = self.__db.lpop(self.key)
+            if not item:
+                break
+            ret.append(item)
+        return ret
+
+    def get_nowait(self):
+        """Equivalent to get(False)."""
+        return self.get(False)
 
 def is_revert_command(wx_msg):
     """
     Is wx_msg a revert command.
     """
     data = wx_msg['data']
+    if 'content' not in data:
+        return False
     content = data['content']
     if content != None and len(content) > 0:
         content = content.encode('UTF-8', 'ignore').decode('UTF-8')
@@ -37,34 +122,6 @@ def is_revert_command(wx_msg):
         elif '撤回' in content:
             return True
     return False
-
-def bind(logpath, port):
-    async def msg_callback(request):
-        """Save wechat message to redis, for revert command, use high priority."""
-        input_json = await request.json()
-        with open(logpath, 'a') as f:
-            json_str = json.dump(input_json, indent=2, ensure_ascii=False)
-            f.write(json_str)
-
-        logger.debug(input_json)
-        msg_que = Queue(name='wechat')
-        revert_que = Queue(name='wechat-high-priority')
-
-        try:
-            json_str = json.dumps(input_json)
-            if is_revert_command(input_json):
-                revert_que.put(json_str)
-            else:
-                msg_que.put(json_str)
-
-        except Exception as e:
-            logger.error(str(e))
-        
-        return web.json_response(text='done')
-
-    app = web.Application()
-    app.add_routes([web.post('/callback', msg_callback)])
-    web.run_app(app, host='0.0.0.0', port=port)
 
 
 class Message:
@@ -100,7 +157,7 @@ class Message:
         self.data = data
         self.type = _type
         self.group_id = data['fromGroup']
-        self.global_user_id = '{}|{}'.format(self.group_id, self.group_id data['fromUser'])
+        self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
         self.timestamp = time.time()
 
 
@@ -140,12 +197,47 @@ class User:
         self.history[-1] = item
         self.last_response_time = time.time()
 
+def bind(logdir: str, port: int):
+
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+    logpath = os.path.join(logdir, 'wechat_message.jsonl')
+    async def msg_callback(request):
+        """Save wechat message to redis, for revert command, use high priority."""
+        input_json = await request.json()
+        with open(logpath, 'a') as f:
+            json_str = json.dumps(input_json, indent=2, ensure_ascii=False)
+            f.write(json_str)
+            f.write('\n')
+
+        logger.debug(input_json)
+        msg_que = Queue(name='wechat')
+        revert_que = Queue(name='wechat-high-priority')
+
+        if input_json['messageType'] == "00000":
+            return web.json_response(text='done')
+      
+        try:
+            json_str = json.dumps(input_json)
+            if is_revert_command(input_json):
+                revert_que.put(json_str)
+            else:
+                msg_que.put(json_str)
+
+        except Exception as e:
+            logger.error(str(e))
+        
+        return web.json_response(text='done')
+
+    app = web.Application()
+    app.add_routes([web.post('/callback', msg_callback)])
+    web.run_app(app, host='0.0.0.0', port=port)
 
 class WkteamManager:
-"""
-1. wkteam Login, see https://wkteam.cn/
-2. Handle wkteam wechat message call back
-"""
+    """
+    1. wkteam Login, see https://wkteam.cn/
+    2. Handle wkteam wechat message call back
+    """
     def __init__(self, config_path: str):
         """
         init with config
@@ -159,9 +251,10 @@ class WkteamManager:
         self.users = dict()
         self.messages = []
 
-        with open(config_path) as f:
+        with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)
-            self.wkteam_config = types.SimpleNamespace(**cconfig['frontend']['wkteam'])
+            assert len(config) > 1
+            self.wkteam_config = types.SimpleNamespace(**config['frontend']['wkteam'])
         
         # set redis env
         if os.getenv('REDIS_HOST') is None:
@@ -170,7 +263,6 @@ class WkteamManager:
             os.environ["REDIS_PORT"] = str(self.wkteam_config.redis_port)
         if os.getenv('REDIS_PASSWORD') is None:
             os.environ["REDIS_PASSWORD"] = str(self.wkteam_config.redis_passwd)
-        assert len(self.wkteam_config) > 1
 
         # load wkteam license
         if not os.path.exists(self.wkteam_config.dir):
@@ -190,6 +282,18 @@ class WkteamManager:
         # {groupId: [wx_msg]}
         self.sent_msg = dict()
 
+    def post(self, url, data, headers):
+        resp = requests.post(url, data=json.dumps(data), headers=headers)
+        json_str = resp.content.decode('utf8')
+        logger.debug(json_str)
+        if resp.status_code != 200:
+            return None, Exception('wkteam auth fail {}'.format(json_str))
+        json_obj = json.loads(json_str)
+        if json_obj['code'] != '1000':
+            return json_obj, Exception(json_str)
+        
+        return json_obj, None
+
     def revert(self, groupId: str):
         """
         Revert all msgs in this group
@@ -204,13 +308,10 @@ class WkteamManager:
             logger.info(sent)
             time_diff = abs(time.time() - int(sent['createTime']))
             if time_diff <= 120:
-            # real revert
-            try:
+                # real revert
                 headers = {"Content-Type": "application/json", "Authorization": self.auth}
-                requests.post('http://{}/revokeMsg'.format(ip_port), data=json.dumps(sent), headers=headers)
-            except Exception as e:
-                logger.error(str(e))
-                time.sleep(0.1)
+                
+                self.post(url='http://{}/revokeMsg'.format(self.WKTEAM_IP_PORT), data=sent, headers=headers)
         del self.sent_msg[groupId]
         
 
@@ -230,51 +331,30 @@ class WkteamManager:
 
         # auth
         headers = {"Content-Type": "application/json"}
-        data = {'account': wkteam_config.account, 'password': wkteam_config.password}
+        data = {'account': self.wkteam_config.account, 'password': self.wkteam_config.password}
 
-        resp = requests.post('http://{}/member/login'.format(self.WKTEAM_IP_PORT), data=json.dumps(data), headers=headers)
-        json_str = resp.content.decode('utf8')
-
-        logger.debug(('auth', json_str))
-        if resp.status_code != 200:
-            return Exception('wkteam auth fail {}'.format(json_str))
-        self.auth = json.loads(json_str)['data']['Authorization']
+        json_obj, err = self.post(url='http://{}/member/login'.format(self.WKTEAM_IP_PORT), data=data, headers=headers)
+        if err is not None:
+            return err
+        self.auth = json_obj['data']['Authorization']
 
         # ipadLogin
-        headers = {"Content-Type": "application/json", "Authorization": self.auth}
+        headers["Authorization"] = self.auth
         data = {"wcId": "", "proxy": self.wkteam_config.proxy}
+        json_obj, err = self.post(url='http://{}/iPadLogin'.format(self.WKTEAM_IP_PORT), data=data, headers=headers)
+        if err is not None:
+            return err
 
-        resp = requests.post('http://{}/iPadLogin'.format(self.WKTEAM_IP_PORT), data=json.dumps(data), headers=headers)
-        json_str = resp.content.decode('utf8')
-      
-        if resp.status_code != 200:
-            return Exception('wkteam ipadLogin fail {}'.format(json_str))
-
-        x = json.loads(json_str)['data']
+        x = json_obj['data']
         self.wId = x['wId']
         self.qrCodeUrl = x['qrCodeUrl']
 
         logger.info('浏览器打开这个地址、下载二维码。打开手机，扫描登录微信\n {}\n 请确认 proxy 地区正确，首次使用、24 小时后要再次登录，以后不需要登。'.format(self.qrCodeUrl))
         
         # getLoginInfo
-        headers = {"Content-Type": "application/json", "Authorization": self.auth}
-        data = {"wId": self.wId}
-        resp = requests.post('http://{}/getIPadLoginInfo'.format(self.WKTEAM_IP_PORT), data=json.dumps(data), headers=headers)
-        json_str = resp.content.decode('utf8')
-        if resp.status_code != 200:
-            return Exception('wkteam ipadLogin fail {}'.format(json_str))
-        x = json.loads(json_str)['data']
+        json_obj, err = self.post(url='http://{}/getIPadLoginInfo'.format(self.WKTEAM_IP_PORT), data={"wId": self.wId}, headers=headers)
+        x = json_obj['data']
         self.wcId = x['wcId']
-
-        # set callback url
-        httpUrl = 'http://{}:{}/callback'.format(self.wkteam_config.callback_ip, self.wkteam_config.callback_port)
-        logger.debug('set callback url {}'.format(httpUrl))
-        headers = {"Content-Type": "application/json", "Authorization": auth}
-        data = {"httpUrl": httpUrl, "type": 2}
-        resp = requests.post('http://{}/setHttpCallbackUrl'.format(ip_port), data=json.dumps(data), headers=headers)
-        json_str = resp.content.decode('utf8')
-        if resp.status_code != 200:
-            return Exception('wkteam set callback fail {}'.format(json_str))
 
         # dump
         with open(self.license_path, 'w') as f:
@@ -283,50 +363,54 @@ class WkteamManager:
                 'wId': self.wId,
                 'wcId': self.wcId,
                 'qrCodeUrl': self.qrCodeUrl
-            }, indent=2, ensure_ascii=False
+            }, indent=2, ensure_ascii=False)
             f.write(json_str)
 
-        logger.info('login success, all license saved to {}'.format(self.license_path))
-        
-        # initAddrList
+    def set_callback(self):
+        # set callback url
+        httpUrl = 'http://{}:{}/callback'.format(self.wkteam_config.callback_ip, self.wkteam_config.callback_port)
+        logger.debug('set callback url {}'.format(httpUrl))
         headers = {"Content-Type": "application/json", "Authorization": self.auth}
-        data = {"wId": self.wId}
+        data = {"httpUrl": httpUrl, "type": 2}
 
-        resp = requests.post('http://{}/getAddressList'.format(self.WKTEAM_IP_PORT), data=json.dumps(data), headers=headers)
-        json_str = resp.content.decode('utf8')
-        logger.info(json_str)
+        json_obj, err = self.post(url='http://{}/setHttpCallbackUrl'.format(self.WKTEAM_IP_PORT), data=data, headers=headers)
+        if err is not None:
+            return err
+
+        logger.info('login success, all license saved to {}'.format(self.license_path))
         return None
 
-    def send_message(self, groupId: str, text: str)
+    def send_message(self, groupId: str, text: str):
         headers = {"Content-Type": "application/json", "Authorization": self.auth}
         data = {"wId": self.wId, "wcId": groupId, "content": text}
 
-        resp = requests.post('http://{}/sendText'.format(self.WKTEAM_IP_PORT), data=json.dumps(data), headers=headers)
-        json_str = resp.content.decode('utf8')
-        if resp.status_code != 200:
-            return Exception('wkteam set callback fail {}'.format(json_str))
+        json_obj, err = self.post(url='http://{}/sendText'.format(self.WKTEAM_IP_PORT), data=data, headers=headers)
+        if err is not None:
+            return err
 
-        sent = json.loads(json_str)
+        sent = json_obj['data']
         sent['wId'] = self.wId
         if groupId not in self.sent_msg:
             self.sent_msg[groupId] = [sent]
         else:
             self.sent_msg[groupId].append(sent)
-            
-    def serve_async(self):
-        """
-        Start a process to listen wechat message callback port
-        """
-        p = Process(target=bind, args=(self.record_path, self.wkteam_config.callback_port))
-        p.start()
+
+        return None
+
 
     def serve(self):
-        bind(self.record_path, self.wkteam_config.callback_port)
+        p = Process(target=bind, args=(self.wkteam_config.dir, self.wkteam_config.callback_port))
+        # bind(self.wkteam_config.callback_port)
+        p.start()
+
+        self.set_callback()
+        p.join()
 
     def loop(self, worker):
         """
         Fetch all messeges from redis, split it by groupId; concat by timestamp
         """
+        self.set_callback()
         while True:
             time.sleep(2)
             # react to revert msg first
@@ -396,7 +480,7 @@ def parse_args():
         help='Configuration path. Default value is config.ini')
     parser.add_argument('--login',
                         action='store_true',
-                        default=True,
+                        default=False,
                         help='Login wkteam')
     parser.add_argument('--serve',
                         action='store_true',
@@ -405,13 +489,14 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
 if __name__ == '__main__':
     args = parse_args()
     manager = WkteamManager(args.config_path)
 
     if args.login:
-        manager.login()
+        err = manager.login()
+        if err is not None:
+            logger.error(err)
 
-    if args.servce:
+    if args.serve:
         manager.serve()
