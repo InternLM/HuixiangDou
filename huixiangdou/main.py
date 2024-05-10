@@ -186,6 +186,10 @@ def run():
         lark_group_recv_and_send(assistant, fe_config)
     elif fe_type == 'wechat_personal':
         wechat_personal_run(assistant, fe_config)
+    elif fe_type == 'wechat_wkteam':
+        from .frontend import WkteamManager
+        manager = WkteamManager(args.config_path)
+        manager.loop(assistant)
     else:
         logger.info(
             f'unsupported fe_config.type {fe_type}, please read `config.ini` description.'  # noqa E501

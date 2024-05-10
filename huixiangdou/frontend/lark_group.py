@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request
 from lark_oapi.adapter.flask import *  # noqa E403
 from lark_oapi.api.im.v1 import *  # noqa E403
 from loguru import logger
-from helper import Queue
+from huixiangdou.service.helper import Queue
 
 app = Flask(__name__)
 handler = None
