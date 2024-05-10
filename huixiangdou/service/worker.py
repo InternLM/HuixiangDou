@@ -14,6 +14,7 @@ from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
 from .web_search import WebSearch
 from .primitive import is_truth
+
 class Session:
     """
     For compute graph, `session` takes all parameter.
@@ -113,7 +114,7 @@ class BCENode(Node):
 
         # answer the question
         prompt = self.GENERATE_TEMPLATE.format(sess.knowledge, sess.query)
-        response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='remote')
+        response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
         
         sess.code = ErrorCode.SUCCESS
         sess.response = response
@@ -162,7 +163,7 @@ class WebSearchNode(Node):
         for article in articles:
                 article.cut(0, self.max_length)
                 prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query, article.brief)
-                truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10)
+                truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='puyu')
                 
                 if truth:
                     sess.web_knowledge += '\n'
@@ -175,7 +176,7 @@ class WebSearchNode(Node):
             return
 
         prompt = self.GENERATE_TEMPLATE.format(sess.web_knowledge, sess.query)
-        sess.response = self.llm.generate_response(prompt=prompt, history=sess.history)
+        sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend="puyu")
         sess.code = ErrorCode.SUCCESS
 
 
@@ -215,7 +216,7 @@ class SGSearchNode(Node):
             return
 
         prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge, sess.query)
-        sess.response = self.llm.generate_response(prompt=prompt, history=sess.history)
+        sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
         if sess.response is None or len(sess.response) < 1:
             sess.code = ErrorCode.LLM_NOT_RESPONSE_SG
             return

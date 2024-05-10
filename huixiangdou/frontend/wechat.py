@@ -85,11 +85,14 @@ class Queue:
         """Get add messages in queue without block.
         """
         ret = []
-        while len(ret) < 1:  # batchsize = 1 for debugging
-            item = self.__db.lpop(self.key)
-            if not item:
-                break
-            ret.append(item)
+        try:
+            while len(ret) < 1:  # batchsize = 1 for debugging
+                item = self.__db.lpop(self.key)
+                if not item:
+                    break
+                ret.append(item)
+        except Exception as e:
+            logger.error(str(e))
         return ret
 
     def get_nowait(self):
@@ -189,7 +192,7 @@ class Message:
 
         query = query.encode('UTF-8', 'ignore').decode('UTF-8')
         if query.startswith('@茴香豆'):
-            query = question.replace('@茴香豆', '')
+            query = query.replace('@茴香豆', '')
         self.query = query.strip()
 
         if '————————' in query:
@@ -586,7 +589,7 @@ class WkteamManager:
                         if len(query) > 30:
                             formatted_reply = '{}..\n---\n{}'.format(query[0:30], resp)
                         else:
-                            formatted_reply = '{}\n---\n{}'.format(query, answer)
+                            formatted_reply = '{}\n---\n{}'.format(query, resp)
                         
                         logger.warning('send {}'.format(formatted_reply))
                         # self.send_message(groupId=user.group_id, text=formatted_reply)
