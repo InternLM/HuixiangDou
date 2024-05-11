@@ -6,6 +6,7 @@ from .feature_store import FeatureStore  # noqa E401
 from .file_operation import FileName, FileOperation  # noqa E401
 from .helper import TaskCode  # noqa E401
 from .helper import ErrorCode, QueryTracker, Queue, multimodal, parse_json_str
+from .helper import kimi_ocr  # noqa E401
 from .llm_client import ChatClient  # noqa E401
 from .llm_server_hybrid import HybridLLMServer, llm_serve, start_llm_server  # noqa E401
 from .retriever import CacheRetriever, Retriever  # noqa E401

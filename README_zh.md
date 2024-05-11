@@ -222,7 +222,7 @@ python3 -m huixiangdou.main # docker 用户
 <img src="./resource/figures/lark-example.png" width="400">
 
 - [算法 pipeline 集成飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)
-- [算法 pipeline 个人微信接入示例](./docs/add_wechat_group_zh.md)
+- [算法 pipeline 个人微信接入示例](./docs/add_wechat_accessibility_zh.md)
 
 **STEP4.** WEB 前后端
 

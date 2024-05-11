@@ -7,13 +7,18 @@ import random
 import time
 from datetime import datetime, timedelta
 from multiprocessing import Process, Value
-
 import pytoml
 import requests
 from aiohttp import web
 from loguru import logger
 from openai import OpenAI
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+
+def os_run(cmd: str):
+    ret = os.popen(cmd)
+    ret = ret.read().rstrip().lstrip()
+    return ret
 
 
 def check_gpu_max_memory_gb():
@@ -38,11 +43,6 @@ def build_messages(prompt, history, system: str = None):
     messages.append({'role': 'user', 'content': prompt})
     return messages
 
-
-def os_run(cmd: str):
-    ret = os.popen(cmd)
-    ret = ret.read().rstrip().lstrip()
-    return ret
 
 
 class RPM:

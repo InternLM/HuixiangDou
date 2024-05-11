@@ -4,6 +4,9 @@ import argparse
 import datetime
 import re
 import time
+import os
+import json
+
 from abc import ABC, abstractmethod
 import pytoml
 from loguru import logger
@@ -19,7 +22,7 @@ class Session:
     """
     For compute graph, `session` takes all parameter.
     """
-    def __init__(self, query:str, history: list, groupname: str):
+    def __init__(self, query:str, history: list, groupname: str, log_path: str = 'logs/generate.jsonl'):
         self.query = query
         self.history = history
         self.groupname = groupname
@@ -41,6 +44,17 @@ class Session:
 
         # debug logs
         self.debug = dict()
+        self.log_path = log_path
+
+    def __del__(self):
+        dirname = os.path.dirname(self.log_path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        
+        with open(self.log_path, 'a') as f:
+            json_str = json.dumps(self.debug, indent=2, ensure_ascii=False)
+            f.write(json_str)
+            f.write('\n')
 
     
 class Node(ABC):
@@ -84,7 +98,7 @@ class BCENode(Node):
 
         prompt = self.SCORING_QUESTION_TEMPLTE.format(sess.query)
         truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=6, default=3)
-        sess.debug['BCENODE_truth'] = logs
+        sess.debug['BCENode_is_question'] = logs
         if not truth:
             sess.code = ErrorCode.NOT_A_QUESTION
             return
@@ -99,15 +113,15 @@ class BCENode(Node):
 
         # retrieve from knowledge base
         sess.chunk, sess.knowledge, sess.references = self.retriever.query(sess.topic, context_max_length=self.max_length)
-        
+        sess.debug['BCENode_chunk'] = sess.chunk
         if sess.knowledge is None:
             sess.code = ErrorCode.UNRELATED
             return
 
         # get relavance between query and knowledge base
         prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query, sess.chunk)
-        truth, log = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10)
-    
+        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10)
+        sess.debug['BCENode_chunk_relavance'] = logs
         if not truth:
             sess.code = ErrorCode.UNRELATED
             return
@@ -154,17 +168,18 @@ class WebSearchNode(Node):
 
         prompt = self.KEYWORDS_TEMPLATE.format(sess.groupname, sess.query)
         search_keywords = self.llm.generate_response(prompt)
+        sess.debug['WebSearchNode_keywords'] = prompt
         articles, error = engine.get(query=search_keywords, max_article=2)
 
         if error is not None:
             sess.code = ErrorCode.SEARCH_FAIL
             return
 
-        for article in articles:
+        for article_id, article in enumerate(articles):
                 article.cut(0, self.max_length)
                 prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query, article.brief)
                 truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='puyu')
-                
+                sess.debug['WebSearchNode_relavance_{}'.format(article_id)] = logs
                 if truth:
                     sess.web_knowledge += '\n'
                     sess.web_knowledge += article.content
@@ -211,6 +226,7 @@ class SGSearchNode(Node):
         sg = SourceGraphProxy(config_path=self.config_path, language=self.language)
         sess.sg_knowledge = sg.search(llm_client=self.llm, question=sess.query, groupname=sess.groupname)
 
+        sess.debug['SGSearchNode_knowledge'] = sess.sg_knowledge
         if sess.sg_knowledge is None or len(sess.sg_knowledge) < 1:
             sess.code = ErrorCode.SG_SEARCH_FAIL
             return
@@ -242,12 +258,14 @@ class SecurityNode(Node):
         """
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query, sess.response)
         truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=9, default=0)
+        sess.debug['SecurityNode_qa_perplex'] = logs
         if truth:
             sess.code = ErrorCode.BAD_ANSWER
             return
 
         prompt = self.SECURITY_TEMAPLTE.format(sess.response)
         truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=8, default=0)
+        sess.debug['SecurityNode_template'] = logs
         if truth:
             sess.code = ErrorCode.SECURITY
             return
@@ -340,7 +358,7 @@ class Worker:
             references: List for referenced filename or web url
         """
         # build input session
-        sess = Session(query, history, groupname)
+        sess = Session(query=query, history=history, groupname=groupname, log_path=self.config['worker']['save_path'])
 
         # build pipeline
         text2vec = BCENode(self.config, self.llm, self.retriever, self.language)

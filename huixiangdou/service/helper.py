@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
 import json
 from enum import Enum
 from types import SimpleNamespace
@@ -6,9 +7,10 @@ from types import SimpleNamespace
 import redis
 import requests
 from loguru import logger
+from pathlib import Path
+from openai import OpenAI
 
 from .config import redis_host, redis_passwd, redis_port
-
 
 class TaskCode(Enum):
     FS_ADD_DOC = 'add_doc'
@@ -219,3 +221,18 @@ def multimodal(filepath: str, timeout=5):
     except Exception as e:
         logger.error(str(e))
     return None
+
+def kimi_ocr(filepath, token):
+    # curl post file to kimi server
+     
+    client = OpenAI(
+        api_key = token,
+        base_url= "https://api.moonshot.cn/v1"
+    )
+    file_object = client.files.create(file=Path(filepath), purpose="file-extract")
+    json_str = client.files.content(file_id=file_object.id).text
+    json_obj = json.loads(json_str)
+    return json_obj['content']
+
+if __name__ == '__main__':
+    print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', 'Y2tpMG41dDB0YzExbjRqYW5nN2c6bXNrLTFzVlB2NGJRaDExeWdnNTlZY3dYMm5mcVRpWng='))

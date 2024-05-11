@@ -215,7 +215,7 @@ python3 -m huixiangdou.main --standalone
 <img src="./resource/figures/lark-example.png" width="400">
 
 - [Integrate Feishu group receiving, sending, and withdrawal functions](./docs/add_lark_group_zh.md)
-- [Integrate personal WeChat access example](./docs/add_wechat_group_zh.md)
+- [Integrate personal WeChat access example](./docs/add_wechat_accessibility_zh.md)
 
 **STEP4.** WEB service and IM applications
 

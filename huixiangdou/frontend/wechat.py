@@ -19,6 +19,7 @@ from loguru import logger
 from readability import Document
 from bs4 import BeautifulSoup as BS
 import hashlib
+import re
 
 def redis_host():
     host = os.getenv('REDIS_HOST')
@@ -111,8 +112,11 @@ def is_revert_command(wx_msg):
         content = content.encode('UTF-8', 'ignore').decode('UTF-8')
     messageType = wx_msg['messageType']
 
+    if '豆哥撤回' in content:
+        return True
+
     if messageType == 5 or messageType == 9 or messageType == '80001':
-        if '@茴香豆' in content and '撤回' in content:
+        if '撤回' in content:
             return True
     elif messageType == 14 or messageType == '80014':
         # 对于引用消息，如果要求撤回
@@ -122,7 +126,6 @@ def is_revert_command(wx_msg):
         elif '撤回' in content:
             return True
     return False
-
 
 class Message:
     def __init__(self):
@@ -188,7 +191,7 @@ class Message:
             logger.warning(wx_msg)
 
         else:
-            return Exception('skip msg type {}'.format(msg_type))
+            return Exception('Skip msg type {}'.format(msg_type))
 
         query = query.encode('UTF-8', 'ignore').decode('UTF-8')
         if query.startswith('@茴香豆'):
@@ -197,10 +200,13 @@ class Message:
 
         if '————————' in query:
             self.status = 'skip'
-            return Exception("repo owner's message, skip")
+            return Exception("Repo owner's message, skip")
 
         self.data = data
         self.type = parse_type
+        if 'fromGroup' not in data:
+            return Exception('GroupID not found in message')
+
         self.group_id = data['fromGroup']
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
         self.timestamp = time.time()
@@ -212,15 +218,16 @@ class User:
         self.history = []
         # meta
         self.last_msg_time = time.time()
-        self.last_response_time = -1
+        self.last_process_time = -1
         # groupid+userid
         self._id = ""
+        self.group_id = ""
     
     def __str__(self):
         obj = {
             "history": self.history,
             "last_msg_time": self.last_msg_time,
-            "last_response_time": self.last_response_time,
+            "last_process_time": self.last_process_time,
             "_id": self._id
         }
         return json.dumps(obj, indent=2, ensure_ascii=False)
@@ -229,6 +236,7 @@ class User:
         self.history.append((msg.query, None, None))
         self.last_msg_time = time.time()
         self._id = msg.global_user_id
+        self.group_id = msg.group_id
 
     def concat(self):
         # concat un-responsed query
@@ -249,7 +257,7 @@ class User:
     def update_history(self, query, reply, refs):
         item = (query, reply, refs)
         self.history[-1] = item
-        self.last_response_time = time.time()
+        self.last_process_time = time.time()
 
 def bind(logdir: str, port: int):
 
@@ -305,12 +313,24 @@ class WkteamManager:
         self.wkteam_config = dict()
         self.users = dict()
         self.messages = []
+        
+        # {group_id: group_name}
+        self.group_whitelist = dict()
 
         with open(config_path, encoding='utf8') as f:
-            config = pytoml.load(f)
-            assert len(config) > 1
-            self.wkteam_config = types.SimpleNamespace(**config['frontend']['wechat_wkteam'])
-        
+            self.config = pytoml.load(f)
+            assert len(self.config) > 1
+
+            wkconf = self.config['frontend']['wechat_wkteam']
+            for key in wkconf.keys():
+                key = key.strip()
+                if re.match(r'\d+', key) is None:
+                    continue
+                group = wkconf[key]
+                self.group_whitelist['{}@chatroom'.format(key)] = group['name']
+
+            self.wkteam_config = types.SimpleNamespace(**wkconf)
+
         # set redis env
         if os.getenv('REDIS_HOST') is None:
             os.environ["REDIS_HOST"] = str(self.wkteam_config.redis_host)
@@ -346,6 +366,7 @@ class WkteamManager:
 
         logger.debug('REDIS_HOST {}'.format(os.getenv('REDIS_HOST')))
         logger.debug('REDIS_PORT {}'.format(os.getenv('REDIS_PORT')))
+        logger.debug(self.group_whitelist)
 
     def post(self, url, data, headers):
         resp = requests.post(url, data=json.dumps(data), headers=headers)
@@ -364,7 +385,12 @@ class WkteamManager:
         Revert all msgs in this group
         """
         # 撤回在本群 2 分钟内发出的所有消息
-        logger.debug('revert message')
+        if groupId in self.group_whitelist:
+            groupname = self.group_whitelist[groupId]
+            logger.debug('revert message in group {} {}'.format(groupname, groupId))
+        else:
+            logger.debug('revert message in group {} '.format(groupId))
+
         if groupId not in self.sent_msg:
             return
 
@@ -421,8 +447,9 @@ class WkteamManager:
                     with open(image_path, 'wb') as image_file:
                         for chunk in resp.iter_content(1024):
                             image_file.write(chunk)
+                return image_url, image_path
 
-        download(data, headers, self.wkteam_config.dir)
+        return download(data, headers, self.wkteam_config.dir)
         # download_task = Process(target=download, args=(data, headers, self.wkteam_config.dir))
         # download_task.start()
 
@@ -519,15 +546,18 @@ class WkteamManager:
         """
         Fetch all messeges from redis, split it by groupId; concat by timestamp
         """
-        from huixiangdou.service.helper import ErrorCode
+        from huixiangdou.service.helper import ErrorCode, kimi_ocr
+
         while True:
-            time.sleep(2)
+            time.sleep(1)
             # react to revert msg first
             revert_que = Queue(name='wechat-high-priority')
 
-            for msg in revert_que.get_all():
-                if 'fromGroup' in msg['data']:
-                    self.revert(groupId = msg['data']['fromGroup'])
+            for wx_msg_str in revert_que.get_all():
+                wx_msg = json.loads(wx_msg_str)
+                data = wx_msg['data']
+                if 'fromGroup' in data:
+                    self.revert(groupId = data['fromGroup'])
 
             # parse wx_msg, add it to group 
             que = Queue(name='wechat')
@@ -541,8 +571,13 @@ class WkteamManager:
                     logger.debug(str(err))
                     continue
                 if msg.type == 'image':
-                    self.download_image_async(param=msg.data)
-                    continue
+                    pdb.set_trace()
+                    _, local_image_path = self.download_image_async(param=msg.data)
+                    
+                    llm_server_config = self.config['llm']['server']
+                    if local_image_path is not None and llm_server_config['remote_type'] == 'kimi':
+                        token = llm_server_config['remote_api_key']
+                        msg.query = kimi_ocr(local_image_path, token)
                 
                 self.messages.append(msg)
 
@@ -558,7 +593,7 @@ class WkteamManager:
 
                 now = time.time()
                 # if a user not send new message in 18 seconds, process and mark it
-                if now - user.last_msg_time >= 18 and user.last_response_time < user.last_msg_time:
+                if now - user.last_msg_time >= 18 and user.last_process_time < user.last_msg_time:
                     user.concat()
                     logger.debug('after concat {}'.format(user))
                     assert len(user.history) > 0
@@ -573,10 +608,14 @@ class WkteamManager:
                     code = ErrorCode.QUESTION_TOO_SHORT
                     resp = ''
                     refs = []
+                    groupname = ''
+                    if user.group_id in self.group_whitelist:
+                        groupname = self.group_whitelist[user.group_id]
                     if len(query) >= 9:
-                        code, resp, refs = worker.generate(query=query, history=user.history, groupname='')
+                        code, resp, refs = worker.generate(query=query, history=user.history[0:-1], groupname=groupname)
 
                     # user history may affact normal conversation, so delete last query
+                    user.last_process_time = time.time()
                     if code in [ErrorCode.NOT_A_QUESTION, ErrorCode.SECURITY, ErrorCode.NO_SEARCH_RESULT, ErrorCode.NO_TOPIC]:
                         del user.history[-1]
                     else:
@@ -590,9 +629,12 @@ class WkteamManager:
                             formatted_reply = '{}..\n---\n{}'.format(query[0:30], resp)
                         else:
                             formatted_reply = '{}\n---\n{}'.format(query, resp)
-                        
-                        logger.warning('send {}'.format(formatted_reply))
-                        # self.send_message(groupId=user.group_id, text=formatted_reply)
+
+                        if user.group_id in self.group_whitelist:
+                            logger.warning(r'send {} to {}'.format(formatted_reply, user.group_id))
+                            self.send_message(groupId=user.group_id, text=formatted_reply)
+                        else:
+                            logger.warning(r'prepare respond {} to {}'.format(formatted_reply, user.group_id))
 
 
 def parse_args():
