@@ -11,13 +11,18 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.EditText
+import android.widget.RelativeLayout
 import android.widget.TextView
+import android.widget.Toast
 import com.carlos.cutils.util.LogUtils
 import com.carlos.grabredenvelope.demo.WechatConstants.RES_ID_EDIT_TEXT
 import com.carlos.grabredenvelope.demo.WechatConstants.RES_ID_GROUP_NAME
 import com.carlos.grabredenvelope.demo.WechatConstants.RES_ID_USER_CONTENT
+import com.carlos.grabredenvelope.demo.WechatConstants.RES_ID_USER_HEADER
 import com.carlos.grabredenvelope.demo.WechatConstants.RES_ID_USER_NAME
+import com.carlos.grabredenvelope.demo.WechatConstants.RES_ID_USER_RL
 import com.google.gson.Gson
+import kotlinx.coroutines.withTimeout
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType
@@ -26,10 +31,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import okhttp3.internal.wait
 import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 data class Query (val type: String, val content: String)
 data class UserInfo (val query_id: String, val groupname: String, val username: String, val query: Query)
@@ -56,7 +62,6 @@ class NoDoubleClick(val timeout: Int) {
 }
 
 class SendEmojiService : AccessibilityService() {
-    private var myname = "茴香豆"
     private var groupname: String = ""
     private var lastusername:String = ""
     private var lastcontent:String = ""
@@ -114,21 +119,8 @@ class SendEmojiService : AccessibilityService() {
         var helper = SharedPreferenceHelper(applicationContext)
         var post_url:String = helper.getString("URL", "")
 
-        var asked = false
-        for (question in asked_questions) {
-            if (question.equals(lastcontent)) {
-                asked = true
-            }
-        }
-        if (asked) {
-            Log.w("msg", "this question already asked")
-            return
-        }
-
-        asked_questions.add(lastcontent)
-
         executor.execute {
-            val client = OkHttpClient()
+            val client = OkHttpClient.Builder().connectTimeout(20, TimeUnit.SECONDS).writeTimeout(40, TimeUnit.SECONDS).readTimeout(180, TimeUnit.SECONDS).build()
             // Define the JSON media type
             val JSON :MediaType? = "application/json; charset=utf-8".toMediaTypeOrNull()
 
@@ -151,7 +143,7 @@ class SendEmojiService : AccessibilityService() {
 
                     if (response.isSuccessful) {
                         // loop and wait resp
-                        var retry: Int = 8
+                        var retry: Int = 2
                         while (retry > 0){
                             retry -= 1
 
@@ -279,6 +271,62 @@ class SendEmojiService : AccessibilityService() {
         }
     }
 
+    private fun parseWindow() {
+        // 声明参数
+        var username = ""
+        // 获取所有的 rl，看里面的头像位置，头像是 imageview 且为正方形
+        var nodeInfo = rootInActiveWindow.findAccessibilityNodeInfosByViewId(RES_ID_USER_RL)
+        if (nodeInfo.size < 1){
+            Log.d("msg", "no rl found, return")
+            return
+        }
+        var lastTop = -1
+
+        for (rl in nodeInfo) {
+            if (rl.className != RelativeLayout::class.java.name) {
+                continue
+            }
+
+            var rlBound = Rect(0,0,0,0)
+            rl.getBoundsInScreen(rlBound)
+            if (rlBound.top <= lastTop) {
+                // 只处理最下面的 RL
+                continue
+            }
+
+            var headers = rl.findAccessibilityNodeInfosByViewId(RES_ID_USER_HEADER)
+            if (headers.size < 1) {
+                continue
+            }
+            lastTop = rlBound.top
+
+            var header = headers[0]
+            var bound = Rect(0,0,0,0)
+            header.getBoundsInScreen(bound)
+            if (abs(bound.right - bound.left) == abs(bound.bottom - bound.top) && bound.left < 300) {
+                // 正方形是头像
+                // 头像尺寸显然在屏幕左边，是发送者
+                // 获取发送者的名字、发的内容
+                var names = rl.findAccessibilityNodeInfosByViewId(RES_ID_USER_NAME)
+                if (names.size > 0) {
+                    var tv = names[0]
+                    if (tv.className == TextView::class.java.name){
+                        lastusername = tv.text.toString()
+                    }
+                }
+
+
+                var contents = rl.findAccessibilityNodeInfosByViewId(RES_ID_USER_CONTENT)
+                if (contents.size > 0) {
+                    var tv = contents[0]
+                    if (tv.className == TextView::class.java.name){
+                        lastcontent = tv.text.toString()
+                    }
+                }
+            }
+        }
+    }
+
     private fun parseSendMessage(event: AccessibilityEvent) {
         var classname = event.className.toString()
         var packagename = event.packageName.toString()
@@ -289,8 +337,9 @@ class SendEmojiService : AccessibilityService() {
             firststart = System.currentTimeMillis()
             return
         }
-        if (System.currentTimeMillis() - firststart < 1000 * 3) {
-            Log.d("msg", "skip first start time + 5s")
+        if (System.currentTimeMillis() - firststart < 1000 * 2) {
+            // 启动 2 秒内不处理，等 view 稳定
+            Log.d("msg", "skip first 2 seconds")
             return
         }
 
@@ -308,68 +357,29 @@ class SendEmojiService : AccessibilityService() {
             }
         }
 
-        var send = false
+        // 解析发送者和发送内容
+        parseWindow()
 
-        // fetch all user send content others' message
-        nodeInfo = rootInActiveWindow.findAccessibilityNodeInfosByViewId(RES_ID_USER_CONTENT)
-        var minLeft = 65535
-        var lastTop = -1
-        if (nodeInfo.size < 1){
-            Log.d("msg", "no resid_text, return")
-            return
-        }
-        for (tv in nodeInfo) {
-            if (tv.className != TextView::class.java.name) {
-                continue
-            }
-            var bound = Rect(minLeft, minLeft, minLeft, minLeft)
-            tv.getBoundsInScreen(bound)
-            if (bound.left <= minLeft) {
-                minLeft = bound.left
-
-                var top = bound.top
-                if (top > lastTop) {
-                    lastTop = top
-                    var content = tv.text.toString()
-                    if (!lastcontent.equals(content)) {
-                        lastcontent = content
-                        send = true
-                    }
-                }
-            }
-        }
-
-        // fetch all messages
         nodeInfo = rootInActiveWindow.findAccessibilityNodeInfosByViewId(RES_ID_USER_NAME)
         if (nodeInfo.size < 1) {
-            Log.d("msg", "resid_username not found, single chat")
-            // take groupname as username
+            // 单聊
+            // 单聊没有 RES_ID_USERNAME，需要把 groupname assign 成 username
             lastusername = groupname
-            send = true
-        } else {
-            // group chat, use last username in group
-            var tv = nodeInfo.last()
-            if (tv.className == TextView::class.java.name) {
-                var username = tv.text.toString()
-                if (!lastusername.equals(username)) {
-                    lastusername = username
-                    send = true
-                }
+        }
+        // 检查要发的内容是否跟之前重复，重复的句子不会请求服务器
+        Log.d("send", groupname)
+        Log.d("send", lastusername)
+        Log.d("send", lastcontent)
+
+        for (question in asked_questions) {
+            if (question.equals(lastcontent)) {
+                Log.w("msg", "this question already asked")
+                return
             }
         }
-
-
-        Log.d("msg", groupname)
-        Log.d("msg", lastusername)
-        Log.d("msg", lastcontent)
-
-        if (lastusername.equals(myname)) {
-            send = false
-        }
-        Log.d("msg", send.toString())
-        if (send) {
-            chat_with_server()
-        }
+        asked_questions.add(lastcontent)
+        Toast.makeText(application.applicationContext, lastcontent, Toast.LENGTH_SHORT)
+        chat_with_server()
     }
 
     private fun click_send(): Boolean {

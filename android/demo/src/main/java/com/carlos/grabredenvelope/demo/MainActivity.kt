@@ -39,9 +39,15 @@ class MainActivity : CBaseAccessibilityActivity() {
             var debug = sw_debug.isChecked()
             helper.saveBoolean("DEBUG", debug)
 
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            Toast.makeText(this@MainActivity, "找到（茴香豆）开启或关闭。", Toast.LENGTH_LONG)
-                .show()
+            var url: String = helper.getString("URL", "")
+            if (url.isEmpty()) {
+                Toast.makeText(this@MainActivity, "请确认 URL 正确，点击确定！", Toast.LENGTH_LONG).show()
+            } else {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                Toast.makeText(this@MainActivity, "找到（茴香豆）开启或关闭。", Toast.LENGTH_LONG)
+                    .show()
+            }
+
         }
 
         btn_url = findViewById(R.id.btn_url)
