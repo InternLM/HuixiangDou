@@ -564,6 +564,7 @@ class WkteamManager:
 
             for wx_msg_str in que.get_all():
                 wx_msg = json.loads(wx_msg_str)
+                logger.debug(wx_msg)
                 msg = Message()
                 msg.index = len(self.messages)
                 err = msg.parse(wx_msg)
@@ -571,13 +572,13 @@ class WkteamManager:
                     logger.debug(str(err))
                     continue
                 if msg.type == 'image':
-                    pdb.set_trace()
                     _, local_image_path = self.download_image_async(param=msg.data)
                     
                     llm_server_config = self.config['llm']['server']
                     if local_image_path is not None and llm_server_config['remote_type'] == 'kimi':
                         token = llm_server_config['remote_api_key']
                         msg.query = kimi_ocr(local_image_path, token)
+                        logger.debug('kimi ocr {} {}'.format(local_image_path, msg.query))
                 
                 self.messages.append(msg)
 
@@ -590,6 +591,11 @@ class WkteamManager:
             for user in self.users.values():
                 if len(user.history) < 1:
                     continue
+
+                # debug
+                # if '20158567857@chatroom' not in user.group_id:
+                #     logger.debug('user.group_id {}'.format(user.group_id))
+                #     continue
 
                 now = time.time()
                 # if a user not send new message in 18 seconds, process and mark it

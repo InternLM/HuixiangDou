@@ -143,13 +143,19 @@ class SourceGraphProxy:
         ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(
             self.sg_config['src_access_token'])
         BINARY = self.sg_config['binary_src_path']
+        if not os.path.exists(BINARY):
+            raise Exception('{} not exist'.format(BINARY))
+            return ''
 
         prompt = self.KEYWORDS_TEMPLATE.format(question)
         entities = []
         entity_str = ''
         try:
             entity_str = llm_client.generate_response(prompt=prompt)
-            entities = [item for item in entity_str.split(',') if item.strip()]
+            seperator = ','
+            if '，' in entity_str:
+                seperator = '，'
+            entities = [item for item in entity_str.split(seperator) if item.strip()]
         except Exception as e:
             logger.error('parse {} failed {}.'.format(entity_str, str(e)))
             # return ''

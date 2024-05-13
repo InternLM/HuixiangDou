@@ -9,7 +9,6 @@ import requests
 from loguru import logger
 from pathlib import Path
 from openai import OpenAI
-
 from .config import redis_host, redis_passwd, redis_port
 
 class TaskCode(Enum):
@@ -45,7 +44,7 @@ class ErrorCode(Enum):
     FAILED = 12, 'Fail'
     BAD_PARAMETER = 13, 'Bad parameter'
     INTERNAL_ERROR = 14, 'Internal error'
-    SEARCH_FAIL = 15, 'Web search fail, please check TOKEN and quota'
+    WEB_SEARCH_FAIL = 15, 'Web search fail, please check network, TOKEN and quota'
     SG_SEARCH_FAIL = 16, 'SourceGraph not result, please check token or input query'
     LLM_NOT_RESPONSE_SG = 17, 'LLM not response query with sg search'
     QUESTION_TOO_SHORT = 18, 'Query length too short'
@@ -224,7 +223,6 @@ def multimodal(filepath: str, timeout=5):
 
 def kimi_ocr(filepath, token):
     # curl post file to kimi server
-     
     client = OpenAI(
         api_key = token,
         base_url= "https://api.moonshot.cn/v1"

@@ -75,7 +75,7 @@ class BCENode(Node):
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server']['remote_llm_max_text_length']
         if language == 'zh':
-            self.TOPIC_TEMPLATE = '告诉我这句话的主题，直接说主题不要解释：“{}”'
+            self.TOPIC_TEMPLATE = '告诉我这句话的主题，不要丢失主语和宾语，直接说主题不要解释：“{}”'
             self.SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'  # noqa E501
             self.SCORING_RELAVANCE_TEMPLATE = '问题：“{}”\n材料：“{}”\n请仔细阅读以上内容，判断问题和材料的关联度，用0～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n'  # noqa E501
             self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
@@ -106,6 +106,9 @@ class BCENode(Node):
         # get query topic
         prompt = self.TOPIC_TEMPLATE.format(sess.query)
         sess.topic = self.llm.generate_response(prompt)
+        if sess.topic.startswith('主题：'):
+            sess.topic = sess.topic[3:]
+        sess.debug['BCENode_topic'] = sess.topic
         if len(sess.topic) < 2:
             # topic too short, return
             sess.code = ErrorCode.NO_TOPIC
@@ -123,7 +126,6 @@ class BCENode(Node):
         truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10)
         sess.debug['BCENode_chunk_relavance'] = logs
         if not truth:
-            sess.code = ErrorCode.UNRELATED
             return
 
         # answer the question
@@ -172,7 +174,7 @@ class WebSearchNode(Node):
         articles, error = engine.get(query=search_keywords, max_article=2)
 
         if error is not None:
-            sess.code = ErrorCode.SEARCH_FAIL
+            sess.code = ErrorCode.WEB_SEARCH_FAIL
             return
 
         for article_id, article in enumerate(articles):
@@ -220,7 +222,7 @@ class SGSearchNode(Node):
             return
 
         # if exit for other status (SECURITY or SEARCH_FAIL), still quit `sg_search`
-        if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT:
+        if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT and sess.code != ErrorCode.WEB_SEARCH_FAIL:
             return
 
         sg = SourceGraphProxy(config_path=self.config_path, language=self.language)
