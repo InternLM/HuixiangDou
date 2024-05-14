@@ -236,5 +236,5 @@ def kimi_ocr(filepath, token):
         logger.error(str(e))
     return ''
 
-if __name__ == '__main__':
-    print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', 'Y2tpMG41dDB0YzExbjRqYW5nN2c6bXNrLTFzVlB2NGJRaDExeWdnNTlZY3dYMm5mcVRpWng='))
+# if __name__ == '__main__':
+#     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', ''))
