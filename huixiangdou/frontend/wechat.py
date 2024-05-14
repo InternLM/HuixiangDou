@@ -164,10 +164,18 @@ class Message:
             # 群、私聊引用消息
             query = data['title']
             parse_type = 'ref'
-            to_user = data['toUser']
+
+            root = ET.fromstring(data['content'])
+            def search_key(xml_key: str):
+                elements = root.findall(".//{}".format(xml_key))
+                content = ''
+                if len(elements) > 0:
+                    content = elements[0].text
+                return content
+            to_user = search_key(xml_key='chatusr')
             if to_user != bot_wxid:
                 self.status = 'skip'
-                return Exception("This message not for bot")
+                return Exception("This message is for {}, not bot".format(to_user))
 
         elif msg_type in ['80007', '60007', '90001']:
             # url message

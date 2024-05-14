@@ -122,9 +122,7 @@ class PreprocNode(Node):
             return
         
         talks = []
-        import pdb
-        pdb.set_trace()
-
+        
         # rewrite user_id to ABCD..
         name_map = dict()
         name_int = ord('A')
