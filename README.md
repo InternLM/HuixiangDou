@@ -241,7 +241,7 @@ enable_local = 0
 enable_remote = 1
 ...
 remote_type = "kimi"
-remote_api_key = "${YOUR-API-KEY}"
+remote_api_key = "YOUR-API-KEY-HERE"
 ```
 
 > [!NOTE]

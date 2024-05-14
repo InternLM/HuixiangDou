@@ -226,7 +226,8 @@ class BCENode(Node):
 
         # answer the question
         prompt = self.GENERATE_TEMPLATE.format(sess.knowledge, sess.query)
-        response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
+        # response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
+        response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='remote')
         
         sess.code = ErrorCode.SUCCESS
         sess.response = response
@@ -289,7 +290,8 @@ class WebSearchNode(Node):
             return
 
         prompt = self.GENERATE_TEMPLATE.format(sess.web_knowledge, sess.query)
-        sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend="puyu")
+        # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend="puyu")
+        sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend="remote")
         sess.code = ErrorCode.SUCCESS
 
 
@@ -330,7 +332,8 @@ class SGSearchNode(Node):
             return
 
         prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge, sess.query)
-        sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
+        # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
+        sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='remote')
         if sess.response is None or len(sess.response) < 1:
             sess.code = ErrorCode.LLM_NOT_RESPONSE_SG
             return

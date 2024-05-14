@@ -136,6 +136,7 @@ apt update
 apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 # python requirements
 pip install -r requirements.txt
+# python3.8 安装 faiss-gpu 而不是 faiss
 ```
 
 茴香豆是基于 `config.ini` 配置实现的，按机器显存可以分成标准版（19G）、实惠版（1.5G）和完整版（40G）。
@@ -248,7 +249,7 @@ enable_local = 0
 enable_remote = 1
 ..
 remote_type = "kimi"
-remote_api_key = "${YOUR-API-KEY}"
+remote_api_key = "YOUR-API-KEY-HERE"
 ```
 
 > \[!NOTE\]
@@ -323,7 +324,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 7. 报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
 
    - 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。检查结束后按 ctrl-c 关掉。
-   - 检查 `config.ini` 中各种 TOKEN 书写正确。`${}` 不要带进 TOKEN ！！！
+   - 检查 `config.ini` 中各种 TOKEN 书写正确。
 
 8. 如果使用 `deepseek` 进行 remote llm 调用，出现 400 错误可能是因为安全审查；在 [huixiangdou/main.py](huixiangdou/main.py) 中修改 `queries = ['请问如何安装 mmpose ?']` 为其他问题即可正常运行。
 

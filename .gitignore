@@ -40,3 +40,4 @@ web/tools/filter.jsonl
 unittest/token.json
 config.test
 wkteam/
+config-wechat.ini
