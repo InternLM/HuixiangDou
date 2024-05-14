@@ -134,11 +134,11 @@ class Message:
         self.query = ''
         self.group_id = ''
         self.global_user_id = ''
-        self.timestamp = -1
+        self._id = -1
         self.status = ''
-        self.index = -1
+        self.sender = ''
 
-    def parse(self, wx_msg: dict):
+    def parse(self, wx_msg: dict, bot_wxid: str):
         # str or int
         msg_type = wx_msg['messageType']
         parse_type = 'unknown'
@@ -147,14 +147,25 @@ class Message:
             return Exception('data not in wx_msg')
 
         data = wx_msg['data']
+        self._id = data['msgId']
 
         # format user input
         query = ''
+        if 'atlist' in data:
+            atlist = data['atlist']
+            if bot_wxid not in atlist:
+                self.status = 'skip'
+                return Exception("Atlist not contains bot") 
+
         if msg_type in ['80014', '60014']:
             # ref message
             # 群、私聊引用消息
             query = data['title']
             parse_type = 'ref'
+            to_user = data['toUser']
+            if to_user != bot_wxid:
+                self.status = 'skip'
+                return Exception("This message not for bot")
 
         elif msg_type in ['80007', '60007', '90001']:
             # url message
@@ -162,18 +173,30 @@ class Message:
             parse_type = 'link'
 
             root = ET.fromstring(data['content'])
-            url =  root.findall(".//url")[0].text
-            title = root.findall(".//title")[0].text
-            desc = root.findall(".//des")[0].text
 
-            resp = requests.get(url)
-            doc = Document(resp.text)
-            soup = BS(doc.summary(), 'html.parser')
+            def search_key(xml_key: str):
+                elements = root.findall(".//{}".format(xml_key))
+                content = ''
+                if len(elements) > 0:
+                    content = elements[0].text
+                return content
 
-            if len(soup.text) > 100:
-                query = '{}\n{}\n{}'.format(title, desc, soup.text)
-            else:
-                query = '{}\n{}\n{}'.format(title, desc, url)
+            url = search_key(xml_key='url')
+            title = search_key(xml_key='title')
+            desc = search_key(xml_key='des')
+
+            query = ''
+            try:
+                resp = requests.get(url)
+                doc = Document(resp.text)
+                soup = BS(doc.summary(), 'html.parser')
+
+                if len(soup.text) > 100:
+                    query = '{}\n{}\n{}'.format(title, desc, soup.text)
+                else:
+                    query = '{}\n{}\n{}'.format(title, desc, url)
+            except Exception as e:
+                logger.error(str(e))
             logger.debug('公众号解析：{}'.format(query)[0:256])
 
         elif msg_type in ['80002', '60002']:
@@ -202,6 +225,11 @@ class Message:
             self.status = 'skip'
             return Exception("Repo owner's message, skip")
 
+        if 'fromUser' not in data:
+            self.status = 'skip'
+            return Exception("msg no sender id, skip")
+
+        self.sender = data['fromUser']
         self.data = data
         self.type = parse_type
         if 'fromGroup' not in data:
@@ -209,7 +237,6 @@ class Message:
 
         self.group_id = data['fromGroup']
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
-        self.timestamp = time.time()
         return None
 
 class User:
@@ -218,6 +245,7 @@ class User:
         self.history = []
         # meta
         self.last_msg_time = time.time()
+        self.last_msg_id = -1
         self.last_process_time = -1
         # groupid+userid
         self._id = ""
@@ -235,6 +263,8 @@ class User:
     def feed(self, msg: Message):
         self.history.append((msg.query, None, None))
         self.last_msg_time = time.time()
+        self.last_msg_type = msg.type
+        self.last_msg_id  = msg._id
         self._id = msg.global_user_id
         self.group_id = msg.group_id
 
@@ -542,6 +572,22 @@ class WkteamManager:
         self.set_callback()
         p.join()
 
+    def fetch_groupchats(self, user: User, max_length:int = 12):
+        """
+        Before obtaining user messages, there are a maximum of `max_length` historical conversations in the group. Fetch them for coreference resolution.
+        """
+        user_msg_id = user.last_msg_id
+        conversations = []
+
+        for index in range(len(self.messages) - 1, -1, -1):
+            msg = self.messages[index]
+            if len(conversations) >= max_length:
+                break
+
+            if msg._id < user_msg_id and msg.group_id == user.group_id:
+                conversations.append(msg)
+        return conversations
+
     def loop(self, worker):
         """
         Fetch all messeges from redis, split it by groupId; concat by timestamp
@@ -566,8 +612,7 @@ class WkteamManager:
                 wx_msg = json.loads(wx_msg_str)
                 logger.debug(wx_msg)
                 msg = Message()
-                msg.index = len(self.messages)
-                err = msg.parse(wx_msg)
+                err = msg.parse(wx_msg=wx_msg, bot_wxid=self.wcId)
                 if err is not None:
                     logger.debug(str(err))
                     continue
@@ -580,6 +625,9 @@ class WkteamManager:
                         msg.query = kimi_ocr(local_image_path, token)
                         logger.debug('kimi ocr {} {}'.format(local_image_path, msg.query))
                 
+                if len(msg.query) < 1:
+                    continue
+
                 self.messages.append(msg)
 
                 if msg.global_user_id not in self.users:
@@ -600,6 +648,10 @@ class WkteamManager:
                 now = time.time()
                 # if a user not send new message in 18 seconds, process and mark it
                 if now - user.last_msg_time >= 18 and user.last_process_time < user.last_msg_time:
+                    if user.last_msg_type in ['link', 'image']:
+                        # if user image or link contains question, do not process
+                        continue
+
                     user.concat()
                     logger.debug('after concat {}'.format(user))
                     assert len(user.history) > 0
@@ -607,18 +659,20 @@ class WkteamManager:
                     item = user.history[-1]
 
                     if item[1] is not None and len(item[1]) > 0:
-                        pdb.set_trace()
-                        print(item)
+                        logger.error('item reply not None, {}'.format(item))
                     query = item[0]
 
                     code = ErrorCode.QUESTION_TOO_SHORT
                     resp = ''
                     refs = []
                     groupname = ''
+                    groupchats = []
                     if user.group_id in self.group_whitelist:
                         groupname = self.group_whitelist[user.group_id]
+                    
                     if len(query) >= 9:
-                        code, resp, refs = worker.generate(query=query, history=user.history[0:-1], groupname=groupname)
+                        groupchats = self.fetch_groupchats(user=user)
+                        code, resp, refs = worker.generate(query=query, history=user.history[0:-1], groupname=groupname, groupchats=groupchats)
 
                     # user history may affact normal conversation, so delete last query
                     user.last_process_time = time.time()

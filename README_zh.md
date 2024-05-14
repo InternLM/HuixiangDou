@@ -8,9 +8,6 @@
   <a href="resource/figures/wechat.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
-  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
-    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
-  </a>
   <a href="https://pypi.org/project/huixiangdou" target="_blank">
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
   </a>
@@ -22,6 +19,9 @@
   </a>
   <a href="https://discord.gg/TW4ZBpZZ" target="_blank">
     <img alt="discord" src="https://img.shields.io/badge/discord-red?logo=discord&logoColor=white" />
+  </a>
+  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
+    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-2401.08772%20-darkred?logo=arxiv&logoColor=white" />
   </a>
 </div>
 
@@ -286,7 +286,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 2. 启动正常，但运行期间显存 OOM 怎么办？
 
-   基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
+   基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization)。然后使用 docker 独立部署 Hybrid LLM Service。
 
 3. 如何接入其他 local LLM / 接入后效果不理想怎么办？
 

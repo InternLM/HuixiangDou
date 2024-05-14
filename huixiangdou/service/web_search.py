@@ -123,7 +123,7 @@ class WebSearch:
                                     data=payload,
                                     timeout=15)  # noqa E501
         jsonobj = json.loads(response.text)
-
+        logger.debug(jsonobj)
         keys = self.search_config.domain_partial_order
         urls = {}
         normal_urls = []
@@ -275,7 +275,7 @@ if __name__ == '__main__':
     parser = parse_args()
     s = WebSearch(config_path=parser.config_path)
 
-    print(s.get('mmdeploy 安装教程'))
+    print(s.get('LMDeploy 修改日志级别'))
     print(
         fetch_web_content(
             'https://mmdeploy.readthedocs.io/zh-cn/latest/get_started.html'))

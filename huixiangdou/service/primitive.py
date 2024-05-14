@@ -1,7 +1,7 @@
 import re
 from .llm_client import ChatClient
 
-def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int):
+def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int, backend:str = 'local'):
     """Generate a score based on the prompt, and then compares it to
     threshold.
 
@@ -21,7 +21,7 @@ def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int):
 
     score = default
     logs['default'] = default
-    relation = llm.generate_response(prompt=prompt, backend='local')
+    relation = llm.generate_response(prompt=prompt, backend=backend)
     logs['relation'] = relation
     filtered_relation = ''.join([c for c in relation if c.isdigit()])
     

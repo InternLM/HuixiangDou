@@ -227,10 +227,14 @@ def kimi_ocr(filepath, token):
         api_key = token,
         base_url= "https://api.moonshot.cn/v1"
     )
-    file_object = client.files.create(file=Path(filepath), purpose="file-extract")
-    json_str = client.files.content(file_id=file_object.id).text
-    json_obj = json.loads(json_str)
-    return json_obj['content']
+    try:
+        file_object = client.files.create(file=Path(filepath), purpose="file-extract")
+        json_str = client.files.content(file_id=file_object.id).text
+        json_obj = json.loads(json_str)
+        return json_obj['content']
+    except Exception as e:
+        logger.error(str(e))
+    return ''
 
 if __name__ == '__main__':
     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', 'Y2tpMG41dDB0YzExbjRqYW5nN2c6bXNrLTFzVlB2NGJRaDExeWdnNTlZY3dYMm5mcVRpWng='))
