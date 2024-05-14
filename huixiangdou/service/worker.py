@@ -94,7 +94,7 @@ class PreprocNode(Node):
 {}
 输入的文本
 “{}”
-一步步分析，首先历史对话包含哪些话题；其次哪个话题与问题最相关；用相关的话题，替换输入中的代词和缺失的部分。直接返回重写后的文本不要解释。""" 
+一步步分析，首先历史对话包含哪些话题；其次哪个话题与输入文本中的代词最相关；用相关的话题，替换输入中的代词和缺失的部分。直接返回重写后的文本不要解释。""" 
 
 #         self.CR_CHECK = """请判断用户意图，这位用户在做单选题，单选题答案有 3 个， A：不需要提取，信息完整  B：需要  C：不知道。
 # 用户输入：
@@ -160,9 +160,17 @@ class PreprocNode(Node):
 
         prompt = self.CR.format(talk_str, sess.query)
         self.cr = self.llm.generate_response(prompt=prompt, backend='remote')
+        if self.cr.startswith('“') and self.cr.endswith('”'):
+            self.cr = self.cr[1:len(self.cr)-1]
+        if self.cr.startswith('"') and self.cr.endswith('"'):
+            self.cr = self.cr[1:len(self.cr)-1]
         sess.debug['cr'] = self.cr
 
-        # TODO test
+        # rewrite query    
+        queries = [sess.query, self.cr]
+        self.query = '\n'.join(queries)
+        logger.debug('merge query and cr, query: {} cr: {}'.format(self.query, self.cr))
+
 
 class BCENode(Node):
     """

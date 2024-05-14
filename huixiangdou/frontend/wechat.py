@@ -11,7 +11,6 @@ import argparse
 from loguru import logger
 import xml.etree.ElementTree as ET
 from aiohttp import web
-# from helper import Queue
 import time
 from multiprocessing import Process
 import os
@@ -137,6 +136,7 @@ class Message:
         self._id = -1
         self.status = ''
         self.sender = ''
+        self.url = ''
 
     def parse(self, wx_msg: dict, bot_wxid: str):
         # str or int
@@ -147,7 +147,9 @@ class Message:
             return Exception('data not in wx_msg')
 
         data = wx_msg['data']
-        self._id = data['msgId']
+
+        if 'msgId' in data:
+            self._id = data['msgId']
 
         # format user input
         query = ''
@@ -181,7 +183,7 @@ class Message:
                     content = elements[0].text
                 return content
 
-            url = search_key(xml_key='url')
+            self.url = search_key(xml_key='url')
             title = search_key(xml_key='title')
             desc = search_key(xml_key='des')
 
@@ -261,7 +263,10 @@ class User:
         return json.dumps(obj, indent=2, ensure_ascii=False)
 
     def feed(self, msg: Message):
-        self.history.append((msg.query, None, None))
+        if msg.type in ['url', 'image']:
+            self.history.append((msg.query, '\n', msg.url))
+        else:
+            self.history.append((msg.query, None, None))
         self.last_msg_time = time.time()
         self.last_msg_type = msg.type
         self.last_msg_id  = msg._id
@@ -399,6 +404,9 @@ class WkteamManager:
         logger.debug(self.group_whitelist)
 
     def post(self, url, data, headers):
+        """
+        Wrap http post and error handling
+        """
         resp = requests.post(url, data=json.dumps(data), headers=headers)
         json_str = resp.content.decode('utf8')
         logger.debug(json_str)
@@ -435,7 +443,10 @@ class WkteamManager:
                 self.post(url='http://{}/revokeMsg'.format(self.WKTEAM_IP_PORT), data=sent, headers=headers)
         del self.sent_msg[groupId]
     
-    def download_image_async(self, param:dict):
+    def download_image(self, param:dict):
+        """
+        Download group chat image
+        """
         content = param['content']
         msgId = param['msgId']
         wId = param['wId']
@@ -583,6 +594,9 @@ class WkteamManager:
             msg = self.messages[index]
             if len(conversations) >= max_length:
                 break
+            
+            if msg.type == 'unknown':
+                continue
 
             if msg._id < user_msg_id and msg.group_id == user.group_id:
                 conversations.append(msg)
@@ -617,7 +631,7 @@ class WkteamManager:
                     logger.debug(str(err))
                     continue
                 if msg.type == 'image':
-                    _, local_image_path = self.download_image_async(param=msg.data)
+                    _, local_image_path = self.download_image(param=msg.data)
                     
                     llm_server_config = self.config['llm']['server']
                     if local_image_path is not None and llm_server_config['remote_type'] == 'kimi':
