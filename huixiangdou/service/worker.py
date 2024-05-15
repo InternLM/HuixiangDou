@@ -82,19 +82,36 @@ class PreprocNode(Node):
             base_url=config['coreference_resolution']['base_url'],
             api_key=config['coreference_resolution']['api_key']
         )
-        self.SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'  # noqa E501
-        self.CR_NEED = """群聊场景中“这”、“它”、“哪”等代词需要查看上下文和其他用户的回复才能确定具体指什么，请完成群聊场景代词替换任务。
+
+        if language == 'zh':
+            self.SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'
+            self.CR_NEED = """群聊场景中“这”、“它”、“哪”等代词需要查看上下文和其他用户的回复才能确定具体指什么，请完成群聊场景代词替换任务。
 以下是历史对话，可能有多个人的发言：
 {}
 输入内容：{}
 输入内容的信息是否完整，是否需要从历史对话中提取代词或宾语来替代 content 中的一部分词汇？ A：不需要提取，信息完整  B：需要  C：不知道 
 一步步分析，首先历史消息包含哪些话题；其次哪个话题与问题最相关；如果都不相关就不提取。"""
-        self.CR = """请根据历史对话，重写输入的文本。
+            self.CR = """请根据历史对话，重写输入的文本。
 以下是历史对话，可能有多个人的发言：
 {}
 输入的文本
 “{}”
-一步步分析，首先历史对话包含哪些话题；其次哪个话题与输入文本中的代词最相关；用相关的话题，替换输入中的代词和缺失的部分。直接返回重写后的文本不要解释。""" 
+一步步分析，首先历史对话包含哪些话题；其次哪个话题与输入文本中的代词最相关；用相关的话题，替换输入中的代词和缺失的部分。直接返回重写后的文本不要解释。"""
+
+        else:
+            self.SCORING_QUESTION_TEMPLTE = '"{}"\nPlease read the content above carefully and judge whether the sentence is a thematic question. Rate it on a scale of 0-10. Only provide the score, no explanation.\nThe criteria are as follows: a sentence gets 10 points if it has a subject, predicate, object and is a question; points are deducted for missing subject, predicate or object; declarative sentences get 0 points; sentences that are not questions also get 0 points. Just give the score, no explanation.'
+            self.CR_NEED = """In group chat scenarios, pronouns such as "this," "it," and "which" require examination of the context and other users' responses to determine their specific reference. Please complete the pronoun substitution task in the group chat scenario.
+Here is the historical conversation, which may contain multiple people's statements:
+{}
+Input content: {}
+Is the information in the input content complete, and is it necessary to extract pronouns or objects from the historical conversation to replace part of the vocabulary in content? A: No extraction needed, information is complete B: Necessary C: Uncertain
+Analyze step by step, first identify which topics are included in the historical messages; second, determine which topic is most relevant to the question; if none are relevant, do not extract."""
+            self.CR = """Please rewrite the input text based on the historical conversation.
+Here is the historical conversation, which may include statements from multiple individuals:
+{}
+The input text
+"{}"
+Analyze step by step, first identify what topics are included in the historical conversation; secondly, determine which topic is most relevant to the pronoun in the input text; replace the pronoun and missing parts in the input with the relevant topic. Return the rewritten text directly without explanation."""
 
 #         self.CR_CHECK = """请判断用户意图，这位用户在做单选题，单选题答案有 3 个， A：不需要提取，信息完整  B：需要  C：不知道。
 # 用户输入：
@@ -140,8 +157,13 @@ class PreprocNode(Node):
         prompt = self.CR_NEED.format(talk_str, sess.query)
 
         # need coreference resolution or not
-        completion = self.cr_client.chat.completions.create(model='coref-res',messages=[{"role": "user", "content": prompt}])
-        response = completion.choices[0].message.content.lower()
+        response = ''
+        try:
+            completion = self.cr_client.chat.completions.create(model='coref-res',messages=[{"role": "user", "content": prompt}])
+            response = completion.choices[0].message.content.lower()
+        except Exception as e:
+            logger.error(str(e))
+            return
         sess.debug['PreprocNode_need_cr'] = response
         need_cr = False
         
@@ -187,7 +209,6 @@ class BCENode(Node):
             self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
         else:
             self.TOPIC_TEMPLATE = 'Tell me the theme of this sentence, just state the theme without explanation: "{}"'  # noqa E501
-            self.SCORING_QUESTION_TEMPLTE = '"{}"\nPlease read the content above carefully and judge whether the sentence is a thematic question. Rate it on a scale of 0-10. Only provide the score, no explanation.\nThe criteria are as follows: a sentence gets 10 points if it has a subject, predicate, object and is a question; points are deducted for missing subject, predicate or object; declarative sentences get 0 points; sentences that are not questions also get 0 points. Just give the score, no explanation.'  # noqa E501
             self.SCORING_RELAVANCE_TEMPLATE = 'Question: "{}", Background Information: "{}"\nPlease read the content above carefully and assess the relevance between the question and the material on a scale of 0-10. The scoring standard is as follows: extremely relevant gets 10 points; completely irrelevant gets 0 points. Only provide the score, no explanation needed.'  # noqa E501
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
         self.max_length = self.context_max_length - 2 * len(self.GENERATE_TEMPLATE)
@@ -196,8 +217,6 @@ class BCENode(Node):
         """
         Try get reply with text2vec & rerank model
         """
-
-
         
         # get query topic
         prompt = self.TOPIC_TEMPLATE.format(sess.query)

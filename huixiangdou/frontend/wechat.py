@@ -157,13 +157,12 @@ class Message:
             atlist = data['atlist']
             if bot_wxid not in atlist:
                 self.status = 'skip'
-                return Exception("Atlist not contains bot") 
+                return Exception("atlist not contains bot") 
 
         if msg_type in ['80014', '60014']:
             # ref message
             # 群、私聊引用消息
             query = data['title']
-            parse_type = 'ref'
 
             root = ET.fromstring(data['content'])
             def search_key(xml_key: str):
@@ -174,8 +173,10 @@ class Message:
                 return content
             to_user = search_key(xml_key='chatusr')
             if to_user != bot_wxid:
+                parse_type = 'ref_for_others'
                 self.status = 'skip'
-                return Exception("This message is for {}, not bot".format(to_user))
+            else:
+                parse_type = 'ref_for_bot'
 
         elif msg_type in ['80007', '60007', '90001']:
             # url message
@@ -651,6 +652,8 @@ class WkteamManager:
                     continue
 
                 self.messages.append(msg)
+                if msg.type == 'ref_for_others':
+                    continue
 
                 if msg.global_user_id not in self.users:
                     self.users[msg.global_user_id] = User()
