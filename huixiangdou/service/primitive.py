@@ -1,4 +1,5 @@
 import re
+from loguru import logger
 from .llm_client import ChatClient
 
 def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int):
