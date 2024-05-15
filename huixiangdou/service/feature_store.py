@@ -14,7 +14,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
                                      RecursiveCharacterTextSplitter)
-from langchain.vectorstores.faiss import FAISS as Vectorstore
+# from langchain.vectorstores.faiss import FAISS as Vectorstore
+from .vector_store import Vectorstore
 from langchain_core.documents import Document
 from loguru import logger
 from torch.cuda import empty_cache
