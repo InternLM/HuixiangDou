@@ -113,7 +113,7 @@ The input text
 "{}"
 Analyze step by step, first identify what topics are included in the historical conversation; secondly, determine which topic is most relevant to the pronoun in the input text; replace the pronoun and missing parts in the input with the relevant topic. Return the rewritten text directly without explanation."""
 
-#         self.CR_CHECK = """请判断用户意图，这位用户在做单选题，单选题答案有 3 个， A：不需要提取，信息完整  B：需要  C：不知道。
+# self.CR_CHECK = """请判断用户意图，这位用户在做单选题，单选题答案有 3 个， A：不需要提取，信息完整  B：需要  C：不知道。
 # 用户输入：
 # {}
 # 用户的答案是？不要解释，直接给 ABC 选项结果。"""
@@ -377,7 +377,7 @@ class SecurityNode(Node):
         Check result with security.
         """
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query, sess.response)
-        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=9, default=0)
+        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=8, default=0)
         sess.debug['SecurityNode_qa_perplex'] = logs
         if truth:
             sess.code = ErrorCode.BAD_ANSWER

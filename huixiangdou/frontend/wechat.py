@@ -198,14 +198,14 @@ class Message:
 
             query = ''
             try:
-                resp = requests.get(url)
+                resp = requests.get(self.url)
                 doc = Document(resp.text)
                 soup = BS(doc.summary(), 'html.parser')
 
                 if len(soup.text) > 100:
                     query = '{}\n{}\n{}'.format(title, desc, soup.text)
                 else:
-                    query = '{}\n{}\n{}'.format(title, desc, url)
+                    query = '{}\n{}\n{}'.format(title, desc, self.url)
             except Exception as e:
                 logger.error(str(e))
             logger.debug('公众号解析：{}'.format(query)[0:256])
