@@ -221,8 +221,10 @@ class BCENode(Node):
         # get query topic
         prompt = self.TOPIC_TEMPLATE.format(sess.query)
         sess.topic = self.llm.generate_response(prompt)
-        if sess.topic.startswith('主题：'):
-            sess.topic = sess.topic[3:]
+        for prefix in ['主题：', '这句话的主题是：']:
+            if sess.topic.startswith(prefix):
+                sess.topic = sess.topic[len(prefix):]
+
         sess.debug['BCENode_topic'] = sess.topic
         if len(sess.topic) < 2:
             # topic too short, return

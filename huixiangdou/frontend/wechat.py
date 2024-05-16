@@ -617,11 +617,12 @@ class WkteamManager:
         """
         from huixiangdou.service.helper import ErrorCode, kimi_ocr
 
+        revert_que = Queue(name='wechat-high-priority')
+        que = Queue(name='wechat')
+
         while True:
             time.sleep(1)
             # react to revert msg first
-            revert_que = Queue(name='wechat-high-priority')
-
             for wx_msg_str in revert_que.get_all():
                 wx_msg = json.loads(wx_msg_str)
                 data = wx_msg['data']
@@ -629,8 +630,6 @@ class WkteamManager:
                     self.revert(groupId = data['fromGroup'])
 
             # parse wx_msg, add it to group 
-            que = Queue(name='wechat')
-
             for wx_msg_str in que.get_all():
                 wx_msg = json.loads(wx_msg_str)
                 logger.debug(wx_msg)

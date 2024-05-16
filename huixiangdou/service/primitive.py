@@ -1,5 +1,6 @@
 import re
 from .llm_client import ChatClient
+from loguru import logger
 
 def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int, backend:str = 'local'):
     """Generate a score based on the prompt, and then compares it to
