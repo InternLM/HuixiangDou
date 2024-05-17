@@ -4,6 +4,7 @@ import re
 from loguru import logger
 
 from .llm_client import ChatClient
+from loguru import logger
 
 
 def is_truth(llm: ChatClient,

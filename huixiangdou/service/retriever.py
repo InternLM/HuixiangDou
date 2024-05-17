@@ -150,6 +150,7 @@ class Retriever:
         references = []
 
         reject, docs = self.is_reject(question=question)
+        logger.debug('retriever.docs {}'.format(docs))
         if reject:
             if len(docs) > 0:
                 references.append(docs[0][0].metadata['source'])

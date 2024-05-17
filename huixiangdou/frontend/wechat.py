@@ -160,13 +160,12 @@ class Message:
             atlist = data['atlist']
             if bot_wxid not in atlist:
                 self.status = 'skip'
-                return Exception('Atlist not contains bot')
+                return Exception("atlist not contains bot") 
 
         if msg_type in ['80014', '60014']:
             # ref message
             # 群、私聊引用消息
             query = data['title']
-            parse_type = 'ref'
 
             root = ET.fromstring(data['content'])
 
@@ -179,9 +178,10 @@ class Message:
 
             to_user = search_key(xml_key='chatusr')
             if to_user != bot_wxid:
+                parse_type = 'ref_for_others'
                 self.status = 'skip'
-                return Exception(
-                    'This message is for {}, not bot'.format(to_user))
+            else:
+                parse_type = 'ref_for_bot'
 
         elif msg_type in ['80007', '60007', '90001']:
             # url message
@@ -203,14 +203,14 @@ class Message:
 
             query = ''
             try:
-                resp = requests.get(url)
+                resp = requests.get(self.url)
                 doc = Document(resp.text)
                 soup = BS(doc.summary(), 'html.parser')
 
                 if len(soup.text) > 100:
                     query = '{}\n{}\n{}'.format(title, desc, soup.text)
                 else:
-                    query = '{}\n{}\n{}'.format(title, desc, url)
+                    query = '{}\n{}\n{}'.format(title, desc, self.url)
             except Exception as e:
                 logger.error(str(e))
             logger.debug('公众号解析：{}'.format(query)[0:256])
@@ -669,20 +669,19 @@ class WkteamManager:
         timestamp."""
         from huixiangdou.service.helper import ErrorCode, kimi_ocr
 
+        revert_que = Queue(name='wechat-high-priority')
+        que = Queue(name='wechat')
+
         while True:
             time.sleep(1)
             # react to revert msg first
-            revert_que = Queue(name='wechat-high-priority')
-
             for wx_msg_str in revert_que.get_all():
                 wx_msg = json.loads(wx_msg_str)
                 data = wx_msg['data']
                 if 'fromGroup' in data:
                     self.revert(groupId=data['fromGroup'])
 
-            # parse wx_msg, add it to group
-            que = Queue(name='wechat')
-
+            # parse wx_msg, add it to group 
             for wx_msg_str in que.get_all():
                 wx_msg = json.loads(wx_msg_str)
                 logger.debug(wx_msg)
@@ -706,6 +705,8 @@ class WkteamManager:
                     continue
 
                 self.messages.append(msg)
+                if msg.type == 'ref_for_others':
+                    continue
 
                 if msg.global_user_id not in self.users:
                     self.users[msg.global_user_id] = User()
