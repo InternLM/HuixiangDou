@@ -29,7 +29,7 @@
 
 茴香豆是一个基于 LLM 的**群聊**知识助手，优势：
 
-1. 设计拒答、响应两阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见论文 [2401.08772](https://arxiv.org/abs/2401.08772) 和 [2405.02817](https://arxiv.org/abs/2405.02817)
+1. 设计预处理、拒答、响应三阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见论文 [2401.08772](https://arxiv.org/abs/2401.08772) 和 [2405.02817](https://arxiv.org/abs/2405.02817)
 2. 成本低至 1.5G 显存，无需训练适用各行业
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
@@ -272,6 +272,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 - [参照 config-advanced.ini 配置提升效果](./docs/full_dev_zh.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
 - [群聊场景指代消歧训练](./sft)
+- [使用商业版微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
 
 # 🛠️ FAQ
 
