@@ -58,9 +58,13 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
   </table>
 
 - \[2024/04\] Add [SFT data annotation and examples](./docs/rag_annotate_sft_data_zh.md)
+
 - \[2024/04\] Update [technical report](./resource/HuixiangDou.pdf)
+
 - \[2024/04\] Release [web server](./web) source code 👍
+
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
+
 - \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
 
 # 📖 Support
@@ -175,7 +179,7 @@ mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-> [!NOTE]
+> \[!NOTE\]
 >
 > <div align="center">
 > If restarting local LLM is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>, then open a new terminal, and only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
@@ -190,7 +194,6 @@ python3 -m huixiangdou.main --standalone
 ```
 
 Please adjust the `repodir` documents, [good_questions](./resource/good_questions.json), and [bad_questions](./resource/bad_questions.json) to try your own domain knowledge (medical, financial, power, etc.).
-
 
 **STEP3.** Test sending messages to Feishu group (optional)
 
@@ -244,7 +247,7 @@ remote_type = "kimi"
 remote_api_key = "YOUR-API-KEY-HERE"
 ```
 
-> [!NOTE]
+> \[!NOTE\]
 >
 > <div align="center">
 > The worst case for each Q&A is to call the LLM 7 times, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
@@ -260,7 +263,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all
 
 The HuixiangDou deployed in the WeChat group is the complete version.
 
-When 40G of GPU memory is available, long text + retrieval capabilities can be used to improve accuracy. 
+When 40G of GPU memory is available, long text + retrieval capabilities can be used to improve accuracy.
 
 Please read following topics
 
@@ -324,7 +327,7 @@ Please read following topics
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
@@ -333,7 +336,7 @@ Please read following topics
 }
 
 @misc{kong2024huixiangdoucr,
-      title={HuixiangDou-CR: Coreference Resolution in Group Chats}, 
+      title={HuixiangDou-CR: Coreference Resolution in Group Chats},
       author={Huanjun Kong},
       year={2024},
       eprint={2405.02817},

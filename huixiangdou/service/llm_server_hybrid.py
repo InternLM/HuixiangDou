@@ -7,6 +7,7 @@ import random
 import time
 from datetime import datetime, timedelta
 from multiprocessing import Process, Value
+
 import pytoml
 import requests
 from aiohttp import web
@@ -42,7 +43,6 @@ def build_messages(prompt, history, system: str = None):
         messages.append({'role': 'assistant', 'content': item[1]})
     messages.append({'role': 'user', 'content': prompt})
     return messages
-
 
 
 class RPM:
@@ -581,9 +581,11 @@ def llm_serve(config_path: str, server_ready: Value):
     app.add_routes([web.post('/inference', inference)])
     web.run_app(app, host='0.0.0.0', port=bind_port)
 
+
 def start_llm_server(config_path: str):
     server_ready = Value('i', 0)
-    server_process = Process(target=llm_serve, args=(config_path, server_ready))
+    server_process = Process(target=llm_serve,
+                             args=(config_path, server_ready))
     server_process.daemon = True
     server_process.start()
     while True:
@@ -596,6 +598,7 @@ def start_llm_server(config_path: str):
             logger.error('start local LLM server failed, quit.')
             raise Exception('local LLM path')
     logger.info('Hybrid LLM Server start.')
+
 
 def main():
     """Function to start the server without running a separate process."""

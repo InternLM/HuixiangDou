@@ -82,7 +82,9 @@ def show(assistant, fe_config: dict):
 
         if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
             # send message to lark group
-            logger.error('!!!`lark_send_only` feature will be removed on October 10, 2024. If this function still helpful for you, please let me know: https://github.com/InternLM/HuixiangDou/issues')
+            logger.error(
+                '!!!`lark_send_only` feature will be removed on October 10, 2024. If this function still helpful for you, please let me know: https://github.com/InternLM/HuixiangDou/issues'
+            )
             from .frontend import Lark
             lark = Lark(webhook=fe_config['webhook_url'])
             logger.info(f'send {reply} and {references} to lark group.')

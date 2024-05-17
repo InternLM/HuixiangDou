@@ -1,9 +1,17 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import re
+
+from loguru import logger
+
 from .llm_client import ChatClient
 
-def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int, backend:str = 'local'):
-    """Generate a score based on the prompt, and then compares it to
-    threshold.
+
+def is_truth(llm: ChatClient,
+             prompt: str,
+             throttle: int,
+             default: int,
+             backend: str = 'local'):
+    """Generate a score based on the prompt, and then compares it to threshold.
 
     Args:
         prompt (str): The prompt for the language model.
@@ -24,15 +32,16 @@ def is_truth(llm: ChatClient, prompt:str, throttle: int, default: int, backend:s
     relation = llm.generate_response(prompt=prompt, backend=backend)
     logs['relation'] = relation
     filtered_relation = ''.join([c for c in relation if c.isdigit()])
-    
+
     try:
         score_str = re.sub(r'[^\d]', ' ', filtered_relation).strip()
         score = int(score_str.split(' ')[0])
     except Exception as e:
-        logger.warning('primitive is_truth: {}, use default value {}'.format(str(e), default))
+        logger.warning('primitive is_truth: {}, use default value {}'.format(
+            str(e), default))
     logs['throttle'] = throttle
     logs['output'] = score
-    
+
     if score >= throttle:
         return True, logs
     return False, logs

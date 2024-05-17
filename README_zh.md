@@ -198,7 +198,6 @@ python3 -m huixiangdou.main --standalone
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
-
 **STEP3.** 测试发消息给飞书群\[可选\]
 
 这一步主要是验证算法 pipeline 可靠，**STEP4** 同样支持即时通讯软件。
@@ -339,7 +338,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
@@ -348,7 +347,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 }
 
 @misc{kong2024huixiangdoucr,
-      title={HuixiangDou-CR: Coreference Resolution in Group Chats}, 
+      title={HuixiangDou-CR: Coreference Resolution in Group Chats},
       author={Huanjun Kong},
       year={2024},
       eprint={2405.02817},

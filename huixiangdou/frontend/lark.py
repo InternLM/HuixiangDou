@@ -11,6 +11,7 @@ from loguru import logger
 
 urllib3.disable_warnings()
 
+
 class Lark:
     """Lark bot http proxy."""
 

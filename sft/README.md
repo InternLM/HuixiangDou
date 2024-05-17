@@ -1,35 +1,35 @@
 # SFT data scripts and training configs
 
-> [!NOTE]
+> \[!NOTE\]
 >
 > <div align="center">
-> This part is not for beginner, please know about <a href="https://github.com/huggingface/transformers/">transformers</a>, <a href="https://arxiv.org/abs/2203.15556">scaling law</a> and <a href="https://github.com/OpenAccess-AI-Collective/axolotl">SFT</a> first. Basic computer network and python programming knowledge also requried.
+> This part is not for beginner, please know about <a href="https://github.com/huggingface/transformers/">transformers</a>, <a href="https://arxiv.org/abs/2203.15556">scaling law</a> and <a href="https://github.com/OpenAccess-AI-Collective/axolotl">SFT</a> first. Basic computer network and python programming knowledge also required.
 > </div>
 
 Here is directory description:
 
-| script | desc |
-| :-: | :-: |
-| reconstruct_wechat_group.py | reconstruct wechat group messages |
+|             script             |                              desc                              |
+| :----------------------------: | :------------------------------------------------------------: |
+|  reconstruct_wechat_group.py   |               reconstruct wechat group messages                |
 | reconstruct_filter_annotate.py | filter data with puyu+kimi, manually annotate, manually review |
-| reconstruct_check_llm.py | recheck 14B & 32B results |
-| convert_to_alpaca.py | convert raw group data to alpaca format |
+|    reconstruct_check_llm.py    |                   recheck 14B & 32B results                    |
+|      convert_to_alpaca.py      |            convert raw group data to alpaca format             |
 
 # Reproduce HuixiangDou-CR
 
 ## 1. Prepare Data
 
-* Get all WeChat group chats, use `python3 reconstruct_wechat_group.py` to split it and filter with LLM
-* `python3 reconstruct_filter_annotate.py` to filter, annotate and manually check
+- Get all WeChat group chats, use `python3 reconstruct_wechat_group.py` to split it and filter with LLM
 
-    Now you can get [gt.jsonl](https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/blob/main/gt.jsonl)
+- `python3 reconstruct_filter_annotate.py` to filter, annotate and manually check
 
-* Convert `gt.jsonl` to alpaca format, use `convert_to_alpaca.py`
+  Now you can get [gt.jsonl](https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/blob/main/gt.jsonl)
 
-    Finally we have [alpaca.json](https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/blob/main/alpaca.json) for SFT
+- Convert `gt.jsonl` to alpaca format, use `convert_to_alpaca.py`
 
+  Finally we have [alpaca.json](https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/blob/main/alpaca.json) for SFT
 
-## 2. Train 
+## 2. Train
 
 Install [axolotl](https://github.com/OpenAccess-AI-Collective/axolotl), update your model path and data path in [axolotl_configs](./axolotl_configs/).
 
@@ -69,6 +69,7 @@ python -m vllm.entrypoints.openai.api_server --served-model-name LoRA-Qwen1.5-0.
 ```
 
 Evaluate the precision and F1 score, **use your own IP and port** in the python code.
+
 ```bash
 python3 reconstruct_filter_annotate.py --action metric --llm-type Qwen1.5-0.5B-Chat
 ```

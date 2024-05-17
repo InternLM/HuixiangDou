@@ -6,9 +6,9 @@ import time
 import numpy as np
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.vectorstores.faiss import FAISS as Vectorstore
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores.utils import DistanceStrategy
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
@@ -36,7 +36,8 @@ class Retriever:
         rejection_path = os.path.join(work_dir, 'db_reject')
         retriever_path = os.path.join(work_dir, 'db_response')
 
-        if not os.path.exists(rejection_path) or not os.path.exists(retriever_path):
+        if not os.path.exists(rejection_path) or not os.path.exists(
+                retriever_path):
             logger.warning('!!!warning, feature db not exist.!!!')
             return
 
@@ -157,7 +158,6 @@ class Retriever:
         docs = self.compression_retriever.get_relevant_documents(question)
         if tracker is not None:
             tracker.log('retrieve', [doc.metadata['source'] for doc in docs])
-
 
         # add file text to context, until exceed `context_max_length`
 
