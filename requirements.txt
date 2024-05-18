@@ -3,6 +3,7 @@ aiohttp
 auto-gptq
 bcembedding
 beautifulsoup4
+duckduckgo_search
 einops
 faiss
 langchain>=0.1.12
@@ -28,4 +29,3 @@ torch>=2.0.0
 transformers>=4.37.0
 transformers_stream_generator
 unstructured
-duckduckgo_search

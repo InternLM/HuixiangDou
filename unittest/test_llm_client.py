@@ -2,9 +2,7 @@ from huixiangdou.service.llm_client import ChatClient
 
 
 def test_auto_fix():
-    """
-    test auto choose backend based on config
-    """
+    """test auto choose backend based on config."""
     remote_only_config = 'config-2G.ini'
     local_only_config = 'config.ini'
     full_config = 'config-advanced.ini'

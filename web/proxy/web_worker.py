@@ -263,7 +263,7 @@ class WebWorker:
             web_context = ''
             articles, error = web.get(query=topic, max_article=2)
             if error is not None:
-                return ErrorCode.SEARCH_FAIL, response, []
+                return ErrorCode.WEB_SEARCH_FAIL, response, []
 
             tracker.log('search returned')
             for article in articles:

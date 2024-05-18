@@ -1,4 +1,10 @@
-# 集成个人微信示例（需要基础开发能力）
+# 集成 wechaty 魔改版个人微信（不推荐）
+
+> \[!NOTE\]
+>
+> <div align="center">
+> wechaty 魔改法有诸多缺陷，请使用 android APK 免费版或 `main.py` 中 wechat_wkteam 类付费版。
+> </div>
 
 截止 2024.01.30，想在个人微信群收发消息，潜在思路有这些：
 

@@ -1,9 +1,9 @@
 # 我们在`BCEmbedding`中提供langchain直接集成的接口。
 from BCEmbedding.tools.langchain import BCERerank
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS as VectorStore
 from langchain_community.vectorstores.utils import DistanceStrategy
 

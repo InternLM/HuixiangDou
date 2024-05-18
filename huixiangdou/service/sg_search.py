@@ -27,10 +27,7 @@ class SourceGraphProxy:
         KEYWORDS_TEMPLATE (str): Template string for generating keywords based on selected language.  # noqa E501
     """
 
-    def __init__(self,
-                 config_path: str,
-                 topk=1,
-                 language: str = 'zh') -> None:
+    def __init__(self, config_path: str, topk=1, language: str = 'zh') -> None:
         """Init searcher with config."""
         self.config_path = config_path
         self.sg_config = None
@@ -143,13 +140,21 @@ class SourceGraphProxy:
         ENV = 'export SRC_ACCESS_TOKEN="{}" && '.format(
             self.sg_config['src_access_token'])
         BINARY = self.sg_config['binary_src_path']
+        if not os.path.exists(BINARY):
+            raise Exception('{} not exist'.format(BINARY))
+            return ''
 
         prompt = self.KEYWORDS_TEMPLATE.format(question)
         entities = []
         entity_str = ''
         try:
             entity_str = llm_client.generate_response(prompt=prompt)
-            entities = [item for item in entity_str.split(',') if item.strip()]
+            separator = ','
+            if '，' in entity_str:
+                separator = '，'
+            entities = [
+                item for item in entity_str.split(separator) if item.strip()
+            ]
         except Exception as e:
             logger.error('parse {} failed {}.'.format(entity_str, str(e)))
             # return ''

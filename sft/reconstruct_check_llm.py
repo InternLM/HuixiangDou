@@ -4,6 +4,7 @@
 # * 标注规范：就看这句话是不是能构成独立的问题、不需要看其他话
 # * kimi & puyu 同时认为需要解答的内容中， puyu cr 判定的正确率
 
+import argparse
 import json
 import os
 import pdb
@@ -13,11 +14,11 @@ import sys
 import termios
 import time
 import tty
-import argparse
 
 from loguru import logger
 from openai import OpenAI
 from sklearn.metrics import f1_score, precision_score, recall_score
+
 
 def read_badcase(llm_type: str, input_filepath: str):
     gts = []
@@ -51,7 +52,7 @@ def read_badcase(llm_type: str, input_filepath: str):
 if __name__ == '__main__':
     b14 = 'Qwen1.5-14B-Chat'
     b14_badcase = read_badcase(b14, 'groups/{}.jsonl'.format(b14))
-    
+
     b32 = 'Qwen1.5-32B-Chat'
     b32_badcase = read_badcase(b32, 'groups/{}.jsonl'.format(b32))
 
@@ -65,4 +66,4 @@ if __name__ == '__main__':
                 dt = json_obj['{}_cr_need'.format(b32)]
 
                 if dt == 'yes':
-                    f.write("dt:{} \ttext:{}\n".format(dt, text))
+                    f.write('dt:{} \ttext:{}\n'.format(dt, text))

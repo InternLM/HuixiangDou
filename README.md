@@ -8,9 +8,6 @@ English | [简体中文](README_zh.md)
   <a href="resource/figures/wechat.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
-  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
-    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
-  </a>
   <a href="https://pypi.org/project/huixiangdou" target="_blank">
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
   </a>
@@ -23,6 +20,9 @@ English | [简体中文](README_zh.md)
   <a href="https://discord.gg/TW4ZBpZZ" target="_blank">
     <img alt="discord" src="https://img.shields.io/badge/discord-red?logo=discord&logoColor=white" />
   </a>
+  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
+    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-2401.08772%20-darkred?logo=arxiv&logoColor=white" />
+  </a>
 </div>
 
 </div>
@@ -31,7 +31,7 @@ HuixiangDou is a **group chat** assistant based on LLM (Large Language Model).
 
 Advantages:
 
-1. Design a two-stage pipeline of rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772) and [2405.02817](https://arxiv.org/abs/2405.02817)
+1. Design a three-stage pipeline of preprocess, rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772) and [2405.02817](https://arxiv.org/abs/2405.02817)
 2. Low cost, requiring only 1.5GB memory and no need for training
 3. Offers a complete suite of Web, Android, and pipeline source code, which is industrial-grade and commercially viable
 
@@ -45,6 +45,7 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
+- \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), support image, URL and reference resolution in group chat
 - \[2024/05\] Add [Coreference Resolution fine-tune](./sft)
 
   <table>
@@ -58,9 +59,13 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
   </table>
 
 - \[2024/04\] Add [SFT data annotation and examples](./docs/rag_annotate_sft_data_zh.md)
+
 - \[2024/04\] Update [technical report](./resource/HuixiangDou.pdf)
+
 - \[2024/04\] Release [web server](./web) source code 👍
+
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-1.0.0.apk) !
+
 - \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
 
 # 📖 Support
@@ -175,7 +180,7 @@ mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-> [!NOTE]
+> \[!NOTE\]
 >
 > <div align="center">
 > If restarting local LLM is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>, then open a new terminal, and only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
@@ -190,7 +195,6 @@ python3 -m huixiangdou.main --standalone
 ```
 
 Please adjust the `repodir` documents, [good_questions](./resource/good_questions.json), and [bad_questions](./resource/bad_questions.json) to try your own domain knowledge (medical, financial, power, etc.).
-
 
 **STEP3.** Test sending messages to Feishu group (optional)
 
@@ -214,8 +218,9 @@ python3 -m huixiangdou.main --standalone
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-- [Integrate Feishu group receiving, sending, and withdrawal functions](./docs/add_lark_group_zh.md)
-- [Integrate personal WeChat access example](./docs/add_wechat_group_zh.md)
+- [Integrate Feishu group receiving, sending, and withdrawal](./docs/add_lark_group_zh.md)
+- [Integrate personal WeChat access](./docs/add_wechat_accessibility_zh.md)
+- [Integrate wkteam WeChat access](./docs/add_wechat_commercial_zh.md)
 
 **STEP4.** WEB service and IM applications
 
@@ -241,10 +246,10 @@ enable_local = 0
 enable_remote = 1
 ...
 remote_type = "kimi"
-remote_api_key = "${YOUR-API-KEY}"
+remote_api_key = "YOUR-API-KEY-HERE"
 ```
 
-> [!NOTE]
+> \[!NOTE\]
 >
 > <div align="center">
 > The worst case for each Q&A is to call the LLM 7 times, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
@@ -260,12 +265,14 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all
 
 The HuixiangDou deployed in the WeChat group is the complete version.
 
-When 40G of GPU memory is available, long text + retrieval capabilities can be used to improve accuracy. 
+When 40G of GPU memory is available, long text + retrieval capabilities can be used to improve accuracy.
 
 Please read following topics
 
 - [Refer to config-advanced.ini to improve precision](./docs/full_dev_en.md)
 - [Use rag.py to annotate SFT training data](./docs/rag_annotate_sft_data_zh.md)
+- [Coreference resolution fine-tune](./sft)
+- [Using the commercial WeChat integration, add image analysis, public account parsing, and reference resolution](./docs/add_wechat_commercial_zh.md)
 
 # 🛠️ FAQ
 
@@ -280,7 +287,7 @@ Please read following topics
 
 2. Launch is normal, but out of memory during runtime?
 
-   LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md). Then use docker to independently deploy Hybrid LLM Service.
+   LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/en/quantization). Then use docker to independently deploy Hybrid LLM Service.
 
 3. How to access other local LLM / After access, the effect is not ideal?
 
@@ -324,7 +331,7 @@ Please read following topics
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
@@ -333,7 +340,7 @@ Please read following topics
 }
 
 @misc{kong2024huixiangdoucr,
-      title={HuixiangDou-CR: Coreference Resolution in Group Chats}, 
+      title={HuixiangDou-CR: Coreference Resolution in Group Chats},
       author={Huanjun Kong},
       year={2024},
       eprint={2405.02817},

@@ -8,9 +8,6 @@
   <a href="resource/figures/wechat.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
-  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
-    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-paper%20-darkred?logo=arxiv&logoColor=white" />
-  </a>
   <a href="https://pypi.org/project/huixiangdou" target="_blank">
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
   </a>
@@ -23,13 +20,16 @@
   <a href="https://discord.gg/TW4ZBpZZ" target="_blank">
     <img alt="discord" src="https://img.shields.io/badge/discord-red?logo=discord&logoColor=white" />
   </a>
+  <a href="https://arxiv.org/abs/2401.08772" target="_blank">
+    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-2401.08772%20-darkred?logo=arxiv&logoColor=white" />
+  </a>
 </div>
 
 </div>
 
 茴香豆是一个基于 LLM 的**群聊**知识助手，优势：
 
-1. 设计拒答、响应两阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见论文 [2401.08772](https://arxiv.org/abs/2401.08772) 和 [2405.02817](https://arxiv.org/abs/2405.02817)
+1. 设计预处理、拒答、响应三阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见论文 [2401.08772](https://arxiv.org/abs/2401.08772) 和 [2405.02817](https://arxiv.org/abs/2405.02817)
 2. 成本低至 1.5G 显存，无需训练适用各行业
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
@@ -43,7 +43,8 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
-- \[2024/05\] 增加[指代消歧微调](./sft/)
+- \[2024/05\] [wkteam 微信接入](./docs/add_wechat_commercial_zh.md)，整合图片&公众号解析、集成指代消歧
+- \[2024/05\] [指代消歧微调](./sft/)
   <table>
       <tr>
           <td>🤗</td>
@@ -112,7 +113,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 # 📦 硬件要求
 
-以下是运行茴香豆的硬件需求。建议遵循部署流程，从基础版开始，逐渐体验高级特性。
+以下是运行茴香豆的硬件需求。建议遵循部署流程，从标准版开始，逐渐体验复杂特性。
 
 |  版本  | GPU显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
@@ -136,6 +137,7 @@ apt update
 apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 # python requirements
 pip install -r requirements.txt
+# python3.8 安装 faiss-gpu 而不是 faiss
 ```
 
 茴香豆是基于 `config.ini` 配置实现的，按机器显存可以分成标准版（19G）、实惠版（1.5G）和完整版（40G）。
@@ -164,7 +166,7 @@ Topics unrelated to the knowledge base.. 请问明天天气如何？, , []
 
 可以看到 `main.py` 示例问题处理结果相同，无论问深度学习相关的 mmpose 还是 `今天天气如何`。
 
-**STEP2.** 用 mmpose 和测试文档构建知识库，开启拒答流
+**STEP2.** 用 mmpose 的文档构建 mmpose 知识库，开启拒答流。如有自己的文档，放入 `repodir` 下即可。
 
 复制下面所有命令（包含 '#' 符号）执行。
 
@@ -197,7 +199,6 @@ python3 -m huixiangdou.main --standalone
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
-
 **STEP3.** 测试发消息给飞书群\[可选\]
 
 这一步主要是验证算法 pipeline 可靠，**STEP4** 同样支持即时通讯软件。
@@ -221,8 +222,9 @@ python3 -m huixiangdou.main # docker 用户
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-- [算法 pipeline 集成飞书群组收发、撤回功能](./docs/add_lark_group_zh.md)
-- [算法 pipeline 个人微信接入示例](./docs/add_wechat_group_zh.md)
+- [算法 pipeline 集成飞书群收发、撤回功能](./docs/add_lark_group_zh.md)
+- [算法 pipeline 个微 android 接入](./docs/add_wechat_accessibility_zh.md)
+- [算法 pipeline 个微 wkteam 接入](./docs/add_wechat_commercial_zh.md)
 
 **STEP4.** WEB 前后端
 
@@ -248,7 +250,7 @@ enable_local = 0
 enable_remote = 1
 ..
 remote_type = "kimi"
-remote_api_key = "${YOUR-API-KEY}"
+remote_api_key = "YOUR-API-KEY-HERE"
 ```
 
 > \[!NOTE\]
@@ -265,12 +267,20 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 ## 三、完整版
 
-微信群里部署的 “豆哥” 是完全体，40G 显存时可使用长文本 + 检索能力提升精度。
+微信群里的 “茴香豆” 开启了全部功能：
+
+* Serper 搜索及 SourceGraph 搜索增强
+* 群聊图片、微信公众号解析
+* 文本指代消歧
+* 混合 LLM
+* 知识库为 openmmlab 相关的 12 个 repo（1700 个文档），拒绝闲聊
 
 请阅读以下话题：
 
 - [参照 config-advanced.ini 配置提升效果](./docs/full_dev_zh.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
+- [群聊场景指代消歧训练](./sft)
+- [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
 
 # 🛠️ FAQ
 
@@ -285,7 +295,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 2. 启动正常，但运行期间显存 OOM 怎么办？
 
-   基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization/kv_int8.md)。然后使用 docker 独立部署 Hybrid LLM Service。
+   基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization)。然后使用 docker 独立部署 Hybrid LLM Service。
 
 3. 如何接入其他 local LLM / 接入后效果不理想怎么办？
 
@@ -322,7 +332,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 7. 报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
 
    - 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。检查结束后按 ctrl-c 关掉。
-   - 检查 `config.ini` 中各种 TOKEN 书写正确。`${}` 不要带进 TOKEN ！！！
+   - 检查 `config.ini` 中各种 TOKEN 书写正确。
 
 8. 如果使用 `deepseek` 进行 remote llm 调用，出现 400 错误可能是因为安全审查；在 [huixiangdou/main.py](huixiangdou/main.py) 中修改 `queries = ['请问如何安装 mmpose ?']` 为其他问题即可正常运行。
 
@@ -337,7 +347,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance}, 
+      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
@@ -346,7 +356,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 }
 
 @misc{kong2024huixiangdoucr,
-      title={HuixiangDou-CR: Coreference Resolution in Group Chats}, 
+      title={HuixiangDou-CR: Coreference Resolution in Group Chats},
       author={Huanjun Kong},
       year={2024},
       eprint={2405.02817},
