@@ -108,7 +108,6 @@ class BCENode(Node):
         truth, log = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10)
     
         if not truth:
-            sess.code = ErrorCode.UNRELATED
             return
 
         # answer the question
@@ -204,7 +203,7 @@ class SGSearchNode(Node):
             return
 
         # if exit for other status (SECURITY or SEARCH_FAIL), still quit `sg_search`
-        if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT:
+        if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT and sess.code != ErrorCode.SEARCH_FAIL:
             return
 
         sg = SourceGraphProxy(config_path=self.config_path, language=self.language)
