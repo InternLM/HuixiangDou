@@ -6,9 +6,8 @@
 
 > [!Warning]
 > <div align="center">
-> wkteam 曾变更过经营主体，🚨注意财产安全 </br>
+> wkteam 曾变更过经营主体，🚨<strong>注意财产安全</strong> </br>
 > 打开 wkteam.cn 和 121.229.29.88:6327， 会发现 UI 相同但数据库不通，须仔细咨询运营方
-> </b>
 > </div>
 
 整个服务需要准备以下资源：
@@ -26,7 +25,9 @@
 
 <img src="figures/wechat-wkteam.jpg" width="600">
 
-信息都被缓存进了 redis，因此算法重启不会漏掉群里的消息。
+这么设计的好处是：
+* 消息回调实现简单，很稳定一般不需重启
+* 信息都被缓存进了 redis，修改算法后重启，不会漏处理群里的消息
 
 ## 二、wkteam 登录、测试消息缓存
 
@@ -34,7 +35,7 @@
 
 在公网机器中填写 `config.ini`，假设我们的 ip 是 `101.133.161.11`；假设我们的地区是上海。
 
-> 注意 `proxy` 地区填错会导致封号！
+> 注意 `proxy` 地区填错会导致封号！ 首次使用 wkteam，24 小时后要重新登录一次
 
 ```bash
 # wechat message callback server ip
