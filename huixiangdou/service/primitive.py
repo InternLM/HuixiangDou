@@ -1,8 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import re
-
-from loguru import logger
-
 from .llm_client import ChatClient
 from loguru import logger
 
