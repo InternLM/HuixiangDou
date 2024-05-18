@@ -45,6 +45,7 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
+- \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), support image, URL and reference resolution in group chat
 - \[2024/05\] Add [Coreference Resolution fine-tune](./sft)
 
   <table>
@@ -217,8 +218,9 @@ python3 -m huixiangdou.main --standalone
 
 <img src="./resource/figures/lark-example.png" width="400">
 
-- [Integrate Feishu group receiving, sending, and withdrawal functions](./docs/add_lark_group_zh.md)
-- [Integrate personal WeChat access example](./docs/add_wechat_accessibility_zh.md)
+- [Integrate Feishu group receiving, sending, and withdrawal](./docs/add_lark_group_zh.md)
+- [Integrate personal WeChat access](./docs/add_wechat_accessibility_zh.md)
+- [Integrate wkteam WeChat access](./docs/add_wechat_commercial_zh.md)
 
 **STEP4.** WEB service and IM applications
 

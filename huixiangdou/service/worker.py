@@ -298,7 +298,8 @@ class WebSearchNode(Node):
         for article_id, article in enumerate(articles):
                 article.cut(0, self.max_length)
                 prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query, article.brief)
-                truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='puyu')
+                # truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='puyu')
+                truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='remote')
                 sess.debug['WebSearchNode_relavance_{}'.format(article_id)] = logs
                 if truth:
                     sess.web_knowledge += '\n'
