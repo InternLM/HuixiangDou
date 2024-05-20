@@ -101,6 +101,25 @@ def test_deepseek_pass():
     assert len(error) == 0
     assert len(response) > 0
 
+def test_step_pass():
+    remote_only_config = 'config-2G.ini'
+    llm_config = None
+    with open(remote_only_config, encoding='utf8') as f:
+        llm_config = pytoml.load(f)['llm']
+
+    secrets = load_secret()
+    llm_config['server']['remote_type'] = 'step'
+    llm_config['server']['remote_api_key'] = secrets['step']
+    llm_config['server']['remote_llm_model'] = 'auto'
+    server = HybridLLMServer(llm_config=llm_config)
+
+    response, error = server.generate_response(prompt='hello',
+                                        history=[],
+                                        backend='step')
+    
+    assert len(error) == 0
+    assert len(response) > 0
+
 
 
 def test_rpm():
@@ -117,5 +136,6 @@ def test_rpm():
         print(i)
 
 # if __name__ == '__main__':
+#     test_step_pass()
 #     test_zhipu_pass()
 #     test_deepseek_pass()
