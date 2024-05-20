@@ -4,12 +4,14 @@ import argparse
 import json
 import os
 import types
+
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS
+from duckduckgo_search import DDGS
 from loguru import logger
 from readability import Document
-from duckduckgo_search import DDGS
+
 
 class Article:
 
@@ -49,14 +51,14 @@ class WebSearch:
     def __init__(self, config_path: str, retry: int = 1) -> None:
         """Initializes the WebSearch object with the given config path and
         retry count."""
-        
+
         self.search_config = None
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             self.search_config = types.SimpleNamespace(**config['web_search'])
         self.retry = retry
 
-    def fetch_url(self, query: str, target_link: str, brief: str=""):
+    def fetch_url(self, query: str, target_link: str, brief: str = ''):
         if not target_link.startswith('http'):
             return None
 
@@ -91,11 +93,13 @@ class WebSearch:
                 if domain in result['href']:
                     filter_results.append(result)
                     break
-        
-        logger.debug("filter results: {}".format(filter_results))
+
+        logger.debug('filter results: {}'.format(filter_results))
         articles = []
         for result in filter_results:
-            a = self.fetch_url(query=query, target_link=result['href'], brief=result['body'])
+            a = self.fetch_url(query=query,
+                               target_link=result['href'],
+                               brief=result['body'])
             if a is not None and len(a) > 0:
                 articles.append(a)
             if len(articles) > max_article:
@@ -123,7 +127,7 @@ class WebSearch:
                                     data=payload,
                                     timeout=15)  # noqa E501
         jsonobj = json.loads(response.text)
-
+        logger.debug(jsonobj)
         keys = self.search_config.domain_partial_order
         urls = {}
         normal_urls = []
@@ -275,7 +279,7 @@ if __name__ == '__main__':
     parser = parse_args()
     s = WebSearch(config_path=parser.config_path)
 
-    print(s.get('mmdeploy 安装教程'))
+    print(s.get('LMDeploy 修改日志级别'))
     print(
         fetch_web_content(
             'https://mmdeploy.readthedocs.io/zh-cn/latest/get_started.html'))

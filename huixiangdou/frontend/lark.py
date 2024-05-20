@@ -7,6 +7,7 @@ import time
 
 import requests
 import urllib3
+from loguru import logger
 
 urllib3.disable_warnings()
 
@@ -21,7 +22,8 @@ class Lark:
                  fail_notice=False):
         """Init with hook url."""
         self.headers = {'Content-Type': 'application/json; charset=utf-8'}
-        print(f'webhook {webhook}')
+        logger.debug(f'webhook {webhook}')
+        logger.error('This class would be deprecated in 2024.10.10')
         self.webhook = webhook
         self.secret = secret
         self.pc_slide = pc_slide

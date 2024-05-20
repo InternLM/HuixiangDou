@@ -70,7 +70,7 @@ def build_reply_text(reply: str, references: list):
     return ret
 
 
-def lark_send_only(assistant, fe_config: dict):
+def show(assistant, fe_config: dict):
     queries = ['请问如何安装 mmpose ?', '请问明天天气如何？']
     for query in queries:
         code, reply, references = assistant.generate(query=query,
@@ -78,9 +78,13 @@ def lark_send_only(assistant, fe_config: dict):
                                                      groupname='')
         logger.warning(f'{code}, {query}, {reply}, {references}')
         reply_text = build_reply_text(reply=reply, references=references)
+        logger.info(reply_text)
 
         if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
             # send message to lark group
+            logger.error(
+                '!!!`lark_send_only` feature will be removed on October 10, 2024. If this function still helpful for you, please let me know: https://github.com/InternLM/HuixiangDou/issues'
+            )
             from .frontend import Lark
             lark = Lark(webhook=fe_config['webhook_url'])
             logger.info(f'send {reply} and {references} to lark group.')
@@ -178,12 +182,16 @@ def run():
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
 
     fe_type = fe_config['type']
-    if fe_type == 'lark' or fe_type == 'none':
-        lark_send_only(assistant, fe_config)
+    if fe_type == 'none':
+        show(assistant, fe_config)
     elif fe_type == 'lark_group':
         lark_group_recv_and_send(assistant, fe_config)
     elif fe_type == 'wechat_personal':
         wechat_personal_run(assistant, fe_config)
+    elif fe_type == 'wechat_wkteam':
+        from .frontend import WkteamManager
+        manager = WkteamManager(args.config_path)
+        manager.loop(assistant)
     else:
         logger.info(
             f'unsupported fe_config.type {fe_type}, please read `config.ini` description.'  # noqa E501

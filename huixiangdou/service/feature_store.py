@@ -10,11 +10,11 @@ from typing import Any, List, Optional
 
 import pytoml
 from BCEmbedding.tools.langchain import BCERerank
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
                                      RecursiveCharacterTextSplitter)
 from langchain.vectorstores.faiss import FAISS as Vectorstore
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from loguru import logger
 from torch.cuda import empty_cache

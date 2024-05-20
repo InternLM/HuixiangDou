@@ -4,6 +4,7 @@
 # * 标注规范：就看这句话是不是能构成独立的问题、不需要看其他话
 # * kimi & puyu 同时认为需要解答的内容中， puyu cr 判定的正确率
 
+import argparse
 import json
 import os
 import pdb
@@ -13,11 +14,11 @@ import sys
 import termios
 import time
 import tty
-import argparse
 
 from loguru import logger
 from openai import OpenAI
 from sklearn.metrics import f1_score, precision_score, recall_score
+
 
 def build_context(sender: str, query: str, window: list):
     context = ''
@@ -74,7 +75,7 @@ def kimi_is_question(query):
     return False
 
 
-def kimi_annotate(puyu_file_path:str, kimi_file_path:str):
+def kimi_annotate(puyu_file_path: str, kimi_file_path: str):
     # 读取输入文件，并逐行处理
     with open(puyu_file_path, 'r', encoding='utf-8') as input_file, open(
             kimi_file_path, 'w', encoding='utf-8') as output_file:
@@ -95,7 +96,7 @@ def kimi_annotate(puyu_file_path:str, kimi_file_path:str):
             output_file.write(json.dumps(data, ensure_ascii=False) + '\n')
 
 
-def human_annotate(kimi_file_path:str, gt_file_path):
+def human_annotate(kimi_file_path: str, gt_file_path):
     # 读取输入文件，并逐行处理
     datas = []
     miss_key = 0
@@ -194,10 +195,12 @@ def human_check(gt_file_path):
                 good.append(repr(data['text']))
                 good_text_sum += len(data['text'])
 
-
     print(json.dumps(bad, indent=2, ensure_ascii=False))
     print(json.dumps(good, indent=2, ensure_ascii=False))
-    print('bad count {}, avg text len {}; good count {}, avg text len {}'.format(len(bad), bad_text_sum / len(bad), len(good), good_text_sum / len(good)))
+    print(
+        'bad count {}, avg text len {}; good count {}, avg text len {}'.format(
+            len(bad), bad_text_sum / len(bad), len(good),
+            good_text_sum / len(good)))
 
     with open('groups/good.json', 'w') as f:
         f.write(json.dumps(good, ensure_ascii=False, indent=2))
@@ -206,7 +209,9 @@ def human_check(gt_file_path):
         f.write(json.dumps(bad, ensure_ascii=False, indent=2))
 
 
-def metric(llm_type:str, gt_filepath:str = 'groups/input.jsonl', dt_filepath:str = 'groups/output.jsonl'):
+def metric(llm_type: str,
+           gt_filepath: str = 'groups/input.jsonl',
+           dt_filepath: str = 'groups/output.jsonl'):
     gts = []
     dts = []
     unknow_count = 0
@@ -234,7 +239,7 @@ def metric(llm_type:str, gt_filepath:str = 'groups/input.jsonl', dt_filepath:str
             else:
                 dt = dt.replace(' ', '')
                 dt = dt.replace('\n', '')
-                
+
                 if 'ab' in dt or 'abc' in dt:
                     unknow_count += 1
 
@@ -254,13 +259,15 @@ def metric(llm_type:str, gt_filepath:str = 'groups/input.jsonl', dt_filepath:str
     recall = recall_score(gts, dts)
     f1 = f1_score(gts, dts)
 
-    logger.info('{}: {} {} {} {}'.format(llm_type, precision, recall, f1, unknow_count))
+    logger.info('{}: {} {} {} {}'.format(llm_type, precision, recall, f1,
+                                         unknow_count))
+
 
 def qwen_coref_res(llm_type: str, target: object):
     model = '/workspace/models/{}'.format(llm_type)
     client = OpenAI(
-        base_url="http://10.140.24.142:29999/v1",
-        api_key="token-abc123",
+        base_url='http://10.140.24.142:29999/v1',
+        api_key='token-abc123',
     )
 
     group_intro = """
@@ -314,17 +321,16 @@ ncnn is a high-performance neural network inference framework optimized for the 
 输入内容：
 "{}"'''
     prompt_base = BASE_PROMPT_TEMPLATE.format(
-        json.dumps(format_history, ensure_ascii=False),
-        target_str)
+        json.dumps(format_history, ensure_ascii=False), target_str)
 
-    prompt = '{}\n输入内容中的 content 信息是否完整，是否需要从历史对话中提取代词或宾语来替代 content 中的一部分词汇？ A：不需要提取，信息完整  B：需要  C：不知道 \n一步步分析，首先历史消息包含哪些话题；其次哪个话题与问题最相关；如果都不相关就不提取。 '.format(prompt_base)
+    prompt = '{}\n输入内容中的 content 信息是否完整，是否需要从历史对话中提取代词或宾语来替代 content 中的一部分词汇？ A：不需要提取，信息完整  B：需要  C：不知道 \n一步步分析，首先历史消息包含哪些话题；其次哪个话题与问题最相关；如果都不相关就不提取。 '.format(
+        prompt_base)
 
-    completion = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
+    completion = client.chat.completions.create(model=model,
+                                                messages=[{
+                                                    'role': 'user',
+                                                    'content': prompt
+                                                }])
     need_cr = completion.choices[0].message.content.lower()
     need_cr = need_cr.strip()
     logger.debug('{} {}'.format(prompt, need_cr))
@@ -338,35 +344,36 @@ ncnn is a high-performance neural network inference framework optimized for the 
 用户的答案是？不要解释，直接给 ABC 选项结果。
 """.format(need_cr)
 
-    completion = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
+    completion = client.chat.completions.create(model=model,
+                                                messages=[{
+                                                    'role': 'user',
+                                                    'content': prompt
+                                                }])
     need_cr = completion.choices[0].message.content.lower()
     need_cr = need_cr.strip()
 
     logger.warning('final choose {}'.format(need_cr))
 
-    if need_cr.startswith('a') or need_cr == '不需要' or '因此不需要' in need_cr or 'a：不需要' in need_cr or '不需要进行指代消解' in need_cr or '选项 a' in need_cr:
+    if need_cr.startswith(
+            'a'
+    ) or need_cr == '不需要' or '因此不需要' in need_cr or 'a：不需要' in need_cr or '不需要进行指代消解' in need_cr or '选项 a' in need_cr:
         return '', 'no'
-    elif need_cr.startswith('b') or need_cr == '需要' or '因此需要' in need_cr or '因此选择b' in need_cr or '需要进行指代消解' in need_cr or '需要指代消解' in need_cr or 'b：需要' in need_cr:
+    elif need_cr.startswith(
+            'b'
+    ) or need_cr == '需要' or '因此需要' in need_cr or '因此选择b' in need_cr or '需要进行指代消解' in need_cr or '需要指代消解' in need_cr or 'b：需要' in need_cr:
         prompt = '{}\n指代消解输入内容中 content 后的文本是？直接返回消解后的完整文本不要解释原因；直接返回最终结果不要解释过程。'.format(
             prompt_base)
-    
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
+
+        completion = client.chat.completions.create(model=model,
+                                                    messages=[{
+                                                        'role': 'user',
+                                                        'content': prompt
+                                                    }])
         response = completion.choices[0].message.content.lower()
     elif need_cr.startswith('c') or '不知道' in need_cr:
         return '', 'unknown'
     else:
         return '', 'exception {}'.format(need_cr)
-
 
     keywords = ['指代消解后的文本是：', '指代消解后是：', '指代消解后：', '指代消解后的文本为：']
     for keyword in keywords:
@@ -379,7 +386,9 @@ ncnn is a high-performance neural network inference framework optimized for the 
     return response, 'yes'
 
 
-def llm_annotate(llm_type: str, input_filepath:str = 'groups/input.jsonl', output_filepath:str = 'groups/output.jsonl'):
+def llm_annotate(llm_type: str,
+                 input_filepath: str = 'groups/input.jsonl',
+                 output_filepath: str = 'groups/output.jsonl'):
     idx = 0
     with open(input_filepath) as fin, open(output_filepath, 'a') as fout:
         for line in fin:
@@ -392,18 +401,20 @@ def llm_annotate(llm_type: str, input_filepath:str = 'groups/input.jsonl', outpu
             idx += 1
 
             if 'qwen' in llm_type.lower():
-                cr_text, state = qwen_coref_res(llm_type=llm_type, target=json_obj)
+                cr_text, state = qwen_coref_res(llm_type=llm_type,
+                                                target=json_obj)
             json_obj['{}_cr_text'.format(llm_type)] = cr_text
             json_obj['{}_cr_need'.format(llm_type)] = state
 
             json_text = json.dumps(json_obj, ensure_ascii=False)
             fout.write(json_text)
             fout.write('\n')
-        
+
 
 def parse_args():
     """Parse args."""
-    parser = argparse.ArgumentParser(description='Annotate and metric LLM with CR task.')
+    parser = argparse.ArgumentParser(
+        description='Annotate and metric LLM with CR task.')
     parser.add_argument('--group-id',
                         type=str,
                         default='20814553575',
@@ -432,8 +443,7 @@ def parse_args():
         # default='Qwen1.5-7B-Chat',
         # default='Qwen1.5-14B-Chat',
         # default='Qwen1.5-32B-Chat',
-        help='LLM type, use qwen moe by default.'
-    )
+        help='LLM type, use qwen moe by default.')
     args = parser.parse_args()
     return args
 
@@ -453,8 +463,10 @@ if __name__ == '__main__':
         4. 基于人工 GT 计算 LLM 的精度
         """
         group_id = args.group_id
-        puyu_file_path = 'groups/{}@chatroom@reconstruct.txt.llm'.format(group_id)
-        kimi_file_path = 'groups/{}@chatroom@reconstruct.txt.kimi'.format(group_id)
+        puyu_file_path = 'groups/{}@chatroom@reconstruct.txt.llm'.format(
+            group_id)
+        kimi_file_path = 'groups/{}@chatroom@reconstruct.txt.kimi'.format(
+            group_id)
         gt_filepath = 'groups/{}@chatroom@gt.jsonl'.format(group_id)
         kimi_annotate()
         human_annotate()

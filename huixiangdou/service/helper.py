@@ -1,11 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import json
+import os
 from enum import Enum
+from pathlib import Path
 from types import SimpleNamespace
 
 import redis
 import requests
 from loguru import logger
+from openai import OpenAI
 
 from .config import redis_host, redis_passwd, redis_port
 
@@ -43,7 +46,7 @@ class ErrorCode(Enum):
     FAILED = 12, 'Fail'
     BAD_PARAMETER = 13, 'Bad parameter'
     INTERNAL_ERROR = 14, 'Internal error'
-    SEARCH_FAIL = 15, 'Web search fail, please check TOKEN and quota'
+    WEB_SEARCH_FAIL = 15, 'Web search fail, please check network, TOKEN and quota'
     SG_SEARCH_FAIL = 16, 'SourceGraph not result, please check token or input query'
     LLM_NOT_RESPONSE_SG = 17, 'LLM not response query with sg search'
     QUESTION_TOO_SHORT = 18, 'Query length too short'
@@ -125,6 +128,16 @@ class Queue:
         if item:
             item = item[1]
         return item
+
+    def get_all(self):
+        """Get add messages in queue without block."""
+        ret = []
+        while True:
+            item = self.__db.lpop(self.key)
+            if not item:
+                break
+            ret.append(item)
+        return ret
 
     def get_nowait(self):
         """Equivalent to get(False)."""
@@ -208,3 +221,21 @@ def multimodal(filepath: str, timeout=5):
     except Exception as e:
         logger.error(str(e))
     return None
+
+
+def kimi_ocr(filepath, token):
+    # curl post file to kimi server
+    client = OpenAI(api_key=token, base_url='https://api.moonshot.cn/v1')
+    try:
+        file_object = client.files.create(file=Path(filepath),
+                                          purpose='file-extract')
+        json_str = client.files.content(file_id=file_object.id).text
+        json_obj = json.loads(json_str)
+        return json_obj['content']
+    except Exception as e:
+        logger.error(str(e))
+    return ''
+
+
+# if __name__ == '__main__':
+#     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', ''))
