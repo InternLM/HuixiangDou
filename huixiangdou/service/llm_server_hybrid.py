@@ -373,18 +373,14 @@ class HybridLLMServer:
         Returns:
             str: Generated response.
         """
-        try:
-            from zhipuai import ZhipuAI
-            client = ZhipuAI(api_key=self.server_config['remote_api_key'])
-        except Exception as e:
-            logger.error(str(e))
-            logger.error('please `pip install zhipuai` and check API_KEY')
-            return ''
+        client = OpenAI(
+            api_key=self.server_config['remote_api_key'],
+            base_url='https://open.bigmodel.cn/api/paas/v4/',
+        )
 
         messages = build_messages(
             prompt=prompt,
-            history=history,
-            system='You are a helpful assistant')  # noqa E501
+            history=history)  # noqa E501
 
         logger.debug('remote api sending: {}'.format(messages))
         completion = client.chat.completions.create(
