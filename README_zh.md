@@ -82,7 +82,8 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 - [Qwen](https://github.com/facebookresearch/llama)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
-- [ChatGLM (ZHIPU)](https://www.zhipuai.cn)
+- [Step](https://platform.stepfun.com)
+- [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [Xi-Api](https://api.xi-ai.cn)
 - [OpenAOE](https://github.com/InternLM/OpenAOE)
 
