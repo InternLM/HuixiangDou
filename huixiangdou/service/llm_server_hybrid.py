@@ -303,6 +303,51 @@ class HybridLLMServer:
         )
         return completion.choices[0].message.content
 
+    def call_step(self, prompt, history):
+        """Generate a response from step, see https://platform.stepfun.com/docs/overview/quickstart
+
+        Args:
+            prompt (str): The prompt to send to LLM.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response from LLM.
+        """
+        client = OpenAI(
+            api_key=self.server_config['remote_api_key'],
+            base_url='https://api.stepfun.com/v1',
+        )
+
+        SYSTEM = '你是由阶跃星辰提供的AI聊天助手，你擅长中文，英文，以及多种其他语言的对话。在保证用户数据安全的前提下，你能对用户的问题和请求，作出快速和精准的回答。同时，你的回答和建议应该拒绝黄赌毒，暴力恐怖主义的内容'  # noqa E501
+        messages = build_messages(prompt=prompt,
+                                  history=history,
+                                  system=SYSTEM)
+
+        logger.debug('remote api sending: {}'.format(messages))
+
+        model = self.server_config['remote_llm_model']
+
+        if model == 'auto':
+            prompt_len = len(prompt)
+            if prompt_len <= int(8192 * 1.5) - 1024:
+                model = 'step-1-8k'
+            elif prompt_len <= int(32768 * 1.5) - 1024:
+                model = 'step-1-32k'
+            elif prompt_len <= int(128000 * 1.5) - 1024:
+                model = 'step-1-128k'
+            else:
+                prompt = prompt[0:int(256000 * 1.5) - 1024]
+                model = 'step-1-256k'
+
+        logger.info('choose step model {}'.format(model))
+
+        completion = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.0,
+        )
+        return completion.choices[0].message.content
+
     def call_gpt(self,
                  prompt,
                  history,
@@ -373,18 +418,14 @@ class HybridLLMServer:
         Returns:
             str: Generated response.
         """
-        try:
-            from zhipuai import ZhipuAI
-            client = ZhipuAI(api_key=self.server_config['remote_api_key'])
-        except Exception as e:
-            logger.error(str(e))
-            logger.error('please `pip install zhipuai` and check API_KEY')
-            return ''
+        client = OpenAI(
+            api_key=self.server_config['remote_api_key'],
+            base_url='https://open.bigmodel.cn/api/paas/v4/',
+        )
 
         messages = build_messages(
             prompt=prompt,
-            history=history,
-            system='You are a helpful assistant')  # noqa E501
+            history=history)  # noqa E501
 
         logger.debug('remote api sending: {}'.format(messages))
         completion = client.chat.completions.create(
@@ -475,6 +516,9 @@ class HybridLLMServer:
                     elif backend == 'zhipuai':
                         output_text = self.call_zhipuai(prompt=prompt,
                                                         history=history)
+
+                    elif backend == 'step':
+                        output_text = self.call_step(prompt=prompt, history=history)
 
                     elif backend == 'xi-api' or backend == 'gpt':
                         base_url = None
