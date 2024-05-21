@@ -665,7 +665,7 @@ class WkteamManager:
         return conversations
 
     def loop(self, worker):
-        """Fetch all messeges from redis, split it by groupId; concat by
+        """Fetch all messages from redis, split it by groupId; concat by
         timestamp."""
         from huixiangdou.service.helper import ErrorCode, kimi_ocr
 
