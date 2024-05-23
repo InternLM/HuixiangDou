@@ -5,7 +5,7 @@ bcembedding
 beautifulsoup4
 duckduckgo_search
 einops
-faiss
+faiss-gpu
 langchain>=0.1.12
 loguru
 lxml_html_clean
