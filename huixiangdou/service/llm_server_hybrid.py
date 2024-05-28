@@ -193,7 +193,7 @@ class HybridLLMServer:
             logger.warning('local LLM disabled.')
 
     def call_puyu(self, prompt, history):
-        url = 'https://puyu.openxlab.org.cn/puyu/api/v1/chat/completion'
+        url = 'https://internlm-chat.intern-ai.org.cn/puyu/api/v1/chat/completions'
 
         now = time.time()
         if int(now - self.token[1]) >= 1800:
@@ -215,7 +215,7 @@ class HybridLLMServer:
         messages.append({'role': 'user', 'content': prompt})
 
         data = {
-            'model': 'internlm2-20b-latest',
+            'model': 'internlm2-latest',
             'messages': messages,
             'n': 1,
             'disable_report': False,
@@ -246,16 +246,16 @@ class HybridLLMServer:
                                      headers=header,
                                      data=json.dumps(data),
                                      timeout=120).json()
-            logger.debug(res_json)
-
-        res_data = res_json['data']
+            
+        res_data = res_json['choices'][0]['message']['content']
+        logger.debug(res_json['choices'])
         if len(res_data) < 1:
             logger.error('debug:')
             logger.error(res_json)
             return output_text
-        output_text = res_data['choices'][0]['text']
+        output_text = res_data
 
-        logger.info(res_json)
+        logger.info(output_text)
         if '仩嗨亾笁潪能實験厔' in output_text:
             raise Exception('internlm model waterprint !!!')
         return output_text
