@@ -647,7 +647,7 @@ def start_llm_server(config_path: str):
 def main():
     """Function to start the server without running a separate process."""
     args = parse_args()
-
+    server_ready = Value('i', 0)
     if not args.unittest:
         llm_serve(args.config_path, server_ready)
     else:

@@ -112,7 +112,7 @@ python3 -m huixiangdou.main
 python3 -m axolotl.cli.merge_lora examples/qwen/qwen2-lora-14B.yaml
 
 # 用 vLLM 部署
-python -m vllm.entrypoints.openai.api_server --served-model-name coref-res --model /path/to/qwen14b-lora-merged/ --port 9999 --max-model-len 4096
+python -m vllm.entrypoints.openai.api_server --served-model-name coref-res --model /path/to/qwen14b-lora-merged/ --port 9999 --max-model-len 4096 --gpu-memory-utilization 0.8
 ```
 
 把端口号配置进 `config.ini` ，重新运行算法 pipeline 即可。

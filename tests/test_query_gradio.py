@@ -7,7 +7,6 @@ import gradio as gr
 import pytoml
 from loguru import logger
 
-from huixiangdou.frontend import Lark
 from huixiangdou.service import ErrorCode, Worker, llm_serve, start_llm_server
 
 
