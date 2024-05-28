@@ -137,6 +137,23 @@ def test_puyu_pass():
     assert len(error) == 0
     assert len(response) > 0
 
+def test_internlm_pass():
+    remote_only_config = 'config-2G.ini'
+    llm_config = None
+    with open(remote_only_config, encoding='utf8') as f:
+        llm_config = pytoml.load(f)['llm']
+
+    secrets = load_secret()
+    llm_config['server']['remote_type'] = 'internlm'
+    server = HybridLLMServer(llm_config=llm_config)
+
+    response, error = server.generate_response(prompt='hello',
+                                        history=[],
+                                        backend='internlm')
+    
+    assert len(error) == 0
+    assert len(response) > 0
+
 def test_rpm():
     rpm = RPM(30)
 
@@ -150,7 +167,9 @@ def test_rpm():
         rpm.wait()
         print(i)
 
-# if __name__ == '__main__':
-#     test_step_pass()
-#     test_zhipu_pass()
-#     test_deepseek_pass()
+if __name__ == '__main__':
+    test_step_pass()
+    test_zhipu_pass()
+    test_deepseek_pass()
+    test_puyu_pass()
+    test_internlm_pass()
