@@ -193,7 +193,7 @@ class HybridLLMServer:
             logger.warning('local LLM disabled.')
 
     def call_puyu(self, prompt, history):
-        url = 'https://internlm-chat.intern-ai.org.cn/puyu/api/v1/chat/completions'
+        url = 'https://puyu.openxlab.org.cn/puyu/api/v1/chat/completion'
 
         now = time.time()
         if int(now - self.token[1]) >= 1800:
@@ -207,6 +207,76 @@ class HybridLLMServer:
 
         logger.info('prompt length {}'.format(len(prompt)))
         history = history[-4:]
+
+        messages = []
+        for item in history:
+            messages.append({'role': 'user', 'content': item[0]})
+            messages.append({'role': 'assistant', 'content': item[1]})
+        messages.append({'role': 'user', 'content': prompt})
+
+        data = {
+            'model': 'internlm2-20b-latest',
+            'messages': messages,
+            'n': 1,
+            'disable_report': False,
+            'top_p': 0.9,
+            'temperature': 0.8,
+            'request_output_len': 2048
+        }
+
+        output_text = ''
+        self.rpm.wait()
+
+        res_json = requests.post(url,
+                                 headers=header,
+                                 data=json.dumps(data),
+                                 timeout=120).json()
+        logger.debug(res_json)
+
+        # fix token
+        if 'msgCode' in res_json and res_json['msgCode'] == 'A0202':
+            # token error retry
+            logger.error('token error, try refresh')
+            self.token = (os_run('openxlab token'), time.time())
+            header = {
+                'Content-Type': 'application/json',
+                'Authorization': self.token[0]
+            }
+            res_json = requests.post(url,
+                                     headers=header,
+                                     data=json.dumps(data),
+                                     timeout=120).json()
+            logger.debug(res_json)
+
+        res_data = res_json['data']
+        if len(res_data) < 1:
+            logger.error('debug:')
+            logger.error(res_json)
+            return output_text
+        output_text = res_data['choices'][0]['text']
+
+        logger.info(res_json)
+        if '仩嗨亾笁潪能實験厔' in output_text:
+            raise Exception('internlm model waterprint !!!')
+        return output_text
+
+    def call_internlm(self, prompt, history):
+        """
+        See https://internlm.intern-ai.org.cn/api/document for internlm remote api
+        """
+        url = 'https://internlm-chat.intern-ai.org.cn/puyu/api/v1/chat/completions'
+
+        now = time.time()
+        if int(now - self.token[1]) >= 1800:
+            logger.debug('refresh token {}'.format(time.time()))
+            self.token = (os_run('openxlab token'), time.time())
+
+        header = {
+            'Content-Type': 'application/json',
+            'Authorization': self.token[0]
+        }
+
+        logger.info('prompt length {}'.format(len(prompt)))
 
         messages = []
         for item in history:
@@ -534,6 +604,9 @@ class HybridLLMServer:
                     elif backend == 'puyu':
                         output_text = self.call_puyu(prompt=prompt,
                                                      history=history)
+                    
+                    elif backend == 'internlm':
+                        output_text = self.call_internlm(prompt=prompt, history=history)
 
                     elif backend == 'alles-apin':
                         output_text = self.call_alles_apin(prompt=prompt,
