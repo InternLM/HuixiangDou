@@ -267,22 +267,19 @@ class HybridLLMServer:
         url = 'https://internlm-chat.intern-ai.org.cn/puyu/api/v1/chat/completions'
 
         now = time.time()
-        if int(now - self.token[1]) >= 1800:
-            logger.debug('refresh token {}'.format(time.time()))
-            self.token = (os_run('openxlab token'), time.time())
 
         header = {
             'Content-Type': 'application/json',
-            'Authorization': self.token[0]
+            'Authorization': self.server_config['remote_api_key']
         }
 
         logger.info('prompt length {}'.format(len(prompt)))
 
         messages = []
         for item in history:
-            messages.append({'role': 'user', 'content': item[0]})
-            messages.append({'role': 'assistant', 'content': item[1]})
-        messages.append({'role': 'user', 'content': prompt})
+            messages.append({'role': 'user', 'text': item[0]})
+            messages.append({'role': 'assistant', 'text': item[1]})
+        messages.append({'role': 'user', 'text': prompt})
 
         data = {
             'model': 'internlm2-latest',
@@ -297,26 +294,13 @@ class HybridLLMServer:
         output_text = ''
         self.rpm.wait()
 
-        res_json = requests.post(url,
-                                 headers=header,
-                                 data=json.dumps(data),
-                                 timeout=120).json()
+        res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
         logger.debug(res_json)
+        if 'msgCode' in res_json:
+            if res_json['msgCode'] == 'A0202':
+                logger.error('Token error, check it starts with "Bearer " or not ?')
+                return ''
 
-        # fix token
-        if 'msgCode' in res_json and res_json['msgCode'] == 'A0202':
-            # token error retry
-            logger.error('token error, try refresh')
-            self.token = (os_run('openxlab token'), time.time())
-            header = {
-                'Content-Type': 'application/json',
-                'Authorization': self.token[0]
-            }
-            res_json = requests.post(url,
-                                     headers=header,
-                                     data=json.dumps(data),
-                                     timeout=120).json()
-            
         res_data = res_json['choices'][0]['message']['content']
         logger.debug(res_json['choices'])
         if len(res_data) < 1:

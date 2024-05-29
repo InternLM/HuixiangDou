@@ -145,6 +145,7 @@ def test_internlm_pass():
 
     secrets = load_secret()
     llm_config['server']['remote_type'] = 'internlm'
+    llm_config['server']['remote_api_key'] = secrets['internlm']
     server = HybridLLMServer(llm_config=llm_config)
 
     response, error = server.generate_response(prompt='hello',
@@ -168,8 +169,8 @@ def test_rpm():
         print(i)
 
 if __name__ == '__main__':
-    test_step_pass()
-    test_zhipu_pass()
-    test_deepseek_pass()
-    test_puyu_pass()
+    # test_step_pass()
+    # test_zhipu_pass()
+    # test_deepseek_pass()
+    # test_puyu_pass()
     test_internlm_pass()
