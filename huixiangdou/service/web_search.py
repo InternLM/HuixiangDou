@@ -4,14 +4,33 @@ import argparse
 import json
 import os
 import types
-
+import asyncio
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS
 from duckduckgo_search import DDGS
 from loguru import logger
 from readability import Document
+import asyncio
+import_pyppeteer = False
+try:
+    from pyppeteer import launch
+    import_pyppeteer = True
+except Exception as e:
+    # Fix ldd ~/.local/share/pyppeteer/local-chromium/1181205/chrome-linux/chrome | grep not
+    # apt install libgbm-dev
+    # See https://techoverflow.net/2020/09/29/how-to-fix-pyppeteer-pyppeteer-errors-browsererror-browser-closed-unexpectedly/
+    logger.info('For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442')
 
+
+async def fetch_zhihu(url):
+    browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
+    page = await browser.newPage()
+    await page.goto(url)
+    content = await page.evaluate('document.getElementsByClassName("Post-Main")[0].innerText', force_expr=True)
+    # print(content)
+    await browser.close()
+    return content
 
 class Article:
 
@@ -63,20 +82,25 @@ class WebSearch:
             return None
 
         logger.info(f'extract: {target_link}')
+
         try:
-            response = requests.get(target_link, timeout=30)
+            content = ''
+            if 'zhuanlan.zhihu.com' in target_link and import_pyppeteer is True:
+                content = asyncio.get_event_loop().run_until_complete(fetch_zhihu(url=target_link))
+            else:
+                response = requests.get(target_link, timeout=30)
 
-            doc = Document(response.text)
-            content_html = doc.summary()
-            title = doc.short_title()
-            soup = BS(content_html, 'html.parser')
+                doc = Document(response.text)
+                content_html = doc.summary()
+                title = doc.short_title()
+                soup = BS(content_html, 'html.parser')
 
-            if len(soup.text) < 4 * len(query):
-                return None
-            content = '{} {}'.format(title, soup.text)
-            content = content.replace('\n\n', '\n')
-            content = content.replace('\n\n', '\n')
-            content = content.replace('  ', ' ')
+                if len(soup.text) < 4 * len(query):
+                    return None
+                content = '{} {}'.format(title, soup.text)
+                content = content.replace('\n\n', '\n')
+                content = content.replace('\n\n', '\n')
+                content = content.replace('  ', ' ')
 
             return Article(content=content, source=target_link, brief=brief)
         except Exception as e:
@@ -278,7 +302,7 @@ if __name__ == '__main__':
 
     parser = parse_args()
     s = WebSearch(config_path=parser.config_path)
-
+    print(s.fetch_url(query='', target_link='https://zhuanlan.zhihu.com/p/699164101'))
     print(s.get('LMDeploy 修改日志级别'))
     print(
         fetch_web_content(

@@ -50,3 +50,16 @@ def test_serper():
     assert articles[0].brief == articles[0].content
     # 删除临时文件，因为delete=False，所以需要手动删除
     os.remove(temp_file.name)
+
+
+def test_parse_zhihu():
+    config_path = 'config-2G.ini'
+    import pdb
+    pdb.set_trace()
+    engine = WebSearch(config_path=config_path)
+    article = engine.fetch_url(query='', target_link='https://zhuanlan.zhihu.com/p/699164101')
+    assert len(article.content) > 20
+
+
+if __name__ == '__main__':
+    test_parse_zhihu()
