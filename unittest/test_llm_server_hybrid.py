@@ -173,6 +173,27 @@ def test_internlm_pass():
     assert len(error) == 0
     assert len(response) > 0
 
+def test_siliconcloud_pass():
+    remote_only_config = 'config-2G.ini'
+    llm_config = None
+    with open(remote_only_config, encoding='utf8') as f:
+        llm_config = pytoml.load(f)['llm']
+
+    secrets = load_secret()
+    llm_config['server']['remote_type'] = 'siliconcloud'
+    llm_config['server']['remote_llm_model'] = 'alibaba/Qwen1.5-110B-Chat'
+    llm_config['server']['remote_api_key'] = secrets['siliconcloud']
+    server = HybridLLMServer(llm_config=llm_config)
+
+    response, error = server.generate_response(prompt=PROMPT,
+                                        history=[],
+                                        backend='siliconcloud')
+    logger.info('siliconcloud response {}'.format(response))
+    score = get_score(relation=response, default=0)
+    assert score >= 5
+    assert len(error) == 0
+    assert len(response) > 0
+
 def test_rpm():
     rpm = RPM(30)
 
@@ -187,9 +208,10 @@ def test_rpm():
         print(i)
 
 if __name__ == '__main__':
-    test_kimi_pass()
-    test_step_pass()
-    test_zhipu_pass()
-    test_deepseek_pass()
+    test_siliconcloud_pass()
+    # test_kimi_pass()
+    # test_step_pass()
+    # test_zhipu_pass()
+    # test_deepseek_pass()
     # test_puyu_pass()
     # test_internlm_pass()

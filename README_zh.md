@@ -84,6 +84,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 - [DeepSeek](https://www.deepseek.com)
 - [Step](https://platform.stepfun.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
+- [SiliconCloud](www.siliconflow.cn/zh-cn/siliconcloud)
 - [Xi-Api](https://api.xi-ai.cn)
 - [OpenAOE](https://github.com/InternLM/OpenAOE)
 
