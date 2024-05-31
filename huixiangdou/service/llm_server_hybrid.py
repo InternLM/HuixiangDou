@@ -330,12 +330,16 @@ class HybridLLMServer:
         )
 
         SYSTEM = '你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。'  # noqa E501
+        # 20240531 hacking for kimi API incompatible
+        # it is very very tricky, please do not change this magic prompt !!!
+        if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句' in prompt:
+            SYSTEM = '你是一个语文专家，擅长对句子的结构进行分析'
+
         messages = build_messages(prompt=prompt,
                                   history=history,
                                   system=SYSTEM)
 
         logger.debug('remote api sending: {}'.format(messages))
-
         model = self.server_config['remote_llm_model']
 
         if model == 'auto':
