@@ -92,6 +92,7 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 - [DeepSeek](https://www.deepseek.com)
 - [Step](https://platform.stepfun.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
+- [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
 - [Xi-Api](https://api.xi-ai.cn)
 - [OpenAOE](https://github.com/InternLM/OpenAOE)
 

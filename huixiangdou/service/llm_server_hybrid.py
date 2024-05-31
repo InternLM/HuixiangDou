@@ -523,6 +523,34 @@ class HybridLLMServer:
 
         return text
 
+    def call_siliconcloud(self, prompt: str, history: list):
+        self.rpm.wait()
+
+        url = "https://api.siliconflow.cn/v1/chat/completions"
+        
+        token = self.server_config['remote_api_key']
+        if not token.startswith('Bearer '):
+            token = 'Bearer ' + token
+        headers = {
+            'content-type': 'application/json',
+            "accept": "application/json",
+            'authorization': token
+        }
+
+        messages = build_messages(prompt=prompt, history=history)
+
+        payload = {
+            'model': self.server_config['remote_llm_model'],
+            "stream": False,
+            'messages': messages,
+            'temperature': 0.1
+        }
+        response = requests.post(url, json=payload, headers=headers)
+        logger.debug(response.text)
+        resp_json = response.json()
+        text = resp_json['choices'][0]['message']['content']
+        return text
+
     def generate_response(self, prompt, history=[], backend='local'):
         """Generate a response from the appropriate LLM based on the
         configuration. If failed, use exponential backoff.
@@ -599,6 +627,9 @@ class HybridLLMServer:
                     elif backend == 'alles-apin':
                         output_text = self.call_alles_apin(prompt=prompt,
                                                            history=history)
+                    elif backend == 'siliconcloud':
+                        output_text = self.call_siliconcloud(prompt=prompt, history=history)      
+
                     else:
                         error = 'unknown backend {}'.format(backend)
                         logger.error(error)
