@@ -235,7 +235,7 @@ See the effect at [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/
 
 ## Cost-effective Edition
 
-If your machine only has 2G of video memory, or if you are pursuing cost-effectiveness, you only need to read [this Zhihu document](https://zhuanlan.zhihu.com/p/685205206).
+If your machine only has 2G GPU memory, or if you are pursuing cost-effectiveness, you only need to read [this Zhihu document](https://zhuanlan.zhihu.com/p/685205206).
 
 The cost-effective version only discards the local LLM and uses the remote LLM instead, and other functions are the same as the standard version.
 
