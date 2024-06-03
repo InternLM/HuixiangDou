@@ -125,7 +125,7 @@ Analyze step by step, first identify what topics are included in the historical 
             return
 
         prompt = self.SCORING_QUESTION_TEMPLTE.format(sess.query)
-        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=6, default=3)
+        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=3, backend='puyu')
         sess.debug['PreprocNode_is_question'] = logs
         if not truth:
             sess.code = ErrorCode.NOT_A_QUESTION
@@ -206,7 +206,7 @@ class BCENode(Node):
         if language == 'zh':
             self.TOPIC_TEMPLATE = '告诉我这句话的主题，不要丢失主语和宾语，直接说主题不要解释：“{}”'
             self.SCORING_RELAVANCE_TEMPLATE = '问题：“{}”\n材料：“{}”\n请仔细阅读以上内容，判断问题和材料的关联度，用0～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n'  # noqa E501
-            self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
+            self.GENERATE_TEMPLATE = '“{}”\n 请仔细阅读以上内容回答问题。\n 问题：“{}” \n '  # noqa E501
         else:
             self.TOPIC_TEMPLATE = 'Tell me the theme of this sentence, just state the theme without explanation: "{}"'  # noqa E501
             self.SCORING_RELAVANCE_TEMPLATE = 'Question: "{}", Background Information: "{}"\nPlease read the content above carefully and assess the relevance between the question and the material on a scale of 0-10. The scoring standard is as follows: extremely relevant gets 10 points; completely irrelevant gets 0 points. Only provide the score, no explanation needed.'  # noqa E501
@@ -220,7 +220,7 @@ class BCENode(Node):
         
         # get query topic
         prompt = self.TOPIC_TEMPLATE.format(sess.query)
-        sess.topic = self.llm.generate_response(prompt)
+        sess.topic = self.llm.generate_response(prompt, backend='puyu')
         for prefix in ['主题：', '这句话的主题是：']:
             if sess.topic.startswith(prefix):
                 sess.topic = sess.topic[len(prefix):]
@@ -240,16 +240,21 @@ class BCENode(Node):
 
         # get relavance between query and knowledge base
         prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query, sess.chunk)
-        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10)
+        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=6, default=10, backend='puyu')
         sess.debug['BCENode_chunk_relavance'] = logs
         if not truth:
             return
 
+        if len(sess.knowledge) < 1:
+            print(sess.knowledge)
+
         # answer the question
         prompt = self.GENERATE_TEMPLATE.format(sess.knowledge, sess.query)
-        # response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
-        response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='remote')
+        response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
         
+        if len(response) < 1:
+            print(response)
+
         sess.code = ErrorCode.SUCCESS
         sess.response = response
         return
@@ -269,7 +274,7 @@ class WebSearchNode(Node):
             self.context_max_length = llm_config['server']['remote_llm_max_text_length']
         if language == 'zh':
             self.SCORING_RELAVANCE_TEMPLATE = '问题：“{}”\n材料：“{}”\n请仔细阅读以上内容，判断问题和材料的关联度，用0～10表示。判断标准：非常相关得 10 分；完全没关联得 0 分。直接提供得分不要解释。\n'  # noqa E501
-            self.KEYWORDS_TEMPLATE = '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。搜索参数类型 string， 内容是短语或关键字，以空格分隔。\n你现在是{}交流群里的助手，用户问“{}”，你打算通过谷歌搜索查询相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'  # noqa E501
+            self.KEYWORDS_TEMPLATE = '谷歌搜索是一个通用搜索引擎，可用于访问互联网、查询百科知识、了解时事新闻等。搜索参数类型 string， 内容是短语或关键字，以空格分隔。\n你打算通过谷歌搜索查询“{}”相关资料，请提供用于搜索的关键字或短语，不要解释直接给出关键字或短语。'  # noqa E501
             self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
         else:
             self.SCORING_RELAVANCE_TEMPLATE = 'Question: "{}", Background Information: "{}"\nPlease read the content above carefully and assess the relevance between the question and the material on a scale of 0-10. The scoring standard is as follows: extremely relevant gets 10 points; completely irrelevant gets 0 points. Only provide the score, no explanation needed.'  # noqa E501
@@ -286,10 +291,14 @@ class WebSearchNode(Node):
 
         engine = WebSearch(config_path=self.config_path)
 
-        prompt = self.KEYWORDS_TEMPLATE.format(sess.groupname, sess.query)
-        search_keywords = self.llm.generate_response(prompt)
-        sess.debug['WebSearchNode_keywords'] = prompt
-        articles, error = engine.get(query=search_keywords, max_article=2)
+        # prompt = self.KEYWORDS_TEMPLATE.format(sess.query)
+        # search_keywords = self.llm.generate_response(prompt)
+        search_keywords = sess.query
+        sess.debug['WebSearchNode_keywords'] = search_keywords
+        articles, error = engine.get(query=search_keywords, max_article=10)
+
+        import pdb
+        pdb.set_trace()
 
         if error is not None:
             sess.code = ErrorCode.WEB_SEARCH_FAIL
@@ -328,7 +337,7 @@ class SGSearchNode(Node):
         self.config_path = config_path
 
         if language == 'zh':
-            self.GENERATE_TEMPLATE = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
+            self.GENERATE_TEMPLATE = '材料：“{}”\n 请仔细阅读参考材料回答问题。\n 问题：“{}” '  # noqa E501
         else:
             self.GENERATE_TEMPLATE = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
@@ -380,18 +389,18 @@ class SecurityNode(Node):
         Check result with security.
         """
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query, sess.response)
-        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=8, default=0)
+        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=7, default=0)
         sess.debug['SecurityNode_qa_perplex'] = logs
         if truth:
             sess.code = ErrorCode.BAD_ANSWER
             return
 
-        prompt = self.SECURITY_TEMAPLTE.format(sess.response)
-        truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=8, default=0)
-        sess.debug['SecurityNode_template'] = logs
-        if truth:
-            sess.code = ErrorCode.SECURITY
-            return
+        # prompt = self.SECURITY_TEMAPLTE.format(sess.response)
+        # truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=8, default=0)
+        # sess.debug['SecurityNode_template'] = logs
+        # if truth:
+        #     sess.code = ErrorCode.SECURITY
+        #     return
 
 class Worker:
     """The Worker class orchestrates the logic of handling user queries,
@@ -509,6 +518,8 @@ class Worker:
                 break
 
         logger.debug(sess.debug)
+        if len(sess.response) < 1:
+            sess.response = self.llm.generate_response(prompt=query, backend='remote')
         return sess.code, sess.response, sess.references
 
 

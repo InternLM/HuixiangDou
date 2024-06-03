@@ -4,14 +4,46 @@ import argparse
 import json
 import os
 import types
-
+import asyncio
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS
 from duckduckgo_search import DDGS
 from loguru import logger
 from readability import Document
+from .file_operation import FileOperation
+from .helper import check_str_useful
+import asyncio
+import_pyppeteer = False
+import re
 
+try:
+    from pyppeteer import launch
+    import_pyppeteer = True
+except Exception as e:
+    # Fix ldd ~/.local/share/pyppeteer/local-chromium/1181205/chrome-linux/chrome | grep not
+    # apt install libgbm-dev
+    # See https://techoverflow.net/2020/09/29/how-to-fix-pyppeteer-pyppeteer-errors-browsererror-browser-closed-unexpectedly/
+    logger.info('For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442')
+
+async def fetch_chroumium_content(url):
+    browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
+    page = await browser.newPage()
+    await page.goto(url)
+    content = await page.evaluate('document.getElementsByClassName("content")[0].innerText', force_expr=True)
+    # print(content)
+    await browser.close()
+    return content
+
+
+async def fetch_zhihu(url):
+    browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
+    page = await browser.newPage()
+    await page.goto(url)
+    content = await page.evaluate('document.getElementsByClassName("Post-Main")[0].innerText', force_expr=True)
+    # print(content)
+    await browser.close()
+    return content
 
 class Article:
 
@@ -62,21 +94,72 @@ class WebSearch:
         if not target_link.startswith('http'):
             return None
 
-        logger.info(f'extract: {target_link}')
         try:
-            response = requests.get(target_link, timeout=30)
+            content = ''
+            if 'zhuanlan.zhihu.com' in target_link and import_pyppeteer is True:
+                logger.info(f'chromium: {target_link}')
 
-            doc = Document(response.text)
-            content_html = doc.summary()
-            title = doc.short_title()
-            soup = BS(content_html, 'html.parser')
+                content = asyncio.get_event_loop().run_until_complete(fetch_zhihu(url=target_link))
 
-            if len(soup.text) < 4 * len(query):
-                return None
-            content = '{} {}'.format(title, soup.text)
-            content = content.replace('\n\n', '\n')
-            content = content.replace('\n\n', '\n')
-            content = content.replace('  ', ' ')
+            elif target_link.lower().endswith('.pdf') or target_link.lower().endswith('.doc') or target_link.lower().endswith('.docx'):
+                # download pdf and doc
+                logger.info(f'download and parse: {target_link}')
+                response = requests.get(target_link, stream=True)
+
+                save_dir = self.search_config.save_dir
+                basename = os.path.basename(target_link)
+                save_path = os.path.join(save_dir, basename)
+
+                with open(save_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+                file_opr = FileOperation()
+                content, error = file_opr.read(filepath=save_path)
+                if error is not None:
+                    return error
+
+            else:
+                logger.info(f'extract: {target_link}')
+
+                response = requests.get(target_link, timeout=30)
+
+                doc = Document(response.text)
+                content_html = doc.summary()
+                title = doc.short_title()
+                soup = BS(content_html, 'html.parser')
+
+                if len(soup.text) < 4 * len(query):
+                    return None
+                content = '{} {}'.format(title, soup.text)
+                content = content.replace('\n\n', '\n')
+                content = content.replace('\n\n', '\n')
+                content = content.replace('  ', ' ')
+
+            if not check_str_useful(content=content):
+                # retry with chromium
+                # content = asyncio.get_event_loop().run_until_complete()
+                import pdb
+                pdb.set_trace()
+
+                # FIXME!
+                loop = asyncio.get_event_loop()
+                result = loop.run_until_complete(fetch_chroumium_content(url=target_link))
+                loop.close()
+
+                # content = asyncio.run(fetch_chroumium_content(url=target_link))
+                # content = await fetch_chroumium_content(url=target_link)
+
+                # loop = asyncio.get_running_loop()
+                # content = loop.run_until_complete(fetch_chroumium_content(url=target_link))
+                # loop.close()
+                
+                if len(content) < 10:
+                    return None
+                if not check_str_useful(content=content):
+                    return None
+
+                return Article(content=content, source=target_link, brief=brief)
 
             return Article(content=content, source=target_link, brief=brief)
         except Exception as e:
@@ -134,12 +217,13 @@ class WebSearch:
 
         for organic in jsonobj['organic']:
             link = ''
-            logger.debug(organic)
 
             if 'link' in organic:
                 link = organic['link']
             else:
                 link = organic['sitelinks'][0]['link']
+
+            logger.debug(link)
 
             for key in keys:
                 if key in link:
@@ -277,9 +361,30 @@ if __name__ == '__main__':
     # print(fetch_web_content('https://www.volcengine.com/theme/4222537-R-7-1'))
 
     parser = parse_args()
+    # s = WebSearch(config_path=parser.config_path)
+    # print(s.fetch_url(query='', target_link='https://zhuanlan.zhihu.com/p/699164101'))
+    # print(s.get('LMDeploy 修改日志级别'))
+    # print(
+    #     fetch_web_content(
+    #         'https://mmdeploy.readthedocs.io/zh-cn/latest/get_started.html'))
+    
     s = WebSearch(config_path=parser.config_path)
 
-    print(s.get('LMDeploy 修改日志级别'))
-    print(
-        fetch_web_content(
-            'https://mmdeploy.readthedocs.io/zh-cn/latest/get_started.html'))
+    pdf_url = 'http://www.lswz.gov.cn/html/xhtml/ztcss/zt-jljstj/images/clgszpj.pdf'
+
+    utf8_url = 'http://www.hljnews.cn/ljxw/content/2023-10/17/content_729976.html?vp-fm'
+    import pdb
+    pdb.set_trace()
+
+    articles, error = s.get(query="中嘉8号具有哪些农艺性状？", max_article=10)
+
+    # article = s.fetch_url(query='', target_link=pdf_url)
+    # assert article is None
+
+    # doc_url = 'https://dara.gd.gov.cn/attachment/0/305/305906/1570875.doc'
+    # pdf_url = 'https://nyncw.cq.gov.cn/ztzl_161/rdzt/xczx/zcwj_249776/bw_257461/202311/P020231122596182031265.pdf'
+    # article = s.fetch_url(query='', target_link=doc_url)
+    # print(article.content)
+    # article = s.fetch_url(query='', target_link=pdf_url)
+    # print(article.content)
+

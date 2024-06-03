@@ -193,6 +193,18 @@ def parse_json_str(json_str: str):
         logger.error(str(e))
         return None, e
 
+def check_str_useful(content: str):
+    useful_char_cnt = 0
+    scopes = [['a', 'z'], ['\u4e00', '\u9fff'], ['A', 'Z'], ['0', '9']]
+    for char in content:
+        for scope in scopes:
+            if char >= scope[0] and char <= scope[1]:
+                useful_char_cnt += 1
+                break
+    if useful_char_cnt / len(content) <= 0.5:
+        # Garbled characters
+        return False
+    return True
 
 def multimodal(filepath: str, timeout=5):
     header = {'Content-Type': 'application/json'}

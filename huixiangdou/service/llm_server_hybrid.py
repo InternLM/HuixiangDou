@@ -215,7 +215,7 @@ class HybridLLMServer:
         messages.append({'role': 'user', 'content': prompt})
 
         data = {
-            'model': 'internlm2-20b-latest',
+            'model': 'internlm2-102b-latest',
             'messages': messages,
             'n': 1,
             'disable_report': False,
@@ -408,6 +408,25 @@ class HybridLLMServer:
         )
         return completion.choices[0].message.content
 
+    def call_fengdeng(self, prompt, history):
+        client = OpenAI(
+            base_url='http://127.0.0.1:9999/v1',
+            api_key='token-abc123',
+        )
+
+        messages = build_messages(
+            prompt=prompt,
+            history=history,
+            system='You are a helpful assistant')  # noqa E501
+
+        logger.debug('remote api sending: {}'.format(messages))
+        completion = client.chat.completions.create(
+            model=self.server_config['remote_llm_model'],
+            messages=messages,
+            temperature=0.1,
+        )
+        return completion.choices[0].message.content
+
     def call_zhipuai(self, prompt, history):
         """Generate a response from zhipuai (a remote LLM).
 
@@ -516,7 +535,10 @@ class HybridLLMServer:
                     elif backend == 'zhipuai':
                         output_text = self.call_zhipuai(prompt=prompt,
                                                         history=history)
-
+                    elif backend == 'fengdeng':
+                        output_text = self.call_fengdeng(prompt=prompt,
+                                                         history=history)
+                    
                     elif backend == 'step':
                         output_text = self.call_step(prompt=prompt, history=history)
 
@@ -549,6 +571,8 @@ class HybridLLMServer:
                     # exponential backoff
                     error = str(e)
                     logger.error(error)
+                    import pdb
+                    pdb.set_trace()
 
                     if 'Error code: 401' in error or 'invalid api_key' in error:
                         break
@@ -647,7 +671,7 @@ def start_llm_server(config_path: str):
 def main():
     """Function to start the server without running a separate process."""
     args = parse_args()
-
+    server_ready = Value('i', 0)
     if not args.unittest:
         llm_serve(args.config_path, server_ready)
     else:

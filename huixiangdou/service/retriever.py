@@ -149,14 +149,15 @@ class Retriever:
         context = ''
         references = []
 
-        reject, docs = self.is_reject(question=question)
-        logger.debug('retriever.docs {}'.format(docs))
-        if reject:
-            if len(docs) > 0:
-                references.append(docs[0][0].metadata['source'])
-            return None, None, references
+        # reject, docs = self.is_reject(question=question)
+        # logger.debug('retriever.docs {}'.format(docs))
+        # if reject:
+        #     if len(docs) > 0:
+        #         references.append(docs[0][0].metadata['source'])
+        #     return None, None, references
 
         docs = self.compression_retriever.get_relevant_documents(question)
+        logger.info(docs)
         if tracker is not None:
             tracker.log('retrieve', [doc.metadata['source'] for doc in docs])
 

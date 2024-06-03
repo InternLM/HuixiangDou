@@ -472,17 +472,30 @@ def parse_args():
 def test_reject(retriever: Retriever, sample: str = None):
     """Simple test reject pipeline."""
     if sample is None:
+        # real_questions = [
+        #     "汕优63是怎么培育出来的",
+        #     "南粳46是什么?",
+        #     "龙粳13是怎么培育出来的？",
+        #     "武育糯16号的亲本是什么？经过多少代选育完成？",
+        #     "原丰早的选育过程是什么？",
+        #     "简述龙粳10号的选育过程？",
+        #     "水稻选育的基本步骤是什么？",
+        #     "在水稻选育过程中，如何评估新品种的适应性和稳定性？",
+        #     "龙粳31是怎样培育出来的？",
+        #     "黄华占有哪些特征特性？",
+        #     "浙辐802具有哪些农艺性状？",
+        #     "如果要栽培汕优63，有哪些栽培要点需要注意？",
+        #     "空育131的栽培技术要点是什么？",
+        #     "吉粳507的适宜种植地区有哪些？",
+        #     "黄丰占种植应该注意什么？",
+        #     "浙辐802适合在哪些地区种植？",
+        #     "水稻适宜种植的土壤条件有哪些？",
+        #     "五常大米是国外引进品种吗？",
+        #     "水稻生长仅需要满足充足的水分和土壤养分即可，这一说法是否正确？"
+        # ]
         real_questions = [
-            'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
-            '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
-            'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
-            '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
-            '请问 ncnn 全称是什么',
-            '有啥中文的 text to speech 模型吗?',
-            '今天中午吃什么？',
-            'huixiangdou 是什么？',
-            'mmpose 如何安装？',
-            '使用科研仪器需要注意什么？'
+            "南粳46是什么?",
+            "黄华占有哪些特征特性？",
         ]
     else:
         with open(sample) as f:
@@ -516,7 +529,7 @@ def test_query(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
         logger.add('logs/feature_store_query.log', rotation='4MB')
     else:
-        real_questions = ['mmpose installation', 'how to use std::vector ?']
+        real_questions = ['冈优22适合在哪些地区种植？']
 
     for example in real_questions:
         example = example[0:400]
@@ -534,23 +547,23 @@ if __name__ == '__main__':
                            config_path=args.config_path)
 
     # walk all files in repo dir
-    file_opr = FileOperation()
-    files = file_opr.scan_dir(repo_dir=args.repo_dir)
-    fs_init.initialize(files=files, work_dir=args.work_dir)
-    file_opr.summarize(files)
-    del fs_init
+    # file_opr = FileOperation()
+    # files = file_opr.scan_dir(repo_dir=args.repo_dir)
+    # fs_init.initialize(files=files, work_dir=args.work_dir)
+    # file_opr.summarize(files)
+    # del fs_init
 
     # update reject throttle
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
-    with open(os.path.join('resource', 'good_questions.json')) as f:
-        good_questions = json.load(f)
-    with open(os.path.join('resource', 'bad_questions.json')) as f:
-        bad_questions = json.load(f)
-    retriever.update_throttle(config_path=args.config_path,
-                              good_questions=good_questions,
-                              bad_questions=bad_questions)
+    # with open(os.path.join('resource', 'good_questions.json')) as f:
+    #     good_questions = json.load(f)
+    # with open(os.path.join('resource', 'bad_questions.json')) as f:
+    #     bad_questions = json.load(f)
+    # retriever.update_throttle(config_path=args.config_path,
+    #                           good_questions=good_questions,
+    #                           bad_questions=bad_questions)
 
-    cache.pop('default')
+    # cache.pop('default')
 
     # test
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)

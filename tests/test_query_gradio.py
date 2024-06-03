@@ -7,7 +7,6 @@ import gradio as gr
 import pytoml
 from loguru import logger
 
-from huixiangdou.frontend import Lark
 from huixiangdou.service import ErrorCode, Worker, llm_serve, start_llm_server
 
 
@@ -25,7 +24,7 @@ def parse_args():
         help='Worker configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
                         action='store_true',
-                        default=True,
+                        default=False,
                         help='Auto deploy required Hybrid LLM Service.')
     args = parser.parse_args()
     return args
@@ -60,4 +59,4 @@ with gr.Blocks() as demo:
             run_button = gr.Button()
     run_button.click(fn=get_reply, inputs=input_question, outputs=result)
 
-demo.launch(share=False, server_name='0.0.0.0', debug=True)
+demo.launch(share=True, server_name='0.0.0.0', debug=True)
