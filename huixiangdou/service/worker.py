@@ -297,9 +297,6 @@ class WebSearchNode(Node):
         sess.debug['WebSearchNode_keywords'] = search_keywords
         articles, error = engine.get(query=search_keywords, max_article=10)
 
-        import pdb
-        pdb.set_trace()
-
         if error is not None:
             sess.code = ErrorCode.WEB_SEARCH_FAIL
             return

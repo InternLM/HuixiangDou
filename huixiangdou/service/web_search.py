@@ -13,9 +13,12 @@ from loguru import logger
 from readability import Document
 from .file_operation import FileOperation
 from .helper import check_str_useful
-import asyncio
 import_pyppeteer = False
 import re
+import aiohttp
+import asyncio
+import nest_asyncio
+import pdb
 
 try:
     from pyppeteer import launch
@@ -26,15 +29,33 @@ except Exception as e:
     # See https://techoverflow.net/2020/09/29/how-to-fix-pyppeteer-pyppeteer-errors-browsererror-browser-closed-unexpectedly/
     logger.info('For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442')
 
+# async def fetch_chroumium_content(url):
+#     browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
+#     page = await browser.newPage()
+#     await page.goto(url)
+#     content = await page.evaluate('document.getElementsByClassName("content")[0].innerText'.format(classname), force_expr=True)
+#     # print(content)
+#     await browser.close()
+#     return content
+
+# async def fetch_ricedata_content(url):
+#     browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
+#     page = await browser.newPage()
+#     await page.goto(url)
+#     content = await page.evaluate("""var texts=""; document.querySelectorAll('.data-table').forEach(function(table){texts += table.textContent || table.innerText;});console.log(texts)
+#  """, force_expr=True)
+#     # print(content)
+#     await browser.close()
+#     return content
+
 async def fetch_chroumium_content(url):
     browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
     page = await browser.newPage()
     await page.goto(url)
-    content = await page.evaluate('document.getElementsByClassName("content")[0].innerText', force_expr=True)
+    content = await page.evaluate('document.body.innerText', force_expr=True)
     # print(content)
     await browser.close()
     return content
-
 
 async def fetch_zhihu(url):
     browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
@@ -98,10 +119,15 @@ class WebSearch:
             content = ''
             if 'zhuanlan.zhihu.com' in target_link and import_pyppeteer is True:
                 logger.info(f'chromium: {target_link}')
-
+                nest_asyncio.apply()
                 content = asyncio.get_event_loop().run_until_complete(fetch_zhihu(url=target_link))
 
-            elif target_link.lower().endswith('.pdf') or target_link.lower().endswith('.doc') or target_link.lower().endswith('.docx'):
+            elif 'ricedata.cn' in target_link or 'hljnews.cn' in target_link:
+                logger.info('direct with chromium {}'.format(target_link))
+                nest_asyncio.apply()
+                content = asyncio.get_event_loop().run_until_complete(fetch_chroumium_content(url=target_link))
+
+            elif target_link.lower().endswith('.pdf') or target_link.lower().endswith('.docx'):
                 # download pdf and doc
                 logger.info(f'download and parse: {target_link}')
                 response = requests.get(target_link, stream=True)
@@ -139,20 +165,10 @@ class WebSearch:
             if not check_str_useful(content=content):
                 # retry with chromium
                 # content = asyncio.get_event_loop().run_until_complete()
-                import pdb
-                pdb.set_trace()
+                logger.info('retry with chromium {}'.format(target_link))
 
-                # FIXME!
-                loop = asyncio.get_event_loop()
-                result = loop.run_until_complete(fetch_chroumium_content(url=target_link))
-                loop.close()
-
-                # content = asyncio.run(fetch_chroumium_content(url=target_link))
-                # content = await fetch_chroumium_content(url=target_link)
-
-                # loop = asyncio.get_running_loop()
-                # content = loop.run_until_complete(fetch_chroumium_content(url=target_link))
-                # loop.close()
+                nest_asyncio.apply()
+                content = asyncio.get_event_loop().run_until_complete(fetch_chroumium_content(url=target_link))
                 
                 if len(content) < 10:
                     return None
@@ -370,10 +386,13 @@ if __name__ == '__main__':
     
     s = WebSearch(config_path=parser.config_path)
 
+    ricedata_url = 'https://www.ricedata.cn/variety/varis/601174.htm'
+    article = s.fetch_url(query='', target_link=ricedata_url)
+    pdb.set_trace()
+
     pdf_url = 'http://www.lswz.gov.cn/html/xhtml/ztcss/zt-jljstj/images/clgszpj.pdf'
 
     utf8_url = 'http://www.hljnews.cn/ljxw/content/2023-10/17/content_729976.html?vp-fm'
-    import pdb
     pdb.set_trace()
 
     articles, error = s.get(query="中嘉8号具有哪些农艺性状？", max_article=10)

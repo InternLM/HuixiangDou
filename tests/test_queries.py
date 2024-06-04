@@ -56,7 +56,7 @@ html_template="<td>{query}</td><td>{resp}</td><td>{refs}</td><td>{code}</td>"
 
 assistant = Worker(work_dir='workdir', config_path='config.ini')
 
-async def inference(request):
+def inference(request):
     """Call local llm inference."""
 
     query = request.rel_url.query['query']

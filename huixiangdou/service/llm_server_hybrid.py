@@ -221,7 +221,7 @@ class HybridLLMServer:
             'disable_report': False,
             'top_p': 0.9,
             'temperature': 0.8,
-            'request_output_len': 2048
+            'request_output_len': 512
         }
 
         output_text = ''
@@ -571,8 +571,6 @@ class HybridLLMServer:
                     # exponential backoff
                     error = str(e)
                     logger.error(error)
-                    import pdb
-                    pdb.set_trace()
 
                     if 'Error code: 401' in error or 'invalid api_key' in error:
                         break
