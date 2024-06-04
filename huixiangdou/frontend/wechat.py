@@ -516,7 +516,14 @@ class WkteamManager:
                             image_file.write(chunk)
                 return image_url, image_path
 
-        return download(data, headers, self.wkteam_config.dir)
+        url = ''
+        path = ''
+        try:
+            url, path = download(data, headers, self.wkteam_config.dir)
+        except Exception as e:
+            logger.error(str(e))
+            return None, None
+        return url, path
         # download_task = Process(target=download, args=(data, headers, self.wkteam_config.dir))
         # download_task.start()
 
