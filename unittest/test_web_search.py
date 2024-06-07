@@ -51,7 +51,6 @@ def test_serper():
     # 删除临时文件，因为delete=False，所以需要手动删除
     os.remove(temp_file.name)
 
-
 def test_parse_zhihu():
     config_path = 'config-2G.ini'
     engine = WebSearch(config_path=config_path)

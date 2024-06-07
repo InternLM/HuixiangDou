@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import types
+import time
 import asyncio
 import pytoml
 import requests
@@ -28,15 +29,8 @@ async def fetch_chroumium_content(url):
     browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
     page = await browser.newPage()
     await page.goto(url)
+    time.sleep(1)
     content = await page.evaluate('document.body.innerText', force_expr=True)
-    await browser.close()
-    return content
-
-async def fetch_zhihu(url):
-    browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
-    page = await browser.newPage()
-    await page.goto(url)
-    content = await page.evaluate('document.getElementsByClassName("Post-Main")[0].innerText', force_expr=True)
     await browser.close()
     return content
 
@@ -90,26 +84,21 @@ class WebSearch:
             return None
 
         logger.info(f'extract: {target_link}')
-
         try:
             content = ''
-            if 'zhuanlan.zhihu.com' in target_link and import_pyppeteer is True:
-                nest_asyncio.apply()
-                content = asyncio.get_event_loop().run_until_complete(fetch_zhihu(url=target_link))
-            else:
-                response = requests.get(target_link, timeout=30)
+            response = requests.get(target_link, timeout=30)
 
-                doc = Document(response.text)
-                content_html = doc.summary()
-                title = doc.short_title()
-                soup = BS(content_html, 'html.parser')
+            doc = Document(response.text)
+            content_html = doc.summary()
+            title = doc.short_title()
+            soup = BS(content_html, 'html.parser')
 
-                if len(soup.text) < 4 * len(query):
-                    return None
-                content = '{} {}'.format(title, soup.text)
-                content = content.replace('\n\n', '\n')
-                content = content.replace('\n\n', '\n')
-                content = content.replace('  ', ' ')
+            if len(soup.text) < 4 * len(query):
+                return None
+            content = '{} {}'.format(title, soup.text)
+            content = content.replace('\n\n', '\n')
+            content = content.replace('\n\n', '\n')
+            content = content.replace('  ', ' ')
 
             if not check_str_useful(content=content):
                 logger.info('retry with chromium {}'.format(target_link))
