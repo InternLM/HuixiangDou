@@ -84,16 +84,13 @@ class InferenceWrapper:
 
     def __init__(self, model_path: str):
         """Init model handler."""
-
-        if check_gpu_max_memory_gb() < 20:
-            logger.warning(
-                'GPU mem < 20GB, try Experience Version or set llm.server.local_llm_path="Qwen/Qwen-7B-Chat-Int8" in `config.ini`'  # noqa E501
-            )
-
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
 
-        if 'qwen1.5' in model_path.lower():
+        if 'qwen2' in model_path.lower():
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_path, torch_dtype="auto", device_map='auto', trust_remote_code=True).eval()
+        elif 'qwen1.5' in model_path.lower():
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path, device_map='auto', trust_remote_code=True).eval()
         elif 'qwen' in model_path.lower():
@@ -143,11 +140,23 @@ class InferenceWrapper:
             output_text = self.tokenizer.batch_decode(
                 generated_ids, skip_special_tokens=True)[0]
         else:
-            output_text, _ = self.model.chat(self.tokenizer,
-                                             prompt,
-                                             history,
-                                             top_k=1,
-                                             do_sample=False)
+            if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。' in prompt:
+                prompt = '你是一个语言专家，擅长分析语句并打分。\n' + prompt
+                output_desc, _ = self.model.chat(self.tokenizer,
+                                                prompt,
+                                                history,
+                                                top_k=1,
+                                                do_sample=False)
+                prompt = '"{}"\n请仔细阅读上面的内容，最后的得分是多少？'.format(output_desc)
+                output_text, _ = self.model.chat(self.tokenizer,
+                                                prompt,
+                                                history)
+            else:
+                output_text, _ = self.model.chat(self.tokenizer,
+                                            prompt,
+                                            history,
+                                            top_k=1,
+                                            do_sample=False)
         return output_text
 
 
@@ -743,11 +752,23 @@ def main():
     if not args.unittest:
         llm_serve(args.config_path, server_ready)
     else:
+        queries = ['今天天气如何？']
+        repeat = 10
+
+        with open(args.config_path) as f:
+            llm_config = pytoml.load(f)['llm']
+            if llm_config['enable_local']:
+                model_path = llm_config['server']['local_llm_path']
+                wrapper = InferenceWrapper(model_path)
+                for query in queries:
+                    for i in range(repeat):
+                        print(wrapper.chat(prompt=query))
+                del wrapper
+
         start_llm_server(config_path=args.config_path)
 
         from .llm_client import ChatClient
         client = ChatClient(config_path=args.config_path)
-        queries = ['今天天气如何？']
         for query in queries:
             print(
                 client.generate_response(prompt=query,

@@ -87,7 +87,7 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
       <td>
 
 - [InternLM2](https://github.com/InternLM/InternLM)
-- [Qwen](https://github.com/facebookresearch/llama)
+- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
 - [Step](https://platform.stepfun.com)
