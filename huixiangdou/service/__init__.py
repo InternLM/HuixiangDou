@@ -10,8 +10,9 @@ from .helper import ErrorCode, QueryTracker, Queue, multimodal, parse_json_str
 from .llm_client import ChatClient  # noqa E401
 from .llm_server_hybrid import (
     HybridLLMServer,
-    llm_serve,  # noqa E401
-    start_llm_server)
+    llm_serve,
+    start_llm_server,
+    InferenceWrapper)  # noqa E401
 from .primitive import is_truth  # noqa E401
 from .retriever import CacheRetriever, Retriever  # noqa E401
 from .web_search import WebSearch  # noqa E401

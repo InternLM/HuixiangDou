@@ -54,8 +54,6 @@ def test_serper():
 
 def test_parse_zhihu():
     config_path = 'config-2G.ini'
-    import pdb
-    pdb.set_trace()
     engine = WebSearch(config_path=config_path)
     article = engine.fetch_url(query='', target_link='https://zhuanlan.zhihu.com/p/699164101')
     assert len(article.content) > 20

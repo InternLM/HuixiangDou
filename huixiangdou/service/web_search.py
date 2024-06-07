@@ -12,6 +12,8 @@ from duckduckgo_search import DDGS
 from loguru import logger
 from readability import Document
 import asyncio
+import nest_asyncio
+from .helper import check_str_useful
 import_pyppeteer = False
 try:
     from pyppeteer import launch
@@ -22,13 +24,19 @@ except Exception as e:
     # See https://techoverflow.net/2020/09/29/how-to-fix-pyppeteer-pyppeteer-errors-browsererror-browser-closed-unexpectedly/
     logger.info('For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442')
 
+async def fetch_chroumium_content(url):
+    browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
+    page = await browser.newPage()
+    await page.goto(url)
+    content = await page.evaluate('document.body.innerText', force_expr=True)
+    await browser.close()
+    return content
 
 async def fetch_zhihu(url):
     browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
     page = await browser.newPage()
     await page.goto(url)
     content = await page.evaluate('document.getElementsByClassName("Post-Main")[0].innerText', force_expr=True)
-    # print(content)
     await browser.close()
     return content
 
@@ -86,6 +94,7 @@ class WebSearch:
         try:
             content = ''
             if 'zhuanlan.zhihu.com' in target_link and import_pyppeteer is True:
+                nest_asyncio.apply()
                 content = asyncio.get_event_loop().run_until_complete(fetch_zhihu(url=target_link))
             else:
                 response = requests.get(target_link, timeout=30)
@@ -101,6 +110,13 @@ class WebSearch:
                 content = content.replace('\n\n', '\n')
                 content = content.replace('\n\n', '\n')
                 content = content.replace('  ', ' ')
+
+            if not check_str_useful(content=content):
+                logger.info('retry with chromium {}'.format(target_link))
+                nest_asyncio.apply()
+                content = asyncio.get_event_loop().run_until_complete(fetch_chroumium_content(url=target_link))
+                if not check_str_useful(content=content):
+                    return None
 
             return Article(content=content, source=target_link, brief=brief)
         except Exception as e:
