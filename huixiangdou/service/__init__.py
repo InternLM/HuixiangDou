@@ -5,7 +5,7 @@ from .config import feature_store_base_dir, redis_passwd, redis_port
 from .feature_store import FeatureStore  # noqa E401
 from .file_operation import FileName, FileOperation  # noqa E401
 from .helper import TaskCode  # noqa E401
-from .helper import kimi_ocr  # noqa E401
+from .helper import kimi_ocr, check_str_useful  # noqa E401
 from .helper import ErrorCode, QueryTracker, Queue, multimodal, parse_json_str
 from .llm_client import ChatClient  # noqa E401
 from .llm_server_hybrid import (
