@@ -173,6 +173,9 @@ class SourceGraphProxy:
                 BINARY, repo_id, entity)
             cmd_return = self.command(ENV + cmd_python)
             search_items += self.extract_sg_result(cmd_return)
+        
+        if len(search_items) < 1:
+            return None
 
         search_text = json.dumps(search_items, ensure_ascii=False, indent=2)
         return search_text
