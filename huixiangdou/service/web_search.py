@@ -15,6 +15,8 @@ from readability import Document
 import asyncio
 import nest_asyncio
 from .helper import check_str_useful
+from .file_operation import FileOperation
+
 import_pyppeteer = False
 try:
     from pyppeteer import launch
@@ -86,6 +88,25 @@ class WebSearch:
         logger.info(f'extract: {target_link}')
         try:
             content = ''
+            if target_link.lower().endswith('.pdf') or target_link.lower().endswith('.docx'):
+                # download file and parse
+                logger.info(f'download and parse: {target_link}')
+                response = requests.get(target_link, stream=True)
+
+                save_dir = self.search_config.save_dir
+                basename = os.path.basename(target_link)
+                save_path = os.path.join(save_dir, basename)
+
+                with open(save_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+                file_opr = FileOperation()
+                content, error = file_opr.read(filepath=save_path)
+                if error is not None:
+                    return error
+                return Article(content=content, source=target_link, brief=brief)
+
             response = requests.get(target_link, timeout=30)
 
             doc = Document(response.text)
@@ -304,9 +325,9 @@ def fetch_web_content(target_link: str):
 if __name__ == '__main__':
     # https://developer.aliyun.com/article/679591 failed
     # print(fetch_web_content('https://www.volcengine.com/theme/4222537-R-7-1'))
-
     parser = parse_args()
     s = WebSearch(config_path=parser.config_path)
+    print(s.fetch_url(query='', target_link='http://www.lswz.gov.cn/html/xhtml/ztcss/zt-jljstj/images/clgszpj.pdf'))
     print(s.fetch_url(query='', target_link='https://zhuanlan.zhihu.com/p/699164101'))
     print(s.get('LMDeploy 修改日志级别'))
     print(
