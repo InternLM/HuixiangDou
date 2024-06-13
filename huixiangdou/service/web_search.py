@@ -103,7 +103,7 @@ class WebSearch:
                     '.pdf') or target_link.lower().endswith('.docx'):
                 # download file and parse
                 logger.info(f'download and parse: {target_link}')
-                response = requests.get(target_link, stream=True)
+                response = requests.get(target_link, stream=True, allow_redirects=True)
 
                 save_dir = self.search_config.save_dir
                 basename = os.path.basename(target_link)
