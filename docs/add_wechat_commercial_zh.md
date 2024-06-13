@@ -4,16 +4,18 @@
 
 因此我们介绍[商业版 wkteam](https://wkteam.cn) 接入方式，支持图片、公众号解析。
 
-> [!Warning]
+> \[!Warning\]
+>
 > <div align="center">
 > wkteam 曾变更过经营主体，🚨<strong>注意财产安全</strong> </br>
 > 打开 wkteam.cn 和 121.229.29.88:6327， 会发现 UI 相同但数据库不通，须仔细咨询运营方
 > </div>
 
 整个服务需要准备以下资源：
-* wkteam 账号
-* 一个微信号，支持 22 个国内地区，见[文档](https://wkteam.cn/api-wen-dang2/deng-lu/huo-qu-wei-xin-er-wei-ma2.html)
-* GPU，最少 2G 显存
+
+- wkteam 账号
+- 一个微信号，支持 22 个国内地区，见[文档](https://wkteam.cn/api-wen-dang2/deng-lu/huo-qu-wei-xin-er-wei-ma2.html)
+- GPU，最少 2G 显存
 
 ## 一、部署图
 
@@ -26,8 +28,9 @@
 <img src="figures/wechat-wkteam.jpg" width="600">
 
 这么设计的好处是：
-* 消息回调实现简单，很稳定一般不需重启
-* 信息都被缓存进了 redis，修改算法后重启，不会漏处理群里的消息
+
+- 消息回调实现简单，很稳定一般不需重启
+- 信息都被缓存进了 redis，修改算法后重启，不会漏处理群里的消息
 
 ## 二、wkteam 登录、测试消息缓存
 
@@ -90,17 +93,19 @@ cat wkteam/license.json
 > 为什么不在公网统一处理所有微信收发？看起来设计简化了，实际上开发调试都巨麻烦。
 
 填写 `config.ini`，运行。[config-wkteam-example.ini](../config-wkteam-example.ini) 是一个填写示例：
-* LLM 只使用 kimi
-* 群列表为茴香豆用户群。`wkteam/wechat_message.jsonl` 记录了所有消息、可以得知群号
-* 开启指代消歧
+
+- LLM 只使用 kimi
+- 群列表为茴香豆用户群。`wkteam/wechat_message.jsonl` 记录了所有消息、可以得知群号
+- 开启指代消歧
 
 ```bash
 python3 -m huixiangdou.main
 ```
 
 这套服务会：
-* 下载群里的图片。如果使用 kimi，会尝试 OCR
-* 尝试解析群里的公众号消息，失败则只使用小标题
+
+- 下载群里的图片。如果使用 kimi，会尝试 OCR
+- 尝试解析群里的公众号消息，失败则只使用小标题
 
 ## 四、【可选】指代消歧
 

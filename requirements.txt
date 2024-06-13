@@ -9,6 +9,7 @@ faiss-gpu
 langchain>=0.1.12
 loguru
 lxml_html_clean
+nest_asyncio
 openai>=1.0.0
 openpyxl
 pandas
@@ -29,4 +30,3 @@ torch>=2.0.0
 transformers>=4.37.0
 transformers_stream_generator
 unstructured
-nest_asyncio
