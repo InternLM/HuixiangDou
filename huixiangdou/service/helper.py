@@ -236,6 +236,7 @@ def kimi_ocr(filepath, token):
         logger.error(str(e))
     return ''
 
+
 def check_str_useful(content: str):
     useful_char_cnt = 0
     scopes = [['a', 'z'], ['\u4e00', '\u9fff'], ['A', 'Z'], ['0', '9']]
@@ -248,6 +249,7 @@ def check_str_useful(content: str):
         # Garbled characters
         return False
     return True
+
 
 # if __name__ == '__main__':
 #     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', ''))

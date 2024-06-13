@@ -89,7 +89,10 @@ class InferenceWrapper:
 
         if 'qwen2' in model_path.lower():
             self.model = AutoModelForCausalLM.from_pretrained(
-                model_path, torch_dtype="auto", device_map='auto', trust_remote_code=True).eval()
+                model_path,
+                torch_dtype='auto',
+                device_map='auto',
+                trust_remote_code=True).eval()
         elif 'qwen1.5' in model_path.lower():
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path, device_map='auto', trust_remote_code=True).eval()
@@ -143,20 +146,19 @@ class InferenceWrapper:
             if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。' in prompt:
                 prompt = '你是一个语言专家，擅长分析语句并打分。\n' + prompt
                 output_desc, _ = self.model.chat(self.tokenizer,
-                                                prompt,
-                                                history,
-                                                top_k=1,
-                                                do_sample=False)
+                                                 prompt,
+                                                 history,
+                                                 top_k=1,
+                                                 do_sample=False)
                 prompt = '"{}"\n请仔细阅读上面的内容，最后的得分是多少？'.format(output_desc)
-                output_text, _ = self.model.chat(self.tokenizer,
-                                                prompt,
-                                                history)
+                output_text, _ = self.model.chat(self.tokenizer, prompt,
+                                                 history)
             else:
                 output_text, _ = self.model.chat(self.tokenizer,
-                                            prompt,
-                                            history,
-                                            top_k=1,
-                                            do_sample=False)
+                                                 prompt,
+                                                 history,
+                                                 top_k=1,
+                                                 do_sample=False)
         return output_text
 
 
@@ -270,9 +272,8 @@ class HybridLLMServer:
         return output_text
 
     def call_internlm(self, prompt, history):
-        """
-        See https://internlm.intern-ai.org.cn/api/document for internlm remote api
-        """
+        """See https://internlm.intern-ai.org.cn/api/document for internlm
+        remote api."""
         url = 'https://internlm-chat.intern-ai.org.cn/puyu/api/v1/chat/completions'
 
         now = time.time()
@@ -303,11 +304,15 @@ class HybridLLMServer:
         output_text = ''
         self.rpm.wait()
 
-        res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
+        res_json = requests.post(url,
+                                 headers=header,
+                                 data=json.dumps(data),
+                                 timeout=120).json()
         logger.debug(res_json)
         if 'msgCode' in res_json:
             if res_json['msgCode'] == 'A0202':
-                logger.error('Token error, check it starts with "Bearer " or not ?')
+                logger.error(
+                    'Token error, check it starts with "Bearer " or not ?')
                 return ''
 
         res_data = res_json['choices'][0]['message']['content']
@@ -371,7 +376,8 @@ class HybridLLMServer:
         return completion.choices[0].message.content
 
     def call_step(self, prompt, history):
-        """Generate a response from step, see https://platform.stepfun.com/docs/overview/quickstart
+        """Generate a response from step, see
+        https://platform.stepfun.com/docs/overview/quickstart.
 
         Args:
             prompt (str): The prompt to send to LLM.
@@ -490,9 +496,7 @@ class HybridLLMServer:
             base_url='https://open.bigmodel.cn/api/paas/v4/',
         )
 
-        messages = build_messages(
-            prompt=prompt,
-            history=history)  # noqa E501
+        messages = build_messages(prompt=prompt, history=history)  # noqa E501
 
         logger.debug('remote api sending: {}'.format(messages))
         completion = client.chat.completions.create(
@@ -535,14 +539,14 @@ class HybridLLMServer:
     def call_siliconcloud(self, prompt: str, history: list):
         self.rpm.wait()
 
-        url = "https://api.siliconflow.cn/v1/chat/completions"
-        
+        url = 'https://api.siliconflow.cn/v1/chat/completions'
+
         token = self.server_config['remote_api_key']
         if not token.startswith('Bearer '):
             token = 'Bearer ' + token
         headers = {
             'content-type': 'application/json',
-            "accept": "application/json",
+            'accept': 'application/json',
             'authorization': token
         }
 
@@ -550,7 +554,7 @@ class HybridLLMServer:
 
         payload = {
             'model': self.server_config['remote_llm_model'],
-            "stream": False,
+            'stream': False,
             'messages': messages,
             'temperature': 0.1
         }
@@ -613,7 +617,8 @@ class HybridLLMServer:
                                                         history=history)
 
                     elif backend == 'step':
-                        output_text = self.call_step(prompt=prompt, history=history)
+                        output_text = self.call_step(prompt=prompt,
+                                                     history=history)
 
                     elif backend == 'xi-api' or backend == 'gpt':
                         base_url = None
@@ -629,15 +634,17 @@ class HybridLLMServer:
                     elif backend == 'puyu':
                         output_text = self.call_puyu(prompt=prompt,
                                                      history=history)
-                    
+
                     elif backend == 'internlm':
-                        output_text = self.call_internlm(prompt=prompt, history=history)
+                        output_text = self.call_internlm(prompt=prompt,
+                                                         history=history)
 
                     elif backend == 'alles-apin':
                         output_text = self.call_alles_apin(prompt=prompt,
                                                            history=history)
                     elif backend == 'siliconcloud':
-                        output_text = self.call_siliconcloud(prompt=prompt, history=history)      
+                        output_text = self.call_siliconcloud(prompt=prompt,
+                                                             history=history)
 
                     else:
                         error = 'unknown backend {}'.format(backend)

@@ -51,17 +51,25 @@ def test_serper():
     # 删除临时文件，因为delete=False，所以需要手动删除
     os.remove(temp_file.name)
 
+
 def test_parse_zhihu():
     config_path = 'config-2G.ini'
     engine = WebSearch(config_path=config_path)
-    article = engine.fetch_url(query='', target_link='https://zhuanlan.zhihu.com/p/699164101')
+    article = engine.fetch_url(
+        query='', target_link='https://zhuanlan.zhihu.com/p/699164101')
     assert check_str_useful(article.content)
+
 
 def test_parse_hljnews():
     config_path = 'config-2G.ini'
     engine = WebSearch(config_path=config_path)
-    article = engine.fetch_url(query='', target_link='http://www.hljnews.cn/ljxw/content/2023-10/17/content_729976.html?vp-fm')
+    article = engine.fetch_url(
+        query='',
+        target_link=
+        'http://www.hljnews.cn/ljxw/content/2023-10/17/content_729976.html?vp-fm'
+    )
     assert check_str_useful(article.content)
+
 
 if __name__ == '__main__':
     test_parse_zhihu()

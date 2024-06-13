@@ -160,7 +160,7 @@ class Message:
             atlist = data['atlist']
             if bot_wxid not in atlist:
                 self.status = 'skip'
-                return Exception("atlist not contains bot") 
+                return Exception('atlist not contains bot')
 
         if msg_type in ['80014', '60014']:
             # ref message
@@ -688,7 +688,7 @@ class WkteamManager:
                 if 'fromGroup' in data:
                     self.revert(groupId=data['fromGroup'])
 
-            # parse wx_msg, add it to group 
+            # parse wx_msg, add it to group
             for wx_msg_str in que.get_all():
                 wx_msg = json.loads(wx_msg_str)
                 logger.debug(wx_msg)
