@@ -79,7 +79,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
       <td>
 
 - [InternLM2](https://github.com/InternLM/InternLM)
-- [Qwen](https://github.com/facebookresearch/llama)
+- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
 - [Step](https://platform.stepfun.com)

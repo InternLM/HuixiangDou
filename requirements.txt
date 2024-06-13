@@ -29,3 +29,4 @@ torch>=2.0.0
 transformers>=4.37.0
 transformers_stream_generator
 unstructured
+nest_asyncio

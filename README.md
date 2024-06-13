@@ -87,7 +87,7 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
       <td>
 
 - [InternLM2](https://github.com/InternLM/InternLM)
-- [Qwen](https://github.com/facebookresearch/llama)
+- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
 - [Step](https://platform.stepfun.com)
@@ -235,7 +235,7 @@ See the effect at [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/
 
 ## Cost-effective Edition
 
-If your machine only has 2G of video memory, or if you are pursuing cost-effectiveness, you only need to read [this Zhihu document](https://zhuanlan.zhihu.com/p/685205206).
+If your machine only has 2G GPU memory, or if you are pursuing cost-effectiveness, you only need to read [this Zhihu document](https://zhuanlan.zhihu.com/p/685205206).
 
 The cost-effective version only discards the local LLM and uses the remote LLM instead, and other functions are the same as the standard version.
 
