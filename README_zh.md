@@ -271,11 +271,11 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 
 微信群里的 “茴香豆” 开启了全部功能：
 
-* Serper 搜索及 SourceGraph 搜索增强
-* 群聊图片、微信公众号解析
-* 文本指代消歧
-* 混合 LLM
-* 知识库为 openmmlab 相关的 12 个 repo（1700 个文档），拒绝闲聊
+- Serper 搜索及 SourceGraph 搜索增强
+- 群聊图片、微信公众号解析
+- 文本指代消歧
+- 混合 LLM
+- 知识库为 openmmlab 相关的 12 个 repo（1700 个文档），拒绝闲聊
 
 请阅读以下话题：
 

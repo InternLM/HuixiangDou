@@ -4,7 +4,6 @@ import json
 
 import lark_oapi as lark
 import pytoml
-import redis
 from flask import Flask, jsonify, request
 from lark_oapi.adapter.flask import *  # noqa E403
 from lark_oapi.api.im.v1 import *  # noqa E403

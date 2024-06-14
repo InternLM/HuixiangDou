@@ -1,20 +1,23 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """Web search utils."""
 import argparse
+import asyncio
 import json
 import os
-import types
 import time
-import asyncio
+import types
+
+import nest_asyncio
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS
 from duckduckgo_search import DDGS
 from loguru import logger
 from readability import Document
-import asyncio
-import nest_asyncio
+
+from .file_operation import FileOperation
 from .helper import check_str_useful
+
 import_pyppeteer = False
 try:
     from pyppeteer import launch
@@ -23,16 +26,26 @@ except Exception as e:
     # Fix ldd ~/.local/share/pyppeteer/local-chromium/1181205/chrome-linux/chrome | grep not
     # apt install libgbm-dev
     # See https://techoverflow.net/2020/09/29/how-to-fix-pyppeteer-pyppeteer-errors-browsererror-browser-closed-unexpectedly/
-    logger.info('For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442')
+    logger.info(
+        'For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442'
+    )
+
 
 async def fetch_chroumium_content(url):
-    browser = await launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-software-rasterizer', '--disable-setuid-sandbox'])
+    browser = await launch(headless=True,
+                           args=[
+                               '--no-sandbox', '--disable-dev-shm-usage',
+                               '--disable-gpu',
+                               '--disable-software-rasterizer',
+                               '--disable-setuid-sandbox'
+                           ])
     page = await browser.newPage()
     await page.goto(url)
     time.sleep(1)
     content = await page.evaluate('document.body.innerText', force_expr=True)
     await browser.close()
     return content
+
 
 class Article:
 
@@ -86,6 +99,28 @@ class WebSearch:
         logger.info(f'extract: {target_link}')
         try:
             content = ''
+            if target_link.lower().endswith(
+                    '.pdf') or target_link.lower().endswith('.docx'):
+                # download file and parse
+                logger.info(f'download and parse: {target_link}')
+                response = requests.get(target_link, stream=True, allow_redirects=True)
+
+                save_dir = self.search_config.save_dir
+                basename = os.path.basename(target_link)
+                save_path = os.path.join(save_dir, basename)
+
+                with open(save_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+                file_opr = FileOperation()
+                content, error = file_opr.read(filepath=save_path)
+                if error is not None:
+                    return error
+                return Article(content=content,
+                               source=target_link,
+                               brief=brief)
+
             response = requests.get(target_link, timeout=30)
 
             doc = Document(response.text)
@@ -103,7 +138,8 @@ class WebSearch:
             if not check_str_useful(content=content):
                 logger.info('retry with chromium {}'.format(target_link))
                 nest_asyncio.apply()
-                content = asyncio.get_event_loop().run_until_complete(fetch_chroumium_content(url=target_link))
+                content = asyncio.get_event_loop().run_until_complete(
+                    fetch_chroumium_content(url=target_link))
                 if not check_str_useful(content=content):
                     return None
 
@@ -304,10 +340,17 @@ def fetch_web_content(target_link: str):
 if __name__ == '__main__':
     # https://developer.aliyun.com/article/679591 failed
     # print(fetch_web_content('https://www.volcengine.com/theme/4222537-R-7-1'))
-
     parser = parse_args()
     s = WebSearch(config_path=parser.config_path)
-    print(s.fetch_url(query='', target_link='https://zhuanlan.zhihu.com/p/699164101'))
+    print(
+        s.fetch_url(
+            query='',
+            target_link=
+            'http://www.lswz.gov.cn/html/xhtml/ztcss/zt-jljstj/images/clgszpj.pdf'
+        ))
+    print(
+        s.fetch_url(query='',
+                    target_link='https://zhuanlan.zhihu.com/p/699164101'))
     print(s.get('LMDeploy 修改日志级别'))
     print(
         fetch_web_content(
