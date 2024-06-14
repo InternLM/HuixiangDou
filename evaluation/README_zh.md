@@ -10,7 +10,7 @@
 
 输出：不同阈值、不同 chunksize 下的 F1 score 曲线
 
-* GT 来自人工标注，评价标准：是否和 openmmlab repo 相关
+* GT 来自人工标注，评价标准：是否和 openmmlab repo 沾边（开集）
 * 知识库不做人工清洗/筛选，直接取 repo 里的 markdown/txt/pdf/word 文件
 
 ## Intention

@@ -58,20 +58,20 @@ class Retriever:
         self.compression_retriever = ContextualCompressionRetriever(
             base_compressor=reranker, base_retriever=self.retriever)
 
-    def is_reject(self, question, k=30, disable_throttle=False):
+    def is_relative(self, question, k=30, disable_throttle=False):
         """If no search results below the threshold can be found from the
         database, reject this query."""
 
         if self.rejecter is None:
-            return True, []
+            return False, []
 
         if disable_throttle:
             # for searching throttle during update sample
             docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
                 question, k=1)
             if len(docs_with_score) < 1:
-                return True, docs_with_score
-            return False, docs_with_score
+                return False, docs_with_score
+            return True, docs_with_score
         else:
             # for retrieve result
             # if no chunk passed the throttle, give the max
@@ -86,8 +86,8 @@ class Retriever:
                 if score > max_score:
                     max_score = score
                     top1 = (doc, score)
-            reject = False if len(ret) > 0 else True
-            return reject, [top1]
+            relative = True if len(ret) > 0 else False
+            return relative, [top1]
 
     def update_throttle(self,
                         config_path: str = 'config.ini',
@@ -101,7 +101,7 @@ class Retriever:
         predictions = []
         for question in questions:
             self.reject_throttle = -1
-            _, docs = self.is_reject(question=question, disable_throttle=True)
+            _, docs = self.is_relative(question=question, disable_throttle=True)
             score = docs[0][1]
             predictions.append(max(0, score))
 
@@ -149,9 +149,9 @@ class Retriever:
         context = ''
         references = []
 
-        reject, docs = self.is_reject(question=question)
+        relative, docs = self.is_relative(question=question)
         logger.debug('retriever.docs {}'.format(docs))
-        if reject:
+        if not relative:
             if len(docs) > 0:
                 references.append(docs[0][0].metadata['source'])
             return None, None, references

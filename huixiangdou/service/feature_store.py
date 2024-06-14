@@ -490,12 +490,12 @@ def test_reject(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
 
     for example in real_questions:
-        reject, _ = retriever.is_reject(example)
+        relative, _ = retriever.is_relative(example)
 
-        if reject:
-            logger.error(f'reject query: {example}')
-        else:
+        if relative:
             logger.warning(f'process query: {example}')
+        else:
+            logger.error(f'reject query: {example}')
 
         if sample is not None:
             if reject:
