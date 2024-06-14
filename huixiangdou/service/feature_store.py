@@ -133,7 +133,8 @@ class FeatureStore:
                  embeddings: HuggingFaceEmbeddings,
                  reranker: BCERerank,
                  config_path: str = 'config.ini',
-                 language: str = 'zh') -> None:
+                 language: str = 'zh',
+                 chunk_size = 768) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
@@ -152,18 +153,18 @@ class FeatureStore:
         self.compression_retriever = None
         self.rejecter = None
         self.retriever = None
-        self.md_splitter = MarkdownTextSplitter(chunk_size=768,
+        self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
                                                 chunk_overlap=32)
 
         if language == 'zh':
             self.text_splitter = ChineseRecursiveTextSplitter(
                 keep_separator=True,
                 is_separator_regex=True,
-                chunk_size=768,
+                chunk_size=chunk_size,
                 chunk_overlap=32)
         else:
             self.text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=768, chunk_overlap=32)
+                chunk_size=chunk_size, chunk_overlap=32)
 
         self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
             ('#', 'Header 1'),
