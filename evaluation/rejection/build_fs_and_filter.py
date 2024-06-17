@@ -6,14 +6,38 @@ import re
 from loguru import logger
 from sklearn.metrics import precision_recall_curve, f1_score, recall_score, precision_score
 from tqdm import tqdm
+import multiprocessing
+from multiprocessing import Pool, Process
+import os
+
+
+class NoDaemonProcess(multiprocessing.Process):
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, value):
+        pass
+
+
+class NoDaemonContext(type(multiprocessing.get_context())):
+    Process = NoDaemonProcess
+
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class NestablePool(multiprocessing.pool.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs['context'] = NoDaemonContext()
+        super(NestablePool, self).__init__(*args, **kwargs)
 
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description='Feature store for processing directories.')
-    parser.add_argument('--work_dir',
+    parser.add_argument('--work_dir_base',
                         type=str,
-                        default='workdir',
+                        default='workdir basename',
                         help='Working directory.')
     parser.add_argument(
         '--repo_dir',
@@ -42,7 +66,14 @@ def load_dataset():
     
     return text_labels
 
-def calculate(config_path:str, repo_dir:str, work_dir: str, chunk_size: int = 768):
+def calculate(chunk_size: int):
+    config_path = 'config.ini'
+    repo_dir = 'repodir'
+    work_dir_base = 'workdir'
+    work_dir = work_dir_base + str(chunk_size)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+        
     # export PYTHONWARNINGS=ignore
     text_labels = load_dataset()
 
@@ -61,12 +92,17 @@ def calculate(config_path:str, repo_dir:str, work_dir: str, chunk_size: int = 76
     fs_init.ingress_reject(files=files, work_dir=work_dir)
     del fs_init
 
-    retriever = CacheRetriever(config_path=config_path).get()
-
-    start = 0.2
-    stop = 0.8
+    retriever = CacheRetriever(config_path=config_path).get(fs_id=str(chunk_size), work_dir=work_dir)
+    start = 0.1
+    stop = 0.7
     step = 0.1
     throttles = [round(start + step * i, 4) for i in range(int((stop - start) / step) + 1)]
+
+    start = 0.3
+    stop = 0.5
+    step = 0.01
+    throttles += [round(start + step * i, 4) for i in range(int((stop - start) / step) + 1)]
+
     best_chunk_f1 = 0.0
 
     for throttle in tqdm(throttles):
@@ -89,6 +125,7 @@ def calculate(config_path:str, repo_dir:str, work_dir: str, chunk_size: int = 76
         logger.info((throttle, precision, recall, f1))
 
         data = {
+            'chunk_size': chunk_size,
             'throttle': throttle, 
             'precision': precision,
             'recall': recall,
@@ -107,14 +144,12 @@ def main():
     args = parse_args()
     best_f1 = 0.0
     best_chunk_size = -1
-    for chunk_size in range(256, 8192, 256):
-    # timecost 21 miniutes
-        chunk_f1 = calculate(config_path=args.config_path, repo_dir=args.repo_dir, work_dir=args.work_dir, chunk_size=chunk_size)
-        if chunk_f1 > best_f1:
-            best_f1 = chunk_f1
-            best_chunk_size = chunk_size
-
-    logger.info(f'best_chunksize {best_chunk_size} f1 {best_f1}')
+    calculate(1500)
+    # pool = NestablePool(6)
+    # result = pool.map(calculate, range(4096, 81920, 4096))
+    # pool.close()
+    # pool.join()
+    # print(result)
 
 if __name__ == '__main__':
     main()

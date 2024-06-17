@@ -12,7 +12,8 @@ import pytoml
 from BCEmbedding.tools.langchain import BCERerank
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
-                                     RecursiveCharacterTextSplitter)
+                                     RecursiveCharacterTextSplitter,
+                                     CharacterTextSplitter)
 from langchain.vectorstores.faiss import FAISS as Vectorstore
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
@@ -20,6 +21,7 @@ from loguru import logger
 from torch.cuda import empty_cache
 
 from .file_operation import FileName, FileOperation
+from .helper import histogram
 from .retriever import CacheRetriever, Retriever
 
 
@@ -134,7 +136,8 @@ class FeatureStore:
                  reranker: BCERerank,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
-                 chunk_size = 768) -> None:
+                 chunk_size = 768,
+                 debug = True) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
@@ -153,19 +156,25 @@ class FeatureStore:
         self.compression_retriever = None
         self.rejecter = None
         self.retriever = None
-        self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
-                                                chunk_overlap=32)
+        self.chunk_size = chunk_size
+        self.debug = debug
 
-        if language == 'zh':
-            self.text_splitter = ChineseRecursiveTextSplitter(
-                keep_separator=True,
-                is_separator_regex=True,
-                chunk_size=chunk_size,
-                chunk_overlap=32)
-        else:
-            self.text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=chunk_size, chunk_overlap=32)
+        logger.info('init fs with chunk_size {}'.format(chunk_size))
+        # self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
+        #                                         chunk_overlap=0)
 
+        # if language == 'zh':
+        #     self.text_splitter = ChineseRecursiveTextSplitter(
+        #         keep_separator=True,
+        #         is_separator_regex=True,
+        #         chunk_size=chunk_size,
+        #         chunk_overlap=32)
+        # else:
+        self.text_splitter = ChineseRecursiveTextSplitter(
+            keep_separator=True,
+            is_separator_regex=True,
+            chunk_size=chunk_size,
+            chunk_overlap=32)
         self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
             ('#', 'Header 1'),
             ('##', 'Header 2'),
@@ -176,7 +185,7 @@ class FeatureStore:
         """Split the markdown document in a nested way, first extracting the
         header.
 
-        If the extraction result exceeds 1024, split it again according to
+        If the extraction result exceeds chunk_size, split it again according to
         length.
         """
         docs = self.head_splitter.split_text(text)
@@ -194,7 +203,7 @@ class FeatureStore:
                     header += ' '
                     header += doc.metadata['Header 3']
 
-            if len(doc.page_content) >= 1024:
+            if len(doc.page_content) > self.chunk_size:
                 subdocs = self.md_splitter.create_documents([doc.page_content])
                 for subdoc in subdocs:
                     if len(subdoc.page_content) >= 10:
@@ -204,10 +213,10 @@ class FeatureStore:
                 final.append('{} {}'.format(
                     header, doc.page_content.lower()))  # noqa E501
 
-        for item in final:
-            if len(item) >= 1024:
-                logger.debug('source {} split length {}'.format(
-                    source, len(item)))
+        # for item in final:
+        #     if len(item) >= self.chunk_size:
+        #         logger.debug('source {} split length {}'.format(
+        #             source, len(item)))
         return final
 
     def clean_md(self, text: str):
@@ -241,6 +250,7 @@ class FeatureStore:
         if len(text) <= 1:
             return [], length
 
+        # chunks = self.text_splitter.create_documents([text])
         chunks = self.split_md(text=text,
                                source=os.path.abspath(file.copypath))
         for chunk in chunks:
@@ -306,6 +316,24 @@ class FeatureStore:
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
+    def analyze(self, documents: list):
+        if not self.debug:
+            return
+
+        text_lens = []
+        token_lens = []
+
+        if self.embeddings is None:
+            logger.info('self.embeddings is None, skip `anaylze_output`')
+            return
+        for doc in documents:
+            content = doc.page_content
+            text_lens.append(len(content))
+            token_lens.append(len(self.embeddings.client.tokenizer(content, padding=False, truncation=False)['input_ids']))
+
+        logger.info('document text histgram {}'.format(histogram(text_lens)))
+        logger.info('document token histgram {}'.format(histogram(token_lens)))
+
     def ingress_reject(self, files: list, work_dir: str):
         """Extract the features required for the reject pipeline based on
         documents."""
@@ -313,41 +341,50 @@ class FeatureStore:
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
+        lens = []
         documents = []
         file_opr = FileOperation()
 
-        logger.debug('ingress reject..')
+        logger.debug('ingress reject with chunk_size {}'.format(self.chunk_size))
         for i, file in enumerate(files):
             if not file.state:
                 continue
 
-            if file._type == 'md':
-                # reject base not clean md
-                text = file.basename + '\n'
-                with open(file.copypath, encoding='utf8') as f:
-                    text += f.read()
-                if len(text) <= 1:
-                    continue
+            # if file._type == 'md':
+            #     # reject base not clean md
+            #     text = file.basename + '\n'
+            #     with open(file.copypath, encoding='utf8') as f:
+            #         text += f.read()
+            #     if len(text) <= 1:
+            #         continue
 
-                chunks = self.split_md(text=text,
-                                       source=os.path.abspath(file.copypath))
-                for chunk in chunks:
-                    new_doc = Document(page_content=chunk,
-                                       metadata={
-                                           'source': file.basename,
-                                           'read': file.copypath
-                                       })
-                    documents.append(new_doc)
+            #     chunks = self.split_md(text=text,
+            #                            source=os.path.abspath(file.copypath))
+            #     for chunk in chunks:
+            #         new_doc = Document(page_content=chunk,
+            #                            metadata={
+            #                                'source': file.basename,
+            #                                'read': file.copypath
+            #                            })
+            #         documents.append(new_doc)
 
-            else:
-                text, error = file_opr.read(file.copypath)
-                if error is not None:
-                    continue
-                text = file.basename + text
-                documents += self.get_text_documents(text, file)
+            # else:
+            text, error = file_opr.read(file.copypath)
+            if len(text) < 1:
+                continue
+            if error is not None:
+                continue
+            lens.append(len(text))
+            text = file.basename + text
+            documents += self.get_text_documents(text, file)
 
         if len(documents) < 1:
             return
+
+        log_str = histogram(values=lens)
+        logger.info('input analyze {}'.format(log_str))
+        logger.info('documents counter {}'.format(len(documents)))
+        self.analyze(documents)
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 

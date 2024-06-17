@@ -36,27 +36,29 @@ class Retriever:
         rejection_path = os.path.join(work_dir, 'db_reject')
         retriever_path = os.path.join(work_dir, 'db_response')
 
-        if not os.path.exists(rejection_path) or not os.path.exists(
-                retriever_path):
-            logger.warning('!!!warning, feature db not exist.!!!')
-            return
-
-        self.rejecter = Vectorstore.load_local(
-            rejection_path,
-            embeddings=embeddings,
-            allow_dangerous_deserialization=True)
-        self.retriever = Vectorstore.load_local(
-            retriever_path,
-            embeddings=embeddings,
-            allow_dangerous_deserialization=True,
-            distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
-                search_type='similarity',
-                search_kwargs={
-                    'score_threshold': 0.15,
-                    'k': 30
-                })
-        self.compression_retriever = ContextualCompressionRetriever(
-            base_compressor=reranker, base_retriever=self.retriever)
+        if os.path.exists(rejection_path):
+            self.rejecter = Vectorstore.load_local(
+                rejection_path,
+                embeddings=embeddings,
+                allow_dangerous_deserialization=True)
+        
+        if os.path.exists(retriever_path):
+            self.retriever = Vectorstore.load_local(
+                retriever_path,
+                embeddings=embeddings,
+                allow_dangerous_deserialization=True,
+                distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
+                    search_type='similarity',
+                    search_kwargs={
+                        'score_threshold': 0.15,
+                        'k': 30
+                    })
+            self.compression_retriever = ContextualCompressionRetriever(base_compressor=reranker, base_retriever=self.retriever)
+        
+        if self.rejecter is None:
+            logger.warning('rejecter is None')
+        if self.retriever is None:
+            logger.warning('retriever is None')
 
     def is_relative(self, question, k=30, disable_throttle=False):
         """If no search results below the threshold can be found from the
@@ -271,6 +273,8 @@ class CacheRetriever:
                               work_dir=work_dir,
                               reject_throttle=reject_throttle)
         self.cache[fs_id] = {'retriever': retriever, 'time': time.time()}
+        if retriever.rejecter is None:
+            logger.warning('retriever.rejecter is None, check workdir')
         return retriever
 
     def pop(self, fs_id: str):

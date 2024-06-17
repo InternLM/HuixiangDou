@@ -12,7 +12,8 @@ from .helper import (
     check_str_useful,
     kimi_ocr,
     multimodal,
-    parse_json_str)
+    parse_json_str,
+    histogram)
 from .llm_client import ChatClient  # noqa E401
 from .llm_server_hybrid import InferenceWrapper  # noqa E401
 from .llm_server_hybrid import HybridLLMServer, llm_serve, start_llm_server
