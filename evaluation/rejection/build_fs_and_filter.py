@@ -63,10 +63,10 @@ def calculate(config_path:str, repo_dir:str, work_dir: str, chunk_size: int = 76
 
     retriever = CacheRetriever(config_path=config_path).get()
 
-    start = 0.02
-    stop = 0.98
-    step = 0.02
-    throttles = [round(start + step * i, 2) for i in range(int((stop - start) / step) + 1)]
+    start = 0.2
+    stop = 0.8
+    step = 0.1
+    throttles = [round(start + step * i, 4) for i in range(int((stop - start) / step) + 1)]
     best_chunk_f1 = 0.0
 
     for throttle in tqdm(throttles):
@@ -107,8 +107,8 @@ def main():
     args = parse_args()
     best_f1 = 0.0
     best_chunk_size = -1
-    for chunk_size in range(256, 4096, 128):
-        # timecost 21 miniutes
+    for chunk_size in range(256, 8192, 256):
+    # timecost 21 miniutes
         chunk_f1 = calculate(config_path=args.config_path, repo_dir=args.repo_dir, work_dir=args.work_dir, chunk_size=chunk_size)
         if chunk_f1 > best_f1:
             best_f1 = chunk_f1
