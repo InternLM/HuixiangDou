@@ -136,8 +136,8 @@ class FeatureStore:
                  reranker: BCERerank,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
-                 chunk_size = 768,
-                 debug = True) -> None:
+                 chunk_size = 832,
+                 debug = False) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
@@ -160,26 +160,21 @@ class FeatureStore:
         self.debug = debug
 
         logger.info('init fs with chunk_size {}'.format(chunk_size))
-        # self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
-        #                                         chunk_overlap=0)
+        self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
+                                                chunk_overlap=0)
 
-        # if language == 'zh':
-        #     self.text_splitter = ChineseRecursiveTextSplitter(
-        #         keep_separator=True,
-        #         is_separator_regex=True,
-        #         chunk_size=chunk_size,
-        #         chunk_overlap=32)
-        # else:
-        self.text_splitter = ChineseRecursiveTextSplitter(
-            keep_separator=True,
-            is_separator_regex=True,
-            chunk_size=chunk_size,
-            chunk_overlap=32)
-        self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
-            ('#', 'Header 1'),
-            ('##', 'Header 2'),
-            ('###', 'Header 3'),
-        ])
+        if language == 'zh':
+            self.text_splitter = ChineseRecursiveTextSplitter(
+                keep_separator=True,
+                is_separator_regex=True,
+                chunk_size=chunk_size,
+                chunk_overlap=32)
+        else:
+            self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
+                ('#', 'Header 1'),
+                ('##', 'Header 2'),
+                ('###', 'Header 3'),
+            ])
 
     def split_md(self, text: str, source: None):
         """Split the markdown document in a nested way, first extracting the
@@ -213,10 +208,10 @@ class FeatureStore:
                 final.append('{} {}'.format(
                     header, doc.page_content.lower()))  # noqa E501
 
-        # for item in final:
-        #     if len(item) >= self.chunk_size:
-        #         logger.debug('source {} split length {}'.format(
-        #             source, len(item)))
+        for item in final:
+            if len(item) >= self.chunk_size:
+                logger.debug('source {} split length {}'.format(
+                    source, len(item)))
         return final
 
     def clean_md(self, text: str):
@@ -317,6 +312,7 @@ class FeatureStore:
         vs.save_local(feature_dir)
 
     def analyze(self, documents: list):
+        """Output documents length mean, median and histogram"""
         if not self.debug:
             return
 
@@ -350,33 +346,33 @@ class FeatureStore:
             if not file.state:
                 continue
 
-            # if file._type == 'md':
-            #     # reject base not clean md
-            #     text = file.basename + '\n'
-            #     with open(file.copypath, encoding='utf8') as f:
-            #         text += f.read()
-            #     if len(text) <= 1:
-            #         continue
+            if file._type == 'md':
+                # reject base not clean md
+                text = file.basename + '\n'
+                with open(file.copypath, encoding='utf8') as f:
+                    text += f.read()
+                if len(text) <= 1:
+                    continue
 
-            #     chunks = self.split_md(text=text,
-            #                            source=os.path.abspath(file.copypath))
-            #     for chunk in chunks:
-            #         new_doc = Document(page_content=chunk,
-            #                            metadata={
-            #                                'source': file.basename,
-            #                                'read': file.copypath
-            #                            })
-            #         documents.append(new_doc)
+                chunks = self.split_md(text=text,
+                                       source=os.path.abspath(file.copypath))
+                for chunk in chunks:
+                    new_doc = Document(page_content=chunk,
+                                       metadata={
+                                           'source': file.basename,
+                                           'read': file.copypath
+                                       })
+                    documents.append(new_doc)
 
-            # else:
-            text, error = file_opr.read(file.copypath)
-            if len(text) < 1:
-                continue
-            if error is not None:
-                continue
-            lens.append(len(text))
-            text = file.basename + text
-            documents += self.get_text_documents(text, file)
+            else:
+                text, error = file_opr.read(file.copypath)
+                if len(text) < 1:
+                    continue
+                if error is not None:
+                    continue
+                lens.append(len(text))
+                text = file.basename + text
+                documents += self.get_text_documents(text, file)
 
         if len(documents) < 1:
             return

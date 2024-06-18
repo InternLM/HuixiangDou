@@ -252,6 +252,7 @@ def check_str_useful(content: str):
 
 
 def histogram(values: list):
+    """Print histogram log string for values"""
     values.sort()
     _len = len(values)
     if _len < 1:
