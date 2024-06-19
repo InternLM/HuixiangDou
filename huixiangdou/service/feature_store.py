@@ -12,7 +12,8 @@ import pytoml
 from BCEmbedding.tools.langchain import BCERerank
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
-                                     RecursiveCharacterTextSplitter)
+                                     RecursiveCharacterTextSplitter,
+                                     CharacterTextSplitter)
 from langchain.vectorstores.faiss import FAISS as Vectorstore
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
@@ -20,6 +21,7 @@ from loguru import logger
 from torch.cuda import empty_cache
 
 from .file_operation import FileName, FileOperation
+from .helper import histogram
 from .retriever import CacheRetriever, Retriever
 
 
@@ -133,7 +135,10 @@ class FeatureStore:
                  embeddings: HuggingFaceEmbeddings,
                  reranker: BCERerank,
                  config_path: str = 'config.ini',
-                 language: str = 'zh') -> None:
+                 language: str = 'zh',
+                 chunk_size = 832,
+                 analyze_reject = False,
+                 rejecter_naive_splitter = False) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
@@ -152,18 +157,23 @@ class FeatureStore:
         self.compression_retriever = None
         self.rejecter = None
         self.retriever = None
-        self.md_splitter = MarkdownTextSplitter(chunk_size=768,
+        self.chunk_size = chunk_size
+        self.analyze_reject = analyze_reject
+        self.rejecter_naive_splitter = rejecter_naive_splitter
+
+        logger.info('init fs with chunk_size {}'.format(chunk_size))
+        self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
                                                 chunk_overlap=32)
 
         if language == 'zh':
             self.text_splitter = ChineseRecursiveTextSplitter(
                 keep_separator=True,
                 is_separator_regex=True,
-                chunk_size=768,
+                chunk_size=chunk_size,
                 chunk_overlap=32)
         else:
             self.text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=768, chunk_overlap=32)
+                chunk_size=chunk_size, chunk_overlap=32)
 
         self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
             ('#', 'Header 1'),
@@ -175,7 +185,7 @@ class FeatureStore:
         """Split the markdown document in a nested way, first extracting the
         header.
 
-        If the extraction result exceeds 1024, split it again according to
+        If the extraction result exceeds chunk_size, split it again according to
         length.
         """
         docs = self.head_splitter.split_text(text)
@@ -193,7 +203,7 @@ class FeatureStore:
                     header += ' '
                     header += doc.metadata['Header 3']
 
-            if len(doc.page_content) >= 1024:
+            if len(doc.page_content) > self.chunk_size:
                 subdocs = self.md_splitter.create_documents([doc.page_content])
                 for subdoc in subdocs:
                     if len(subdoc.page_content) >= 10:
@@ -204,7 +214,7 @@ class FeatureStore:
                     header, doc.page_content.lower()))  # noqa E501
 
         for item in final:
-            if len(item) >= 1024:
+            if len(item) >= self.chunk_size:
                 logger.debug('source {} split length {}'.format(
                     source, len(item)))
         return final
@@ -305,6 +315,25 @@ class FeatureStore:
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
+    def analyze(self, documents: list):
+        """Output documents length mean, median and histogram"""
+        if not self.analyze_reject:
+            return
+
+        text_lens = []
+        token_lens = []
+
+        if self.embeddings is None:
+            logger.info('self.embeddings is None, skip `anaylze_output`')
+            return
+        for doc in documents:
+            content = doc.page_content
+            text_lens.append(len(content))
+            token_lens.append(len(self.embeddings.client.tokenizer(content, padding=False, truncation=False)['input_ids']))
+
+        logger.info('document text histgram {}'.format(histogram(text_lens)))
+        logger.info('document token histgram {}'.format(histogram(token_lens)))
+
     def ingress_reject(self, files: list, work_dir: str):
         """Extract the features required for the reject pipeline based on
         documents."""
@@ -312,15 +341,16 @@ class FeatureStore:
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
+        lens = []
         documents = []
         file_opr = FileOperation()
 
-        logger.debug('ingress reject..')
+        logger.debug('ingress reject with chunk_size {}'.format(self.chunk_size))
         for i, file in enumerate(files):
             if not file.state:
                 continue
 
-            if file._type == 'md':
+            if not self.rejecter_naive_splitter and file._type == 'md':
                 # reject base not clean md
                 text = file.basename + '\n'
                 with open(file.copypath, encoding='utf8') as f:
@@ -340,13 +370,21 @@ class FeatureStore:
 
             else:
                 text, error = file_opr.read(file.copypath)
+                if len(text) < 1:
+                    continue
                 if error is not None:
                     continue
+                lens.append(len(text))
                 text = file.basename + text
                 documents += self.get_text_documents(text, file)
 
         if len(documents) < 1:
             return
+
+        log_str = histogram(values=lens)
+        logger.info('analyze input text. {}'.format(log_str))
+        logger.info('documents counter {}'.format(len(documents)))
+        self.analyze(documents)
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
@@ -489,12 +527,12 @@ def test_reject(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
 
     for example in real_questions:
-        reject, _ = retriever.is_reject(example)
+        relative, _ = retriever.is_relative(example)
 
-        if reject:
-            logger.error(f'reject query: {example}')
-        else:
+        if relative:
             logger.warning(f'process query: {example}')
+        else:
+            logger.error(f'reject query: {example}')
 
         if sample is not None:
             if reject:
