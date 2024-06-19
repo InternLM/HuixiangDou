@@ -382,7 +382,7 @@ class FeatureStore:
             return
 
         log_str = histogram(values=lens)
-        logger.info('input analyze {}'.format(log_str))
+        logger.info('analyze input text. {}'.format(log_str))
         logger.info('documents counter {}'.format(len(documents)))
         self.analyze(documents)
         vs = Vectorstore.from_documents(documents, self.embeddings)
