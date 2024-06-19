@@ -84,7 +84,8 @@ def calculate(chunk_size: int):
                            reranker=cache.reranker,
                            config_path=config_path,
                            chunk_size=chunk_size,
-                           debug=True)
+                           analyze_reject=True,
+                           reject_naive_splitter=True)
 
     # walk all files in repo dir
     file_opr = FileOperation()
@@ -146,12 +147,12 @@ def main():
     best_f1 = 0.0
     best_chunk_size = -1
     
-    # calculate(1400)
-    pool = NestablePool(6)
-    result = pool.map(calculate, range(4096, 81920, 4096))
-    pool.close()
-    pool.join()
-    print(result)
+    calculate(1240)
+    # pool = NestablePool(6)
+    # result = pool.map(calculate, range(128, 512, 32))
+    # pool.close()
+    # pool.join()
+    # print(result)
 
 if __name__ == '__main__':
     main()

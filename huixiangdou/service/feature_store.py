@@ -137,7 +137,8 @@ class FeatureStore:
                  config_path: str = 'config.ini',
                  language: str = 'zh',
                  chunk_size = 832,
-                 debug = False) -> None:
+                 analyze_reject = False,
+                 rejecter_naive_splitter = False) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
@@ -157,11 +158,12 @@ class FeatureStore:
         self.rejecter = None
         self.retriever = None
         self.chunk_size = chunk_size
-        self.debug = debug
+        self.analyze_reject = analyze_reject
+        self.rejecter_naive_splitter = rejecter_naive_splitter
 
         logger.info('init fs with chunk_size {}'.format(chunk_size))
         self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
-                                                chunk_overlap=0)
+                                                chunk_overlap=32)
 
         if language == 'zh':
             self.text_splitter = ChineseRecursiveTextSplitter(
@@ -170,11 +172,14 @@ class FeatureStore:
                 chunk_size=chunk_size,
                 chunk_overlap=32)
         else:
-            self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
-                ('#', 'Header 1'),
-                ('##', 'Header 2'),
-                ('###', 'Header 3'),
-            ])
+            self.text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=chunk_size, chunk_overlap=32)
+
+        self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
+            ('#', 'Header 1'),
+            ('##', 'Header 2'),
+            ('###', 'Header 3'),
+        ])
 
     def split_md(self, text: str, source: None):
         """Split the markdown document in a nested way, first extracting the
@@ -245,7 +250,6 @@ class FeatureStore:
         if len(text) <= 1:
             return [], length
 
-        # chunks = self.text_splitter.create_documents([text])
         chunks = self.split_md(text=text,
                                source=os.path.abspath(file.copypath))
         for chunk in chunks:
@@ -313,7 +317,7 @@ class FeatureStore:
 
     def analyze(self, documents: list):
         """Output documents length mean, median and histogram"""
-        if not self.debug:
+        if not self.analyze_reject:
             return
 
         text_lens = []
@@ -346,7 +350,7 @@ class FeatureStore:
             if not file.state:
                 continue
 
-            if file._type == 'md':
+            if not self.rejecter_naive_splitter and file._type == 'md':
                 # reject base not clean md
                 text = file.basename + '\n'
                 with open(file.copypath, encoding='utf8') as f:
