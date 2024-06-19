@@ -53,7 +53,7 @@ print(result)
 
 使用 `python3 plot.py` 绘制不同 chunksize 和 throttle 下的 F1。结果样例：
 
-<img src="rejection/plot_example.png" width="400">
+<img src="rejection/plot_example.png" width="600">
 
 ### **1.3 测试结论**
 

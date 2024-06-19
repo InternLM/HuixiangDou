@@ -53,7 +53,7 @@ print(result)
 
 Use `python3 plot.py` to plot the F1 under different chunksizes and throttles. An example of the results is shown below:
 
-<img src="rejection/plot_example.png" width="400">
+<img src="rejection/plot_example.png" width="600">
 
 ### **1.3 Test Conclusion**
 
