@@ -43,11 +43,11 @@ def test_llm_backend_fail():
     logger.error(error)
     assert len(error) > 0
 
-    resp, error = server.generate_response(prompt='hello',
+    _, error = server.generate_response(prompt='hello',
                                         history=[],
                                         backend='deepseek')
     logger.error(error)
-    assert len(resp) > 0 or len(error) > 0
+    assert len(error) > 0
 
     _, error = server.generate_response(prompt='hello', history=[], backend='zhipuai')
     logger.error(error)
