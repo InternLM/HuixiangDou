@@ -145,11 +145,7 @@ class InferenceWrapper:
         else:
             if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。' in prompt:
                 prompt = '你是一个语言专家，擅长分析语句并打分。\n' + prompt
-                output_desc, _ = self.model.chat(self.tokenizer,
-                                                 prompt,
-                                                 history,
-                                                 top_k=1,
-                                                 do_sample=False)
+                output_desc, _ = self.model.chat(self.tokenizer, prompt, history, top_k=1, do_sample=False)
                 prompt = '"{}"\n请仔细阅读上面的内容，最后的得分是多少？'.format(output_desc)
                 output_text, _ = self.model.chat(self.tokenizer, prompt,
                                                  history)
@@ -226,7 +222,7 @@ class HybridLLMServer:
         messages.append({'role': 'user', 'content': prompt})
 
         data = {
-            'model': 'internlm2-20b-latest',
+            'model': 'internlm2-102b-latest',
             'messages': messages,
             'n': 1,
             'disable_report': False,
