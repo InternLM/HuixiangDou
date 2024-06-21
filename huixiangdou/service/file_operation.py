@@ -18,7 +18,7 @@ class FileName:
         self.prefix = filename.replace('/', '_')
         self.basename = os.path.basename(filename)
         self.origin = os.path.join(root, filename)
-        self.copypath = ''
+        self.copypath = self.origin
         self._type = _type
         self.state = True
         self.reason = ''
