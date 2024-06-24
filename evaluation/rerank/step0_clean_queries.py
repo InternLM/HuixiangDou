@@ -1,17 +1,21 @@
 import re
 import os
 import json
+from loguru import logger
 pattern = re.compile(r'^[A-Za-z0-9]+$')
 
 
-def save(_id, sentence):
-    with open(os.path.join('/workspace/queries', _id) + '.txt', 'a') as f:
-        # json_str = json.dumps({'data': sentence}, ensure_ascii=False)
-        # f.write(r'{}'.format(json_str))
-        f.write(r'{}'.format(sentence))
-        f.write('\n')
+pwd = os.path.dirname(__file__)
+query_log = os.path.join(pwd, '..', 'query.log')
 
-with open('/workspace/query.log') as f:
+def save(_id, sentence):
+    if _id not in queries:
+        queries[_id] = [sentence]
+    else:
+        queries[_id].append(sentence) 
+
+queries = dict()
+with open(query_log) as f:
     query = None
 
     _id = None
@@ -34,3 +38,16 @@ with open('/workspace/query.log') as f:
                 sentence += line
 
     save(_id, sentence)
+
+
+counter = 0
+for _id in queries:
+    with open(os.path.join(pwd, '..', 'queries', _id) + '.txt', 'a') as f:
+        values = map(lambda x: x.strip(), queries[_id])
+        values = list(set(values))
+        counter += len(values)
+        json_str = json.dumps(values, ensure_ascii=False)
+        f.write(r'{}'.format(json_str))
+        f.write('\n')
+
+logger.info(counter)

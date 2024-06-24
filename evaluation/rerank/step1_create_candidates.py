@@ -10,7 +10,6 @@ import multiprocessing
 from multiprocessing import Pool, Process
 import os
 import pdb
-
 class NoDaemonProcess(multiprocessing.Process):
     @property
     def daemon(self):
@@ -38,7 +37,7 @@ class Record:
         if os.path.exists('record.txt'):
             with open('record.txt') as f:
                 for line in f:
-                    self.records.append(f)
+                    self.records.append(line.strip())
         
     def is_processed(self):
         if self.fsid in self.records:
@@ -48,16 +47,20 @@ class Record:
     def mark_as_processed(self):
         with open('record.txt', 'a') as f:
             f.write(self.fsid)
+            f.write('\n')
 
 def load_queries(fsid: str):
-    query_path = os.path.join('/workspace/HuixiangDou/evaluation/queries/', fsid+'.txt')
+    pwd = os.path.dirname(__file__)
+    base = os.path.join(pwd, '..', 'queries')
+    query_path = os.path.join(base, fsid+'.txt')
     if not os.path.exists(query_path):
         return []
-    queries = set()
+    queries = []
     with open(query_path) as f:
         for line in f:
-            queries.add(line)
-    return list(queries)
+            queries = json.loads(line)
+            break
+    return queries
 
 def process(param:tuple):
     fsid, filedir = param
@@ -67,6 +70,7 @@ def process(param:tuple):
 
     r = Record(fsid=fsid)
     if r.is_processed():
+        logger.info('skip {}'.format(fsid))
         return
 
     config_path = 'config.ini'
@@ -90,11 +94,7 @@ def process(param:tuple):
     
     for query in queries:
         try:
-            if len(query) > 512:
-                import pdb
-                pdb.set_trace()
-                logger.info('long query: {}'.format(query))
-
+            query = query[0:512]
             docs = retriever.compression_retriever.get_relevant_documents(query)
             candidates = []
             logger.info('{} docs count {}'.format(fsid, len(docs)))
@@ -118,17 +118,18 @@ def process(param:tuple):
     r.mark_as_processed()
 
 def main():
-    base = '/workspace/HuixiangDou/evaluation/feature_stores'
+    pwd = os.path.dirname(__file__)
+    base = os.path.join(pwd, '..', 'feature_stores')
     dirs = os.listdir(base)
     params = []
     for fsid in dirs:
         filedir = os.path.join(base, fsid, 'workdir/preprocess')
-        process((fsid,filedir))
+        # process((fsid,filedir))
         params.append((fsid, filedir))
-    # pool = NestablePool(6)
-    # result = pool.map(process, params)
-    # pool.close()
-    # pool.join()
+    pool = NestablePool(3)
+    result = pool.map(process, params)
+    pool.close()
+    pool.join()
 
 if __name__ == '__main__':
     main()
