@@ -215,7 +215,7 @@ class Retriever:
 
 class CacheRetriever:
 
-    def __init__(self, config_path: str, cache_size: int = 4, rerank_topn: int = 7):
+    def __init__(self, config_path: str, cache_size: int = 4, rerank_topn: int = 10):
         self.cache = dict()
         self.cache_size = cache_size
         self.rerank_topn = rerank_topn

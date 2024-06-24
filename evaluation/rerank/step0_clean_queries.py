@@ -16,8 +16,6 @@ with open('/workspace/query.log') as f:
 
     _id = None
     sentence = ''
-    import pdb
-    pdb.set_trace()
     for line in f:
         line = line.strip()
         if len(line) < 5:

@@ -30,6 +30,25 @@ class NestablePool(multiprocessing.pool.Pool):
         kwargs['context'] = NoDaemonContext()
         super(NestablePool, self).__init__(*args, **kwargs)
 
+
+class Record:
+    def __init__(self, fsid: str):
+        self.records = []
+        self.fsid = fsid
+        if os.path.exists('record.txt'):
+            with open('record.txt') as f:
+                for line in f:
+                    self.records.append(f)
+        
+    def is_processed(self):
+        if self.fsid in self.records:
+            return True
+        return False
+    
+    def mark_as_processed(self):
+        with open('record.txt', 'a') as f:
+            f.write(self.fsid)
+
 def load_queries(fsid: str):
     query_path = os.path.join('/workspace/HuixiangDou/evaluation/queries/', fsid+'.txt')
     if not os.path.exists(query_path):
@@ -46,6 +65,10 @@ def process(param:tuple):
     if len(queries) < 1:
         return
 
+    r = Record(fsid=fsid)
+    if r.is_processed():
+        return
+
     config_path = 'config.ini'
     cache = CacheRetriever(config_path=config_path)
 
@@ -56,15 +79,43 @@ def process(param:tuple):
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=filedir)
     work_dir = os.path.join('workdir',fsid)
-    fs_init.ingress_response(files=files, work_dir=work_dir)
+    fs_init.initialize(files=files, work_dir=work_dir)
+    file_opr.summarize(files)
     del fs_init
 
-    retriever = CacheRetriever(config_path=config_path).get(fs_id=fsid, work_dir=work_dir)
-
+    retriever = cache.get(config_path=config_path, work_dir=work_dir)
+    
+    if not os.path.exists('candidates'):
+        os.makedirs('candidates')
+    
     for query in queries:
-        docs = retriever.compression_retriever.get_relevant_documents(query)
-        for doc in docs:
-            
+        try:
+            if len(query) > 512:
+                import pdb
+                pdb.set_trace()
+                logger.info('long query: {}'.format(query))
+
+            docs = retriever.compression_retriever.get_relevant_documents(query)
+            candidates = []
+            logger.info('{} docs count {}'.format(fsid, len(docs)))
+
+            for doc in docs:
+                data = {
+                    'content': doc.page_content,
+                    'source': doc.metadata['read'],
+                    'score': doc.metadata['relevance_score']
+                }
+                candidates.append(data)
+
+            json_str = json.dumps({'query': query, 'candidates': candidates}, ensure_ascii=False)
+
+            with open(os.path.join('candidates', fsid+'.jsonl'), 'a') as f:
+                f.write(json_str)
+                f.write('\n')
+        except Exception as e:
+            pdb.set_trace()
+            print(e)
+    r.mark_as_processed()
 
 def main():
     base = '/workspace/HuixiangDou/evaluation/feature_stores'
@@ -72,7 +123,7 @@ def main():
     params = []
     for fsid in dirs:
         filedir = os.path.join(base, fsid, 'workdir/preprocess')
-        process(fsid=fsid, filedir=filedir)
+        process((fsid,filedir))
         params.append((fsid, filedir))
     # pool = NestablePool(6)
     # result = pool.map(process, params)
