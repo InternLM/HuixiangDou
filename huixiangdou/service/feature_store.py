@@ -136,7 +136,9 @@ class FeatureStore:
                  reranker: BCERerank,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
-                 chunk_size = 768) -> None:
+                 chunk_size = 832,
+                 analyze_reject = False,
+                 rejecter_naive_splitter = False) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
@@ -155,6 +157,11 @@ class FeatureStore:
         self.compression_retriever = None
         self.rejecter = None
         self.retriever = None
+        self.chunk_size = chunk_size
+        self.analyze_reject = analyze_reject
+        self.rejecter_naive_splitter = rejecter_naive_splitter
+
+        logger.info('init fs with chunk_size {}'.format(chunk_size))
         self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
                                                 chunk_overlap=32)
 
@@ -378,8 +385,9 @@ class FeatureStore:
         logger.info('analyze input text. {}'.format(log_str))
         logger.info('documents counter {}'.format(len(documents)))
         self.analyze(documents)
-        vs = Vectorstore.from_documents(documents, self.embeddings)
-        vs.save_local(feature_dir)
+        return documents
+        # vs = Vectorstore.from_documents(documents, self.embeddings)
+        # vs.save_local(feature_dir)
 
     def preprocess(self, files: list, work_dir: str):
         """Preprocesses files in a given directory. Copies each file to
