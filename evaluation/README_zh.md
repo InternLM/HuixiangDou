@@ -73,9 +73,3 @@ splitter 选择依据
 * 英文 `langchain.RecursiveTextSplitter`，切中文语料更碎但没有离心值
 * `CharacterTextSplitter` 实际没切片作用，避免直接用
 
-
-## Rerank
-
-### **1.1 数据说明**
-
-第一部分来自 2302 个问题和 9 个知识库（开源）；第二部分来自 OpenXLab HuixiangDou 应用知识库和对应问题（无法开源），累计 
