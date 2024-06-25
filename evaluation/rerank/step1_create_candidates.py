@@ -55,7 +55,16 @@ def load_queries(fsid: str):
     query_path = os.path.join(base, fsid+'.txt')
     if not os.path.exists(query_path):
         return []
+
     queries = []
+    print(query_path)
+    if fsid == '0000':
+
+        with open(query_path) as f:
+            for line in f:
+                queries.append(line)
+        return queries
+
     with open(query_path) as f:
         for line in f:
             queries = json.loads(line)
@@ -94,7 +103,7 @@ def process(param:tuple):
     
     for query in queries:
         try:
-            query = query[0:512]
+            query = query[0:400]
             docs = retriever.compression_retriever.get_relevant_documents(query)
             candidates = []
             logger.info('{} docs count {}'.format(fsid, len(docs)))
@@ -122,14 +131,16 @@ def main():
     base = os.path.join(pwd, '..', 'feature_stores')
     dirs = os.listdir(base)
     params = []
+    import pdb
+    pdb.set_trace()
     for fsid in dirs:
         filedir = os.path.join(base, fsid, 'workdir/preprocess')
-        # process((fsid,filedir))
+        process((fsid,filedir))
         params.append((fsid, filedir))
-    pool = NestablePool(3)
-    result = pool.map(process, params)
-    pool.close()
-    pool.join()
+    # pool = NestablePool(2)
+    # result = pool.map(process, params)
+    # pool.close()
+    # pool.join()
 
 if __name__ == '__main__':
     main()
