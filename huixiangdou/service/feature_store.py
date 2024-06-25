@@ -324,8 +324,8 @@ class FeatureStore:
             text_lens.append(len(content))
             token_lens.append(len(self.embeddings.client.tokenizer(content, padding=False, truncation=False)['input_ids']))
 
-        logger.info('document text histgram {}'.format(histogram(text_lens)))
-        logger.info('document token histgram {}'.format(histogram(token_lens)))
+        logger.info('document text histgram, {}'.format(histogram(text_lens)))
+        logger.info('document token histgram, {}'.format(histogram(token_lens)))
 
     def ingress_reject(self, files: list, work_dir: str):
         """Extract the features required for the reject pipeline based on

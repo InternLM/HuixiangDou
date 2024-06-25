@@ -215,9 +215,10 @@ class Retriever:
 
 class CacheRetriever:
 
-    def __init__(self, config_path: str, max_len: int = 4):
+    def __init__(self, config_path: str, cache_size: int = 4, rerank_topn: int = 10):
         self.cache = dict()
-        self.max_len = max_len
+        self.cache_size = cache_size
+        self.rerank_topn = rerank_topn
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)['feature_store']
             embedding_model_path = config['embedding_model_path']
@@ -235,7 +236,7 @@ class CacheRetriever:
         self.embeddings.client = self.embeddings.client.half()
         reranker_args = {
             'model': reranker_model_path,
-            'top_n': 7,
+            'top_n': self.rerank_topn,
             'device': 'cuda',
             'use_fp16': True
         }
@@ -253,7 +254,7 @@ class CacheRetriever:
             reject_throttle = pytoml.load(
                 f)['feature_store']['reject_throttle']
 
-        if len(self.cache) >= self.max_len:
+        if len(self.cache) >= self.cache_size:
             # drop the oldest one
             del_key = None
             min_time = time.time()

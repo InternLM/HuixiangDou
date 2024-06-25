@@ -255,16 +255,14 @@ def histogram(values: list):
     """Print histogram log string for values"""
     values.sort()
     _len = len(values)
-    if _len < 1:
+    if _len <= 1:
         return ''
     
     median = values[round((_len - 1) / 2)]
     _sum = 0
     min_val = min(values)
     max_val = max(values)
-    range_width = round(0.1 * (max_val - min_val))
-    if range_width == 0:
-        logger.info("all input length = {}".format(min_val))
+    range_width = max(1, round(0.1 * (max_val - min_val)))
     ranges = [(i * range_width, (i + 1) * range_width) for i in range((max_val // range_width) + 1)]
 
     # 计算每个范围的数值总数

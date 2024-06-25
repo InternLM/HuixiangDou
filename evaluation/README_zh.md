@@ -72,3 +72,4 @@ splitter 选择依据
 * 中文优先 `ChineseTextSplitter`，会出现离心值
 * 英文 `langchain.RecursiveTextSplitter`，切中文语料更碎但没有离心值
 * `CharacterTextSplitter` 实际没切片作用，避免直接用
+
