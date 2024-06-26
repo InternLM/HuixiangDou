@@ -388,6 +388,7 @@ class FeatureStore:
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
+
     def preprocess(self, files: list, work_dir: str):
         """Preprocesses files in a given directory. Copies each file to
         'preprocess' with new name formed by joining all subdirectories with
