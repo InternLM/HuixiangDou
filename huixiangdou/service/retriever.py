@@ -36,42 +36,44 @@ class Retriever:
         rejection_path = os.path.join(work_dir, 'db_reject')
         retriever_path = os.path.join(work_dir, 'db_response')
 
-        if not os.path.exists(rejection_path) or not os.path.exists(
-                retriever_path):
-            logger.warning('!!!warning, feature db not exist.!!!')
-            return
+        if os.path.exists(rejection_path):
+            self.rejecter = Vectorstore.load_local(
+                rejection_path,
+                embeddings=embeddings,
+                allow_dangerous_deserialization=True)
+        
+        if os.path.exists(retriever_path):
+            self.retriever = Vectorstore.load_local(
+                retriever_path,
+                embeddings=embeddings,
+                allow_dangerous_deserialization=True,
+                distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
+                    search_type='similarity',
+                    search_kwargs={
+                        'score_threshold': 0.15,
+                        'k': 30
+                    })
+            self.compression_retriever = ContextualCompressionRetriever(base_compressor=reranker, base_retriever=self.retriever)
+        
+        if self.rejecter is None:
+            logger.warning('rejecter is None')
+        if self.retriever is None:
+            logger.warning('retriever is None')
 
-        self.rejecter = Vectorstore.load_local(
-            rejection_path,
-            embeddings=embeddings,
-            allow_dangerous_deserialization=True)
-        self.retriever = Vectorstore.load_local(
-            retriever_path,
-            embeddings=embeddings,
-            allow_dangerous_deserialization=True,
-            distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
-                search_type='similarity',
-                search_kwargs={
-                    'score_threshold': 0.15,
-                    'k': 30
-                })
-        self.compression_retriever = ContextualCompressionRetriever(
-            base_compressor=reranker, base_retriever=self.retriever)
-
-    def is_reject(self, question, k=30, disable_throttle=False):
+    def is_relative(self, question, k=30, disable_throttle=False):
         """If no search results below the threshold can be found from the
         database, reject this query."""
 
         if self.rejecter is None:
-            return True, []
+            return False, []
 
         if disable_throttle:
             # for searching throttle during update sample
             docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
                 question, k=1)
             if len(docs_with_score) < 1:
-                return True, docs_with_score
-            return False, docs_with_score
+                return False, docs_with_score
+            return True, docs_with_score
         else:
             # for retrieve result
             # if no chunk passed the throttle, give the max
@@ -86,8 +88,8 @@ class Retriever:
                 if score > max_score:
                     max_score = score
                     top1 = (doc, score)
-            reject = False if len(ret) > 0 else True
-            return reject, [top1]
+            relative = True if len(ret) > 0 else False
+            return relative, [top1]
 
     def update_throttle(self,
                         config_path: str = 'config.ini',
@@ -101,7 +103,7 @@ class Retriever:
         predictions = []
         for question in questions:
             self.reject_throttle = -1
-            _, docs = self.is_reject(question=question, disable_throttle=True)
+            _, docs = self.is_relative(question=question, disable_throttle=True)
             score = docs[0][1]
             predictions.append(max(0, score))
 
@@ -149,9 +151,9 @@ class Retriever:
         context = ''
         references = []
 
-        reject, docs = self.is_reject(question=question)
+        relative, docs = self.is_relative(question=question)
         logger.debug('retriever.docs {}'.format(docs))
-        if reject:
+        if not relative:
             if len(docs) > 0:
                 references.append(docs[0][0].metadata['source'])
             return None, None, references
@@ -213,9 +215,10 @@ class Retriever:
 
 class CacheRetriever:
 
-    def __init__(self, config_path: str, max_len: int = 4):
+    def __init__(self, config_path: str, cache_size: int = 4, rerank_topn: int = 10):
         self.cache = dict()
-        self.max_len = max_len
+        self.cache_size = cache_size
+        self.rerank_topn = rerank_topn
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)['feature_store']
             embedding_model_path = config['embedding_model_path']
@@ -233,7 +236,7 @@ class CacheRetriever:
         self.embeddings.client = self.embeddings.client.half()
         reranker_args = {
             'model': reranker_model_path,
-            'top_n': 7,
+            'top_n': self.rerank_topn,
             'device': 'cuda',
             'use_fp16': True
         }
@@ -251,7 +254,7 @@ class CacheRetriever:
             reject_throttle = pytoml.load(
                 f)['feature_store']['reject_throttle']
 
-        if len(self.cache) >= self.max_len:
+        if len(self.cache) >= self.cache_size:
             # drop the oldest one
             del_key = None
             min_time = time.time()
@@ -271,6 +274,8 @@ class CacheRetriever:
                               work_dir=work_dir,
                               reject_throttle=reject_throttle)
         self.cache[fs_id] = {'retriever': retriever, 'time': time.time()}
+        if retriever.rejecter is None:
+            logger.warning('retriever.rejecter is None, check workdir')
         return retriever
 
     def pop(self, fs_id: str):
