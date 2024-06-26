@@ -385,9 +385,9 @@ class FeatureStore:
         logger.info('analyze input text. {}'.format(log_str))
         logger.info('documents counter {}'.format(len(documents)))
         self.analyze(documents)
-        return documents
-        # vs = Vectorstore.from_documents(documents, self.embeddings)
-        # vs.save_local(feature_dir)
+        vs = Vectorstore.from_documents(documents, self.embeddings)
+        vs.save_local(feature_dir)
+
 
     def preprocess(self, files: list, work_dir: str):
         """Preprocesses files in a given directory. Copies each file to

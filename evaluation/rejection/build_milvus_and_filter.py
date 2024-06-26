@@ -46,11 +46,6 @@ dense_dim = ef.dim["dense"]
 
 def init_milvus(col_name: str, max_length_bytes: int):
     conn = connections.connect("default", host="localhost", port="19530")
-    # DBNAME = 'HuixiangDou'
-    # if DBNAME in db.list_database():
-    #     db.drop_database(DBNAME)
-    # db.create_database(DBNAME)
-    # db.using_database(DBNAME)
     # Specify the data schema for the new Collection.
     fields = [
         # Use auto generated id as primary key
@@ -164,37 +159,37 @@ def calculate(chunk_size: int):
                            rejecter_naive_splitter=True)
 
     # walk all files in repo dir
-    # file_opr = FileOperation()
-    # files = file_opr.scan_dir(repo_dir=repo_dir)
-    # fs_init.preprocess(files=files, work_dir=work_dir)
-    # docs = fs_init.ingress_reject(files=files, work_dir=work_dir)
-    # del fs_init
+    file_opr = FileOperation()
+    files = file_opr.scan_dir(repo_dir=repo_dir)
+    fs_init.preprocess(files=files, work_dir=work_dir)
+    docs = fs_init.ingress_reject(files=files, work_dir=work_dir)
+    del fs_init
 
     # docs = docs[0:20]
 
-    col = init_milvus(col_name='test1', max_length_bytes= 3 * chunk_size)
+    col = init_milvus(col_name='test2', max_length_bytes= 3 * chunk_size)
    
-    # subdocs = split_by_group(docs)
-    # pdb.set_trace()
-    # for idx, docs in enumerate(subdocs):
-    #     print('build step {}'.format(idx))
-    #     texts = []
-    #     sources = []
-    #     reads = []
-    #     for doc in docs:
-    #         texts.append(doc.page_content[0:chunk_size])
-    #         sources.append(doc.metadata['source'])
-    #         reads.append(doc.metadata['read'])
+    subdocs = split_by_group(docs)
+    pdb.set_trace()
+    for idx, docs in enumerate(subdocs):
+        print('build step {}'.format(idx))
+        texts = []
+        sources = []
+        reads = []
+        for doc in docs:
+            texts.append(doc.page_content[0:chunk_size])
+            sources.append(doc.metadata['source'])
+            reads.append(doc.metadata['read'])
     
-    #     max_length = len(max(texts, key=lambda x: len(x)))
-    #     docs_emb = ef(texts)
-    #     entities = [texts, docs_emb["sparse"], docs_emb["dense"]]
-    #     try:
-    #         col.insert(entities)
-    #         col.flush()
-    #     except Exception as e:
-    #         print(e)
-    #         pdb.set_trace()
+        max_length = len(max(texts, key=lambda x: len(x)))
+        docs_emb = ef(texts)
+        entities = [texts, docs_emb["sparse"], docs_emb["dense"]]
+        try:
+            col.insert(entities)
+            col.flush()
+        except Exception as e:
+            print(e)
+            pdb.set_trace()
 
     print('insert finished')
     # start = 0.4
@@ -254,7 +249,7 @@ def main():
     best_f1 = 0.0
     best_chunk_size = -1
     
-    calculate(832)
+    calculate(2048)
     # pool = NestablePool(6)
     # result = pool.map(calculate, range(128, 512, 32))
     # pool.close()
