@@ -86,7 +86,6 @@ def process(param:tuple):
     cache = CacheRetriever(config_path=config_path)
 
     fs_init = FeatureStore(embeddings=cache.embeddings,
-                           reranker=cache.reranker,
                            config_path=config_path)
 
     file_opr = FileOperation()

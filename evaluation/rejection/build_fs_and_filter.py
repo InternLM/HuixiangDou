@@ -83,7 +83,6 @@ def calculate(chunk_size: int):
     # 读 input.jsonl 计算 F1
     cache = CacheRetriever(config_path=config_path)
     fs_init = FeatureStore(embeddings=cache.embeddings,
-                           reranker=cache.reranker,
                            config_path=config_path,
                            chunk_size=chunk_size,
                            analyze_reject=True,

@@ -133,7 +133,6 @@ class FeatureStore:
 
     def __init__(self,
                  embeddings: HuggingFaceEmbeddings,
-                 reranker: BCERerank,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
                  chunk_size = 832,
@@ -153,7 +152,6 @@ class FeatureStore:
 
         logger.debug('loading text2vec model..')
         self.embeddings = embeddings
-        self.reranker = reranker
         self.compression_retriever = None
         self.rejecter = None
         self.retriever = None
@@ -564,12 +562,10 @@ def test_query(retriever: Retriever, sample: str = None):
 
     empty_cache()
 
-
 if __name__ == '__main__':
     args = parse_args()
     cache = CacheRetriever(config_path=args.config_path)
     fs_init = FeatureStore(embeddings=cache.embeddings,
-                           reranker=cache.reranker,
                            config_path=args.config_path)
 
     # walk all files in repo dir

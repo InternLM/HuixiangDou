@@ -300,10 +300,7 @@ class HybridLLMServer:
         output_text = ''
         self.rpm.wait()
 
-        res_json = requests.post(url,
-                                 headers=header,
-                                 data=json.dumps(data),
-                                 timeout=120).json()
+        res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
         logger.debug(res_json)
         if 'msgCode' in res_json:
             if res_json['msgCode'] == 'A0202':
