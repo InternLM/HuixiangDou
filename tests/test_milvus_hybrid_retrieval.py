@@ -30,7 +30,7 @@ use_reranker = False
 import random
 import string
 import numpy as np
-
+from sklearn.metrics import precision_recall_curve
 from pymilvus import (
     utility,
     FieldSchema, CollectionSchema, DataType,
@@ -47,23 +47,12 @@ docs = [
 docs.extend([' '.join(''.join(random.choice(string.ascii_lowercase) for _ in range(random.randint(1, 8))) for _ in range(10)) for _ in range(1000)])
 query = "Who started AI research?"
 
-def random_embedding(texts):
-    rng = np.random.default_rng()
-    return {
-        "dense": np.random.rand(len(texts), 768),
-        "sparse": [{d: rng.random() for d in random.sample(range(1000), random.randint(20, 30))} for _ in texts],
-    }
-
-dense_dim = 768
-ef = random_embedding
-
-if use_bge_m3:
-    # BGE-M3 model can embed texts as dense and sparse vectors.
-    # It is included in the optional `model` module in pymilvus, to install it,
-    # simply run "pip install pymilvus[model]".
-    from pymilvus.model.hybrid import BGEM3EmbeddingFunction
-    ef = BGEM3EmbeddingFunction(model_name='/data2/khj/bge-m3', use_fp16=False, device="cuda")
-    dense_dim = ef.dim["dense"]
+# BGE-M3 model can embed texts as dense and sparse vectors.
+# It is included in the optional `model` module in pymilvus, to install it,
+# simply run "pip install pymilvus[model]".
+from pymilvus.model.hybrid import BGEM3EmbeddingFunction
+ef = BGEM3EmbeddingFunction(model_name='/data2/khj/bge-m3', use_fp16=False, device="cuda")
+dense_dim = ef.dim["dense"]
 
 docs_embeddings = ef(docs)
 query_embeddings = ef([query])
@@ -85,7 +74,7 @@ fields = [
                 dim=dense_dim),
 ]
 schema = CollectionSchema(fields, "")
-col_name = 'hybrid_demo'
+col_name = 'hybrid_demo1'
 # Now we can create the new collection with above name and schema.
 col = Collection(col_name, schema, consistency_level="Strong")
 

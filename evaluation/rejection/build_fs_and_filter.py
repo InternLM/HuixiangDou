@@ -9,7 +9,9 @@ from tqdm import tqdm
 import multiprocessing
 from multiprocessing import Pool, Process
 import os
+import pdb
 
+save_hardcase = False
 
 class NoDaemonProcess(multiprocessing.Process):
     @property
@@ -91,6 +93,7 @@ def calculate(chunk_size: int):
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=repo_dir)
     fs_init.preprocess(files=files, work_dir=work_dir)
+    fs_init.ingress_response(files=files, work_dir=work_dir)
     fs_init.ingress_reject(files=files, work_dir=work_dir)
     del fs_init
 
@@ -103,7 +106,7 @@ def calculate(chunk_size: int):
     start = 0.3
     stop = 0.5
     step = 0.01
-    throttles += [round(start + step * i, 4) for i in range(int((stop - start) / step) + 1)]
+    throttles = [round(start + step * i, 4) for i in range(int((stop - start) / step) + 1)]
 
     best_chunk_f1 = 0.0
 
@@ -113,9 +116,20 @@ def calculate(chunk_size: int):
         dts = []
         gts = []
         for text_label in text_labels:
-            dt, _ = retriever.is_relative(question=text_label[0])
+            question = text_label[0]
+            dt, _ = retriever.is_relative(question=question)
             dts.append(dt)
             gts.append(text_label[1])
+
+            if save_hardcase and dt != text_label[1]:
+                docs = retriever.compression_retriever.get_relevant_documents(question)
+                if len(docs) > 0:
+                    doc = docs[0]
+                    question = question.replace('\n', ' ')
+                    content = "{}  {}".format(question, doc)
+                    with open('hardcase{}.txt'.format(throttle), 'a') as f:
+                        f.write(content)
+                        f.write('\n')
 
         f1 = f1_score(gts, dts)
         f1 = round(f1, 4)
@@ -147,7 +161,7 @@ def main():
     best_f1 = 0.0
     best_chunk_size = -1
     
-    calculate(2048)
+    calculate(832)
     # pool = NestablePool(6)
     # result = pool.map(calculate, range(128, 512, 32))
     # pool.close()
