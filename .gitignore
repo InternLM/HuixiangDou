@@ -44,3 +44,8 @@ config-wechat.ini
 sft/groups/
 evaluation/queries/
 candidates/
+evaluation/candidates.zip
+evaluation/feature_stores.zip
+evaluation/query.log
+bceodir/
+odir/
