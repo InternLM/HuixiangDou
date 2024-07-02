@@ -1,16 +1,23 @@
-from huixiangdou.service import FeatureStore, CacheRetriever, Retriever, FileOperation
-import os.path as osp
 import argparse
 import json
-import re
-from loguru import logger
-from sklearn.metrics import precision_recall_curve, f1_score, recall_score, precision_score
-from tqdm import tqdm
 import multiprocessing
-from multiprocessing import Pool, Process
 import os
+import os.path as osp
 import pdb
+import re
+from multiprocessing import Pool, Process
+
+from loguru import logger
+from sklearn.metrics import (f1_score, precision_recall_curve, precision_score,
+                             recall_score)
+from tqdm import tqdm
+
+from huixiangdou.service import (CacheRetriever, FeatureStore, FileOperation,
+                                 Retriever)
+
+
 class NoDaemonProcess(multiprocessing.Process):
+
     @property
     def daemon(self):
         return False
@@ -19,18 +26,22 @@ class NoDaemonProcess(multiprocessing.Process):
     def daemon(self, value):
         pass
 
+
 class NoDaemonContext(type(multiprocessing.get_context())):
     Process = NoDaemonProcess
+
 
 # We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
 # because the latter is only a wrapper function, not a proper class.
 class NestablePool(multiprocessing.pool.Pool):
+
     def __init__(self, *args, **kwargs):
         kwargs['context'] = NoDaemonContext()
         super(NestablePool, self).__init__(*args, **kwargs)
 
 
 class Record:
+
     def __init__(self, fsid: str):
         self.records = []
         self.fsid = fsid
@@ -38,21 +49,22 @@ class Record:
             with open('record.txt') as f:
                 for line in f:
                     self.records.append(line.strip())
-        
+
     def is_processed(self):
         if self.fsid in self.records:
             return True
         return False
-    
+
     def mark_as_processed(self):
         with open('record.txt', 'a') as f:
             f.write(self.fsid)
             f.write('\n')
 
+
 def load_queries(fsid: str):
     pwd = os.path.dirname(__file__)
     base = os.path.join(pwd, '..', 'queries')
-    query_path = os.path.join(base, fsid+'.txt')
+    query_path = os.path.join(base, fsid + '.txt')
     if not os.path.exists(query_path):
         return []
 
@@ -71,7 +83,8 @@ def load_queries(fsid: str):
             break
     return queries
 
-def process(param:tuple):
+
+def process(param: tuple):
     fsid, filedir = param
     queries = load_queries(fsid=fsid)
     if len(queries) < 1:
@@ -90,20 +103,21 @@ def process(param:tuple):
 
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=filedir)
-    work_dir = os.path.join('workdir',fsid)
+    work_dir = os.path.join('workdir', fsid)
     fs_init.initialize(files=files, work_dir=work_dir)
     file_opr.summarize(files)
     del fs_init
 
     retriever = cache.get(config_path=config_path, work_dir=work_dir)
-    
+
     if not os.path.exists('candidates'):
         os.makedirs('candidates')
-    
+
     for query in queries:
         try:
             query = query[0:400]
-            docs = retriever.compression_retriever.get_relevant_documents(query)
+            docs = retriever.compression_retriever.get_relevant_documents(
+                query)
             candidates = []
             logger.info('{} docs count {}'.format(fsid, len(docs)))
 
@@ -115,15 +129,20 @@ def process(param:tuple):
                 }
                 candidates.append(data)
 
-            json_str = json.dumps({'query': query, 'candidates': candidates}, ensure_ascii=False)
+            json_str = json.dumps({
+                'query': query,
+                'candidates': candidates
+            },
+                                  ensure_ascii=False)
 
-            with open(os.path.join('candidates', fsid+'.jsonl'), 'a') as f:
+            with open(os.path.join('candidates', fsid + '.jsonl'), 'a') as f:
                 f.write(json_str)
                 f.write('\n')
         except Exception as e:
             pdb.set_trace()
             print(e)
     r.mark_as_processed()
+
 
 def main():
     pwd = os.path.dirname(__file__)
@@ -134,12 +153,13 @@ def main():
     pdb.set_trace()
     for fsid in dirs:
         filedir = os.path.join(base, fsid, 'workdir/preprocess')
-        process((fsid,filedir))
+        process((fsid, filedir))
         params.append((fsid, filedir))
     # pool = NestablePool(2)
     # result = pool.map(process, params)
     # pool.close()
     # pool.join()
+
 
 if __name__ == '__main__':
     main()

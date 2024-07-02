@@ -1,46 +1,53 @@
-import os
-import torch
-import pdb
-from transformers import AutoModelForCausalLM, AutoTokenizer
+# Copyright (c) OpenMMLab. All rights reserved.
 import json
-import numpy as np
+import os
+import pdb
 from typing import List
-from langchain_core.documents import Document
+
+import numpy as np
+import torch
 from langchain_core.retrievers import BaseRetriever
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
 
 class LLMReranker:
+
     def __init__(
             self,
-            model_name_or_path: str='BAAI/bge-reranker-v2-minicpm-layerwise',
+            model_name_or_path: str = 'BAAI/bge-reranker-v2-minicpm-layerwise',
             topn: int = 10):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True, torch_dtype=torch.bfloat16).eval()
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,
+                                                       trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name_or_path,
+            trust_remote_code=True,
+            torch_dtype=torch.bfloat16).eval()
         self.model = self.model.to('cuda')
         self.topn = topn
 
-    def get_inputs(self, pairs, tokenizer, prompt=None, max_length=1024):
-        """Build input tokens with query and chunks"""
+    def get_inputs(self, pairs, prompt=None, max_length=1024):
+        """Build input tokens with query and chunks."""
         if prompt is None:
             prompt = "Given a query A and a passage B, determine whether the passage contains an answer to the query by providing a prediction of either 'Yes' or 'No'."
-        sep = "\n"
+        sep = '\n'
         prompt_inputs = self.tokenizer(prompt,
-                                return_tensors=None,
-                                add_special_tokens=False)['input_ids']
+                                       return_tensors=None,
+                                       add_special_tokens=False)['input_ids']
         sep_inputs = self.tokenizer(sep,
-                            return_tensors=None,
-                            add_special_tokens=False)['input_ids']
+                                    return_tensors=None,
+                                    add_special_tokens=False)['input_ids']
         inputs = []
         for query, passage in pairs:
             query_inputs = self.tokenizer(f'A: {query}',
-                                    return_tensors=None,
-                                    add_special_tokens=False,
-                                    max_length=max_length * 3 // 4,
-                                    truncation=True)
+                                          return_tensors=None,
+                                          add_special_tokens=False,
+                                          max_length=max_length * 3 // 4,
+                                          truncation=True)
             passage_inputs = self.tokenizer(f'B: {passage}',
-                                    return_tensors=None,
-                                    add_special_tokens=False,
-                                    max_length=max_length,
-                                    truncation=True)
+                                            return_tensors=None,
+                                            add_special_tokens=False,
+                                            max_length=max_length,
+                                            truncation=True)
             item = self.tokenizer.prepare_for_model(
                 [self.tokenizer.bos_token_id] + query_inputs['input_ids'],
                 sep_inputs + passage_inputs['input_ids'],
@@ -49,34 +56,42 @@ class LLMReranker:
                 padding=False,
                 return_attention_mask=False,
                 return_token_type_ids=False,
-                add_special_tokens=False
-            )
+                add_special_tokens=False)
             item['input_ids'] = item['input_ids'] + sep_inputs + prompt_inputs
             item['attention_mask'] = [1] * len(item['input_ids'])
             inputs.append(item)
-        return self.tokenizer.pad(
-                inputs,
-                padding=True,
-                max_length=max_length + len(sep_inputs) + len(prompt_inputs),
-                pad_to_multiple_of=8,
-                return_tensors='pt')
+        return self.tokenizer.pad(inputs,
+                                  padding=True,
+                                  max_length=max_length + len(sep_inputs) +
+                                  len(prompt_inputs),
+                                  pad_to_multiple_of=8,
+                                  return_tensors='pt')
 
-    def sort(self, chunks: List[str], query:str):
-        """Rerank input chunks, return descending indexes, indexes[0] is the nearest chunk"""
+    def sort(self, chunks: List[str], query: str):
+        """Rerank input chunks, return descending indexes, indexes[0] is the
+        nearest chunk."""
         pairs = []
         for chunk in chunks:
             pairs.append([query, chunk])
-        
-        inputs = self.get_inputs(pairs, tokenizer).to(model.device)
-        scores = model(**inputs, return_dict=True, cutoff_layers=[28])
-        scores = [ scores[:, -1].view(-1, ).float() for scores in all_scores[0] ]
-        scores = scores[0].cpu().numpy()
-        # get descending order
-        return scores.argsort()[::-1][0:self.topn]
+
+        with torch.no_grad():
+            inputs = self.get_inputs(pairs).to(self.model.device)
+            all_scores = self.model(**inputs,
+                                    return_dict=True,
+                                    cutoff_layers=[28])
+            scores = [
+                scores[:, -1].view(-1, ).float() for scores in all_scores[0]
+            ]
+            scores = scores[0].cpu().numpy()
+            # get descending order
+            return scores.argsort()[::-1][0:self.topn]
+
 
 class LLMCompressionRetriever:
-    def __init__(self, base_compressor: LLMReranker, base_retriever: BaseRetriever):
-        self.compressor = base_compressor
+
+    def __init__(self, base_compressor: LLMReranker,
+                 base_retriever: BaseRetriever):
+        self.reranker = base_compressor
         self.retriever = base_retriever
 
     def get_relevant_documents(self, query: str):
@@ -86,6 +101,6 @@ class LLMCompressionRetriever:
         chunks = []
         for doc in docs:
             chunks.append(doc.page_content)
-        
+
         indexes = self.reranker.sort(chunks=chunks, query=query)
         return [docs[i] for i in indexes]

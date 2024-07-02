@@ -59,27 +59,29 @@ print(result)
 
 对 bce-embedding-base_v1
 
-* chunksize 范围应在 (512, 1500)
-* 右值取到的最佳 F1@throttle 为 75.39@0.41
-* chunksize 取 640 时，F1 可达到 75.88
+- chunksize 范围应在 (512, 1500)
+- 右值取到的最佳 F1@throttle 为 75.39@0.41
+- chunksize 取 640 时，F1 可达到 75.88
 
 对 bge-large-zh-v1.5
-* chunksize 范围应在 (423, 1240)
-* embedding.tokenzier 的压缩率略低
-* 右值取到的最佳 F1@throttle 为 72.23@0.34
+
+- chunksize 范围应在 (423, 1240)
+- embedding.tokenzier 的压缩率略低
+- 右值取到的最佳 F1@throttle 为 72.23@0.34
 
 splitter 选择依据
-* 中文优先 `ChineseTextSplitter`，会出现离心值
-* 英文 `langchain.RecursiveTextSplitter`，切中文语料更碎但没有离心值
-* `CharacterTextSplitter` 实际没切片作用，避免直接用
+
+- 中文优先 `ChineseTextSplitter`，会出现离心值
+- 英文 `langchain.RecursiveTextSplitter`，切中文语料更碎但没有离心值
+- `CharacterTextSplitter` 实际没切片作用，避免直接用
 
 ### **1.4 方案对比**
 
 我们也对比了其他办法和模型：
 
-| 方案 | F1 score | 说明 |
-| :-: | :-: | :-: |
-| Ours | 75.88 | 使用 [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) 配合特定 splitter 测试。注意不合适的 splitter 和 distance_strategy 会严重影响精度 |
-| bge-v1.5-large | 72.23 | 使用 [bge-large-zh-v1.5](https://github.com/FlagOpen/FlagEmbedding) 测试 |
-| bge-m3 | 70.62 | 使用 [m3](https://github.com/FlagOpen/FlagEmbedding) dense retrieval。注意 m3 最大输入 token 长度 8192，测试数据无法完整发挥模型编码能力 |
-| hybrid search | 63.85 | 基于 [milvus WeightedRanker](https://github.com/milvus-io/milvus) 测试 [m3](https://github.com/FlagOpen/FlagEmbedding) dense+sparse retrieval 拒答效果 |
+|      方案      | F1 score |                                                                             说明                                                                              |
+| :------------: | :------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|      Ours      |  75.88   | 使用 [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) 配合特定 splitter 测试。注意不合适的 splitter 和 distance_strategy 会严重影响精度 |
+| bge-v1.5-large |  72.23   |                                           使用 [bge-large-zh-v1.5](https://github.com/FlagOpen/FlagEmbedding) 测试                                            |
+|     bge-m3     |  70.62   |           使用 [m3](https://github.com/FlagOpen/FlagEmbedding) dense retrieval。注意 m3 最大输入 token 长度 8192，测试数据无法完整发挥模型编码能力            |
+| hybrid search  |  63.85   |    基于 [milvus WeightedRanker](https://github.com/milvus-io/milvus) 测试 [m3](https://github.com/FlagOpen/FlagEmbedding) dense+sparse retrieval 拒答效果     |

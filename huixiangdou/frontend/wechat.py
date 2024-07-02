@@ -3,10 +3,7 @@ import argparse
 import hashlib
 import json
 import os
-import pdb
-import random
 import re
-import string
 import time
 import types
 import xml.etree.ElementTree as ET

@@ -1,19 +1,23 @@
-from huixiangdou.service import FeatureStore, CacheRetriever, Retriever, FileOperation
-import os.path as osp
 import argparse
 import json
-import re
-from loguru import logger
-from sklearn.metrics import precision_recall_curve, f1_score, recall_score, precision_score
-from tqdm import tqdm
 import multiprocessing
-from multiprocessing import Pool, Process
 import os
+import os.path as osp
 import pdb
+from multiprocessing import Pool, Process
+
+from loguru import logger
+from sklearn.metrics import (f1_score, precision_score,
+                             recall_score)
+from tqdm import tqdm
+
+from huixiangdou.service import (CacheRetriever, FeatureStore, FileOperation)
 
 save_hardcase = False
 
+
 class NoDaemonProcess(multiprocessing.Process):
+
     @property
     def daemon(self):
         return False
@@ -26,12 +30,15 @@ class NoDaemonProcess(multiprocessing.Process):
 class NoDaemonContext(type(multiprocessing.get_context())):
     Process = NoDaemonProcess
 
+
 # We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
 # because the latter is only a wrapper function, not a proper class.
 class NestablePool(multiprocessing.pool.Pool):
+
     def __init__(self, *args, **kwargs):
         kwargs['context'] = NoDaemonContext()
         super(NestablePool, self).__init__(*args, **kwargs)
+
 
 def parse_args():
     """Parse command-line arguments."""
@@ -50,10 +57,10 @@ def parse_args():
         '--config_path',
         default='config.ini',
         help='Feature store configuration path. Default value is config.ini')
-    parser.add_argument(
-        '--chunk-size', default=768, help='Text chunksize')
+    parser.add_argument('--chunk-size', default=768, help='Text chunksize')
     args = parser.parse_args()
     return args
+
 
 def load_dataset():
     text_labels = []
@@ -65,8 +72,9 @@ def load_dataset():
         for line in f:
             # rejection
             text_labels.append((line, False))
-    
+
     return text_labels
+
 
 def calculate(chunk_size: int):
     config_path = 'config.ini'
@@ -75,7 +83,7 @@ def calculate(chunk_size: int):
     work_dir = work_dir_base + str(chunk_size)
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
-        
+
     # export PYTHONWARNINGS=ignore
     text_labels = load_dataset()
 
@@ -96,16 +104,23 @@ def calculate(chunk_size: int):
     fs_init.ingress_reject(files=files, work_dir=work_dir)
     del fs_init
 
-    retriever = CacheRetriever(config_path=config_path).get(fs_id=str(chunk_size), work_dir=work_dir)
+    retriever = CacheRetriever(config_path=config_path).get(
+        fs_id=str(chunk_size), work_dir=work_dir)
     start = 0.1
     stop = 0.7
     step = 0.1
-    throttles = [round(start + step * i, 4) for i in range(int((stop - start) / step) + 1)]
+    throttles = [
+        round(start + step * i, 4)
+        for i in range(int((stop - start) / step) + 1)
+    ]
 
     start = 0.3
     stop = 0.5
     step = 0.01
-    throttles = [round(start + step * i, 4) for i in range(int((stop - start) / step) + 1)]
+    throttles = [
+        round(start + step * i, 4)
+        for i in range(int((stop - start) / step) + 1)
+    ]
 
     best_chunk_f1 = 0.0
 
@@ -121,11 +136,12 @@ def calculate(chunk_size: int):
             gts.append(text_label[1])
 
             if save_hardcase and dt != text_label[1]:
-                docs = retriever.compression_retriever.get_relevant_documents(question)
+                docs = retriever.compression_retriever.get_relevant_documents(
+                    question)
                 if len(docs) > 0:
                     doc = docs[0]
                     question = question.replace('\n', ' ')
-                    content = "{}  {}".format(question, doc)
+                    content = '{}  {}'.format(question, doc)
                     with open('hardcase{}.txt'.format(throttle), 'a') as f:
                         f.write(content)
                         f.write('\n')
@@ -141,13 +157,15 @@ def calculate(chunk_size: int):
 
         data = {
             'chunk_size': chunk_size,
-            'throttle': throttle, 
+            'throttle': throttle,
             'precision': precision,
             'recall': recall,
             'f1': f1
         }
         json_str = json.dumps(data)
-        with open(osp.join(osp.dirname(__file__), 'chunk_size{}.jsonl'.format(chunk_size)), 'a') as f:
+        with open(
+                osp.join(osp.dirname(__file__),
+                         'chunk_size{}.jsonl'.format(chunk_size)), 'a') as f:
             f.write(json_str)
             f.write('\n')
 
@@ -155,17 +173,19 @@ def calculate(chunk_size: int):
             best_chunk_f1 = f1
     return best_chunk_f1
 
+
 def main():
     args = parse_args()
     best_f1 = 0.0
     best_chunk_size = -1
-    
+
     calculate(832)
     # pool = NestablePool(6)
     # result = pool.map(calculate, range(128, 512, 32))
     # pool.close()
     # pool.join()
     # print(result)
+
 
 if __name__ == '__main__':
     main()

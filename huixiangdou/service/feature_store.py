@@ -3,22 +3,22 @@
 import argparse
 import json
 import os
+import pdb
 import re
 import shutil
 from multiprocessing import Pool
 from typing import Any, List, Optional
 
 import pytoml
-from BCEmbedding.tools.langchain import BCERerank
 from langchain.text_splitter import (MarkdownHeaderTextSplitter,
                                      MarkdownTextSplitter,
-                                     RecursiveCharacterTextSplitter,
-                                     CharacterTextSplitter)
+                                     RecursiveCharacterTextSplitter)
 from langchain.vectorstores.faiss import FAISS as Vectorstore
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from loguru import logger
 from torch.cuda import empty_cache
+from tqdm import tqdm
 
 from .file_operation import FileName, FileOperation
 from .helper import histogram
@@ -135,9 +135,9 @@ class FeatureStore:
                  embeddings: HuggingFaceEmbeddings,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
-                 chunk_size = 832,
-                 analyze_reject = False,
-                 rejecter_naive_splitter = False) -> None:
+                 chunk_size=832,
+                 analyze_reject=False,
+                 rejecter_naive_splitter=False) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
@@ -183,8 +183,8 @@ class FeatureStore:
         """Split the markdown document in a nested way, first extracting the
         header.
 
-        If the extraction result exceeds chunk_size, split it again according to
-        length.
+        If the extraction result exceeds chunk_size, split it again according
+        to length.
         """
         docs = self.head_splitter.split_text(text)
 
@@ -211,10 +211,10 @@ class FeatureStore:
                 final.append('{} {}'.format(
                     header, doc.page_content.lower()))  # noqa E501
 
-        for item in final:
-            if len(item) >= self.chunk_size:
-                logger.debug('source {} split length {}'.format(
-                    source, len(item)))
+        # for item in final:
+        #     if len(item) >= self.chunk_size:
+        #         logger.debug('source {} split length {}'.format(
+        #             source, len(item)))
         return final
 
     def clean_md(self, text: str):
@@ -283,16 +283,15 @@ class FeatureStore:
         file_opr = FileOperation()
         documents = []
 
-        for i, file in enumerate(files):
-            logger.debug('{}/{}.. {}'.format(i + 1, len(files), file.basename))
+        for i, file in tqdm(enumerate(files)):
+            # logger.debug('{}/{}.. {}'.format(i + 1, len(files), file.basename))
             if not file.state:
                 continue
 
             if file._type == 'md':
                 md_documents, md_length = self.get_md_documents(file)
                 documents += md_documents
-                logger.info('{} content length {}'.format(
-                    file._type, md_length))
+                # logger.info('{} content length {}'.format(file._type, md_length))
                 file.reason = str(md_length)
 
             else:
@@ -303,8 +302,7 @@ class FeatureStore:
                     file.reason = str(error)
                     continue
                 file.reason = str(len(text))
-                logger.info('{} content length {}'.format(
-                    file._type, len(text)))
+                # logger.info('{} content length {}'.format(file._type, len(text)))
                 text = file.prefix + text
                 documents += self.get_text_documents(text, file)
 
@@ -314,7 +312,7 @@ class FeatureStore:
         vs.save_local(feature_dir)
 
     def analyze(self, documents: list):
-        """Output documents length mean, median and histogram"""
+        """Output documents length mean, median and histogram."""
         if not self.analyze_reject:
             return
 
@@ -327,10 +325,15 @@ class FeatureStore:
         for doc in documents:
             content = doc.page_content
             text_lens.append(len(content))
-            token_lens.append(len(self.embeddings.client.tokenizer(content, padding=False, truncation=False)['input_ids']))
+            token_lens.append(
+                len(
+                    self.embeddings.client.tokenizer(
+                        content, padding=False,
+                        truncation=False)['input_ids']))
 
-        logger.info('document text histgram, {}'.format(histogram(text_lens)))
-        logger.info('document token histgram, {}'.format(histogram(token_lens)))
+        logger.info('document text histogram, {}'.format(histogram(text_lens)))
+        logger.info('document token histogram, {}'.format(
+            histogram(token_lens)))
 
     def ingress_reject(self, files: list, work_dir: str):
         """Extract the features required for the reject pipeline based on
@@ -343,8 +346,9 @@ class FeatureStore:
         documents = []
         file_opr = FileOperation()
 
-        logger.debug('ingress reject with chunk_size {}'.format(self.chunk_size))
-        for i, file in enumerate(files):
+        logger.debug('ingress reject with chunk_size {}'.format(
+            self.chunk_size))
+        for i, file in tqdm(enumerate(files)):
             if not file.state:
                 continue
 
@@ -385,7 +389,6 @@ class FeatureStore:
         self.analyze(documents)
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
-
 
     def preprocess(self, files: list, work_dir: str):
         """Preprocesses files in a given directory. Copies each file to
@@ -443,7 +446,7 @@ class FeatureStore:
                 file.state = False
                 file.reason = 'skip unknown format'
         pool.close()
-        logger.debug('waiting for preprocess read finish..')
+        logger.debug('waiting for file preprocess finish..')
         pool.join()
 
         # check process result
@@ -534,12 +537,12 @@ def test_reject(retriever: Retriever, sample: str = None):
             logger.error(f'reject query: {example}')
 
         if sample is not None:
-            if reject:
-                with open('workdir/negative.txt', 'a+') as f:
+            if relative:
+                with open('workdir/positive.txt', 'a+') as f:
                     f.write(example)
                     f.write('\n')
             else:
-                with open('workdir/positive.txt', 'a+') as f:
+                with open('workdir/negative.txt', 'a+') as f:
                     f.write(example)
                     f.write('\n')
 
@@ -548,6 +551,7 @@ def test_reject(retriever: Retriever, sample: str = None):
 
 def test_query(retriever: Retriever, sample: str = None):
     """Simple test response pipeline."""
+    from texttable import Texttable
     if sample is not None:
         with open(sample) as f:
             real_questions = json.load(f)
@@ -555,12 +559,23 @@ def test_query(retriever: Retriever, sample: str = None):
     else:
         real_questions = ['mmpose installation', 'how to use std::vector ?']
 
+    table = Texttable()
+    table.set_cols_valign(['t', 't', 't', 't'])
+    table.header(['Query', 'State', 'Part of Chunks', 'References'])
+
     for example in real_questions:
         example = example[0:400]
-        print(retriever.query(example))
+        chunks, context, refs = retriever.query(example)
+        if chunks:
+            table.add_row(
+                [example, 'Accepted', chunks[0:100] + '..', ','.join(refs)])
+        else:
+            table.add_row([example, 'Rejected', 'None', 'None'])
         empty_cache()
 
+    logger.info('\n' + table.draw())
     empty_cache()
+
 
 if __name__ == '__main__':
     args = parse_args()

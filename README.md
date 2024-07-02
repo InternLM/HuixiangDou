@@ -46,6 +46,7 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
 - \[2024/06\] [Evaluation of Chunk Size, Splitter and Model](./evaluation)
+
 - \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), support image, URL and reference resolution in group chat
 
 - \[2024/05\] Add [Coreference Resolution fine-tune](./sft)

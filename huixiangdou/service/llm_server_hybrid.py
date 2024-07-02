@@ -145,7 +145,11 @@ class InferenceWrapper:
         else:
             if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。' in prompt:
                 prompt = '你是一个语言专家，擅长分析语句并打分。\n' + prompt
-                output_desc, _ = self.model.chat(self.tokenizer, prompt, history, top_k=1, do_sample=False)
+                output_desc, _ = self.model.chat(self.tokenizer,
+                                                 prompt,
+                                                 history,
+                                                 top_k=1,
+                                                 do_sample=False)
                 prompt = '"{}"\n请仔细阅读上面的内容，最后的得分是多少？'.format(output_desc)
                 output_text, _ = self.model.chat(self.tokenizer, prompt,
                                                  history)
@@ -300,7 +304,10 @@ class HybridLLMServer:
         output_text = ''
         self.rpm.wait()
 
-        res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
+        res_json = requests.post(url,
+                                 headers=header,
+                                 data=json.dumps(data),
+                                 timeout=120).json()
         logger.debug(res_json)
         if 'msgCode' in res_json:
             if res_json['msgCode'] == 'A0202':

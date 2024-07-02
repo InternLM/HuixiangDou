@@ -1,7 +1,7 @@
 import json
+import pdb
 import re
 import time
-import pdb
 
 import pytoml
 from loguru import logger
@@ -49,11 +49,15 @@ def test_llm_backend_fail():
     logger.error(error)
     assert len(error) > 0
 
-    _, error = server.generate_response(prompt='hello', history=[], backend='zhipuai')
+    _, error = server.generate_response(prompt='hello',
+                                        history=[],
+                                        backend='zhipuai')
     logger.error(error)
     assert len(error) > 0
 
-    _, error = server.generate_response(prompt='hello', history=[], backend='xi-api')
+    _, error = server.generate_response(prompt='hello',
+                                        history=[],
+                                        backend='xi-api')
     logger.error(error)
     assert len(error) > 0
 
@@ -152,7 +156,9 @@ def test_puyu_pass():
     llm_config['server']['remote_type'] = 'puyu'
     server = HybridLLMServer(llm_config=llm_config)
 
-    response, error = server.generate_response(prompt=PROMPT, history=[], backend='puyu')
+    response, error = server.generate_response(prompt=PROMPT,
+                                               history=[],
+                                               backend='puyu')
     score = get_score(relation=response, default=0)
     assert score >= 5
     assert len(error) == 0
