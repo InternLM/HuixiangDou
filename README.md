@@ -45,7 +45,10 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
+- \[2024/07\] `config.ini` support [LLM Reranker](./huixiangdou/service/llm_reranker.py)
+
 - \[2024/06\] [Evaluation of Chunk Size, Splitter and Model](./evaluation)
+
 - \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), support image, URL and reference resolution in group chat
 
 - \[2024/05\] Add [Coreference Resolution fine-tune](./sft)
@@ -162,8 +165,12 @@ The standard edition runs [text2vec](https://huggingface.co/maidalun1020/bce-emb
 # main creates a subprocess to run the LLM API, then sends requests to the subprocess
 python3 -m huixiangdou.main --standalone
 ..
-..Topics unrelated to the knowledge base.."How to install mmpose?"
-..Topics unrelated to the knowledge base.."How's the weather tomorrow?"
++-------------------------+-------------------------+---------------+------------+
+|          Query          |          State          | Part of Reply | References |
++=========================+=========================+===============+============+
+| How to install mmpose ? | Topics unrelated to the | ..            |            |
+|                         | knowledge base..        |               |            |
++------------  -----------+-------------------------+---------------+------------+
 ```
 
 You can see that the result of handling the example question in `main.py` is the same, whether it's about `mmpose installation` or `How's the weather tomorrow?`
@@ -194,8 +201,12 @@ Then rerun `main`, Huixiangdou will be able to answer `mmpose installation` and 
 
 ```bash
 python3 -m huixiangdou.main --standalone
-..success.. To install mmpose, you should..
-..Topics unrelated to the knowledge base.."How's the weather tomorrow?"
+
++-----------------------+---------+--------------------------------+-----------------+
+|         Query         |  State  |         Part of Reply          |   References    |
++=======================+=========+================================+=================+
+| How to install mmpose?| success | To install mmpose, please..    | installation.md |
++-----------------------+---------+--------------------------------+-----------------+
 ```
 
 Please adjust the `repodir` documents, [good_questions](./resource/good_questions.json), and [bad_questions](./resource/bad_questions.json) to try your own domain knowledge (medical, financial, power, etc.).

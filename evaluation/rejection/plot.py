@@ -1,14 +1,15 @@
+import json
+import os
+
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import os
-import json
+
 
 def plot_3d():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     for jsonl_file in os.listdir('./'):
 
-        
         if not jsonl_file.endswith('.jsonl'):
             continue
 
@@ -25,17 +26,17 @@ def plot_3d():
             for json_str in f:
                 json_obj = json.loads(json_str)
                 datas.append(json_obj)
-        
+
         datas.sort(key=lambda x: x['throttle'])
 
         for data in datas:
-                chunk_size = data['chunk_size']
-                throttle = data['throttle']
-                f1 = data['f1']
+            chunk_size = data['chunk_size']
+            throttle = data['throttle']
+            f1 = data['f1']
 
-                x.append(chunk_size)
-                y.append(throttle)
-                z.append(f1)
+            x.append(chunk_size)
+            y.append(throttle)
+            z.append(f1)
 
         # 绘制3D曲线
         ax.plot(x, y, z)
@@ -98,6 +99,7 @@ def plot_cross_splitter():
     plt.legend()
     # 显示图形
     plt.show()
+
 
 if __name__ == '__main__':
     plot_3d()

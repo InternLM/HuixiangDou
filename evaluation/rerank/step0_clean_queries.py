@@ -1,18 +1,21 @@
-import re
-import os
 import json
-from loguru import logger
-pattern = re.compile(r'^[A-Za-z0-9]+$')
+import os
+import re
 
+from loguru import logger
+
+pattern = re.compile(r'^[A-Za-z0-9]+$')
 
 pwd = os.path.dirname(__file__)
 query_log = os.path.join(pwd, '..', 'query.log')
+
 
 def save(_id, sentence):
     if _id not in queries:
         queries[_id] = [sentence]
     else:
-        queries[_id].append(sentence) 
+        queries[_id].append(sentence)
+
 
 queries = dict()
 with open(query_log) as f:
@@ -25,7 +28,8 @@ with open(query_log) as f:
         if len(line) < 5:
             continue
 
-        if line[4] == ' ' and pattern.match(line[0:4]) and _id is not None and sentence != '':
+        if line[4] == ' ' and pattern.match(
+                line[0:4]) and _id is not None and sentence != '':
             save(_id, sentence)
             _id = line[0:4]
             sentence = line[4:]
@@ -38,7 +42,6 @@ with open(query_log) as f:
                 sentence += line
 
     save(_id, sentence)
-
 
 counter = 0
 for _id in queries:

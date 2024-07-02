@@ -252,18 +252,19 @@ def check_str_useful(content: str):
 
 
 def histogram(values: list):
-    """Print histogram log string for values"""
+    """Print histogram log string for values."""
     values.sort()
     _len = len(values)
     if _len <= 1:
         return ''
-    
+
     median = values[round((_len - 1) / 2)]
     _sum = 0
     min_val = min(values)
     max_val = max(values)
     range_width = max(1, round(0.1 * (max_val - min_val)))
-    ranges = [(i * range_width, (i + 1) * range_width) for i in range((max_val // range_width) + 1)]
+    ranges = [(i * range_width, (i + 1) * range_width)
+              for i in range((max_val // range_width) + 1)]
 
     # 计算每个范围的数值总数
     total_count = len(values)
@@ -277,11 +278,13 @@ def histogram(values: list):
 
     range_percentages = [(count / total_count) * 100 for count in range_counts]
 
-    log_str = 'count {}, avg {}, median {}\n'.format(len(values), round(_sum / len(values), 2), median)
+    log_str = 'length count {}, avg {}, median {}\n'.format(
+        len(values), round(_sum / len(values), 2), median)
     for i, (start, end) in enumerate(ranges):
         log_str += f'{start}-{end}  {range_percentages[i]:.2f}%'
         log_str += '\n'
     return log_str
+
 
 # if __name__ == '__main__':
 #     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', ''))

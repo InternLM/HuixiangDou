@@ -4,14 +4,13 @@
 import argparse
 import os
 import time
-from multiprocessing import Process, Value
 
 import pytoml
 import requests
 from aiohttp import web
 from loguru import logger
 
-from .service import ErrorCode, Worker, llm_serve, start_llm_server
+from .service import ErrorCode, Worker, start_llm_server
 
 
 def parse_args():
@@ -59,35 +58,35 @@ def check_env(args):
         os.makedirs(args.work_dir)
 
 
-def build_reply_text(reply: str, references: list):
-    if len(references) < 1:
-        return reply
-
-    ret = reply
-    for ref in references:
-        ret += '\n'
-        ret += ref
-    return ret
+def build_reply_text(code, query: str, reply: str, refs: list):
+    from texttable import Texttable
+    table = Texttable()
+    table.set_cols_valign(['t', 't', 't', 't'])
+    table.header(['Query', 'State', 'Part of Reply', 'References'])
+    table.add_row([query, str(code), reply[0:20] + '..', ','.join(refs)])
+    return table.draw()
 
 
 def show(assistant, fe_config: dict):
     queries = ['请问如何安装 mmpose ?', '请问明天天气如何？']
     for query in queries:
-        code, reply, references = assistant.generate(query=query,
-                                                     history=[],
-                                                     groupname='')
-        logger.warning(f'{code}, {query}, {reply}, {references}')
-        reply_text = build_reply_text(reply=reply, references=references)
-        logger.info(reply_text)
+        code, reply, refs = assistant.generate(query=query,
+                                               history=[],
+                                               groupname='')
+        reply_text = build_reply_text(code=code,
+                                      query=query,
+                                      reply=reply,
+                                      refs=refs)
+        logger.info('\n' + reply_text)
 
-        if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
+        if fe_config['type'] == 'lark':
             # send message to lark group
             logger.error(
                 '!!!`lark_send_only` feature will be removed on October 10, 2024. If this function still helpful for you, please let me know: https://github.com/InternLM/HuixiangDou/issues'
             )
             from .frontend import Lark
             lark = Lark(webhook=fe_config['webhook_url'])
-            logger.info(f'send {reply} and {references} to lark group.')
+            logger.info(f'send {reply} and {refs} to lark group.')
             lark.send_text(msg=reply_text)
 
 

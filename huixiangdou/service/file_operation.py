@@ -98,10 +98,10 @@ class FileOperation:
             elif file.reason == 'skip':
                 skip += 1
             else:
-                logger.info('{} {}'.format(file.origin, file.reason))
+                # logger.info('{} {}'.format(file.origin, file.reason))
                 failed += 1
 
-            logger.info('{} {}'.format(file.reason, file.copypath))
+            # logger.info('{} {}'.format(file.reason, file.copypath))
         logger.info('累计{}文件，成功{}个，跳过{}个，异常{}个'.format(len(files), success,
                                                       skip, failed))
 

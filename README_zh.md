@@ -43,6 +43,7 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
+- \[2024/07\] `config.ini` 支持 [LLM Reranker](./huixiangdou/service/llm_reranker.py)
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation)
 - \[2024/05\] [wkteam 微信接入](./docs/add_wechat_commercial_zh.md)，整合图片&公众号解析、集成指代消歧
 - \[2024/05\] [指代消歧微调](./sft/)
@@ -156,9 +157,12 @@ pip install -r requirements.txt
 # main 创建子进程运行 LLM API，然后向子进程发请求
 python3 -m huixiangdou.main --standalone
 ..
-Topics unrelated to the knowledge base.. 请问如何安装 mmpose ?, , []
-..
-Topics unrelated to the knowledge base.. 请问明天天气如何？, , []
++-----------------------+-------------------------+---------------+------------+
+|         Query         |          State          | Part of Reply | References |
++=======================+=========================+===============+============+
+| 请问如何安装 mmpose ?   | Topics unrelated to the | ..            |            |
+|                       | knowledge base..        |               |            |
++-----------------------+-------------------------+---------------+------------+
 ```
 
 > \[!NOTE\]
@@ -190,8 +194,12 @@ python3 -m huixiangdou.service.feature_store
 
 ```bash
 python3 -m huixiangdou.main --standalone
-..success, 请问如何安装 mmpose ?, 要安装 mmpose，请按照以下步骤进行..
-..Topics unrelated to the knowledge base..请问明天天气如何？
+
++-----------------------+---------+--------------------------------+-----------------+
+|         Query         |  State  |         Part of Reply          |   References    |
++=======================+=========+================================+=================+
+| 请问如何安装 mmpose ?   | success | 要安装 mmpose，请按照以下步骤操作..| installation.md |
++-----------------------+---------+--------------------------------+-----------------+
 ```
 
 > \[!NOTE\]
