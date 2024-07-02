@@ -30,9 +30,6 @@ def parse_args():
     return args
 
 
-args = parse_args()
-
-
 def get_reply(query):
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
     code, reply, references = assistant.generate(query=query,
@@ -45,18 +42,20 @@ def get_reply(query):
 
     return json.dumps(ret, indent=2, ensure_ascii=False)
 
+if __name__ == '__main__':
+    args = parse_args()
 
-# start service
-if args.standalone is True:
-    # hybrid llm serve
-    start_llm_server(config_path=args.config_path)
+    # start service
+    if args.standalone is True:
+        # hybrid llm serve
+        start_llm_server(config_path=args.config_path)
 
-with gr.Blocks() as demo:
-    with gr.Row():
-        input_question = gr.Textbox(label='输入你的提问')
-        with gr.Column():
-            result = gr.Textbox(label='生成结果')
-            run_button = gr.Button()
-    run_button.click(fn=get_reply, inputs=input_question, outputs=result)
+    with gr.Blocks() as demo:
+        with gr.Row():
+            input_question = gr.Textbox(label='输入你的提问')
+            with gr.Column():
+                result = gr.Textbox(label='生成结果')
+                run_button = gr.Button()
+        run_button.click(fn=get_reply, inputs=input_question, outputs=result)
 
-demo.launch(share=False, server_name='0.0.0.0', debug=True)
+    demo.launch(share=False, server_name='0.0.0.0', debug=True)

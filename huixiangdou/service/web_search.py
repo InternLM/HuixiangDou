@@ -26,7 +26,7 @@ except Exception as e:
     # Fix ldd ~/.local/share/pyppeteer/local-chromium/1181205/chrome-linux/chrome | grep not
     # apt install libgbm-dev
     # See https://techoverflow.net/2020/09/29/how-to-fix-pyppeteer-pyppeteer-errors-browsererror-browser-closed-unexpectedly/
-    logger.info(
+    logger.warning(
         'For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442'
     )
 
@@ -103,7 +103,9 @@ class WebSearch:
                     '.pdf') or target_link.lower().endswith('.docx'):
                 # download file and parse
                 logger.info(f'download and parse: {target_link}')
-                response = requests.get(target_link, stream=True, allow_redirects=True)
+                response = requests.get(target_link,
+                                        stream=True,
+                                        allow_redirects=True)
 
                 save_dir = self.search_config.save_dir
                 basename = os.path.basename(target_link)

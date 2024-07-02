@@ -200,8 +200,7 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
         f.write(payload.name)
 
     fs = FeatureStore(config_path=configpath,
-                      embeddings=cache.embeddings,
-                      reranker=cache.reranker)
+                      embeddings=cache.embeddings)
     task_state = partial(callback_task_state,
                          feature_store_id=fs_id,
                          _type=TaskCode.FS_ADD_DOC.value)

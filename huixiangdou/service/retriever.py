@@ -1,6 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """extract feature and search with user query."""
+import json
 import os
+import pdb
 import time
 
 import numpy as np
@@ -15,6 +17,7 @@ from sklearn.metrics import precision_recall_curve
 
 from .file_operation import FileOperation
 from .helper import QueryTracker
+from .llm_reranker import LLMCompressionRetriever, LLMReranker
 
 
 class Retriever:
@@ -41,20 +44,26 @@ class Retriever:
                 rejection_path,
                 embeddings=embeddings,
                 allow_dangerous_deserialization=True)
-        
+
         if os.path.exists(retriever_path):
             self.retriever = Vectorstore.load_local(
                 retriever_path,
                 embeddings=embeddings,
                 allow_dangerous_deserialization=True,
-                distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT).as_retriever(
-                    search_type='similarity',
-                    search_kwargs={
-                        'score_threshold': 0.15,
-                        'k': 30
-                    })
-            self.compression_retriever = ContextualCompressionRetriever(base_compressor=reranker, base_retriever=self.retriever)
-        
+                distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT
+            ).as_retriever(search_type='similarity',
+                           search_kwargs={
+                               'score_threshold': 0.15,
+                               'k': 30
+                           })
+
+            if 'LLMReranker' in type(reranker).__name__:
+                self.compression_retriever = LLMCompressionRetriever(
+                    base_compressor=reranker, base_retriever=self.retriever)
+            else:
+                self.compression_retriever = ContextualCompressionRetriever(
+                    base_compressor=reranker, base_retriever=self.retriever)
+
         if self.rejecter is None:
             logger.warning('rejecter is None')
         if self.retriever is None:
@@ -103,7 +112,8 @@ class Retriever:
         predictions = []
         for question in questions:
             self.reject_throttle = -1
-            _, docs = self.is_relative(question=question, disable_throttle=True)
+            _, docs = self.is_relative(question=question,
+                                       disable_throttle=True)
             score = docs[0][1]
             predictions.append(max(0, score))
 
@@ -152,7 +162,7 @@ class Retriever:
         references = []
 
         relative, docs = self.is_relative(question=question)
-        logger.debug('retriever.docs {}'.format(docs))
+        # logger.debug('retriever.docs {}'.format(docs))
         if not relative:
             if len(docs) > 0:
                 references.append(docs[0][0].metadata['source'])
@@ -215,10 +225,12 @@ class Retriever:
 
 class CacheRetriever:
 
-    def __init__(self, config_path: str, cache_size: int = 4, rerank_topn: int = 10):
+    def __init__(self,
+                 config_path: str,
+                 cache_size: int = 4,
+                 rerank_topn: int = 10):
         self.cache = dict()
         self.cache_size = cache_size
-        self.rerank_topn = rerank_topn
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)['feature_store']
             embedding_model_path = config['embedding_model_path']
@@ -234,13 +246,36 @@ class CacheRetriever:
                 'normalize_embeddings': True
             })
         self.embeddings.client = self.embeddings.client.half()
-        reranker_args = {
-            'model': reranker_model_path,
-            'top_n': self.rerank_topn,
-            'device': 'cuda',
-            'use_fp16': True
-        }
-        self.reranker = BCERerank(**reranker_args)
+
+        if self.use_llm_reranker(reranker_model_path):
+            self.reranker = LLMReranker(model_name_or_path=reranker_model_path,
+                                        topn=rerank_topn)
+        else:
+            logger.warning(
+                'For higher rerank precision, we strong advice using `BAAI/bge-reranker-v2-minicpm-layerwise`'
+            )
+            reranker_args = {
+                'model': reranker_model_path,
+                'top_n': rerank_topn,
+                'device': 'cuda',
+                'use_fp16': True
+            }
+            self.reranker = BCERerank(**reranker_args)
+
+    def use_llm_reranker(self, model_path):
+        config_path = os.path.join(model_path, 'config.json')
+        if not os.path.exists(config_path):
+            if 'bge-reranker-v2-minicpm-layerwise' in config_path.lower():
+                return True
+            return False
+        try:
+            with open(config_path) as f:
+                if 'bge-reranker-v2-minicpm-layerwise' in json.loads(
+                        f.read())['_name_or_path']:
+                    return True
+        except Exception as e:
+            logger.warning(e)
+        return False
 
     def get(self,
             fs_id: str = 'default',

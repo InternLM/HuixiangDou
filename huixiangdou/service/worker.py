@@ -12,7 +12,7 @@ import pytoml
 from loguru import logger
 from openai import OpenAI
 
-from .helper import ErrorCode, QueryTracker
+from .helper import ErrorCode
 from .llm_client import ChatClient
 from .primitive import is_truth
 from .retriever import CacheRetriever, Retriever
@@ -412,7 +412,7 @@ class SecurityNode(Node):
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query, sess.response)
         truth, logs = is_truth(llm=self.llm,
                                prompt=prompt,
-                               throttle=8,
+                               throttle=9,
                                default=0)
         sess.debug['SecurityNode_qa_perplex'] = logs
         if truth:
