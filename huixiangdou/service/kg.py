@@ -31,15 +31,20 @@ class KnowledgeGraph:
                 if abspath.lower().endswith('.md'):
                     self.build_md(abspath)
 
-    def generate_kg(self, chunk: str):
+    def generate_kg(self, abspath: str, pageid: int, text: str):
         # build chunk node
-
+        self.nodes.append({
+            'type': 'text',
+            'content': text,
+            'path': ,
+            'page': 
+        })
         # get othernodes and relationship
-        prompt = self.prompt_template.format(chunk)
+        prompt = self.prompt_template.format(text)
         raw = self.llm.generate_response(prompt=prompt)
         items = extract_json_from_str(raw=raw)
         for item in items:
-            # TODO
+            
 
     def dump_kg(self):
         pass
@@ -52,19 +57,24 @@ class KnowledgeGraph:
         splits = content.split('\n')
         
         chunk = ''
-        for idx in range(1, len(splits)):
-            split = idx
+        pageid = 0
+
+        for split in splits:
             if len(split) >= self.chunksize:
                 if len(chunk) > 0:
-                    generate_kg(chunk)
+                    generate_kg(abspath=abspath, pageid=pageid, text=chunk)
+                    pageid += 1
                     chunk = ''
-                generate_kg(split)
+                generate_kg(abspath=abspath, pageid=pageid, text=split)
+                pageid +=1
                 continue
             
             if len(chunk) + len(split) < self.chunksize:
                 chunk = chunk + '\n' + split
-            
-            generate_kg(chunk)
+                continue
+
+            generate_kg(abspath=abspath, pageid=pageid, text=chunk)
+            pageid +=1
             chunk = split
 
         dump_kg()            
