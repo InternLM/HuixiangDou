@@ -16,3 +16,4 @@ from .primitive import is_truth  # noqa E401
 from .retriever import CacheRetriever, Retriever  # noqa E401
 from .web_search import WebSearch  # noqa E401
 from .worker import Worker  # noqa E401
+from .kg import KnowledgeGraph # noqa E401

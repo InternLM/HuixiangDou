@@ -285,6 +285,16 @@ def histogram(values: list):
         log_str += '\n'
     return log_str
 
+def extract_json_from_str(raw: str):
+    raw = raw.strip()
+    try:
+        start = raw.find('[')
+        end = raw.rfind(']')
+        json_str = raw[start:end+1]
+        return json.loads(json_str)
+    except Exception as e:
+        logger.error(e)
+        logger.error(raw)
 
 # if __name__ == '__main__':
 #     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', ''))
