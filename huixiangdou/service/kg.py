@@ -9,8 +9,8 @@ class KnowledgeGraph:
     def __init__(self, config_path: str):
 
         self.llm = ChatClient(config_path=config_path)
-        self.nodes = dict()
-        self.connections = []
+        self.nodes = []
+        self.relations = []
         self.chunksize = 2048
         self.prompt_template = '你是一位语言专家，现在要做实体识别任务（NER），请阅读以下内容，以 json 形式输出实体：\n{}'
 
@@ -31,24 +31,36 @@ class KnowledgeGraph:
                 if abspath.lower().endswith('.md'):
                     self.build_md(abspath)
 
-    def generate_kg(self, abspath: str, pageid: int, text: str):
-        # build chunk node
-        self.nodes.append({
-            'type': 'text',
-            'content': text,
-            'path': ,
-            'page': 
-        })
+    def build_md_text(self, node: dict):
         # get othernodes and relationship
+        """
+            {
+                "entity": "HuixiangDou",
+                "type": "Software"
+            },
+        """
+        uuid = node['uuid']
+        text = node['text']
         prompt = self.prompt_template.format(text)
         raw = self.llm.generate_response(prompt=prompt)
         items = extract_json_from_str(raw=raw)
         for item in items:
+            # fetch nodes and add relations
+            entity = item['entity']
+            self.nodes.append({'uuid': entity, 'type': 'keywords'})
+            self.relations.append({
+                'from': entity,
+                'to': uuid,
+                'relation': item['type']
+            })
+
+        # TODO parse image
+        if '\[' in text and '\]' in text:
+            # markdown formatted
             
+        else:
 
-    def dump_kg(self):
-        pass
-
+            
     def build_md(self, abspath: str):
         """Load markdown and split, build nodes and relationship."""
         content = ''
@@ -59,13 +71,34 @@ class KnowledgeGraph:
         chunk = ''
         pageid = 0
 
+        md_node = {
+            'uuid': uuid4(),
+            'data': abspath,
+            'type': 'markdown'
+        }
+        self.nodes.append(md_node)
+
+        def add_chunk(pageid=pageid, text: str):
+            chunk_node = {
+                'uuid': uuid4(),
+                'data': text,
+                'type': 'chunk'
+            }
+            self.nodes.append(chunk_node)
+            self.build_md_text(chunk_node)
+            self.relations.append({
+                'from': md_node['uuid'],
+                'to': chunk_node['uuid'],
+                'relation': 'page{}'.format(pageid)
+            })
+
         for split in splits:
             if len(split) >= self.chunksize:
                 if len(chunk) > 0:
-                    generate_kg(abspath=abspath, pageid=pageid, text=chunk)
+                    add_chunk(pageid=pageid, text=chunk)
                     pageid += 1
                     chunk = ''
-                generate_kg(abspath=abspath, pageid=pageid, text=split)
+                add_chunk(pageid=pageid, text=split)
                 pageid +=1
                 continue
             
@@ -73,7 +106,7 @@ class KnowledgeGraph:
                 chunk = chunk + '\n' + split
                 continue
 
-            generate_kg(abspath=abspath, pageid=pageid, text=chunk)
+            add_chunk(pageid=pageid, text=chunk)
             pageid +=1
             chunk = split
 

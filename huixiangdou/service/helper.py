@@ -287,6 +287,11 @@ def histogram(values: list):
 
 def extract_json_from_str(raw: str):
     raw = raw.strip()
+    raw = raw.replace('”', '"')
+    raw = raw.replace('“', '"')
+    raw = raw.replace('"""', '"')
+    raw = raw.replace('""', '"')
+
     try:
         start = raw.find('[')
         end = raw.rfind(']')
