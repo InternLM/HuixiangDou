@@ -1,4 +1,3 @@
-import pytoml
 from typing import List
 from loguru import logger
 from .llm_client import ChatClient
@@ -6,12 +5,15 @@ from .helper import extract_json_from_str
 from .file_operation import FileOperation
 from .llm_server_hybrid import start_llm_server
 from uuid import uuid4
-import re
 from dataclasses import dataclass, field
 from enum import Enum, unique
 import argparse
 import os
 import pdb
+import re
+import pytoml
+from tqdm import tqdm
+import sys
 
 def simple_uuid():
     return str(uuid4())[0:6]
@@ -42,21 +44,36 @@ class KnowledgeGraph:
         self.nodes = []
         self.relations = []
         self.chunksize = 2048
-        self.prompt_template = '你是一位语言专家，现在要做实体识别任务（NER），请阅读以下内容，以 json 形式输出实体：\n{}'
+        self.prompt_template = '''
+你是一位语言专家，现在要做实体识别任务（NER），请阅读以下内容，以 json 形式输出实体。
+输出示例：
+[{"entity":"实体","type":"类型"}]
+
+以下是阅读内容：
+'''
         self.md_pattern= re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
+        self.file_opr = FileOperation()
+
         with open(config_path) as f:
             config = pytoml.load(f)
             self.work_dir = config['feature_store']['work_dir']
             worker = config['worker']
-         
+        
     def build(self, repodir: str):
         logger.info('multi-modal knowledge graph retrieval is experimental, only support markdown format.')
+        proc_files = []
+
         for root, dirs, files in os.walk(repodir):
             for file in files:
-                abspath = os.path.join(root, file)
-                
-                if abspath.lower().endswith('.md'):
-                    self.build_md(abspath)
+                file_type = self.file_opr.get_type(file)
+                if file_type not in ['md']:
+                    continue
+
+                proc_files.append((os.path.join(root, file), file_type))
+
+        for abspath, file_type in tqdm(proc_files):
+            if file_type == 'md':
+                self.build_md(abspath)
 
     def build_md_chunk(self, md_node: Node, abspath: str):
         # get othernodes and relationship
@@ -66,30 +83,35 @@ class KnowledgeGraph:
                 "type": "Software"
             },
         """
-        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template.format(md_node.data))
+        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + md_node.data)
         items = extract_json_from_str(raw=llm_raw_text)
-        pdb.set_trace()
+        if len(items) < 1:
+            pdb.set_trace()
+            logger.warning('parse llm_raw_text failed, please check. {}'.format(llm_raw_text))
         for item in items:
             # fetch nodes and add relations
-            entity = item['entity']
+            try:
+                entity = item['entity']
+            except Exception as e:
+                pdb.set_trace()
+                logger.error(e)
+
             self.nodes.append(Node(uuid=entity, _type=KGType.KEYWORD))
             self.relations.append(Relation(entity, md_node.uuid, item['type']))
-
-        file_opr = FileOperation()
-        matches = self.md_pattern.findall(text)
+        
+        matches = self.md_pattern.findall(md_node.data)
         for match in matches:
             target = match[0]
             uri = match[1]
-            if file_opr.get_type(uri) != 'image':
+            if self.file_opr.get_type(uri) != 'image':
                 continue
 
             if not uri.startswith('http'):
                 uri = os.path.join(os.path.dirname(abspath), uri)
-            uuid, image_path = file_opr.save_image(uri=uri, outdir=self.work_dir)
+            uuid, image_path = self.file_opr.save_image(uri=uri, outdir=self.work_dir)
             if image_path is not None:
                 self.nodes.append(Node(uuid=uuid, _type=KGType.IMAGE, data=image_path))
                 self.relations.append(Relation(uuid, md_node.uuid, 'file'))
-
 
     def build_md(self, abspath: str):
         """Load markdown and split, build nodes and relationship."""
@@ -128,9 +150,11 @@ class KnowledgeGraph:
             pageid +=1
             chunk = split
 
-    def dump_networkx(self, dumpfile: str=None):
+    def dump_networkx(self, dump_path: str=None):
         """Convert to networkx and dump GraphML format"""
         import networkx as nx
+        import matplotlib.pyplot as plt
+        pdb.set_trace()
         G = nx.Graph()
         for node in self.nodes:
             G.add_nodes_from([(node.uuid, {"type": node._type, "data": node.data})])
@@ -139,15 +163,18 @@ class KnowledgeGraph:
         logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
         pos = nx.spring_layout(G)
         nx.draw(G, pos, with_labels=True, node_shape='s')
-        if dumpfile:
-            plt.savefig(dumpfile, format='svg')
+        nx.write_gpickle(G, os.path.join(self.work_dir, 'kg.gpickle'))
+
+        if dump_path:
+            plt.savefig(dump_path, format='svg')
+
 
     def dump_image_faiss(self):
         """Convert image to CLIP feature, save to faiss for later retriever"""
         pass
 
 def parse_args():
-    """Parse command-line arguments."""
+    """Parse command-line arguments. Please `export LOGURU_LEVEL=WARNING` before running."""
     parser = argparse.ArgumentParser(
         description='Knowledge graph for processing directories.')
     parser.add_argument(
@@ -177,4 +204,4 @@ if __name__ == '__main__':
         start_llm_server(args.config_path)
     kg = KnowledgeGraph(args.config_path)
     kg.build(args.repo_dir)
-    kg.dump_networkx()
+    kg.dump_networkx(args.dump_path)

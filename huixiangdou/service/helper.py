@@ -4,7 +4,7 @@ import os
 from enum import Enum
 from pathlib import Path
 from types import SimpleNamespace
-
+import pdb
 import redis
 import requests
 from loguru import logger
@@ -291,6 +291,8 @@ def extract_json_from_str(raw: str):
     raw = raw.replace('“', '"')
     raw = raw.replace('"""', '"')
     raw = raw.replace('""', '"')
+    raw = raw.replace('```json\n', '')
+    raw = raw.replace('```', '')
 
     json_list = []
     try:
@@ -302,10 +304,19 @@ def extract_json_from_str(raw: str):
             for k in json_obj.keys():
                 json_list = json_obj[k]
                 break
+        else:
+            json_list = json_obj
     except Exception as e:
         logger.error(e)
         logger.error(raw)
-    return json_list
+    
+    ret_list = []
+    for item in json_list:
+        if 'events' in item:
+            ret_list += item['events']
+        else:
+            ret_list.append(item)
+    return ret_list
 
 # if __name__ == '__main__':
 #     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', ''))
