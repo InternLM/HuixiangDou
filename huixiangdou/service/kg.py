@@ -4,10 +4,17 @@ from loguru import logger
 from .llm_client import ChatClient
 from .helper import extract_json_from_str
 from .file_operation import FileOperation
+from .llm_server_hybrid import start_llm_server
 from uuid import uuid4
 import re
 from dataclasses import dataclass, field
 from enum import Enum, unique
+import argparse
+import os
+import pdb
+
+def simple_uuid():
+    return str(uuid4())[0:6]
 
 @unique
 class KGType(Enum):
@@ -19,7 +26,7 @@ class KGType(Enum):
 @dataclass
 class Node:
     _type: KGType
-    uuid: str = field(default_factory=uuid.uuid4)
+    uuid: str = field(default_factory=simple_uuid)
     data: str = ''
 
 @dataclass
@@ -41,14 +48,10 @@ class KnowledgeGraph:
             config = pytoml.load(f)
             self.work_dir = config['feature_store']['work_dir']
             worker = config['worker']
-            if 'enable_kg' not in worker:
-                logger.error('enable_kg not found, please update config.ini')
-            
-            self.neo4j = config['worker']['neo4j']
-
+         
     def build(self, repodir: str):
         logger.info('multi-modal knowledge graph retrieval is experimental, only support markdown format.')
-        for root, dirs, files in os.work(repodir):
+        for root, dirs, files in os.walk(repodir):
             for file in files:
                 abspath = os.path.join(root, file)
                 
@@ -63,8 +66,9 @@ class KnowledgeGraph:
                 "type": "Software"
             },
         """
-        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template.format(text))
+        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template.format(md_node.data))
         items = extract_json_from_str(raw=llm_raw_text)
+        pdb.set_trace()
         for item in items:
             # fetch nodes and add relations
             entity = item['entity']
@@ -100,10 +104,10 @@ class KnowledgeGraph:
         md_node = Node(_type=KGType.MARKDOWN, data=abspath)
         self.nodes.append(md_node)
 
-        def add_chunk(pageid=pageid, text: str):
+        def add_chunk(pageid:int, text: str):
             chunk_node = Node(_type=KGType.CHUNK, data=text)
             self.nodes.append(chunk_node)
-            self.build_md_chunk(noded=chunk_node, abspath=abspath)
+            self.build_md_chunk(md_node=chunk_node, abspath=abspath)
             self.relations.append(Relation(md_node.uuid, chunk_node.uuid, 'page{}'.format(pageid)))
 
         for split in splits:
@@ -124,6 +128,53 @@ class KnowledgeGraph:
             pageid +=1
             chunk = split
 
-    def save_svg(self):
+    def dump_networkx(self, dumpfile: str=None):
+        """Convert to networkx and dump GraphML format"""
         import networkx as nx
         G = nx.Graph()
+        for node in self.nodes:
+            G.add_nodes_from([(node.uuid, {"type": node._type, "data": node.data})])
+        for rel in self.relations:
+            G.add_edge(rel._from, rel.to, desc=rel.desc)
+        logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
+        pos = nx.spring_layout(G)
+        nx.draw(G, pos, with_labels=True, node_shape='s')
+        if dumpfile:
+            plt.savefig(dumpfile, format='svg')
+
+    def dump_image_faiss(self):
+        """Convert image to CLIP feature, save to faiss for later retriever"""
+        pass
+
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Knowledge graph for processing directories.')
+    parser.add_argument(
+        '--repo_dir',
+        type=str,
+        default='repodir',
+        help='Root directory where the docs are located.')
+    parser.add_argument(
+        '--config_path',
+        default='config-kg.ini',
+        help='Configuration path. Default value is config.ini')
+    parser.add_argument(
+        '--dump_path',
+        default='graph.svg',
+        help='Dump svg filepath. `chrome-browswer` could open it.')
+    parser.add_argument(
+        '--standalone',
+        action='store_true',
+        default=True,
+        help='Building knowledge graph needs LLM for NER. This option would auto start LLM service, default value is True')
+    args = parser.parse_args()
+    return args
+
+if __name__ == '__main__':
+    args = parse_args()
+    if args.standalone:
+        start_llm_server(args.config_path)
+    kg = KnowledgeGraph(args.config_path)
+    kg.build(args.repo_dir)
+    kg.dump_networkx()

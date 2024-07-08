@@ -292,14 +292,20 @@ def extract_json_from_str(raw: str):
     raw = raw.replace('"""', '"')
     raw = raw.replace('""', '"')
 
+    json_list = []
     try:
         start = raw.find('[')
         end = raw.rfind(']')
         json_str = raw[start:end+1]
-        return json.loads(json_str)
+        json_obj = json.loads(json_str)
+        if type(json_obj) is dict:
+            for k in json_obj.keys():
+                json_list = json_obj[k]
+                break
     except Exception as e:
         logger.error(e)
         logger.error(raw)
+    return json_list
 
 # if __name__ == '__main__':
 #     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', ''))
