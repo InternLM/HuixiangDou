@@ -10,6 +10,7 @@ from enum import Enum, unique
 import argparse
 import os
 import pdb
+import pickle
 import re
 import pytoml
 from tqdm import tqdm
@@ -154,7 +155,6 @@ class KnowledgeGraph:
         """Convert to networkx and dump GraphML format"""
         import networkx as nx
         import matplotlib.pyplot as plt
-        pdb.set_trace()
         G = nx.Graph()
         for node in self.nodes:
             G.add_nodes_from([(node.uuid, {"type": node._type, "data": node.data})])
@@ -163,11 +163,23 @@ class KnowledgeGraph:
         logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
         pos = nx.spring_layout(G)
         nx.draw(G, pos, with_labels=True, node_shape='s')
-        nx.write_gpickle(G, os.path.join(self.work_dir, 'kg.gpickle'))
 
-        if dump_path:
-            plt.savefig(dump_path, format='svg')
+        # save json format
+        with open(os.path.join(self.work_dir, 'kg_nodes.json'), 'wb') as f:
+            json_str = json.dumps(self.nodes, ensure_ascii=False)
+            f.write(json_str)
+        with open(os.path.join(self.work_dir, 'kg_relations.json'), 'wb') as f:
+            json_str = json.dumps(self.relations, ensure_ascii=False)
+            f.write(json_str)
 
+        # save to pickle format
+        with open(os.path.join(self.work_dir, 'kg.gpickle'), 'wb') as f:
+            pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
+
+        # save neo4j for better graph viewer
+        # see https://neo4j.com/docs/operations-manual/current/configuration/ports/#_listen_address_configuration_settings
+        # and open `.config/Neo4j Desktop`
+        
 
     def dump_image_faiss(self):
         """Convert image to CLIP feature, save to faiss for later retriever"""
@@ -186,10 +198,6 @@ def parse_args():
         '--config_path',
         default='config-kg.ini',
         help='Configuration path. Default value is config.ini')
-    parser.add_argument(
-        '--dump_path',
-        default='graph.svg',
-        help='Dump svg filepath. `chrome-browswer` could open it.')
     parser.add_argument(
         '--standalone',
         action='store_true',
