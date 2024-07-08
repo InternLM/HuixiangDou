@@ -7,7 +7,8 @@ import pandas as pd
 import textract
 from bs4 import BeautifulSoup
 from loguru import logger
-
+import requests
+import shutil
 
 class FileName:
     """Record file original name, state and copied filepath with text
@@ -46,7 +47,32 @@ class FileOperation:
                               ] + self.word_suffix + [self.ppt_suffix
                                                       ] + self.html_suffix
 
+    def save_image(self, uri: str, outdir: str):
+        """Save image URI to local dir. Return None if failed."""
+        if not os.path.exists(outdir):
+            os.makedirs(os.path.join(outdir, 'images'))
+        md5 = hashlib.md5()
+        md5.update(uri.encode('utf8'))
+        uuid = md5.hexdigest()[0:6]
+        filename = uuid + '.' + uri.rfind('.')[0]
+        image_path = os.path.join(outdir, 'images', filename)
+
+        try:
+            if uri.startswith('http'):
+                resp = requests.get(uri, stream=True)
+                if resp.status_code == 200:
+                    with open(image_path, 'wb') as image_file:
+                        for chunk in resp.iter_content(1024):
+                            image_file.write(chunk)
+            else:
+                shutil.copy(uri, image_path)
+        except Exception as e:
+            logger.debug(e)
+            return None
+        return uuid, image_path
+
     def get_type(self, filepath: str):
+        """Get filetype depends on URI suffix"""
         filepath = filepath.lower()
         if filepath.endswith(self.pdf_suffix):
             return 'pdf'
