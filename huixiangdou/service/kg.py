@@ -5,7 +5,7 @@ from .helper import extract_json_from_str
 from .file_operation import FileOperation
 from .llm_server_hybrid import start_llm_server
 from uuid import uuid4
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from enum import Enum, unique
 import argparse
 import os
@@ -16,6 +16,7 @@ import pytoml
 from tqdm import tqdm
 import sys
 import json
+import time
 
 def simple_uuid():
     return str(uuid4())[0:6]
@@ -33,11 +34,20 @@ class Node:
     uuid: str = field(default_factory=simple_uuid)
     data: str = ''
 
+def node_to_jsonstr(instance):
+    dict_instance = asdict(instance)
+    dict_instance['_type'] = instance._type.value
+    return json.dumps(dict_instance, ensure_ascii=False)
+
 @dataclass
 class Relation:
     _from: str
     to: str
     desc: str
+
+def relation_to_jsonstr(instance):
+    dict_instance = asdict(instance)
+    return json.dumps(dict_instance, ensure_ascii=False)
 
 class KnowledgeGraph:
     def __init__(self, config_path: str):
@@ -58,7 +68,7 @@ class KnowledgeGraph:
 
         with open(config_path) as f:
             config = pytoml.load(f)
-            self.kg_work_dir = os.path.join(config['feature_store']['work_dir'])
+            self.kg_work_dir = os.path.join(config['feature_store']['work_dir'], 'kg')
             if not os.path.exists(self.kg_work_dir):
                 os.makedirs(self.kg_work_dir)
         
@@ -160,24 +170,60 @@ class KnowledgeGraph:
         # See https://github.com/jbaktir/networkx-neo4j/blob/master/examples/nxneo4j_tutorial_latest.ipynb
         from neo4j import GraphDatabase
         import nxneo4j as nx
-        driver = GraphDatabase.driver(uri, auth=(user, password))
+        driver = GraphDatabase.driver(uri, auth=(user, passwd))
         G = nx.Graph(driver)
         # clear database first
+        # with self.driver.session() as session:
+        #     session.run("MATCH (n) DETACH DELETE n")
         G.delete_all()
 
         # load jsonl and save it
         nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
         relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
-
+        
+        nodes = dict()
         with open(nodes_path) as f:
-            for json_str in f:
-                node = json.loads(json_str)
-                G.add_nodes_from([(node.uuid, {"type": node._type, "data": node.data})])
-            
+            add_node_query_with_props = """\
+            MERGE (n:`%s` {`id`: $value })
+            ON CREATE SET n+=$props
+            """
+            with driver.session() as session:
+                for json_str in f:
+                    node = json.loads(json_str)
+                    nodes[node['uuid']] = node
+
+                    nodel_label = node['_type']
+                    query = add_node_query_with_props % nodel_label
+                    session.run(query, {"value": node['uuid']}, props={"type": node['_type'], "data": node['data']})
+
         with open(relations_path) as f:
-            for json_str in f:
-                rel = json.loads(json_str)
-                G.add_edge(rel._from, rel.to, desc=rel.desc)
+            # query node1 and node2, add an relationship
+            add_edge_query = """\
+            MERGE (node1:`%s` {`id`: $node1 })
+            MERGE (node2:`%s` {`id`: $node2 })
+            MERGE (node1)-[r:`%s`]->(node2)
+            ON CREATE SET r=$props
+            """
+            with driver.session() as session:
+                for json_str in f:
+                    rel = json.loads(json_str)
+                    _from = rel['_from']
+                    to = rel['to']
+
+                    label1 = nodes[_from]['_type']
+                    label2 = nodes[rel['to']]['_type']
+
+                    desc = rel['desc']
+                    if desc in ['file']:
+                        relationship_type = desc
+                    elif desc.startswith('page'):
+                        relationship_type = 'page'
+                    else:
+                        relationship_type = 'attr'
+
+                    query = add_edge_query % (label1, label2, relationship_type)
+                    session.run(query, {"node1": _from, "node2": to}, props={"desc": desc})
+
 
     def dump_networkx(self, override:bool=False):
         """Convert to networkx and dump GraphML format"""
@@ -195,7 +241,6 @@ class KnowledgeGraph:
         nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
         relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
 
-        pdb.set_trace()
         if override:
             if os.path.exists(nodes_path):
                 os.remove(nodes_path) 
@@ -205,19 +250,17 @@ class KnowledgeGraph:
         # save jsonl format
         with open(nodes_path, 'a') as f:
             for node in self.nodes:
-                json_str = json.dumps(self.node, ensure_ascii=False)
-                f.write(json_str)
+                f.write(node_to_jsonstr(node))
                 f.write('\n')
 
         with open(relations_path, 'a') as f:
             for relation in self.relations:
-                json_str = json.dumps(self.relation, ensure_ascii=False)
-                f.write(json_str)
+                f.write(relation_to_jsonstr(relation))
                 f.write('\n')
 
         # save to pickle format
-        gpick_path = os.path.join(self.kg_work_dir, 'kg-{}.gpickle'.format(round(time.time())))
-        with open(gpick_path, 'wb') as f:
+        gpickle_path = os.path.join(self.kg_work_dir, 'kg-{}.gpickle'.format(round(time.time())))
+        with open(gpickle_path, 'wb') as f:
             pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
 
 def parse_args():
@@ -271,8 +314,10 @@ if __name__ == '__main__':
     if args.standalone:
         start_llm_server(args.config_path)
     kg = KnowledgeGraph(args.config_path)
-    kg.build(repodir=args.repo_dir)
-    kg.dump_networkx(override=args.override)
 
     if args.dump_neo4j:
         kg.dump_neo4j(uri=args.neo4j_uri, user=args.neo4j_user, passwd=args.neo4j_passwd)
+    else:
+        kg.build(repodir=args.repo_dir)
+        kg.dump_networkx(override=args.override)
+    

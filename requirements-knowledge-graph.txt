@@ -3,3 +3,4 @@ IPython
 networkx-neo4j @ git+https://github.com/jbaktir/networkx-neo4j@master
 matplotlib
 pickle
+torchvision timm einops ftfy
