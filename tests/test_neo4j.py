@@ -1,4 +1,6 @@
 from neo4j import GraphDatabase
+import nxneo4j as nx
+
 # Neo4j Desktop 版
 # 1. 关掉 auth
 # 2. server.default_listen_address=0.0.0.0
@@ -12,13 +14,15 @@ password = "neo4j"     # Neo4j 密码
 # 创建驱动实例
 driver = GraphDatabase.driver(uri, auth=(user, password))
 
-try:
-    # 运行一个简单的查询，比如返回所有节点
-    with driver.session() as session:
-        result = session.run("MATCH (n) RETURN n LIMIT 1")
-        print("Query result:", [record for record in result])
-except Exception as e:
-    print("An error occurred:", e)
-finally:
-    # 确保关闭驱动连接
-    driver.close()
+G = nx.Graph(driver)
+G.delete_all()
+
+#Add a node
+G.add_node("Yusuf")
+#Add node with features
+G.add_node("Nurgul",gender='F')
+#Add multiple properties at once
+G.add_node("Betul",age=4,gender='F')
+#Check nodes
+for node in G.nodes():   #Unlike networkX, nxneo4j returns a generator
+    print(node)

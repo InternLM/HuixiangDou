@@ -60,6 +60,7 @@ class FileOperation:
         filename = uuid + uri[uri.rfind('.'):]
         image_path = os.path.join(images_dir, filename)
 
+        logger.info('download {}'.format(uri))
         try:
             if uri.startswith('http'):
                 resp = requests.get(uri, stream=True)

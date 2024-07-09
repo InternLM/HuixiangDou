@@ -15,6 +15,7 @@ import re
 import pytoml
 from tqdm import tqdm
 import sys
+import json
 
 def simple_uuid():
     return str(uuid4())[0:6]
@@ -57,8 +58,9 @@ class KnowledgeGraph:
 
         with open(config_path) as f:
             config = pytoml.load(f)
-            self.work_dir = config['feature_store']['work_dir']
-            worker = config['worker']
+            self.kg_work_dir = os.path.join(config['feature_store']['work_dir'])
+            if not os.path.exists(self.kg_work_dir):
+                os.makedirs(self.kg_work_dir)
         
     def build(self, repodir: str):
         logger.info('multi-modal knowledge graph retrieval is experimental, only support markdown format.')
@@ -87,8 +89,9 @@ class KnowledgeGraph:
         llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + md_node.data)
         items = extract_json_from_str(raw=llm_raw_text)
         if len(items) < 1:
-            pdb.set_trace()
             logger.warning('parse llm_raw_text failed, please check. {}'.format(llm_raw_text))
+            return
+
         for item in items:
             # fetch nodes and add relations
             try:
@@ -109,7 +112,7 @@ class KnowledgeGraph:
 
             if not uri.startswith('http'):
                 uri = os.path.join(os.path.dirname(abspath), uri)
-            uuid, image_path = self.file_opr.save_image(uri=uri, outdir=self.work_dir)
+            uuid, image_path = self.file_opr.save_image(uri=uri, outdir=self.kg_work_dir)
             if image_path is not None:
                 self.nodes.append(Node(uuid=uuid, _type=KGType.IMAGE, data=image_path))
                 self.relations.append(Relation(uuid, md_node.uuid, 'file'))
@@ -151,39 +154,71 @@ class KnowledgeGraph:
             pageid +=1
             chunk = split
 
-    def dump_networkx(self, dump_path: str=None):
+    def dump_neo4j(self, uri: str, user: str, passwd: str):
+        # Save networkx-neo4j for better graph viewer
+        # Open `.config/Neo4j Desktop` and see https://neo4j.com/docs/operations-manual/current/configuration/ports/#_listen_address_configuration_settings
+        # See https://github.com/jbaktir/networkx-neo4j/blob/master/examples/nxneo4j_tutorial_latest.ipynb
+        from neo4j import GraphDatabase
+        import nxneo4j as nx
+        driver = GraphDatabase.driver(uri, auth=(user, password))
+        G = nx.Graph(driver)
+        # clear database first
+        G.delete_all()
+
+        # load jsonl and save it
+        nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
+        relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
+
+        with open(nodes_path) as f:
+            for json_str in f:
+                node = json.loads(json_str)
+                G.add_nodes_from([(node.uuid, {"type": node._type, "data": node.data})])
+            
+        with open(relations_path) as f:
+            for json_str in f:
+                rel = json.loads(json_str)
+                G.add_edge(rel._from, rel.to, desc=rel.desc)
+
+    def dump_networkx(self, override:bool=False):
         """Convert to networkx and dump GraphML format"""
         import networkx as nx
         import matplotlib.pyplot as plt
+
         G = nx.Graph()
         for node in self.nodes:
             G.add_nodes_from([(node.uuid, {"type": node._type, "data": node.data})])
         for rel in self.relations:
             G.add_edge(rel._from, rel.to, desc=rel.desc)
         logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
-        pos = nx.spring_layout(G)
-        nx.draw(G, pos, with_labels=True, node_shape='s')
 
-        # save json format
-        with open(os.path.join(self.work_dir, 'kg_nodes.json'), 'wb') as f:
-            json_str = json.dumps(self.nodes, ensure_ascii=False)
-            f.write(json_str)
-        with open(os.path.join(self.work_dir, 'kg_relations.json'), 'wb') as f:
-            json_str = json.dumps(self.relations, ensure_ascii=False)
-            f.write(json_str)
+        # save to jsonl and pickle
+        nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
+        relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
+
+        pdb.set_trace()
+        if override:
+            if os.path.exists(nodes_path):
+                os.remove(nodes_path) 
+            if os.path.exists(relations_path):
+                os.remove(relations_path)
+        
+        # save jsonl format
+        with open(nodes_path, 'a') as f:
+            for node in self.nodes:
+                json_str = json.dumps(self.node, ensure_ascii=False)
+                f.write(json_str)
+                f.write('\n')
+
+        with open(relations_path, 'a') as f:
+            for relation in self.relations:
+                json_str = json.dumps(self.relation, ensure_ascii=False)
+                f.write(json_str)
+                f.write('\n')
 
         # save to pickle format
-        with open(os.path.join(self.work_dir, 'kg.gpickle'), 'wb') as f:
+        gpick_path = os.path.join(self.kg_work_dir, 'kg-{}.gpickle'.format(round(time.time())))
+        with open(gpick_path, 'wb') as f:
             pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
-
-        # save neo4j for better graph viewer
-        # see https://neo4j.com/docs/operations-manual/current/configuration/ports/#_listen_address_configuration_settings
-        # and open `.config/Neo4j Desktop`
-        
-
-    def dump_image_faiss(self):
-        """Convert image to CLIP feature, save to faiss for later retriever"""
-        pass
 
 def parse_args():
     """Parse command-line arguments. Please `export LOGURU_LEVEL=WARNING` before running."""
@@ -203,6 +238,31 @@ def parse_args():
         action='store_true',
         default=True,
         help='Building knowledge graph needs LLM for NER. This option would auto start LLM service, default value is True')
+    parser.add_argument(
+        '--override',
+        action='store_true',
+        default=True,
+        help='Remove old data and rebuild knowledge graph from scratch.')
+    parser.add_argument(
+        '--dump-neo4j',
+        action='store_true',
+        default=False,
+        help='Load jsonl data and dump to neo4j for viewing knowledge graph.')
+    parser.add_argument(
+        '--neo4j-uri',
+        type=str,
+        default='bolt://10.1.52.85:7687',
+        help='neo4j URI, see https://neo4j.com/')
+    parser.add_argument(
+        '--neo4j-user',
+        type=str,
+        default='neo4j',
+        help='neo4j username, see https://neo4j.com/')
+    parser.add_argument(
+        '--neo4j-passwd',
+        type=str,
+        default='neo4j',
+        help='neo4j password, see https://neo4j.com/')
     args = parser.parse_args()
     return args
 
@@ -211,5 +271,8 @@ if __name__ == '__main__':
     if args.standalone:
         start_llm_server(args.config_path)
     kg = KnowledgeGraph(args.config_path)
-    kg.build(args.repo_dir)
-    kg.dump_networkx(args.dump_path)
+    kg.build(repodir=args.repo_dir)
+    kg.dump_networkx(override=args.override)
+
+    if args.dump_neo4j:
+        kg.dump_neo4j(uri=args.neo4j_uri, user=args.neo4j_user, passwd=args.neo4j_passwd)
