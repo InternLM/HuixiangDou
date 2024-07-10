@@ -50,7 +50,7 @@ def relation_to_jsonstr(instance):
     return json.dumps(dict_instance, ensure_ascii=False)
 
 class KnowledgeGraph:
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str, override:bool=False):
 
         self.llm = ChatClient(config_path=config_path)
         self.nodes = []
@@ -65,6 +65,7 @@ class KnowledgeGraph:
 '''
         self.md_pattern= re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
         self.file_opr = FileOperation()
+        self.override = override
 
         with open(config_path) as f:
             config = pytoml.load(f)
@@ -84,9 +85,22 @@ class KnowledgeGraph:
 
                 proc_files.append((os.path.join(root, file), file_type))
 
+        processed = []
+        processed_path = os.path.join(self.kg_work_dir, 'processed.txt')
+        if os.path.exists(processed_path):
+            with open(processed_path) as f:
+                for path in f:
+                    processed.append(path)
+
         for abspath, file_type in tqdm(proc_files):
+            if abspath in processed:
+                logger.info('skip')
+                continue
             if file_type == 'md':
                 self.build_md(abspath)
+            with open(processed_path, 'a') as f:
+                f.write(abspath)
+                f.write('\n')
 
     def build_md_chunk(self, md_node: Node, abspath: str):
         # get othernodes and relationship
@@ -140,7 +154,7 @@ class KnowledgeGraph:
         md_node = Node(_type=KGType.MARKDOWN, data=abspath)
         self.nodes.append(md_node)
 
-        def add_chunk(pageid:int, text: str):
+        def add_chunk(md_node: Node, pageid:int, text: str):
             chunk_node = Node(_type=KGType.CHUNK, data=text)
             self.nodes.append(chunk_node)
             self.build_md_chunk(md_node=chunk_node, abspath=abspath)
@@ -149,10 +163,10 @@ class KnowledgeGraph:
         for split in splits:
             if len(split) >= self.chunksize:
                 if len(chunk) > 0:
-                    add_chunk(pageid=pageid, text=chunk)
+                    add_chunk(md_node=md_node, pageid=pageid, text=chunk)
                     pageid += 1
                     chunk = ''
-                add_chunk(pageid=pageid, text=split)
+                add_chunk(md_node=md_node, pageid=pageid, text=split)
                 pageid +=1
                 continue
             
@@ -160,22 +174,21 @@ class KnowledgeGraph:
                 chunk = chunk + '\n' + split
                 continue
 
-            add_chunk(pageid=pageid, text=chunk)
+            add_chunk(md_node=md_node, pageid=pageid, text=chunk)
             pageid +=1
             chunk = split
+
+        if len(chunk) > 0:
+            add_chunk(md_node=md_node, pageid=pageid, text=chunk)
 
     def dump_neo4j(self, uri: str, user: str, passwd: str):
         # Save networkx-neo4j for better graph viewer
         # Open `.config/Neo4j Desktop` and see https://neo4j.com/docs/operations-manual/current/configuration/ports/#_listen_address_configuration_settings
-        # See https://github.com/jbaktir/networkx-neo4j/blob/master/examples/nxneo4j_tutorial_latest.ipynb
         from neo4j import GraphDatabase
-        import nxneo4j as nx
         driver = GraphDatabase.driver(uri, auth=(user, passwd))
-        G = nx.Graph(driver)
-        # clear database first
-        # with self.driver.session() as session:
-        #     session.run("MATCH (n) DETACH DELETE n")
-        G.delete_all()
+        # clear database if override
+        with driver.session() as session:
+            session.run("MATCH (n) DETACH DELETE n")
 
         # load jsonl and save it
         nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
@@ -225,7 +238,7 @@ class KnowledgeGraph:
                     session.run(query, {"node1": _from, "node2": to}, props={"desc": desc})
 
 
-    def dump_networkx(self, override:bool=False):
+    def dump_networkx(self):
         """Convert to networkx and dump GraphML format"""
         import networkx as nx
         import matplotlib.pyplot as plt
@@ -241,7 +254,7 @@ class KnowledgeGraph:
         nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
         relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
 
-        if override:
+        if self.override:
             if os.path.exists(nodes_path):
                 os.remove(nodes_path) 
             if os.path.exists(relations_path):
@@ -313,11 +326,11 @@ if __name__ == '__main__':
     args = parse_args()
     if args.standalone:
         start_llm_server(args.config_path)
-    kg = KnowledgeGraph(args.config_path)
+    kg = KnowledgeGraph(args.config_path, override=args.override)
 
     if args.dump_neo4j:
         kg.dump_neo4j(uri=args.neo4j_uri, user=args.neo4j_user, passwd=args.neo4j_passwd)
     else:
         kg.build(repodir=args.repo_dir)
-        kg.dump_networkx(override=args.override)
+        kg.dump_networkx()
     
