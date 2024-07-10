@@ -57,7 +57,7 @@ class KnowledgeGraph:
         self.relations = []
         self.chunksize = 2048
         self.prompt_template = '''
-你是一位语言专家，现在要做实体识别任务（NER），请阅读以下内容，以 json 形式输出实体。
+你是一位语言专家，现在要做实体识别任务（NER），请阅读以下内容，以 json 形式输出实体。直接给出结果不要解释。
 输出示例：
 [{"entity":"实体","type":"类型"}]
 
@@ -73,12 +73,17 @@ class KnowledgeGraph:
             if not os.path.exists(self.kg_work_dir):
                 os.makedirs(self.kg_work_dir)
         
+        self.nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
+        self.relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
+        
     def build(self, repodir: str):
         logger.info('multi-modal knowledge graph retrieval is experimental, only support markdown format.')
         proc_files = []
 
         for root, dirs, files in os.walk(repodir):
             for file in files:
+                if '.github' in root:
+                    continue
                 file_type = self.file_opr.get_type(file)
                 if file_type not in ['md']:
                     continue
@@ -92,6 +97,14 @@ class KnowledgeGraph:
                 for path in f:
                     processed.append(path)
 
+        # save to jsonl and pickle
+
+        if self.override:
+            if os.path.exists(self.nodes_path):
+                os.remove(self.nodes_path) 
+            if os.path.exists(self.relations_path):
+                os.remove(self.relations_path)
+
         for abspath, file_type in tqdm(proc_files):
             if abspath in processed:
                 logger.info('skip')
@@ -101,6 +114,19 @@ class KnowledgeGraph:
             with open(processed_path, 'a') as f:
                 f.write(abspath)
                 f.write('\n')
+
+            # save jsonl format
+            with open(self.nodes_path, 'a') as f:
+                for node in self.nodes:
+                    f.write(node_to_jsonstr(node))
+                    f.write('\n')
+            self.nodes = []
+
+            with open(self.relations_path, 'a') as f:
+                for relation in self.relations:
+                    f.write(relation_to_jsonstr(relation))
+                    f.write('\n')
+            self.relations = []
 
     def build_md_chunk(self, md_node: Node, abspath: str):
         # get othernodes and relationship
@@ -191,11 +217,8 @@ class KnowledgeGraph:
             session.run("MATCH (n) DETACH DELETE n")
 
         # load jsonl and save it
-        nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
-        relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
-        
         nodes = dict()
-        with open(nodes_path) as f:
+        with open(self.nodes_path) as f:
             add_node_query_with_props = """\
             MERGE (n:`%s` {`id`: $value })
             ON CREATE SET n+=$props
@@ -209,7 +232,7 @@ class KnowledgeGraph:
                     query = add_node_query_with_props % nodel_label
                     session.run(query, {"value": node['uuid']}, props={"type": node['_type'], "data": node['data']})
 
-        with open(relations_path) as f:
+        with open(self.relations_path) as f:
             # query node1 and node2, add an relationship
             add_edge_query = """\
             MERGE (node1:`%s` {`id`: $node1 })
@@ -243,33 +266,28 @@ class KnowledgeGraph:
         import networkx as nx
         import matplotlib.pyplot as plt
 
+        if not os.path.exists(self.nodes_path):
+            logger.error('nodes path not exist')
+            return
+
+        if not os.path.exists(self.relations_path):
+            logger.error('relations path not exist')
+            return
+
+        with open(self.nodes_path) as f:
+            for json_str in f:
+                self.nodes.append(json.loads(json_str))
+
+        with open(self.relations_path) as f:
+            for json_str in f:
+                self.relations.append(json.loads(json_str))
+
         G = nx.Graph()
         for node in self.nodes:
-            G.add_nodes_from([(node.uuid, {"type": node._type, "data": node.data})])
+            G.add_nodes_from([(node['uuid'], {"type": node['_type'], "data": node['data']})])
         for rel in self.relations:
-            G.add_edge(rel._from, rel.to, desc=rel.desc)
+            G.add_edge(rel['_from'], rel['to'], desc=rel['desc'])
         logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
-
-        # save to jsonl and pickle
-        nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
-        relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
-
-        if self.override:
-            if os.path.exists(nodes_path):
-                os.remove(nodes_path) 
-            if os.path.exists(relations_path):
-                os.remove(relations_path)
-        
-        # save jsonl format
-        with open(nodes_path, 'a') as f:
-            for node in self.nodes:
-                f.write(node_to_jsonstr(node))
-                f.write('\n')
-
-        with open(relations_path, 'a') as f:
-            for relation in self.relations:
-                f.write(relation_to_jsonstr(relation))
-                f.write('\n')
 
         # save to pickle format
         gpickle_path = os.path.join(self.kg_work_dir, 'kg-{}.gpickle'.format(round(time.time())))
@@ -299,6 +317,11 @@ def parse_args():
         action='store_true',
         default=True,
         help='Remove old data and rebuild knowledge graph from scratch.')
+    parser.add_argument(
+        '--dump-networkx',
+        action='store_true',
+        default=False,
+        help='Load jsonl data and dump to networkx gpickle format.')
     parser.add_argument(
         '--dump-neo4j',
         action='store_true',
@@ -330,7 +353,8 @@ if __name__ == '__main__':
 
     if args.dump_neo4j:
         kg.dump_neo4j(uri=args.neo4j_uri, user=args.neo4j_user, passwd=args.neo4j_passwd)
+    elif args.dump_networkx:
+        kg.dump_networkx()
     else:
         kg.build(repodir=args.repo_dir)
-        kg.dump_networkx()
     

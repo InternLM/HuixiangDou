@@ -293,6 +293,7 @@ def extract_json_from_str(raw: str):
     raw = raw.replace('""', '"')
     raw = raw.replace('```json\n', '')
     raw = raw.replace('```', '')
+    raw = raw.replace('，', ',')
 
     json_list = []
     try:
