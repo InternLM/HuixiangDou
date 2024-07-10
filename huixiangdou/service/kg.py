@@ -80,6 +80,13 @@ class KnowledgeGraph:
         logger.info('multi-modal knowledge graph retrieval is experimental, only support markdown format.')
         proc_files = []
 
+        processed = []
+        processed_path = os.path.join(self.kg_work_dir, 'processed.txt')
+        if os.path.exists(processed_path):
+            with open(processed_path) as f:
+                for path in f:
+                    processed.append(path.strip())
+
         for root, dirs, files in os.walk(repodir):
             for file in files:
                 if '.github' in root:
@@ -88,14 +95,10 @@ class KnowledgeGraph:
                 if file_type not in ['md']:
                     continue
 
-                proc_files.append((os.path.join(root, file), file_type))
-
-        processed = []
-        processed_path = os.path.join(self.kg_work_dir, 'processed.txt')
-        if os.path.exists(processed_path):
-            with open(processed_path) as f:
-                for path in f:
-                    processed.append(path)
+                abspath = os.path.join(root, file)
+                if abspath in processed:
+                    continue
+                proc_files.append((abspath, file_type))
 
         # save to jsonl and pickle
 
@@ -106,9 +109,6 @@ class KnowledgeGraph:
                 os.remove(self.relations_path)
 
         for abspath, file_type in tqdm(proc_files):
-            if abspath in processed:
-                logger.info('skip')
-                continue
             if file_type == 'md':
                 self.build_md(abspath)
             with open(processed_path, 'a') as f:
@@ -149,6 +149,7 @@ class KnowledgeGraph:
             except Exception as e:
                 pdb.set_trace()
                 logger.error(e)
+                continue
 
             self.nodes.append(Node(uuid=entity, _type=KGType.KEYWORD))
             self.relations.append(Relation(entity, md_node.uuid, item['type']))
@@ -315,7 +316,7 @@ def parse_args():
     parser.add_argument(
         '--override',
         action='store_true',
-        default=True,
+        default=False,
         help='Remove old data and rebuild knowledge graph from scratch.')
     parser.add_argument(
         '--dump-networkx',

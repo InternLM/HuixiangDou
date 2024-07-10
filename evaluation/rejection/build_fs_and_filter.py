@@ -100,8 +100,8 @@ def calculate(chunk_size: int):
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=repo_dir)
     fs_init.preprocess(files=files, work_dir=work_dir)
-    fs_init.ingress_response(files=files, work_dir=work_dir)
-    fs_init.ingress_reject(files=files, work_dir=work_dir)
+    fs_init.build_dense_response(files=files, work_dir=work_dir)
+    fs_init.build_dense_reject(files=files, work_dir=work_dir)
     del fs_init
 
     retriever = CacheRetriever(config_path=config_path).get(
