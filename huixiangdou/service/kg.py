@@ -128,6 +128,7 @@ class KnowledgeGraph:
                     f.write('\n')
             self.relations = []
 
+
     def build_md_chunk(self, md_node: Node, abspath: str):
         # get othernodes and relationship
         """
@@ -146,13 +147,14 @@ class KnowledgeGraph:
             # fetch nodes and add relations
             try:
                 entity = item['entity']
+                _type = item['type']
             except Exception as e:
-                pdb.set_trace()
                 logger.error(e)
+                logger.error(item)
                 continue
 
             self.nodes.append(Node(uuid=entity, _type=KGType.KEYWORD))
-            self.relations.append(Relation(entity, md_node.uuid, item['type']))
+            self.relations.append(Relation(entity, md_node.uuid, _type))
         
         matches = self.md_pattern.findall(md_node.data)
         for match in matches:

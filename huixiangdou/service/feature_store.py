@@ -391,13 +391,6 @@ class FeatureStore:
         vs = Vectorstore.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
-    def build_knowledge_graph(self):
-        kg = KnowledgeGraph(config_path=self.config_path, override=self.override)
-        kg.build(repodir=args.repo_dir)
-
-        # extract image feature and save
-
-
     def preprocess(self, files: list, work_dir: str):
         """Preprocesses files in a given directory. Copies each file to
         'preprocess' with new name formed by joining all subdirectories with
@@ -481,8 +474,6 @@ class FeatureStore:
         # build dense retrieval refusal-to-answer and response database
         self.build_dense_response(files=files, work_dir=work_dir)
         self.build_dense_reject(files=files, work_dir=work_dir)
-        # build knowledge graph
-
 
 def parse_args():
     """Parse command-line arguments."""
