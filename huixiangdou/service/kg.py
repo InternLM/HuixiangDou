@@ -17,6 +17,7 @@ from tqdm import tqdm
 import sys
 import json
 import time
+import networkx as nx
 
 def simple_uuid():
     return str(uuid4())[0:6]
@@ -75,6 +76,8 @@ class KnowledgeGraph:
         
         self.nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
         self.relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
+        self.graphml_path = os.path.join(self.kg_work_dir, 'kg.graphml')
+        self.gpickle_path = os.path.join(self.kg_work_dir, 'kg.gpickle')
         
     def build(self, repodir: str):
         logger.info('multi-modal knowledge graph retrieval is experimental, only support markdown format.')
@@ -222,53 +225,55 @@ class KnowledgeGraph:
         # load jsonl and save it
         nodes = dict()
         with open(self.nodes_path) as f:
-            add_node_query_with_props = """\
-            MERGE (n:`%s` {`id`: $value })
-            ON CREATE SET n+=$props
-            """
-            with driver.session() as session:
-                for json_str in f:
-                    node = json.loads(json_str)
-                    nodes[node['uuid']] = node
+            for json_str in f:
+                node = json.loads(json_str)
+                nodes[node['uuid']] = node
+        
+        add_node_query_with_props = """\
+        MERGE (n:`%s` {`id`: $value })
+        ON CREATE SET n+=$props
+        """
+        with driver.session() as session:
+            for node in tqdm(nodes.values()):
+                nodel_label = node['_type']
+                query = add_node_query_with_props % nodel_label
+                session.run(query, {"value": node['uuid']}, props={"type": node['_type'], "data": node['data']})
 
-                    nodel_label = node['_type']
-                    query = add_node_query_with_props % nodel_label
-                    session.run(query, {"value": node['uuid']}, props={"type": node['_type'], "data": node['data']})
-
+        # load relations
+        relations = []
         with open(self.relations_path) as f:
-            # query node1 and node2, add an relationship
-            add_edge_query = """\
-            MERGE (node1:`%s` {`id`: $node1 })
-            MERGE (node2:`%s` {`id`: $node2 })
-            MERGE (node1)-[r:`%s`]->(node2)
-            ON CREATE SET r=$props
-            """
-            with driver.session() as session:
-                for json_str in f:
-                    rel = json.loads(json_str)
-                    _from = rel['_from']
-                    to = rel['to']
+            for json_str in f:
+                rel = json.loads(json_str)
+                relations.append(rel)
 
-                    label1 = nodes[_from]['_type']
-                    label2 = nodes[rel['to']]['_type']
+        # query node1 and node2, add an relationship
+        add_edge_query = """\
+        MERGE (node1:`%s` {`id`: $node1 })
+        MERGE (node2:`%s` {`id`: $node2 })
+        MERGE (node1)-[r:`%s`]->(node2)
+        ON CREATE SET r=$props
+        """
+        with driver.session() as session:
+            for rel in tqdm(relations):
+                _from = rel['_from']
+                to = rel['to']
 
-                    desc = rel['desc']
-                    if desc in ['file']:
-                        relationship_type = desc
-                    elif desc.startswith('page'):
-                        relationship_type = 'page'
-                    else:
-                        relationship_type = 'attr'
+                label1 = nodes[_from]['_type']
+                label2 = nodes[to]['_type']
 
-                    query = add_edge_query % (label1, label2, relationship_type)
-                    session.run(query, {"node1": _from, "node2": to}, props={"desc": desc})
+                desc = rel['desc']
+                if desc in ['file']:
+                    relationship_type = desc
+                elif desc.startswith('page'):
+                    relationship_type = 'page'
+                else:
+                    relationship_type = 'attr'
 
+                query = add_edge_query % (label1, label2, relationship_type)
+                session.run(query, {"node1": _from, "node2": to}, props={"desc": desc})
 
     def dump_networkx(self):
         """Convert to networkx and dump GraphML format"""
-        import networkx as nx
-        import matplotlib.pyplot as plt
-
         if not os.path.exists(self.nodes_path):
             logger.error('nodes path not exist')
             return
@@ -293,9 +298,76 @@ class KnowledgeGraph:
         logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
 
         # save to pickle format
-        gpickle_path = os.path.join(self.kg_work_dir, 'kg-{}.gpickle'.format(round(time.time())))
-        with open(gpickle_path, 'wb') as f:
+        with open(self.gpickle_path, 'wb') as f:
             pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
+
+    def load_networkx(self):
+        if not os.path.exists(self.gpickle_path):
+            logger.error('gpickle {} not exist.'.format(self.gpickle_path))
+            return None
+
+        with open(self.gpickle_path, 'rb') as f:
+            G = pickle.load(f)
+
+        logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
+        return G
+
+    def query_file_chunk_map(self, G, attr:str):
+        ret = dict()
+
+        # chunks = [G.nodes[neighbor] for neighbor in G.neighbors(attr)]
+        for chunk in G.neighbors(attr):
+            files = [nbr for nbr in G.neighbors(chunk) if 'page' in G.edges[chunk, nbr].get('desc')]
+            for file in files:
+                chunk_data = G.nodes[chunk].get('data')
+                file_data = G.nodes[file].get('data')
+                if file_data in ret:
+                    ret[file_data].append(chunk_data)
+                else:
+                    ret[file_data] = [chunk_data]
+
+        return ret
+
+    def retrieve(self, query: str):
+        G = self.load_networkx()
+        if not G:
+            logger.error('Knowledge graph not build, quit.')
+            return
+
+        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + query)
+
+        items = extract_json_from_str(raw=llm_raw_text)
+        if len(items) < 1:
+            logger.warning('parse llm_raw_text failed, please check. {}'.format(llm_raw_text))
+            return
+
+        file_chunks = dict()
+        for item in items:
+            # fetch nodes and add relations
+            try:
+                entity = item['entity']
+                if not G.has_node(entity):
+                    continue
+            
+                file_chunks_on_entity = self.query_file_chunk_map(G=G, attr=entity)
+
+                for k,v in file_chunks_on_entity.items():
+                    if k in file_chunks:
+                        file_chunks[k] += v
+                    else:
+                        file_chunks[k] = v
+
+            except Exception as e:
+                logger.error(e)
+                logger.error(item)
+                continue
+
+        candidates = []
+        for k,v in file_chunks.items():
+            candidates.append((k,v))
+        
+        candidates.sort(key=lambda x:len(x[1]))
+        logger.info(candidates[0])
 
 def parse_args():
     """Parse command-line arguments. Please `export LOGURU_LEVEL=WARNING` before running."""
@@ -321,6 +393,11 @@ def parse_args():
         default=False,
         help='Remove old data and rebuild knowledge graph from scratch.')
     parser.add_argument(
+        '--build',
+        action='store_true',
+        default=False,
+        help='Build knowledge graph from repodir.')
+    parser.add_argument(
         '--dump-networkx',
         action='store_true',
         default=False,
@@ -339,12 +416,17 @@ def parse_args():
         '--neo4j-user',
         type=str,
         default='neo4j',
-        help='neo4j username, see https://neo4j.com/')
+        help='neo4j username')
     parser.add_argument(
         '--neo4j-passwd',
         type=str,
         default='neo4j',
-        help='neo4j password, see https://neo4j.com/')
+        help='neo4j password')
+    parser.add_argument(
+        '--query',
+        type=str,
+        default=None,
+        help='Information Retrieval based on knowledge graph.')
     args = parser.parse_args()
     return args
 
@@ -354,10 +436,14 @@ if __name__ == '__main__':
         start_llm_server(args.config_path)
     kg = KnowledgeGraph(args.config_path, override=args.override)
 
+    if args.build:
+        kg.build(repodir=args.repo_dir)
+
     if args.dump_neo4j:
         kg.dump_neo4j(uri=args.neo4j_uri, user=args.neo4j_user, passwd=args.neo4j_passwd)
-    elif args.dump_networkx:
-        kg.dump_networkx()
-    else:
-        kg.build(repodir=args.repo_dir)
     
+    if args.dump_networkx:
+        kg.dump_networkx()
+    
+    if args.query:
+        kg.retrieve(query=args.query)

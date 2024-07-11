@@ -1,4 +1,3 @@
 networkx>=3.0
-matplotlib
 pickle
 # torchvision timm einops ftfy
