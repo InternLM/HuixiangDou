@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from loguru import logger
 from .llm_client import ChatClient
 from .helper import extract_json_from_str
@@ -76,7 +76,6 @@ class KnowledgeGraph:
         
         self.nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
         self.relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
-        self.graphml_path = os.path.join(self.kg_work_dir, 'kg.graphml')
         self.gpickle_path = os.path.join(self.kg_work_dir, 'kg.gpickle')
         
     def build(self, repodir: str):
@@ -328,12 +327,7 @@ class KnowledgeGraph:
 
         return ret
 
-    def retrieve(self, query: str):
-        G = self.load_networkx()
-        if not G:
-            logger.error('Knowledge graph not build, quit.')
-            return
-
+    def retrieve(self, G, query: str):
         llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + query)
 
         items = extract_json_from_str(raw=llm_raw_text)
@@ -364,10 +358,13 @@ class KnowledgeGraph:
 
         candidates = []
         for k,v in file_chunks.items():
-            candidates.append((k,v))
+            candidates.append({
+                'path': k,
+                'chunks': v
+            })
         
-        candidates.sort(key=lambda x:len(x[1]))
-        logger.info(candidates[0])
+        candidates.sort(key=lambda x:len(x['chunks']))
+        return candidates
 
 def parse_args():
     """Parse command-line arguments. Please `export LOGURU_LEVEL=WARNING` before running."""
@@ -429,7 +426,7 @@ def parse_args():
         help='Information Retrieval based on knowledge graph.')
     args = parser.parse_args()
     return args
-
+    
 if __name__ == '__main__':
     args = parse_args()
     if args.standalone:
@@ -446,4 +443,8 @@ if __name__ == '__main__':
         kg.dump_networkx()
     
     if args.query:
-        kg.retrieve(query=args.query)
+        G = kg.load_networkx()
+        if G:
+            logger.info(kg.retrieve(G=G, query=args.query)[0])
+        else:
+            logger.error('Knowledge graph not build, quit.')

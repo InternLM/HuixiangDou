@@ -51,4 +51,6 @@ bceodir/
 odir/
 repodir-full/
 web.log
-workdir-kg-half/
+workdir-full/
+evaluation/rejection/gt_bad.txt
+evaluation/rejection/gt_good.txt
