@@ -344,7 +344,6 @@ class KnowledgeGraph:
                     continue
             
                 file_chunks_on_entity = self.query_file_chunk_map(G=G, attr=entity)
-
                 for k,v in file_chunks_on_entity.items():
                     if k in file_chunks:
                         file_chunks[k] += v
