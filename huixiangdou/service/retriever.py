@@ -92,6 +92,7 @@ class Retriever:
             max_score = -1
             top1 = None
             for (doc, score) in docs_with_score:
+                print(score, self.reject_throttle)
                 if score >= self.reject_throttle:
                     ret.append(doc)
                 if score > max_score:

@@ -752,7 +752,7 @@ class WkteamManager:
                     if user.group_id in self.group_whitelist:
                         groupname = self.group_whitelist[user.group_id]
 
-                    if len(query) >= 9:
+                    if len(query) >= 8:
                         groupchats = self.fetch_groupchats(user=user)
                         code, resp, refs = worker.generate(
                             query=query,
