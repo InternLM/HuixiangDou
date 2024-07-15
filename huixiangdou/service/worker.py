@@ -409,10 +409,13 @@ class SecurityNode(Node):
 
     def process(self, sess: Session):
         """Check result with security."""
+        if len(sess.response) < 1:
+            sess.code = ErrorCode.BAD_ANSWER
+            return
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query, sess.response)
         truth, logs = is_truth(llm=self.llm,
                                prompt=prompt,
-                               throttle=9,
+                               throttle=8,
                                default=0)
         sess.debug['SecurityNode_qa_perplex'] = logs
         if truth:
