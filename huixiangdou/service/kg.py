@@ -51,9 +51,10 @@ def relation_to_jsonstr(instance):
     return json.dumps(dict_instance, ensure_ascii=False)
 
 class KnowledgeGraph:
-    def __init__(self, config_path: str, override:bool=False):
+    def __init__(self, config_path: str, override:bool=False, retry:int=1):
 
         self.llm = ChatClient(config_path=config_path)
+        self.retry = retry
         self.nodes = []
         self.relations = []
         self.chunksize = 2048
@@ -134,8 +135,7 @@ class KnowledgeGraph:
     def build_md_chunk(self, md_node: Node, abspath: str):
         """Parse markdown chunk to nodes and relations. LLM NER with retry policy."""
         items = []
-        retry = 2
-        for _ in range(retry):
+        for _ in range(self.retry):
             llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + md_node.data)
             items += extract_json_from_str(raw=llm_raw_text)
 
@@ -421,6 +421,11 @@ def parse_args():
         type=str,
         default=None,
         help='Information Retrieval based on knowledge graph.')
+    parser.add_argument(
+        '--retry',
+        type=int,
+        default=1,
+        help='Retry count for LLM NER.')
     args = parser.parse_args()
     return args
     
@@ -428,7 +433,7 @@ if __name__ == '__main__':
     args = parse_args()
     if args.standalone:
         start_llm_server(args.config_path)
-    kg = KnowledgeGraph(args.config_path, override=args.override)
+    kg = KnowledgeGraph(args.config_path, override=args.override, retry=args.retry)
 
     if args.build:
         kg.build(repodir=args.repo_dir)
