@@ -41,7 +41,7 @@ class FileOperation:
         self.ppt_suffix = '.pptx'
         self.html_suffix = ['.html', '.htm', '.shtml', '.xhtml']
         self.word_suffix = ['.docx', '.doc']
-        self.code_suffix = ['.py', '.cpp', '.h']
+        # self.code_suffix = ['.py', '.cpp', '.h']
         self.normal_suffix = [self.md_suffix
                               ] + self.text_suffix + self.excel_suffix + [
                                   self.pdf_suffix
@@ -107,9 +107,9 @@ class FileOperation:
             if filepath.endswith(suffix):
                 return 'html'
 
-        for suffix in self.code_suffix:
-            if filepath.endswith(suffix):
-                return 'code'
+        # for suffix in self.code_suffix:
+        #     if filepath.endswith(suffix):
+        #         return 'code'
         return None
 
     def md5(self, filepath: str):

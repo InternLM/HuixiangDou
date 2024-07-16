@@ -23,6 +23,9 @@ English | [简体中文](README_zh.md)
   <a href="https://arxiv.org/abs/2401.08772" target="_blank">
     <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-2401.08772%20-darkred?logo=arxiv&logoColor=white" />
   </a>
+  <a href="https://arxiv.org/abs/2405.02817" target="_blank">
+    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-2405.02817%20-darkred?logo=arxiv&logoColor=white" />
+  </a>
 </div>
 
 </div>
@@ -31,7 +34,7 @@ HuixiangDou is a **group chat** assistant based on LLM (Large Language Model).
 
 Advantages:
 
-1. Design a three-stage pipeline of preprocess, rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817) and [Precision Report](./evaluation/).
+1. Design a three-stage pipeline of preprocess, rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Search](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/).
 2. Low cost, requiring only 1.5GB memory and no need for training
 3. Offers a complete suite of Web, Android, and pipeline source code, which is industrial-grade and commercially viable
 
@@ -45,13 +48,14 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
+- \[2024/07\] [Hybrid knowledge graph and dense retrieval boost 2% F1 score](./docs/knowledge_graph_en.md) 🎯
 - \[2024/07\] `config.ini` support [LLM Reranker](./huixiangdou/service/llm_reranker.py)
 
-- \[2024/06\] [Evaluation of Chunk Size, Splitter and Model](./evaluation)
+- \[2024/06\] [Evaluation of Chunk Size, Splitter and Model](./evaluation)🎯
 
 - \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), support image, URL and reference resolution in group chat
 
-- \[2024/05\] Add [Coreference Resolution fine-tune](./sft)
+- \[2024/05\] Add [Coreference Resolution fine-tune](./sft) 🎯
 
   <table>
       <tr>
