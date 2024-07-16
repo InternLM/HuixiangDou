@@ -2,7 +2,7 @@
 
 ## Rejection
 
-Based on this test, the upper and lower bounds of the chunksize in the text2vec model were obtained.
+Based on this test, the upper and lower bounds of the chunksize in the text2vec model were obtained. See [how_to_choose_chunksize_and_splitter_for_text2vec](https://www.reddit.com/r/LocalLLaMA/comments/1dkuj80/how_to_choose_chunksize_and_splitter_for_text2vec/).
 
 ### **1.1 Data Description**
 
@@ -81,7 +81,8 @@ We also compared other methods and models:
 
 |    Approach    | F1 score |                                                                                                     Description                                                                                                      |
 | :------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|      Ours      |  75.88   | Tested using [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) in conjunction with a specific splitter. Note that inappropriate splitter and distance_strategy can severely affect the accuracy |
+| bce+knowlegegraph | 77.68 | The weight of the knowledge graph is 10% |
+|      bce      |  75.88   | Tested using [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) in conjunction with a specific splitter. Note that inappropriate splitter and distance_strategy can severely affect the accuracy |
 | bge-v1.5-large |  72.23   |                                                                     Tested using [bge-large-zh-v1.5](https://github.com/FlagOpen/FlagEmbedding)                                                                      |
 |     bge-m3     |  70.62   |   Tested using [m3](https://github.com/FlagOpen/FlagEmbedding) for dense retrieval. Note that m3 has a maximum input token length of 8192, and the test data cannot fully utilize the model's encoding capability    |
 | hybrid search  |  63.85   |                       Tested [m3](https://github.com/FlagOpen/FlagEmbedding) dense + sparse retrieval rejection effects based on [milvus WeightedRanker](https://github.com/milvus-io/milvus)                        |

@@ -85,6 +85,9 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
         <b>File Format</b>
       </td>
       <td>
+        <b>Retrieve Method</b>
+      </td>  
+      <td>
         <b>IM Application</b>
       </td>
     </tr>
@@ -116,9 +119,16 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 
 <td>
 
+- [Knowledge Graph](./huixiangdou/service/kg.py)
+- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding)
+- [bge/bge-m3](https://github.com/FlagOpen/FlagEmbedding)
+
+</td>
+
+<td>
+
 - WeChat
 - Lark
-- ..
 
 </td>
 

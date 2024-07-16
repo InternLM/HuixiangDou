@@ -145,7 +145,7 @@ def calculate(chunk_size: int):
     best_chunk_f1 = 0.0
     best_level = 5
 
-    for level in range(5, 50, 5):
+    for level in range(0, 50, 5):
         kg_score = KnowledgeGraphScore(level=level)
         for i in range(1, 4, 1):
             scale = i * 0.1
@@ -158,7 +158,7 @@ def calculate(chunk_size: int):
                     question = text_label[0]
                     
                     retriever.reject_throttle = max(0.0 , throttle - scale * kg_score.evaluate(query=question))
-                    dt, _ = retriever.is_relative(question=question)
+                    dt, _ = retriever.is_relative(question=question, disable_graph=True)
                     dts.append(dt)
                     gts.append(text_label[1])
 

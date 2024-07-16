@@ -74,6 +74,9 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
         <b>文件格式</b>
       </td>
       <td>
+        <b>检索方法</b>
+      </td>
+      <td>
         <b>即时通讯软件</b>
       </td>
     </tr>
@@ -103,11 +106,19 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 </td>
 
+
+<td>
+
+- [知识图谱](./huixiangdou/service/kg.py)
+- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding)
+- [bge/bge-m3](https://github.com/FlagOpen/FlagEmbedding)
+
+</td>
+
 <td>
 
 - WeChat
 - Lark
-- ..
 
 </td>
 

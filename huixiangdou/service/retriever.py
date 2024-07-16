@@ -18,15 +18,16 @@ from sklearn.metrics import precision_recall_curve
 from .file_operation import FileOperation
 from .helper import QueryTracker
 from .llm_reranker import LLMCompressionRetriever, LLMReranker
-
+from .kg import KnowledgeGraph
 
 class Retriever:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
 
-    def __init__(self, embeddings, reranker, work_dir: str,
+    def __init__(self, config_path:str, embeddings, reranker, work_dir: str,
                  reject_throttle: float) -> None:
         """Init with model device type and config."""
+        self.config_path = config_path
         self.reject_throttle = reject_throttle
         self.rejecter = None
         self.retriever = None
@@ -36,6 +37,15 @@ class Retriever:
             logger.warning('!!!warning, workdir not exist.!!!')
             return
 
+        # load prebuilt knowledge graph gpickle
+        self.kg = KnowledgeGraph(config_path=config_path)
+        self.graph = self.kg.load_networkx()
+        if self.graph is None:
+            logger.warning('Kownledge graph retrieval disable.')
+        else:
+            logger.warning('Kownledge graph retrieval enable.')
+        
+        # dense retrieval, load refusal-to-answer and response feature database 
         rejection_path = os.path.join(work_dir, 'db_reject')
         retriever_path = os.path.join(work_dir, 'db_response')
 
@@ -69,7 +79,7 @@ class Retriever:
         if self.retriever is None:
             logger.warning('retriever is None')
 
-    def is_relative(self, question, k=30, disable_throttle=False):
+    def is_relative(self, question, k=30, disable_throttle=False, disable_graph=False):
         """If no search results below the threshold can be found from the
         database, reject this query."""
 
@@ -86,13 +96,18 @@ class Retriever:
         else:
             # for retrieve result
             # if no chunk passed the throttle, give the max
+            graph_delta = 0.0
+            if self.graph is not None and not disable_graph:
+                candidates = self.kg.retrieve(G=self.graph, query=question)
+                graph_delta = 0.1 * max(100, len(candidates)) / 100
+
             docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
                 question, k=k)
             ret = []
             max_score = -1
             top1 = None
             for (doc, score) in docs_with_score:
-                if score >= self.reject_throttle:
+                if score >= self.reject_throttle - graph_delta:
                     ret.append(doc)
                 if score > max_score:
                     max_score = score
@@ -304,7 +319,8 @@ class CacheRetriever:
                 self.cache.pop(del_key)
                 del del_value['retriever']
 
-        retriever = Retriever(embeddings=self.embeddings,
+        retriever = Retriever(config_path=config_path,
+                              embeddings=self.embeddings,
                               reranker=self.reranker,
                               work_dir=work_dir,
                               reject_throttle=reject_throttle)

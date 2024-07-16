@@ -99,11 +99,11 @@ class KnowledgeGraph:
 
                 abspath = os.path.join(root, file)
                 if abspath in processed:
+                    logger.info(f'skip {abspath}')
                     continue
                 proc_files.append((abspath, file_type))
 
         # save to jsonl and pickle
-
         if self.override:
             if os.path.exists(self.nodes_path):
                 os.remove(self.nodes_path) 
@@ -132,19 +132,17 @@ class KnowledgeGraph:
 
 
     def build_md_chunk(self, md_node: Node, abspath: str):
-        # get othernodes and relationship
-        """
-            {
-                "entity": "HuixiangDou",
-                "type": "Software"
-            },
-        """
-        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + md_node.data)
-        items = extract_json_from_str(raw=llm_raw_text)
-        if len(items) < 1:
-            logger.warning('parse llm_raw_text failed, please check. {}'.format(llm_raw_text))
-            return
+        """Parse markdown chunk to nodes and relations. LLM NER with retry policy."""
+        items = []
+        retry = 2
+        for _ in range(retry):
+            llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + md_node.data)
+            items += extract_json_from_str(raw=llm_raw_text)
 
+        if len(items) < 1:
+            logger.warning('parse llm_raw_text failed. {}'.format(llm_raw_text))
+            return
+            
         for item in items:
             # fetch nodes and add relations
             try:
@@ -434,13 +432,14 @@ if __name__ == '__main__':
 
     if args.build:
         kg.build(repodir=args.repo_dir)
+        kg.dump_networkx()
 
     if args.dump_neo4j:
         kg.dump_neo4j(uri=args.neo4j_uri, user=args.neo4j_user, passwd=args.neo4j_passwd)
-    
+
     if args.dump_networkx:
         kg.dump_networkx()
-    
+
     if args.query:
         G = kg.load_networkx()
         if G:
