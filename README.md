@@ -302,6 +302,8 @@ Please read following topics
 - [Use rag.py to annotate SFT training data](./docs/rag_annotate_sft_data_zh.md)
 - [Coreference resolution fine-tune](./sft)
 - [Using the commercial WeChat integration, add image analysis, public account parsing, and reference resolution](./docs/add_wechat_commercial_zh.md)
+- [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_zh.md)
+
 
 # 🛠️ FAQ
 

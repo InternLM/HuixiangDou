@@ -304,6 +304,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
 - [群聊场景指代消歧训练](./sft)
 - [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
+- [混合知识图谱和稠密检索提升精度](./docs/knowledge_graph_zh.md)
 
 # 🛠️ FAQ
 
