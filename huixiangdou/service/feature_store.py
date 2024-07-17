@@ -22,6 +22,7 @@ from tqdm import tqdm
 
 from .file_operation import FileName, FileOperation
 from .helper import histogram
+from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
 
 
@@ -137,11 +138,13 @@ class FeatureStore:
                  language: str = 'zh',
                  chunk_size=832,
                  analyze_reject=False,
-                 rejecter_naive_splitter=False) -> None:
+                 rejecter_naive_splitter=False,
+                 override=False) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
         self.language = language
+        self.override = override
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)['feature_store']
             self.reject_throttle = config['reject_throttle']
@@ -272,7 +275,7 @@ class FeatureStore:
             documents.append(chunk)
         return documents
 
-    def ingress_response(self, files: list, work_dir: str):
+    def build_dense_response(self, files: list, work_dir: str):
         """Extract the features required for the response pipeline based on the
         document."""
         feature_dir = os.path.join(work_dir, 'db_response')
@@ -335,7 +338,7 @@ class FeatureStore:
         logger.info('document token histogram, {}'.format(
             histogram(token_lens)))
 
-    def ingress_reject(self, files: list, work_dir: str):
+    def build_dense_reject(self, files: list, work_dir: str):
         """Extract the features required for the reject pipeline based on
         documents."""
         feature_dir = os.path.join(work_dir, 'db_reject')
@@ -346,7 +349,7 @@ class FeatureStore:
         documents = []
         file_opr = FileOperation()
 
-        logger.debug('ingress reject with chunk_size {}'.format(
+        logger.debug('build dense reject with chunk_size {}'.format(
             self.chunk_size))
         for i, file in tqdm(enumerate(files)):
             if not file.state:
@@ -470,8 +473,9 @@ class FeatureStore:
             'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
         self.preprocess(files=files, work_dir=work_dir)
-        self.ingress_response(files=files, work_dir=work_dir)
-        self.ingress_reject(files=files, work_dir=work_dir)
+        # build dense retrieval refusal-to-answer and response database
+        self.build_dense_response(files=files, work_dir=work_dir)
+        self.build_dense_reject(files=files, work_dir=work_dir)
 
 
 def parse_args():
@@ -505,6 +509,11 @@ def parse_args():
     )
     parser.add_argument(
         '--sample', help='Input an json file, save reject and search output.')
+    parser.add_argument(
+        '--override',
+        action='store_true',
+        default=False,
+        help='Remove old data and rebuild knowledge graph from scratch.')
     args = parser.parse_args()
     return args
 
@@ -581,7 +590,8 @@ if __name__ == '__main__':
     args = parse_args()
     cache = CacheRetriever(config_path=args.config_path)
     fs_init = FeatureStore(embeddings=cache.embeddings,
-                           config_path=args.config_path)
+                           config_path=args.config_path,
+                           override=args.override)
 
     # walk all files in repo dir
     file_opr = FileOperation()
@@ -604,5 +614,7 @@ if __name__ == '__main__':
 
     # test
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
+    if retriever.kg.is_available():
+        start_llm_server(args.config_path)
     test_reject(retriever, args.sample)
     test_query(retriever, args.sample)

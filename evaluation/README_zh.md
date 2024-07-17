@@ -2,7 +2,7 @@
 
 ## Rejection
 
-通过本测试，得到了 text2vec 模型中 chunksize 上下界。
+通过本测试，得到了 text2vec 模型中 chunksize 上下界。见[text2vec 如何选择 chunksize 和 splitter](https://zhuanlan.zhihu.com/p/704311157)。
 
 ### **1.1 数据说明**
 
@@ -79,9 +79,10 @@ splitter 选择依据
 
 我们也对比了其他办法和模型：
 
-|      方案      | F1 score |                                                                             说明                                                                              |
-| :------------: | :------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|      Ours      |  75.88   | 使用 [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) 配合特定 splitter 测试。注意不合适的 splitter 和 distance_strategy 会严重影响精度 |
-| bge-v1.5-large |  72.23   |                                           使用 [bge-large-zh-v1.5](https://github.com/FlagOpen/FlagEmbedding) 测试                                            |
-|     bge-m3     |  70.62   |           使用 [m3](https://github.com/FlagOpen/FlagEmbedding) dense retrieval。注意 m3 最大输入 token 长度 8192，测试数据无法完整发挥模型编码能力            |
-| hybrid search  |  63.85   |    基于 [milvus WeightedRanker](https://github.com/milvus-io/milvus) 测试 [m3](https://github.com/FlagOpen/FlagEmbedding) dense+sparse retrieval 拒答效果     |
+|        方案         | F1 score |                                                                                      说明                                                                                       |
+| :-----------------: | :------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|  bce+knowlegegraph  |  77.57   |                                                                              知识图谱权重占比 20%                                                                               |
+|         bce         |  75.88   |          使用 [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) 配合特定 splitter 测试。注意不合适的 splitter 和 distance_strategy 会严重影响精度          |
+|   bge-v1.5-large    |  72.23   |                                                    使用 [bge-large-zh-v1.5](https://github.com/FlagOpen/FlagEmbedding) 测试                                                     |
+|       bge-m3        |  70.62   |                    使用 [m3](https://github.com/FlagOpen/FlagEmbedding) dense retrieval。注意 m3 最大输入 token 长度 8192，测试数据无法完整发挥模型编码能力                     |
+| bge-m3 dense+sparse |  63.85   | 基于 [milvus WeightedRanker](https://github.com/milvus-io/milvus) 测试 [m3](https://github.com/FlagOpen/FlagEmbedding) dense+sparse retrieval 拒答效果。sparse 占比越高效果越差 |

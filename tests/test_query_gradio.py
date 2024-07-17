@@ -42,6 +42,7 @@ def get_reply(query):
 
     return json.dumps(ret, indent=2, ensure_ascii=False)
 
+
 if __name__ == '__main__':
     args = parse_args()
 
