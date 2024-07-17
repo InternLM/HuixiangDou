@@ -17,14 +17,15 @@ from sklearn.metrics import precision_recall_curve
 
 from .file_operation import FileOperation
 from .helper import QueryTracker
-from .llm_reranker import LLMCompressionRetriever, LLMReranker
 from .kg import KnowledgeGraph
+from .llm_reranker import LLMCompressionRetriever, LLMReranker
+
 
 class Retriever:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
 
-    def __init__(self, config_path:str, embeddings, reranker, work_dir: str,
+    def __init__(self, config_path: str, embeddings, reranker, work_dir: str,
                  reject_throttle: float) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
@@ -39,8 +40,8 @@ class Retriever:
 
         # load prebuilt knowledge graph gpickle
         self.kg = KnowledgeGraph(config_path=config_path)
-        
-        # dense retrieval, load refusal-to-answer and response feature database 
+
+        # dense retrieval, load refusal-to-answer and response feature database
         rejection_path = os.path.join(work_dir, 'db_reject')
         retriever_path = os.path.join(work_dir, 'db_response')
 
@@ -74,7 +75,11 @@ class Retriever:
         if self.retriever is None:
             logger.warning('retriever is None')
 
-    def is_relative(self, question, k=30, disable_throttle=False, disable_graph=False):
+    def is_relative(self,
+                    question,
+                    k=30,
+                    disable_throttle=False,
+                    disable_graph=False):
         """If no search results below the threshold can be found from the
         database, reject this query."""
 

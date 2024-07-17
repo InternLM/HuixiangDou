@@ -7,31 +7,33 @@ import pdb
 from multiprocessing import Pool, Process
 
 from loguru import logger
-from sklearn.metrics import (f1_score, precision_score,
-                             recall_score)
+from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 
-from huixiangdou.service import (CacheRetriever, FeatureStore, FileOperation)
+from huixiangdou.service import CacheRetriever, FeatureStore, FileOperation
 
 save_hardcase = False
 
+
 class KnowledgeGraphScore():
-    def __init__(self, level:int):
+
+    def __init__(self, level: int):
         outpath = os.path.join(os.path.dirname(__file__), 'out.jsonl')
         self.scores = dict()
         with open(outpath) as f:
             for line in f:
                 json_obj = json.loads(line)
                 query = json_obj['query']
-                
+
                 score = 0.0
                 result = json_obj['result']
                 if result is not None and len(result) > level:
                     score = min(100, len(result) - level) / 100
-                    print('query cnt score {} {} {}'.format(query, len(result), score))
+                    print('query cnt score {} {} {}'.format(
+                        query, len(result), score))
                 self.scores[query] = score
-        
-    def evaluate(self, query:str):
+
+    def evaluate(self, query: str):
         return self.scores[query]
 
 
@@ -77,7 +79,10 @@ def parse_args():
         default='config.ini',
         help='Feature store configuration path. Default value is config.ini')
     parser.add_argument('--chunk-size', default=768, help='Text chunksize')
-    parser.add_argument('--hybrid', default=False, help='Combine knowledge graph evaluation and dense feature score')
+    parser.add_argument(
+        '--hybrid',
+        default=False,
+        help='Combine knowledge graph evaluation and dense feature score')
     args = parser.parse_args()
     return args
 
@@ -157,9 +162,12 @@ def calculate(chunk_size: int):
                 gts = []
                 for text_label in text_labels:
                     question = text_label[0]
-                    
-                    retriever.reject_throttle = max(0.0 , throttle - scale * kg_score.evaluate(query=question))
-                    dt, _ = retriever.is_relative(question=question, disable_graph=True)
+
+                    retriever.reject_throttle = max(
+                        0.0,
+                        throttle - scale * kg_score.evaluate(query=question))
+                    dt, _ = retriever.is_relative(question=question,
+                                                  disable_graph=True)
                     dts.append(dt)
                     gts.append(text_label[1])
 
@@ -170,7 +178,8 @@ def calculate(chunk_size: int):
                             doc = docs[0]
                             question = question.replace('\n', ' ')
                             content = '{}  {}'.format(question, doc)
-                            with open('hardcase{}.txt'.format(throttle), 'a') as f:
+                            with open('hardcase{}.txt'.format(throttle),
+                                      'a') as f:
                                 f.write(content)
                                 f.write('\n')
 
@@ -192,8 +201,10 @@ def calculate(chunk_size: int):
                 }
                 json_str = json.dumps(data)
                 with open(
-                        osp.join(osp.dirname(__file__),
-                                'level{}_scale{}_chunk{}.jsonl'.format(level, scale, chunk_size)), 'a') as f:
+                        osp.join(
+                            osp.dirname(__file__),
+                            'level{}_scale{}_chunk{}.jsonl'.format(
+                                level, scale, chunk_size)), 'a') as f:
                     f.write(json_str)
                     f.write('\n')
 

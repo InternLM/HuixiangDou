@@ -10,10 +10,12 @@ langchain>=0.1.12
 loguru
 lxml_html_clean
 nest_asyncio
+networkx>=3.0
 numpy<2.0.0
 openai>=1.0.0
 openpyxl
 pandas
+pickle
 pydantic>=1.10.13
 pymupdf
 python-docx
@@ -32,5 +34,3 @@ torch>=2.0.0
 transformers>=4.38
 transformers_stream_generator
 unstructured
-networkx>=3.0
-pickle

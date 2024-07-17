@@ -7,11 +7,11 @@ import pdb
 from multiprocessing import Pool, Process
 
 from loguru import logger
-from sklearn.metrics import (f1_score, precision_score,
-                             recall_score)
+from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 
-from huixiangdou.service import KnowledgeGraph, start_llm_server, histogram
+from huixiangdou.service import KnowledgeGraph, histogram, start_llm_server
+
 
 def load_dataset():
     text_labels = []
@@ -26,6 +26,7 @@ def load_dataset():
 
     return text_labels
 
+
 def calculate(config_path: str = 'config.ini'):
     kg = KnowledgeGraph(config_path=config_path, override=False)
     G = kg.load_networkx()
@@ -33,14 +34,20 @@ def calculate(config_path: str = 'config.ini'):
         logger.error('Knowledge graph not build, quit.')
         return
     text_labels = load_dataset()
-    
+
     outpath = os.path.join(os.path.dirname(__file__), 'out.jsonl')
     for text, label in tqdm(text_labels):
         result = kg.retrieve(G=G, query=text)
-        json_str = json.dumps({'query':text, 'result': result, 'gt': label}, ensure_ascii=False)
+        json_str = json.dumps({
+            'query': text,
+            'result': result,
+            'gt': label
+        },
+                              ensure_ascii=False)
         with open(outpath, 'a') as f:
             f.write(json_str)
             f.write('\n')
+
 
 def summarize():
     outpath = os.path.join(os.path.dirname(__file__), 'out.jsonl')
@@ -71,22 +78,22 @@ def summarize():
         recall = recall_score(gts, dts)
         recall = round(recall, 2)
 
-        logger.info(('throttle, precision, recall, F1', throttle, precision, recall, f1))
+        logger.info(('throttle, precision, recall, F1', throttle, precision,
+                     recall, f1))
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Knowledge graph for processing directories.')
-    parser.add_argument(
-        '--config_path',
-        default='config-kg.ini',
-        help='Configuration path. Default value is config.ini')
-    parser.add_argument(
-        '--retrieve',
-        default=False,
-        help='Retrieve result from knowledge graph.')
+    parser.add_argument('--config_path',
+                        default='config-kg.ini',
+                        help='Configuration path. Default value is config.ini')
+    parser.add_argument('--retrieve',
+                        default=False,
+                        help='Retrieve result from knowledge graph.')
     args = parser.parse_args()
     return args
+
 
 def main():
     args = parse_args()
@@ -95,6 +102,7 @@ def main():
         calculate(args.config_path)
     else:
         summarize()
+
 
 if __name__ == '__main__':
     main()

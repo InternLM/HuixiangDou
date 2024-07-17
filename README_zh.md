@@ -109,7 +109,6 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 </td>
 
-
 <td>
 
 - [知识图谱](./huixiangdou/service/kg.py)

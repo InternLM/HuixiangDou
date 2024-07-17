@@ -22,9 +22,9 @@ from tqdm import tqdm
 
 from .file_operation import FileName, FileOperation
 from .helper import histogram
-from .retriever import CacheRetriever, Retriever
-from .kg import KnowledgeGraph
 from .llm_server_hybrid import start_llm_server
+from .retriever import CacheRetriever, Retriever
+
 
 def read_and_save(file: FileName):
     if os.path.exists(file.copypath):
@@ -45,6 +45,7 @@ def read_and_save(file: FileName):
 
     with open(file.copypath, 'w') as f:
         f.write(content)
+
 
 def _split_text_with_regex_from_end(text: str, separator: str,
                                     keep_separator: bool) -> List[str]:
@@ -475,6 +476,7 @@ class FeatureStore:
         # build dense retrieval refusal-to-answer and response database
         self.build_dense_response(files=files, work_dir=work_dir)
         self.build_dense_reject(files=files, work_dir=work_dir)
+
 
 def parse_args():
     """Parse command-line arguments."""

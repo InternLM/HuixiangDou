@@ -26,19 +26,20 @@ rpm = 1000
 python3 -m huixiangdou.service.kg --build
 python3 -m huixiangdou.service.kg --query 如何安装mmpose?
 ..
-+-----------------+-------+------------------------+---------------------------+ 
-|      Query      | State |     Part of Reply      |        References         | 
-+=================+=======+========================+===========================+ 
-| 如何安装mmpose?  | 0     | repodir/mmpose/READM.. |                           |                                                                                 
-|                 |       |                        | <div align="center">      | 
-|                 |       |                        |   <img                    | 
-|                 |       |                        | src="resources/mmpose-    | 
++-----------------+-------+------------------------+---------------------------+
+|      Query      | State |     Part of Reply      |        References         |
++=================+=======+========================+===========================+
+| 如何安装mmpose?  | 0     | repodir/mmpose/READM.. |                           |
+|                 |       |                        | <div align="center">      |
+|                 |       |                        |   <img                    |
+|                 |       |                        | src="resources/mmpose-    |
 ..
 ```
 
 ## 二、可视化
 
 可以利用 neo4j 可视化：
+
 ```bash
 python3 -m huixiangdou.service.kg --dump-neo4j --neo4j-uri ${URI} --neo4j-user ${USER} --neo4j-passwd ${PWD}
 ```

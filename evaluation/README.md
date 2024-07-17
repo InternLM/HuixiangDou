@@ -79,10 +79,10 @@ The basis for choosing splitter is:
 
 We also compared other methods and models:
 
-|    Approach    | F1 score |                                                                                                     Description                                                                                                      |
-| :------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| bce+knowlegegraph | 77.57 | The weight of the knowledge graph is 20% |
-|      bce      |  75.88   | Tested using [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) in conjunction with a specific splitter. Note that inappropriate splitter and distance_strategy can severely affect the accuracy |
-| bge-v1.5-large |  72.23   |                                                                     Tested using [bge-large-zh-v1.5](https://github.com/FlagOpen/FlagEmbedding)                                                                      |
-|     bge-m3     |  70.62   |   Tested using [m3](https://github.com/FlagOpen/FlagEmbedding) for dense retrieval. Note that m3 has a maximum input token length of 8192, and the test data cannot fully utilize the model's encoding capability    |
-| hybrid search  |  63.85   |                       Tested [m3](https://github.com/FlagOpen/FlagEmbedding) dense + sparse retrieval rejection effects based on [milvus WeightedRanker](https://github.com/milvus-io/milvus)                        |
+|     Approach      | F1 score |                                                                                                     Description                                                                                                      |
+| :---------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| bce+knowlegegraph |  77.57   |                                                                                       The weight of the knowledge graph is 20%                                                                                       |
+|        bce        |  75.88   | Tested using [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) in conjunction with a specific splitter. Note that inappropriate splitter and distance_strategy can severely affect the accuracy |
+|  bge-v1.5-large   |  72.23   |                                                                     Tested using [bge-large-zh-v1.5](https://github.com/FlagOpen/FlagEmbedding)                                                                      |
+|      bge-m3       |  70.62   |   Tested using [m3](https://github.com/FlagOpen/FlagEmbedding) for dense retrieval. Note that m3 has a maximum input token length of 8192, and the test data cannot fully utilize the model's encoding capability    |
+|   hybrid search   |  63.85   |                       Tested [m3](https://github.com/FlagOpen/FlagEmbedding) dense + sparse retrieval rejection effects based on [milvus WeightedRanker](https://github.com/milvus-io/milvus)                        |

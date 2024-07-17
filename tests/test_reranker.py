@@ -117,7 +117,6 @@ def test_bce_reranker():
             with open(fullpath) as fin:
                 for jsonstr in fin:
                     jsonobj = json.loads(jsonstr)
-                    pairs = []
                     query = jsonobj['query']
                     passages = []
                     candidates = jsonobj['candidates']

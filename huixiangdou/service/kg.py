@@ -1,26 +1,31 @@
-from typing import List, Union
-from loguru import logger
-from .llm_client import ChatClient
-from .helper import extract_json_from_str, build_reply_text
-from .file_operation import FileOperation
-from .llm_server_hybrid import start_llm_server
-from uuid import uuid4
-from dataclasses import dataclass, field, asdict
-from enum import Enum, unique
+# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
+import json
 import os
 import pdb
 import pickle
 import re
-import pytoml
-from tqdm import tqdm
 import sys
-import json
 import time
+from dataclasses import asdict, dataclass, field
+from enum import Enum, unique
+from typing import List, Union
+from uuid import uuid4
+
 import networkx as nx
+import pytoml
+from loguru import logger
+from tqdm import tqdm
+
+from .file_operation import FileOperation
+from .helper import build_reply_text, extract_json_from_str
+from .llm_client import ChatClient
+from .llm_server_hybrid import start_llm_server
+
 
 def simple_uuid():
     return str(uuid4())[0:6]
+
 
 @unique
 class KGType(Enum):
@@ -29,16 +34,19 @@ class KGType(Enum):
     KEYWORD = 'keyword'
     IMAGE = 'image'
 
+
 @dataclass
 class Node:
     _type: KGType
     uuid: str = field(default_factory=simple_uuid)
     data: str = ''
 
+
 def node_to_jsonstr(instance):
     dict_instance = asdict(instance)
     dict_instance['_type'] = instance._type.value
     return json.dumps(dict_instance, ensure_ascii=False)
+
 
 @dataclass
 class Relation:
@@ -46,12 +54,18 @@ class Relation:
     to: str
     desc: str
 
+
 def relation_to_jsonstr(instance):
     dict_instance = asdict(instance)
     return json.dumps(dict_instance, ensure_ascii=False)
 
+
 class KnowledgeGraph:
-    def __init__(self, config_path: str, override:bool=False, retry:int=1):
+
+    def __init__(self,
+                 config_path: str,
+                 override: bool = False,
+                 retry: int = 1):
 
         self.llm = ChatClient(config_path=config_path)
         self.retry = retry
@@ -65,23 +79,27 @@ class KnowledgeGraph:
 
 以下是阅读内容：
 '''
-        self.md_pattern= re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
+        self.md_pattern = re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
         self.file_opr = FileOperation()
         self.override = override
 
         with open(config_path) as f:
             config = pytoml.load(f)
-            self.kg_work_dir = os.path.join(config['feature_store']['work_dir'], 'kg')
+            self.kg_work_dir = os.path.join(
+                config['feature_store']['work_dir'], 'kg')
             if not os.path.exists(self.kg_work_dir):
                 os.makedirs(self.kg_work_dir)
-        
+
         self.nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
-        self.relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
+        self.relations_path = os.path.join(self.kg_work_dir,
+                                           'kg_relations.jsonl')
         self.gpickle_path = os.path.join(self.kg_work_dir, 'kg.gpickle')
         self.graph = None
-        
+
     def build(self, repodir: str):
-        logger.info('multi-modal knowledge graph retrieval is experimental, only support markdown format.')
+        logger.info(
+            'multi-modal knowledge graph retrieval is experimental, only support markdown format.'
+        )
         proc_files = []
 
         processed = []
@@ -108,7 +126,7 @@ class KnowledgeGraph:
         # save to jsonl and pickle
         if self.override:
             if os.path.exists(self.nodes_path):
-                os.remove(self.nodes_path) 
+                os.remove(self.nodes_path)
             if os.path.exists(self.relations_path):
                 os.remove(self.relations_path)
 
@@ -132,18 +150,22 @@ class KnowledgeGraph:
                     f.write('\n')
             self.relations = []
 
-
     def build_md_chunk(self, md_node: Node, abspath: str):
-        """Parse markdown chunk to nodes and relations. LLM NER with retry policy."""
+        """Parse markdown chunk to nodes and relations.
+
+        LLM NER with retry policy.
+        """
         items = []
         for _ in range(self.retry):
-            llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + md_node.data)
+            llm_raw_text = self.llm.generate_response(
+                prompt=self.prompt_template + md_node.data)
             items += extract_json_from_str(raw=llm_raw_text)
 
         if len(items) < 1:
-            logger.warning('parse llm_raw_text failed. {}'.format(llm_raw_text))
+            logger.warning(
+                'parse llm_raw_text failed. {}'.format(llm_raw_text))
             return
-            
+
         for item in items:
             # fetch nodes and add relations
             try:
@@ -156,19 +178,21 @@ class KnowledgeGraph:
 
             self.nodes.append(Node(uuid=entity, _type=KGType.KEYWORD))
             self.relations.append(Relation(entity, md_node.uuid, _type))
-        
+
         matches = self.md_pattern.findall(md_node.data)
         for match in matches:
-            target = match[0]
+            # target = match[0]
             uri = match[1]
             if self.file_opr.get_type(uri) != 'image':
                 continue
 
             if not uri.startswith('http'):
                 uri = os.path.join(os.path.dirname(abspath), uri)
-            uuid, image_path = self.file_opr.save_image(uri=uri, outdir=self.kg_work_dir)
+            uuid, image_path = self.file_opr.save_image(
+                uri=uri, outdir=self.kg_work_dir)
             if image_path is not None:
-                self.nodes.append(Node(uuid=uuid, _type=KGType.IMAGE, data=image_path))
+                self.nodes.append(
+                    Node(uuid=uuid, _type=KGType.IMAGE, data=image_path))
                 self.relations.append(Relation(uuid, md_node.uuid, 'file'))
 
     def build_md(self, abspath: str):
@@ -177,18 +201,20 @@ class KnowledgeGraph:
         with open(abspath) as f:
             content = f.read()
         splits = content.split('\n')
-        
+
         chunk = ''
         pageid = 0
 
         md_node = Node(_type=KGType.MARKDOWN, data=abspath)
         self.nodes.append(md_node)
 
-        def add_chunk(md_node: Node, pageid:int, text: str):
+        def add_chunk(md_node: Node, pageid: int, text: str):
             chunk_node = Node(_type=KGType.CHUNK, data=text)
             self.nodes.append(chunk_node)
             self.build_md_chunk(md_node=chunk_node, abspath=abspath)
-            self.relations.append(Relation(md_node.uuid, chunk_node.uuid, 'page{}'.format(pageid)))
+            self.relations.append(
+                Relation(md_node.uuid, chunk_node.uuid,
+                         'page{}'.format(pageid)))
 
         for split in splits:
             if len(split) >= self.chunksize:
@@ -197,15 +223,15 @@ class KnowledgeGraph:
                     pageid += 1
                     chunk = ''
                 add_chunk(md_node=md_node, pageid=pageid, text=split)
-                pageid +=1
+                pageid += 1
                 continue
-            
+
             if len(chunk) + len(split) < self.chunksize:
                 chunk = chunk + '\n' + split
                 continue
 
             add_chunk(md_node=md_node, pageid=pageid, text=chunk)
-            pageid +=1
+            pageid += 1
             chunk = split
 
         if len(chunk) > 0:
@@ -218,7 +244,7 @@ class KnowledgeGraph:
         driver = GraphDatabase.driver(uri, auth=(user, passwd))
         # clear database if override
         with driver.session() as session:
-            session.run("MATCH (n) DETACH DELETE n")
+            session.run('MATCH (n) DETACH DELETE n')
 
         # load jsonl and save it
         nodes = dict()
@@ -226,7 +252,7 @@ class KnowledgeGraph:
             for json_str in f:
                 node = json.loads(json_str)
                 nodes[node['uuid']] = node
-        
+
         add_node_query_with_props = """\
         MERGE (n:`%s` {`id`: $value })
         ON CREATE SET n+=$props
@@ -235,7 +261,11 @@ class KnowledgeGraph:
             for node in tqdm(nodes.values()):
                 nodel_label = node['_type']
                 query = add_node_query_with_props % nodel_label
-                session.run(query, {"value": node['uuid']}, props={"type": node['_type'], "data": node['data']})
+                session.run(query, {'value': node['uuid']},
+                            props={
+                                'type': node['_type'],
+                                'data': node['data']
+                            })
 
         # load relations
         relations = []
@@ -268,10 +298,14 @@ class KnowledgeGraph:
                     relationship_type = 'attr'
 
                 query = add_edge_query % (label1, label2, relationship_type)
-                session.run(query, {"node1": _from, "node2": to}, props={"desc": desc})
+                session.run(query, {
+                    'node1': _from,
+                    'node2': to
+                },
+                            props={'desc': desc})
 
     def dump_networkx(self):
-        """Convert to networkx and dump GraphML format"""
+        """Convert to networkx and dump GraphML format."""
         if not os.path.exists(self.nodes_path):
             logger.error('nodes path not exist')
             return
@@ -290,10 +324,14 @@ class KnowledgeGraph:
 
         G = nx.Graph()
         for node in self.nodes:
-            G.add_nodes_from([(node['uuid'], {"type": node['_type'], "data": node['data']})])
+            G.add_nodes_from([(node['uuid'], {
+                'type': node['_type'],
+                'data': node['data']
+            })])
         for rel in self.relations:
             G.add_edge(rel['_from'], rel['to'], desc=rel['desc'])
-        logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
+        logger.debug('number of nodes {}, number of edges {}'.format(
+            G.number_of_nodes(), G.number_of_edges()))
 
         # save to pickle format
         with open(self.gpickle_path, 'wb') as f:
@@ -304,9 +342,9 @@ class KnowledgeGraph:
         if os.path.exists(self.gpickle_path):
             return True
         return False
-    
+
     def load(self):
-        """Load knowledge graph"""
+        """Load knowledge graph."""
         if not os.path.exists(self.gpickle_path):
             logger.error('gpickle {} not exist.'.format(self.gpickle_path))
             return None
@@ -314,15 +352,19 @@ class KnowledgeGraph:
         with open(self.gpickle_path, 'rb') as f:
             self.graph = pickle.load(f)
 
-        logger.debug('number of nodes {}, number of edges {}'.format(self.graph.number_of_nodes(), self.graph.number_of_edges()))
+        logger.debug('number of nodes {}, number of edges {}'.format(
+            self.graph.number_of_nodes(), self.graph.number_of_edges()))
 
-    def query_file_chunk_map(self, attr:str):
+    def query_file_chunk_map(self, attr: str):
         ret = dict()
 
         G = self.graph
         # chunks = [G.nodes[neighbor] for neighbor in G.neighbors(attr)]
         for chunk in G.neighbors(attr):
-            files = [nbr for nbr in G.neighbors(chunk) if 'page' in G.edges[chunk, nbr].get('desc')]
+            files = [
+                nbr for nbr in G.neighbors(chunk)
+                if 'page' in G.edges[chunk, nbr].get('desc')
+            ]
             for file in files:
                 chunk_data = G.nodes[chunk].get('data')
                 file_data = G.nodes[file].get('data')
@@ -336,7 +378,8 @@ class KnowledgeGraph:
     def retrieve(self, query: str):
         if self.graph is None:
             self.load()
-        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + query)
+        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template +
+                                                  query)
 
         items = extract_json_from_str(raw=llm_raw_text)
         if len(items) < 1:
@@ -349,9 +392,9 @@ class KnowledgeGraph:
                 entity = item['entity']
                 if not self.graph.has_node(entity):
                     continue
-            
+
                 file_chunks_on_entity = self.query_file_chunk_map(attr=entity)
-                for k,v in file_chunks_on_entity.items():
+                for k, v in file_chunks_on_entity.items():
                     if k in file_chunks:
                         file_chunks[k] += v
                     else:
@@ -363,43 +406,43 @@ class KnowledgeGraph:
                 continue
 
         candidates = []
-        for k,v in file_chunks.items():
-            candidates.append({
-                'path': k,
-                'chunks': v
-            })
-        
-        candidates.sort(key=lambda x:len(x['chunks']))
+        for k, v in file_chunks.items():
+            candidates.append({'path': k, 'chunks': v})
+
+        candidates.sort(key=lambda x: len(x['chunks']))
         return candidates
 
+
 def parse_args():
-    """Parse command-line arguments. Please `export LOGURU_LEVEL=WARNING` before running."""
+    """Parse command-line arguments.
+
+    Please `export LOGURU_LEVEL=WARNING` before running.
+    """
     parser = argparse.ArgumentParser(
         description='Knowledge graph for processing directories.')
-    parser.add_argument(
-        '--repo_dir',
-        type=str,
-        default='repodir',
-        help='Root directory where the docs are located.')
-    parser.add_argument(
-        '--config_path',
-        default='config-kg.ini',
-        help='Configuration path. Default value is config.ini')
+    parser.add_argument('--repo_dir',
+                        type=str,
+                        default='repodir',
+                        help='Root directory where the docs are located.')
+    parser.add_argument('--config_path',
+                        default='config-kg.ini',
+                        help='Configuration path. Default value is config.ini')
     parser.add_argument(
         '--standalone',
         action='store_true',
         default=True,
-        help='Building knowledge graph needs LLM for NER. This option would auto start LLM service, default value is True')
+        help=
+        'Building knowledge graph needs LLM for NER. This option would auto start LLM service, default value is True'
+    )
     parser.add_argument(
         '--override',
         action='store_true',
         default=False,
         help='Remove old data and rebuild knowledge graph from scratch.')
-    parser.add_argument(
-        '--build',
-        action='store_true',
-        default=False,
-        help='Build knowledge graph from repodir.')
+    parser.add_argument('--build',
+                        action='store_true',
+                        default=False,
+                        help='Build knowledge graph from repodir.')
     parser.add_argument(
         '--dump-networkx',
         action='store_true',
@@ -410,51 +453,54 @@ def parse_args():
         action='store_true',
         default=False,
         help='Load jsonl data and dump to neo4j for viewing knowledge graph.')
-    parser.add_argument(
-        '--neo4j-uri',
-        type=str,
-        default='bolt://10.1.52.85:7687',
-        help='neo4j URI, see https://neo4j.com/')
-    parser.add_argument(
-        '--neo4j-user',
-        type=str,
-        default='neo4j',
-        help='neo4j username')
-    parser.add_argument(
-        '--neo4j-passwd',
-        type=str,
-        default='neo4j',
-        help='neo4j password')
-    parser.add_argument(
-        '--query',
-        type=str,
-        default=None,
-        help='Information Retrieval based on knowledge graph.')
-    parser.add_argument(
-        '--retry',
-        type=int,
-        default=1,
-        help='Retry count for LLM NER.')
+    parser.add_argument('--neo4j-uri',
+                        type=str,
+                        default='bolt://10.1.52.85:7687',
+                        help='neo4j URI, see https://neo4j.com/')
+    parser.add_argument('--neo4j-user',
+                        type=str,
+                        default='neo4j',
+                        help='neo4j username')
+    parser.add_argument('--neo4j-passwd',
+                        type=str,
+                        default='neo4j',
+                        help='neo4j password')
+    parser.add_argument('--query',
+                        type=str,
+                        default=None,
+                        help='Information Retrieval based on knowledge graph.')
+    parser.add_argument('--retry',
+                        type=int,
+                        default=1,
+                        help='Retry count for LLM NER.')
     args = parser.parse_args()
     return args
-    
+
+
 if __name__ == '__main__':
     args = parse_args()
     if args.standalone:
         start_llm_server(args.config_path)
-    kg = KnowledgeGraph(args.config_path, override=args.override, retry=args.retry)
+    kg = KnowledgeGraph(args.config_path,
+                        override=args.override,
+                        retry=args.retry)
 
     if args.build:
         kg.build(repodir=args.repo_dir)
         kg.dump_networkx()
 
     if args.dump_neo4j:
-        kg.dump_neo4j(uri=args.neo4j_uri, user=args.neo4j_user, passwd=args.neo4j_passwd)
+        kg.dump_neo4j(uri=args.neo4j_uri,
+                      user=args.neo4j_user,
+                      passwd=args.neo4j_passwd)
 
     if args.dump_networkx:
         kg.dump_networkx()
 
     if args.query:
         result = kg.retrieve(query=args.query)[0]
-        reply_text = build_reply_text(code=0, query=args.query, reply=result['path'], refs=result['chunks'])
+        reply_text = build_reply_text(code=0,
+                                      query=args.query,
+                                      reply=result['path'],
+                                      refs=result['chunks'])
         logger.info('\n' + reply_text)

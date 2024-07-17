@@ -49,6 +49,7 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
 - \[2024/07\] [Hybrid knowledge graph and dense retrieval boost 1.7% F1 score](./docs/knowledge_graph_en.md) 🎯
+
 - \[2024/07\] `config.ini` support [LLM Reranker](./huixiangdou/service/llm_reranker.py)
 
 - \[2024/06\] [Evaluation of Chunk Size, Splitter and Model](./evaluation)🎯
@@ -90,7 +91,7 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
       </td>
       <td>
         <b>Retrieve Method</b>
-      </td>  
+      </td>
       <td>
         <b>IM Application</b>
       </td>
@@ -303,7 +304,6 @@ Please read following topics
 - [Coreference resolution fine-tune](./sft)
 - [Using the commercial WeChat integration, add image analysis, public account parsing, and reference resolution](./docs/add_wechat_commercial_zh.md)
 - [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_zh.md)
-
 
 # 🛠️ FAQ
 

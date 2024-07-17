@@ -10,7 +10,7 @@ import requests
 from aiohttp import web
 from loguru import logger
 
-from .service import ErrorCode, Worker, start_llm_server, build_reply_text
+from .service import ErrorCode, Worker, build_reply_text, start_llm_server
 
 
 def parse_args():
@@ -56,6 +56,7 @@ def check_env(args):
         logger.warning(
             f'args.work_dir dir not exist, auto create {args.work_dir}.')
         os.makedirs(args.work_dir)
+
 
 def show(assistant, fe_config: dict):
     queries = ['请问如何安装 mmpose ?', '请问明天天气如何？']

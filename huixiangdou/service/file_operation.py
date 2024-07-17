@@ -1,14 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import hashlib
 import os
+import shutil
 
 import fitz
 import pandas as pd
+import requests
 import textract
 from bs4 import BeautifulSoup
 from loguru import logger
-import requests
-import shutil
+
 
 class FileName:
     """Record file original name, state and copied filepath with text
@@ -49,11 +50,14 @@ class FileOperation:
                                                       ] + self.html_suffix
 
     def save_image(self, uri: str, outdir: str):
-        """Save image URI to local dir. Return None if failed."""
+        """Save image URI to local dir.
+
+        Return None if failed.
+        """
         images_dir = os.path.join(outdir, 'images')
         if not os.path.exists(images_dir):
             os.makedirs(images_dir)
-        
+
         md5 = hashlib.md5()
         md5.update(uri.encode('utf8'))
         uuid = md5.hexdigest()[0:6]
@@ -76,7 +80,7 @@ class FileOperation:
         return uuid, image_path
 
     def get_type(self, filepath: str):
-        """Get filetype depends on URI suffix"""
+        """Get filetype depends on URI suffix."""
         filepath = filepath.lower()
         if filepath.endswith(self.pdf_suffix):
             return 'pdf'

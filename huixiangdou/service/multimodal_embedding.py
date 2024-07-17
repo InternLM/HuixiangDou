@@ -1,8 +1,10 @@
-# 
-from typing import List, Any
+# Copyright (c) OpenMMLab. All rights reserved.
+#
+from typing import Any, List
+
 
 class MultiModalEmbedding:
-    """TODO, Wrap MultiModal model as langchain.embedding API"""
+    """TODO, Wrap MultiModal model as langchain.embedding API."""
     client: Any
 
     def __init__(self):
@@ -20,7 +22,8 @@ class MultiModalEmbedding:
         pass
 
     def embed_query(self, text: str) -> List[float]:
-        """Compute query embeddings using a HuggingFace transformer model. Compatible with langchain API.
+        """Compute query embeddings using a HuggingFace transformer model.
+        Compatible with langchain API.
 
         Args:
             text: The text to embed.
@@ -50,4 +53,4 @@ class MultiModalEmbedding:
         Returns:
             Embeddings for the image.
         """
-        return self.embed_documents([text])[0]
+        return self.embed_documents([path])[0]

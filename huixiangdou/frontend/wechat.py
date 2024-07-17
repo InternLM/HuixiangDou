@@ -105,7 +105,7 @@ def is_revert_command(wx_msg):
     if 'content' not in data:
         return False
     content = data['content']
-    if content != None and len(content) > 0:
+    if content is not None and len(content) > 0:
         content = content.encode('UTF-8', 'ignore').decode('UTF-8')
     messageType = wx_msg['messageType']
 
@@ -770,7 +770,7 @@ class WkteamManager:
                     else:
                         user.update_history(query=query, reply=resp, refs=refs)
 
-                    send = False
+                    # send = False
                     if code == ErrorCode.SUCCESS:
                         # save sent and send reply to WeChat group
                         formatted_reply = ''
