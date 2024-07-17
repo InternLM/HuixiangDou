@@ -61,3 +61,5 @@ Test it.
 ```bash
 python3 -m huixiangdou.main --standalone
 ```
+
+For precision report, see [evaluation](../evaluation/README.md).
