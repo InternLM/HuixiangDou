@@ -44,6 +44,8 @@ If this helps you, please give it a star ⭐
 
 # 🔆 News
 
+🔥 Join the [InternLM Summer Camp3](https://www.wjx.cn/vm/PvefmG2.aspx?sojumpparm=github) now!
+
 The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can build your own knowledge assistant without any coding, using WeChat and Feishu groups.
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
