@@ -81,7 +81,7 @@ splitter 选择依据
 
 |      方案      | F1 score |                                                                             说明                                                                              |
 | :------------: | :------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| bce+knowlegegraph | 77.68 | 知识图谱权重占比 10% |
+| bce+knowlegegraph | 77.57 | 知识图谱权重占比 20% |
 |      bce      |  75.88   | 使用 [bce-embedding-base_v1](https://github.com/netease-youdao/BCEmbedding) 配合特定 splitter 测试。注意不合适的 splitter 和 distance_strategy 会严重影响精度 |
 | bge-v1.5-large |  72.23   |                                           使用 [bge-large-zh-v1.5](https://github.com/FlagOpen/FlagEmbedding) 测试                                            |
 |     bge-m3     |  70.62   |           使用 [m3](https://github.com/FlagOpen/FlagEmbedding) dense retrieval。注意 m3 最大输入 token 长度 8192，测试数据无法完整发挥模型编码能力            |
