@@ -10,7 +10,7 @@ import requests
 from aiohttp import web
 from loguru import logger
 
-from .service import ErrorCode, Worker, start_llm_server
+from .service import ErrorCode, Worker, build_reply_text, start_llm_server
 
 
 def parse_args():
@@ -56,15 +56,6 @@ def check_env(args):
         logger.warning(
             f'args.work_dir dir not exist, auto create {args.work_dir}.')
         os.makedirs(args.work_dir)
-
-
-def build_reply_text(code, query: str, reply: str, refs: list):
-    from texttable import Texttable
-    table = Texttable()
-    table.set_cols_valign(['t', 't', 't', 't'])
-    table.header(['Query', 'State', 'Part of Reply', 'References'])
-    table.add_row([query, str(code), reply[0:20] + '..', ','.join(refs)])
-    return table.draw()
 
 
 def show(assistant, fe_config: dict):

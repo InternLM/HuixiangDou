@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import json
 import os
+import pdb
 from enum import Enum
 from pathlib import Path
 from types import SimpleNamespace
@@ -9,6 +10,7 @@ import redis
 import requests
 from loguru import logger
 from openai import OpenAI
+from texttable import Texttable
 
 from .config import redis_host, redis_passwd, redis_port
 
@@ -284,6 +286,49 @@ def histogram(values: list):
         log_str += f'{start}-{end}  {range_percentages[i]:.2f}%'
         log_str += '\n'
     return log_str
+
+
+def extract_json_from_str(raw: str):
+    raw = raw.strip()
+    raw = raw.replace('”', '"')
+    raw = raw.replace('“', '"')
+    raw = raw.replace('"""', '"')
+    raw = raw.replace('""', '"')
+    raw = raw.replace('```json\n', '')
+    raw = raw.replace('```', '')
+    raw = raw.replace('，', ',')
+
+    json_list = []
+    try:
+        start = raw.find('[')
+        end = raw.rfind(']')
+        json_str = raw[start:end + 1]
+        json_obj = json.loads(json_str)
+        if type(json_obj) is dict:
+            for k in json_obj.keys():
+                json_list = json_obj[k]
+                break
+        else:
+            json_list = json_obj
+    except Exception as e:
+        logger.error(e)
+        logger.error(raw)
+
+    ret_list = []
+    for item in json_list:
+        if 'events' in item:
+            ret_list += item['events']
+        else:
+            ret_list.append(item)
+    return ret_list
+
+
+def build_reply_text(code, query: str, reply: str, refs: list):
+    table = Texttable()
+    table.set_cols_valign(['t', 't', 't', 't'])
+    table.header(['Query', 'State', 'Part of Reply', 'References'])
+    table.add_row([query, str(code), reply[0:20] + '..', ','.join(refs)])
+    return table.draw()
 
 
 # if __name__ == '__main__':

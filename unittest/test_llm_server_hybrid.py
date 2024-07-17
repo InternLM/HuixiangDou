@@ -152,7 +152,7 @@ def test_puyu_pass():
     with open(remote_only_config, encoding='utf8') as f:
         llm_config = pytoml.load(f)['llm']
 
-    secrets = load_secret()
+    # secrets = load_secret()
     llm_config['server']['remote_type'] = 'puyu'
     server = HybridLLMServer(llm_config=llm_config)
 

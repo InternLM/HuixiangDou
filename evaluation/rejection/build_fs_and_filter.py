@@ -7,13 +7,34 @@ import pdb
 from multiprocessing import Pool, Process
 
 from loguru import logger
-from sklearn.metrics import (f1_score, precision_score,
-                             recall_score)
+from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 
-from huixiangdou.service import (CacheRetriever, FeatureStore, FileOperation)
+from huixiangdou.service import CacheRetriever, FeatureStore, FileOperation
 
 save_hardcase = False
+
+
+class KnowledgeGraphScore():
+
+    def __init__(self, level: int):
+        outpath = os.path.join(os.path.dirname(__file__), 'out.jsonl')
+        self.scores = dict()
+        with open(outpath) as f:
+            for line in f:
+                json_obj = json.loads(line)
+                query = json_obj['query']
+
+                score = 0.0
+                result = json_obj['result']
+                if result is not None and len(result) > level:
+                    score = min(100, len(result) - level) / 100
+                    print('query cnt score {} {} {}'.format(
+                        query, len(result), score))
+                self.scores[query] = score
+
+    def evaluate(self, query: str):
+        return self.scores[query]
 
 
 class NoDaemonProcess(multiprocessing.Process):
@@ -58,6 +79,10 @@ def parse_args():
         default='config.ini',
         help='Feature store configuration path. Default value is config.ini')
     parser.add_argument('--chunk-size', default=768, help='Text chunksize')
+    parser.add_argument(
+        '--hybrid',
+        default=False,
+        help='Combine knowledge graph evaluation and dense feature score')
     args = parser.parse_args()
     return args
 
@@ -77,6 +102,7 @@ def load_dataset():
 
 
 def calculate(chunk_size: int):
+
     config_path = 'config.ini'
     repo_dir = 'repodir'
     work_dir_base = 'workdir'
@@ -99,22 +125,14 @@ def calculate(chunk_size: int):
     # walk all files in repo dir
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=repo_dir)
-    fs_init.preprocess(files=files, work_dir=work_dir)
-    fs_init.ingress_response(files=files, work_dir=work_dir)
-    fs_init.ingress_reject(files=files, work_dir=work_dir)
-    del fs_init
+    # fs_init.preprocess(files=files, work_dir=work_dir)
+    # fs_init.build_dense_response(files=files, work_dir=work_dir)
+    # fs_init.build_dense_reject(files=files, work_dir=work_dir)
+    # del fs_init
 
     retriever = CacheRetriever(config_path=config_path).get(
         fs_id=str(chunk_size), work_dir=work_dir)
-    start = 0.1
-    stop = 0.7
-    step = 0.1
-    throttles = [
-        round(start + step * i, 4)
-        for i in range(int((stop - start) / step) + 1)
-    ]
-
-    start = 0.3
+    start = 0.4
     stop = 0.5
     step = 0.01
     throttles = [
@@ -122,55 +140,78 @@ def calculate(chunk_size: int):
         for i in range(int((stop - start) / step) + 1)
     ]
 
+    # start = 0.3
+    # stop = 0.5
+    # step = 0.01
+    # throttles = [
+    #     round(start + step * i, 4)
+    #     for i in range(int((stop - start) / step) + 1)
+    # ]
+
     best_chunk_f1 = 0.0
+    best_level = 5
 
-    for throttle in tqdm(throttles):
-        retriever.reject_throttle = throttle
+    for level in range(0, 50, 5):
+        kg_score = KnowledgeGraphScore(level=level)
+        for i in range(1, 4, 1):
+            scale = i * 0.1
+            for throttle in tqdm(throttles):
+                retriever.reject_throttle = throttle
 
-        dts = []
-        gts = []
-        for text_label in text_labels:
-            question = text_label[0]
-            dt, _ = retriever.is_relative(question=question)
-            dts.append(dt)
-            gts.append(text_label[1])
+                dts = []
+                gts = []
+                for text_label in text_labels:
+                    question = text_label[0]
 
-            if save_hardcase and dt != text_label[1]:
-                docs = retriever.compression_retriever.get_relevant_documents(
-                    question)
-                if len(docs) > 0:
-                    doc = docs[0]
-                    question = question.replace('\n', ' ')
-                    content = '{}  {}'.format(question, doc)
-                    with open('hardcase{}.txt'.format(throttle), 'a') as f:
-                        f.write(content)
-                        f.write('\n')
+                    retriever.reject_throttle = max(
+                        0.0,
+                        throttle - scale * kg_score.evaluate(query=question))
+                    dt, _ = retriever.is_relative(question=question,
+                                                  disable_graph=True)
+                    dts.append(dt)
+                    gts.append(text_label[1])
 
-        f1 = f1_score(gts, dts)
-        f1 = round(f1, 4)
-        precision = precision_score(gts, dts)
-        precision = round(precision, 4)
-        recall = recall_score(gts, dts)
-        recall = round(recall, 4)
+                    if save_hardcase and dt != text_label[1]:
+                        docs = retriever.compression_retriever.get_relevant_documents(
+                            question)
+                        if len(docs) > 0:
+                            doc = docs[0]
+                            question = question.replace('\n', ' ')
+                            content = '{}  {}'.format(question, doc)
+                            with open('hardcase{}.txt'.format(throttle),
+                                      'a') as f:
+                                f.write(content)
+                                f.write('\n')
 
-        logger.info((throttle, precision, recall, f1))
+                f1 = f1_score(gts, dts)
+                f1 = round(f1, 4)
+                precision = precision_score(gts, dts)
+                precision = round(precision, 4)
+                recall = recall_score(gts, dts)
+                recall = round(recall, 4)
 
-        data = {
-            'chunk_size': chunk_size,
-            'throttle': throttle,
-            'precision': precision,
-            'recall': recall,
-            'f1': f1
-        }
-        json_str = json.dumps(data)
-        with open(
-                osp.join(osp.dirname(__file__),
-                         'chunk_size{}.jsonl'.format(chunk_size)), 'a') as f:
-            f.write(json_str)
-            f.write('\n')
+                logger.info((throttle, precision, recall, f1))
 
-        if f1 > best_chunk_f1:
-            best_chunk_f1 = f1
+                data = {
+                    'chunk_size': chunk_size,
+                    'throttle': throttle,
+                    'precision': precision,
+                    'recall': recall,
+                    'f1': f1
+                }
+                json_str = json.dumps(data)
+                with open(
+                        osp.join(
+                            osp.dirname(__file__),
+                            'level{}_scale{}_chunk{}.jsonl'.format(
+                                level, scale, chunk_size)), 'a') as f:
+                    f.write(json_str)
+                    f.write('\n')
+
+                if f1 > best_chunk_f1:
+                    best_chunk_f1 = f1
+                    best_level = level
+    print(best_chunk_f1, best_level)
     return best_chunk_f1
 
 

@@ -23,13 +23,16 @@
   <a href="https://arxiv.org/abs/2401.08772" target="_blank">
     <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-2401.08772%20-darkred?logo=arxiv&logoColor=white" />
   </a>
+  <a href="https://arxiv.org/abs/2405.02817" target="_blank">
+    <img alt="Arxiv" src="https://img.shields.io/badge/arxiv-2405.02817%20-darkred?logo=arxiv&logoColor=white" />
+  </a>
 </div>
 
 </div>
 
 茴香豆是一个基于 LLM 的**群聊**知识助手，优势：
 
-1. 设计预处理、拒答、响应三阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)和[业务数据精度测试](./evaluation)
+1. 设计预处理、拒答、响应三阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/knowledge_graph_zh.md)和[业务数据精度测试](./evaluation)
 2. 成本低至 1.5G 显存，无需训练适用各行业
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
@@ -43,21 +46,21 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
+- \[2024/07\] [混合知识图谱和稠密检索](./docs/knowledge_graph_zh.md)涨点 🎯
 - \[2024/07\] `config.ini` 支持 [LLM Reranker](./huixiangdou/service/llm_reranker.py)
-- \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation)
+- \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
 - \[2024/05\] [wkteam 微信接入](./docs/add_wechat_commercial_zh.md)，整合图片&公众号解析、集成指代消歧
-- \[2024/05\] [指代消歧微调](./sft/)
+- \[2024/05\] [SFT 是否需要指代消歧，F1 提升 29%](./sft/) 🎯
   <table>
       <tr>
           <td>🤗</td>
           <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>
           <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>
           <td><a href="https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/tree/main">alpaca 数据</a></td>
-          <td><a href="https://arxiv.org/abs/2405.02817">论文</a></td>
+          <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
       </tr>
   </table>
 - \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/rag_annotate_sft_data_zh.md)
-- \[2024/04\] 更新 [技术报告](./resource/HuixiangDou.pdf)
 - \[2024/04\] 发布 [web 前后端服务源码](./web) 👍
 - \[2024/03\] 新的[个人微信集成方法](./docs/add_wechat_accessibility_zh.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
 - \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
@@ -72,6 +75,9 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
       </td>
       <td>
         <b>文件格式</b>
+      </td>
+      <td>
+        <b>检索方法</b>
       </td>
       <td>
         <b>即时通讯软件</b>
@@ -105,9 +111,16 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 <td>
 
+- [知识图谱](./huixiangdou/service/kg.py)
+- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding)
+- [bge/bge-m3](https://github.com/FlagOpen/FlagEmbedding)
+
+</td>
+
+<td>
+
 - WeChat
 - Lark
-- ..
 
 </td>
 
@@ -178,19 +191,17 @@ python3 -m huixiangdou.main --standalone
 复制下面所有命令（包含 '#' 符号）执行。
 
 ```shell
-# 下载知识库文档
+# 下载知识库，我们仅以 mmpose 的文档为例。repodir下可以放任何自己的文档
 cd HuixiangDou
 mkdir repodir
 git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
 
 # 把 repodir 的特征保存到 workdir，把正反例阈值更新进 `config.ini`
 mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-运行结束后再次测试 main
-，茴香豆能够回答 mmpose 问题，同时拒答天气问题。
+运行结束后再次测试 main，茴香豆能够回答 mmpose 问题，同时拒答天气问题。
 
 ```bash
 python3 -m huixiangdou.main --standalone
@@ -292,6 +303,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
 - [群聊场景指代消歧训练](./sft)
 - [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
+- [混合知识图谱和稠密检索提升精度](./docs/knowledge_graph_zh.md)
 
 # 🛠️ FAQ
 

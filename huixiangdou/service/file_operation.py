@@ -1,9 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import hashlib
 import os
+import shutil
 
 import fitz
 import pandas as pd
+import requests
 import textract
 from bs4 import BeautifulSoup
 from loguru import logger
@@ -40,13 +42,45 @@ class FileOperation:
         self.ppt_suffix = '.pptx'
         self.html_suffix = ['.html', '.htm', '.shtml', '.xhtml']
         self.word_suffix = ['.docx', '.doc']
+        # self.code_suffix = ['.py', '.cpp', '.h']
         self.normal_suffix = [self.md_suffix
                               ] + self.text_suffix + self.excel_suffix + [
                                   self.pdf_suffix
                               ] + self.word_suffix + [self.ppt_suffix
                                                       ] + self.html_suffix
 
+    def save_image(self, uri: str, outdir: str):
+        """Save image URI to local dir.
+
+        Return None if failed.
+        """
+        images_dir = os.path.join(outdir, 'images')
+        if not os.path.exists(images_dir):
+            os.makedirs(images_dir)
+
+        md5 = hashlib.md5()
+        md5.update(uri.encode('utf8'))
+        uuid = md5.hexdigest()[0:6]
+        filename = uuid + uri[uri.rfind('.'):]
+        image_path = os.path.join(images_dir, filename)
+
+        logger.info('download {}'.format(uri))
+        try:
+            if uri.startswith('http'):
+                resp = requests.get(uri, stream=True)
+                if resp.status_code == 200:
+                    with open(image_path, 'wb') as image_file:
+                        for chunk in resp.iter_content(1024):
+                            image_file.write(chunk)
+            else:
+                shutil.copy(uri, image_path)
+        except Exception as e:
+            logger.debug(e)
+            return None, None
+        return uuid, image_path
+
     def get_type(self, filepath: str):
+        """Get filetype depends on URI suffix."""
         filepath = filepath.lower()
         if filepath.endswith(self.pdf_suffix):
             return 'pdf'
@@ -76,6 +110,10 @@ class FileOperation:
         for suffix in self.html_suffix:
             if filepath.endswith(suffix):
                 return 'html'
+
+        # for suffix in self.code_suffix:
+        #     if filepath.endswith(suffix):
+        #         return 'code'
         return None
 
     def md5(self, filepath: str):

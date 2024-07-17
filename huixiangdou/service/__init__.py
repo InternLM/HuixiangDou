@@ -6,8 +6,10 @@ from .feature_store import FeatureStore  # noqa E401
 from .file_operation import FileName, FileOperation  # noqa E401
 from .helper import Queue  # noqa E401
 from .helper import TaskCode  # noqa E401
-from .helper import (ErrorCode, QueryTracker, check_str_useful, histogram,
-                     kimi_ocr, multimodal, parse_json_str)
+from .helper import (ErrorCode, QueryTracker, build_reply_text,
+                     check_str_useful, histogram, kimi_ocr, multimodal,
+                     parse_json_str)
+from .kg import KnowledgeGraph  # noqa E401
 from .llm_client import ChatClient  # noqa E401
 from .llm_reranker import LLMCompressionRetriever, LLMReranker  # noqa E401
 from .llm_server_hybrid import InferenceWrapper  # noqa E401
