@@ -39,11 +39,6 @@ class Retriever:
 
         # load prebuilt knowledge graph gpickle
         self.kg = KnowledgeGraph(config_path=config_path)
-        self.graph = self.kg.load_networkx()
-        if self.graph is None:
-            logger.warning('Kownledge graph retrieval disable.')
-        else:
-            logger.warning('Kownledge graph retrieval enable.')
         
         # dense retrieval, load refusal-to-answer and response feature database 
         rejection_path = os.path.join(work_dir, 'db_reject')
@@ -97,9 +92,9 @@ class Retriever:
             # for retrieve result
             # if no chunk passed the throttle, give the max
             graph_delta = 0.0
-            if self.graph is not None and not disable_graph:
-                candidates = self.kg.retrieve(G=self.graph, query=question)
-                graph_delta = 0.1 * max(100, len(candidates)) / 100
+            if not disable_graph and self.kg.is_available():
+                candidates = self.kg.retrieve(query=question)
+                graph_delta = 0.2 * min(100, len(candidates)) / 100
 
             docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
                 question, k=k)

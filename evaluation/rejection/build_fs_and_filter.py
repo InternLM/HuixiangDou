@@ -27,9 +27,10 @@ class KnowledgeGraphScore():
                 score = 0.0
                 result = json_obj['result']
                 if result is not None and len(result) > level:
-                    score = max(100, len(result) - level) / 100
+                    score = min(100, len(result) - level) / 100
+                    print('query cnt score {} {} {}'.format(query, len(result), score))
                 self.scores[query] = score
-    
+        
     def evaluate(self, query:str):
         return self.scores[query]
 
@@ -192,7 +193,7 @@ def calculate(chunk_size: int):
                 json_str = json.dumps(data)
                 with open(
                         osp.join(osp.dirname(__file__),
-                                'level{}_chunk_size{}.jsonl'.format(level, chunk_size)), 'a') as f:
+                                'level{}_scale{}_chunk{}.jsonl'.format(level, scale, chunk_size)), 'a') as f:
                     f.write(json_str)
                     f.write('\n')
 

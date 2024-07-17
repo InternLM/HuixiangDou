@@ -1,6 +1,6 @@
 # 混合知识图谱和稠密检索
 
-通过混合知识图谱和稠密检索，拒答 F1 提升 2 个点。方案解释见 [知乎]()。它的本质是**给高频词加权**。
+通过混合知识图谱和稠密检索，拒答 F1 提升约 2 个点，它的本质是**给高频词加权**。介绍已同步到[飞书](https://aicarrier.feishu.cn/docx/F51pduYyMof8syxKe5RchiU1nIN)。
 
 本方案对老版本完美兼容，以下是完整操作步骤。
 
@@ -22,9 +22,18 @@ rpm = 1000
 完成后， `workdir/kg` 下有 jsonl 和 pickle 文件，可简单测试 query 效果
 
 ```bash
-# 大约 40min
+# 大约 2 小时
 python3 -m huixiangdou.service.kg --build
 python3 -m huixiangdou.service.kg --query 如何安装mmpose?
+..
++-----------------+-------+------------------------+---------------------------+ 
+|      Query      | State |     Part of Reply      |        References         | 
++=================+=======+========================+===========================+ 
+| 如何安装mmpose?  | 0     | repodir/mmpose/READM.. |                           |                                                                                 
+|                 |       |                        | <div align="center">      | 
+|                 |       |                        |   <img                    | 
+|                 |       |                        | src="resources/mmpose-    | 
+..
 ```
 
 ## 二、可视化
@@ -35,9 +44,6 @@ python3 -m huixiangdou.service.kg --dump-neo4j --neo4j-uri ${URI} --neo4j-user $
 ```
 
 更多用法可以 `--help`
-```bash
-python3 -m huixiangdou.service.kg --help
-```
 
 ## 三、建立稠密检索特征库
 

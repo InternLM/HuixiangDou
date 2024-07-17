@@ -1,7 +1,7 @@
 from typing import List, Union
 from loguru import logger
 from .llm_client import ChatClient
-from .helper import extract_json_from_str
+from .helper import extract_json_from_str, build_reply_text
 from .file_operation import FileOperation
 from .llm_server_hybrid import start_llm_server
 from uuid import uuid4
@@ -78,6 +78,7 @@ class KnowledgeGraph:
         self.nodes_path = os.path.join(self.kg_work_dir, 'kg_nodes.jsonl')
         self.relations_path = os.path.join(self.kg_work_dir, 'kg_relations.jsonl')
         self.gpickle_path = os.path.join(self.kg_work_dir, 'kg.gpickle')
+        self.graph = None
         
     def build(self, repodir: str):
         logger.info('multi-modal knowledge graph retrieval is experimental, only support markdown format.')
@@ -298,20 +299,27 @@ class KnowledgeGraph:
         with open(self.gpickle_path, 'wb') as f:
             pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
 
-    def load_networkx(self):
+    def is_available(self):
+        """Check knowledge graph exist or not."""
+        if os.path.exists(self.gpickle_path):
+            return True
+        return False
+    
+    def load(self):
+        """Load knowledge graph"""
         if not os.path.exists(self.gpickle_path):
             logger.error('gpickle {} not exist.'.format(self.gpickle_path))
             return None
 
         with open(self.gpickle_path, 'rb') as f:
-            G = pickle.load(f)
+            self.graph = pickle.load(f)
 
-        logger.debug('number of nodes {}, number of edges {}'.format(G.number_of_nodes(), G.number_of_edges()))
-        return G
+        logger.debug('number of nodes {}, number of edges {}'.format(self.graph.number_of_nodes(), self.graph.number_of_edges()))
 
-    def query_file_chunk_map(self, G, attr:str):
+    def query_file_chunk_map(self, attr:str):
         ret = dict()
 
+        G = self.graph
         # chunks = [G.nodes[neighbor] for neighbor in G.neighbors(attr)]
         for chunk in G.neighbors(attr):
             files = [nbr for nbr in G.neighbors(chunk) if 'page' in G.edges[chunk, nbr].get('desc')]
@@ -325,23 +333,24 @@ class KnowledgeGraph:
 
         return ret
 
-    def retrieve(self, G, query: str):
+    def retrieve(self, query: str):
+        if self.graph is None:
+            self.load()
         llm_raw_text = self.llm.generate_response(prompt=self.prompt_template + query)
 
         items = extract_json_from_str(raw=llm_raw_text)
         if len(items) < 1:
-            logger.warning('parse llm_raw_text failed, please check. {}'.format(llm_raw_text))
-            return
+            return []
 
         file_chunks = dict()
         for item in items:
             # fetch nodes and add relations
             try:
                 entity = item['entity']
-                if not G.has_node(entity):
+                if not self.graph.has_node(entity):
                     continue
             
-                file_chunks_on_entity = self.query_file_chunk_map(G=G, attr=entity)
+                file_chunks_on_entity = self.query_file_chunk_map(attr=entity)
                 for k,v in file_chunks_on_entity.items():
                     if k in file_chunks:
                         file_chunks[k] += v
@@ -446,8 +455,6 @@ if __name__ == '__main__':
         kg.dump_networkx()
 
     if args.query:
-        G = kg.load_networkx()
-        if G:
-            logger.info(kg.retrieve(G=G, query=args.query)[0])
-        else:
-            logger.error('Knowledge graph not build, quit.')
+        result = kg.retrieve(query=args.query)[0]
+        reply_text = build_reply_text(code=0, query=args.query, reply=result['path'], refs=result['chunks'])
+        logger.info('\n' + reply_text)

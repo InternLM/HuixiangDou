@@ -9,7 +9,7 @@ import redis
 import requests
 from loguru import logger
 from openai import OpenAI
-
+from texttable import Texttable
 from .config import redis_host, redis_passwd, redis_port
 
 
@@ -318,6 +318,14 @@ def extract_json_from_str(raw: str):
         else:
             ret_list.append(item)
     return ret_list
+
+
+def build_reply_text(code, query: str, reply: str, refs: list):
+    table = Texttable()
+    table.set_cols_valign(['t', 't', 't', 't'])
+    table.header(['Query', 'State', 'Part of Reply', 'References'])
+    table.add_row([query, str(code), reply[0:20] + '..', ','.join(refs)])
+    return table.draw()
 
 # if __name__ == '__main__':
 #     print(kimi_ocr('/root/hxddev/wkteam/images/e36e48.jpg', ''))

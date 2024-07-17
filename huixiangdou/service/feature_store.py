@@ -24,6 +24,7 @@ from .file_operation import FileName, FileOperation
 from .helper import histogram
 from .retriever import CacheRetriever, Retriever
 from .kg import KnowledgeGraph
+from .llm_server_hybrid import start_llm_server
 
 def read_and_save(file: FileName):
     if os.path.exists(file.copypath):
@@ -611,5 +612,7 @@ if __name__ == '__main__':
 
     # test
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
+    if retriever.kg.is_available():
+        start_llm_server(args.config_path)
     test_reject(retriever, args.sample)
     test_query(retriever, args.sample)

@@ -1,6 +1,6 @@
 # Hybrid Knowledge Graph and Dense Retrieval
 
-By integrating a hybrid knowledge graph with dense retrieval, the F1 score is improved by 2%. For a detailed explanation of the solution, see [Zhihu](). The essence of this approach is to **weight high-frequency words**.
+By integrating a hybrid knowledge graph with dense retrieval, the F1 score in refusal-to-answer task is improved by 2%. For a detailed explanation of the solution, see [lark documentation](https://aicarrier.feishu.cn/docx/F51pduYyMof8syxKe5RchiU1nIN). The essence of this approach is to **weight high-frequency words**.
 
 This approach is perfectly compatible with the older version. Below are the steps.
 
@@ -22,9 +22,18 @@ Assuming the knowledge base is still in the `repodir` directory, first establish
 After completion, there will be `jsonl` and `pickle` files under `workdir/kg`, and you can test the query.
 
 ```bash
-# About 40 mins
+# About 2 hours
 python3 -m huixiangdou.service.kg --build
 python3 -m huixiangdou.service.kg --query "How to install mmpose?"
+..
++-----------------+-------+------------------------+---------------------------+ 
+|      Query      | State |     Part of Reply      |        References         | 
++=================+=======+========================+===========================+ 
+| 如何安装mmpose?  | 0     | repodir/mmpose/READM.. |                           |                                                                                 
+|                 |       |                        | <div align="center">      | 
+|                 |       |                        |   <img                    | 
+|                 |       |                        | src="resources/mmpose-    | 
+..
 ```
 
 ## 2. Visualization
