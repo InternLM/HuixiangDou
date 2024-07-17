@@ -44,7 +44,7 @@ If this helps you, please give it a star ⭐
 
 # 🔆 News
 
-🔥 Join the [InternLM Summer Camp3](https://www.wjx.cn/vm/PvefmG2.aspx?sojumpparm=github) now!
+🔥 Join the [InternLM Summer Camp3](https://www.wjx.cn/vm/PvefmG2.aspx?sojumpparm=github) now !
 
 The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can build your own knowledge assistant without any coding, using WeChat and Feishu groups.
 
@@ -54,7 +54,7 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 
 - \[2024/07\] `config.ini` support [LLM Reranker](./huixiangdou/service/llm_reranker.py)
 
-- \[2024/06\] [Evaluation of Chunk Size, Splitter and Model](./evaluation)🎯
+- \[2024/06\] [Evaluation of Chunk Size, Splitter and Model](./evaluation) 🎯
 
 - \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), support image, URL and reference resolution in group chat
 
