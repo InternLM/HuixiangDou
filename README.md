@@ -45,7 +45,7 @@ The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tp
 
 Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
 
-- \[2024/07\] Intern [Summer Camp3](https://www.wjx.cn/vm/PvefmG2.aspx?sojumpparm=github) are comming!
+- \[2024/07\] 🔥 Join the Intern [Summer Camp3](https://www.wjx.cn/vm/PvefmG2.aspx?sojumpparm=github) now!
 
 - \[2024/07\] `config.ini` support [LLM Reranker](./huixiangdou/service/llm_reranker.py)
 
