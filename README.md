@@ -72,8 +72,6 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 
 - \[2024/04\] Add [SFT data annotation and examples](./docs/rag_annotate_sft_data_zh.md)
 
-- \[2024/04\] Update [preprint](./resource/HuixiangDou.pdf)
-
 - \[2024/04\] Release [web server](./web) source code 👍
 
 - \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
