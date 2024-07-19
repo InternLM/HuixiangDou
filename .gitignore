@@ -55,3 +55,4 @@ workdir-full/
 evaluation/rejection/gt_bad.txt
 evaluation/rejection/gt_good.txt
 workdir832/
+workdir.bak/

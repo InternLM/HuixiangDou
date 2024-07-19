@@ -473,6 +473,16 @@ class Worker:
         """"Generate reply with LLM."""
         return self.llm.generate_response(prompt=query, backend='remote')
 
+    def notify_badcase(self):
+        """Receiving revert command means the current threshold is too low, use higher one."""
+        delta =  max(0, 1 - self.retriever.reject_throttle) * 0.02
+        logger.info('received badcase, use bigger reject_throttle. Current {}, delta {}'.format(self.retriever.reject_throttle, delta))
+
+        # this throttle also means quality, cannot exceed 0.5
+        self.retriever.reject_throttle = min(self.retriever.reject_throttle+delta, 0.5)
+        with open('throttle', 'w') as f:
+            f.write(str(self.retriever.reject_throttle))
+
     def work_time(self):
         """If worktime enabled, determines the current time falls within the
         scheduled working hours of the chat assistant.

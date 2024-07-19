@@ -17,7 +17,8 @@ from aiohttp import web
 from bs4 import BeautifulSoup as BS
 from loguru import logger
 from readability import Document
-
+from dataclasses import asdict, dataclass, field
+from typing import List
 
 def redis_host():
     host = os.getenv('REDIS_HOST')
@@ -252,11 +253,26 @@ class Message:
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
         return None
 
+def empty_list():
+    return []
+
+@dataclass
+class Talk:
+    query: str
+    reply: str = ''
+    refs: tuple = ()
+    now: int = time.time()
+
+def convert_talk_to_dict(talk: Talk):
+    return {'query': talk.query, 'reply': talk.reply, 'refs': talk.refs, 'now': talk.now}
+
+def convert_history_to_tuple(history: List[Talk]):
+    return [(item.query, item.reply, item.refs, item.now) for item in history]
 
 class User:
 
     def __init__(self):
-        # [(query, reply, refs)]
+        # list of class Talk
         self.history = []
         # meta
         self.last_msg_time = time.time()
@@ -268,18 +284,22 @@ class User:
 
     def __str__(self):
         obj = {
-            'history': self.history,
+            'history': [],
             'last_msg_time': self.last_msg_time,
             'last_process_time': self.last_process_time,
             '_id': self._id
         }
+        for item in self.history:
+            obj['history'].append(convert_talk_to_dict(item))
         return json.dumps(obj, indent=2, ensure_ascii=False)
 
     def feed(self, msg: Message):
         if msg.type in ['url', 'image']:
-            self.history.append((msg.query, '\n', msg.url))
+            talk = Talk(query=msg.query, refs=(msg.url))
+            self.history.append(talk)
         else:
-            self.history.append((msg.query, None, None))
+            talk = Talk(query=msg.query)
+            self.history.append(talk)
         self.last_msg_time = time.time()
         self.last_msg_type = msg.type
         self.last_msg_id = msg._id
@@ -293,18 +313,29 @@ class User:
             return
         ret = []
         merge_list = []
+        now = time.time()
         for item in self.history:
-            answer = item[1]
+            if abs(now - item.now) > 3600:
+                # 1小时前，太久的消息就不要了
+                continue
+
+            answer = item.reply
             if answer is not None and len(answer) > 0:
                 ret.append(item)
             else:
-                merge_list.append(item[0])
-        ret.append(('。'.join(merge_list), ''))
+                merge_list.append(item.query)
+        
+        concat_query = '\n'.join(merge_list)
+        concat_talk = Talk(query=concat_query)
+        ret.append(concat_talk)
         self.history = ret
 
     def update_history(self, query, reply, refs):
-        item = (query, reply, refs)
-        self.history[-1] = item
+        if type(refs) is list:
+            talk = Talk(query=query, reply=reply, refs=tuple(refs))
+        else:
+            talk = Talk(query=query, reply=reply, refs=(refs))
+        self.history[-1] = talk
         self.last_process_time = time.time()
 
 
@@ -684,6 +715,8 @@ class WkteamManager:
                 data = wx_msg['data']
                 if 'fromGroup' in data:
                     self.revert(groupId=data['fromGroup'])
+                    # “群友学习法”。命令撤回将提升阈值，提升量越来越小。
+                    worker.notify_badcase()
 
             # parse wx_msg, add it to group
             for wx_msg_str in que.get_all():
@@ -740,9 +773,9 @@ class WkteamManager:
 
                     item = user.history[-1]
 
-                    if item[1] is not None and len(item[1]) > 0:
+                    if item.reply is not None and len(item.reply) > 0:
                         logger.error('item reply not None, {}'.format(item))
-                    query = item[0]
+                    query = item.query
 
                     code = ErrorCode.QUESTION_TOO_SHORT
                     resp = ''
@@ -754,9 +787,10 @@ class WkteamManager:
 
                     if len(query) >= 8:
                         groupchats = self.fetch_groupchats(user=user)
+                        tuple_history = convert_history_to_tuple(user.history[0:-1])
                         code, resp, refs = worker.generate(
                             query=query,
-                            history=user.history[0:-1],
+                            history=tuple_history,
                             groupname=groupname,
                             groupchats=groupchats)
 
