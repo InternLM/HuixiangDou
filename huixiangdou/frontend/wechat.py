@@ -253,11 +253,14 @@ class Message:
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
         return None
 
+def empty_list():
+    return []
+    
 @dataclass
-class Talk
+class Talk:
     query: str
     reply: str = ''
-    refs: list = []
+    refs: list = field(default_factory=empty_list)
     now: int = time.time()
 
 def convert_history_to_tuple(history: List[Talk]):
