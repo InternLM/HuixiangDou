@@ -323,9 +323,9 @@ class User:
             if answer is not None and len(answer) > 0:
                 ret.append(item)
             else:
-                merge_list.append(answer)
+                merge_list.append(item.query)
         
-        concat_query = '。'.join(merge_list)
+        concat_query = '\n'.join(merge_list)
         concat_talk = Talk(query=concat_query)
         ret.append(concat_talk)
         self.history = ret
