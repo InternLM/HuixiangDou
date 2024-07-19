@@ -315,7 +315,7 @@ class User:
         merge_list = []
         now = time.time()
         for item in self.history:
-            if abs(now - item.now) > 3600:
+            if abs(now - item.now) > 7200:
                 # 1小时前，太久的消息就不要了
                 continue
 
