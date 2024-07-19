@@ -474,7 +474,7 @@ class Worker:
         return self.llm.generate_response(prompt=query, backend='remote')
 
     def notify_badcase(self):
-        """Receiving revert command means the current threshold is too slow, add it."""
+        """Receiving revert command means the current threshold is too low, use higher one."""
         delta =  max(0, 1 - self.feature_store.reject_throttle) * 0.02
         logger.info('received badcase, use bigger reject_throttle. Current {}, delta {}'.format(self.retriever.reject_throttle, delta))
 
