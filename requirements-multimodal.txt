@@ -1,0 +1,5 @@
+torchvision
+timm
+einops
+ftfy
+# donot install xformer and apex

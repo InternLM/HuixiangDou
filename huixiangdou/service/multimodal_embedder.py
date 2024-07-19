@@ -3,12 +3,14 @@
 from typing import Any, List
 
 
-class MultiModalEmbedding:
-    """TODO, Wrap MultiModal model as langchain.embedding API."""
+class MultiModalEmbedder:
+    """Wrap MultiModal model as langchain.embedding object."""
     client: Any
 
-    def __init__(self):
-        pass
+    def __init__(self, model_path: str):
+        from FlagEmbedding.visual.modeling import Visualized_BGE
+        vision_weight_path = os.path.join(model_path, 'Visualized_m3.pth')
+        self.client = Visualized_BGE(model_name_bge=model_path, model_weight=vision_weight_path)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -19,7 +21,11 @@ class MultiModalEmbedding:
         Returns:
             List of embeddings, one for each text.
         """
-        pass
+        features = []
+        for text in texts:
+            feature = self.client.encode(text=text)
+            features.append(feature.tolist())
+        return features
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
@@ -42,7 +48,11 @@ class MultiModalEmbedding:
         Returns:
             List of embeddings, one for each image.
         """
-        pass
+        features = []
+        for path in paths:
+            feature = self.client.encode(image=path)
+            features.append(feature.tolist())
+        return features
 
     def embed_query_image(self, path: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
@@ -53,4 +63,4 @@ class MultiModalEmbedding:
         Returns:
             Embeddings for the image.
         """
-        return self.embed_documents([path])[0]
+        return self.embed_images([path])[0]

@@ -14,18 +14,18 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores.utils import DistanceStrategy
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
-
+from typing import Any
 from .file_operation import FileOperation
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
 from .llm_reranker import LLMCompressionRetriever, LLMReranker
-
+from .multimodal_embedder import MultiModalEmbedder
 
 class Retriever:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
 
-    def __init__(self, config_path: str, embeddings, reranker, work_dir: str,
+    def __init__(self, config_path: str, embeddings: Any, reranker: Any, work_dir: str,
                  reject_throttle: float) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
@@ -80,8 +80,8 @@ class Retriever:
                     k=30,
                     disable_throttle=False,
                     disable_graph=False):
-        """If no search results below the threshold can be found from the
-        database, reject this query."""
+        """If no search results below the threshold can be found, reject this query.
+        """
 
         if self.rejecter is None:
             return False, []
@@ -253,14 +253,17 @@ class CacheRetriever:
 
         # load text2vec and rerank model
         logger.info('loading test2vec and rerank models')
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=embedding_model_path,
-            model_kwargs={'device': 'cuda'},
-            encode_kwargs={
-                'batch_size': 1,
-                'normalize_embeddings': True
-            })
-        self.embeddings.client = self.embeddings.client.half()
+        if self.use_multimodal(embedding_model_path):
+            self.embeddings = MultiModalEmbedder(model_path=embedding_model_path)
+        else:
+            self.embeddings = HuggingFaceEmbeddings(
+                model_name=embedding_model_path,
+                model_kwargs={'device': 'cuda'},
+                encode_kwargs={
+                    'batch_size': 1,
+                    'normalize_embeddings': True
+                })
+            self.embeddings.client = self.embeddings.client.half()
 
         if self.use_llm_reranker(reranker_model_path):
             self.reranker = LLMReranker(model_name_or_path=reranker_model_path,
@@ -277,7 +280,21 @@ class CacheRetriever:
             }
             self.reranker = BCERerank(**reranker_args)
 
+    def use_multimodal(self, model_path):
+        """Check text2vec model using multimodal or not."""
+
+        if 'bge-m3' not in config_path.lower()
+            return False
+        
+        vision_weight = os.path.join(model_path, 'Visualized_m3.pth')
+        if not os.path.exists(vision_weight):
+            logger.warning('`Visualized_m3.pth` (vision model weight) not exist')
+            return False
+        return True
+
     def use_llm_reranker(self, model_path):
+        """Check reranker model is LLM reranker or not."""
+
         config_path = os.path.join(model_path, 'config.json')
         if not os.path.exists(config_path):
             if 'bge-reranker-v2-minicpm-layerwise' in config_path.lower():
@@ -296,6 +313,8 @@ class CacheRetriever:
             fs_id: str = 'default',
             config_path='config.ini',
             work_dir='workdir'):
+        """Get database by id"""
+
         if fs_id in self.cache:
             self.cache[fs_id]['time'] = time.time()
             return self.cache[fs_id]['retriever']
@@ -330,6 +349,8 @@ class CacheRetriever:
         return retriever
 
     def pop(self, fs_id: str):
+        """Drop database by id"""
+
         if fs_id not in self.cache:
             return
         del_value = self.cache[fs_id]

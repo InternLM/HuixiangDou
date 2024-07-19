@@ -412,7 +412,7 @@ class FeatureStore:
         if not os.path.exists(preproc_dir):
             os.makedirs(preproc_dir)
 
-        pool = Pool(processes=16)
+        pool = Pool(processes=8)
         file_opr = FileOperation()
         for idx, file in enumerate(files):
             if not os.path.exists(file.origin):
