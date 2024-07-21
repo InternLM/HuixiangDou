@@ -9,7 +9,7 @@ import types
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from multiprocessing import Process
-
+import pdb
 import pytoml
 import redis
 import requests
@@ -261,7 +261,7 @@ class Talk:
     query: str
     reply: str = ''
     refs: tuple = ()
-    now: int = time.time()
+    now: float = field(default_factory=time.time)
 
 def convert_talk_to_dict(talk: Talk):
     return {'query': talk.query, 'reply': talk.reply, 'refs': talk.refs, 'now': talk.now}
@@ -316,7 +316,7 @@ class User:
         now = time.time()
         for item in self.history:
             if abs(now - item.now) > 7200:
-                # 1小时前，太久的消息就不要了
+                # 2小时前，太久的消息就不要了
                 continue
 
             answer = item.reply
@@ -324,7 +324,7 @@ class User:
                 ret.append(item)
             else:
                 merge_list.append(item.query)
-        
+
         concat_query = '\n'.join(merge_list)
         concat_talk = Talk(query=concat_query)
         ret.append(concat_talk)
@@ -767,6 +767,7 @@ class WkteamManager:
                         # if user image or link contains question, do not process
                         continue
 
+                    logger.debug('before concat {}'.format(user))
                     user.concat()
                     logger.debug('after concat {}'.format(user))
                     assert len(user.history) > 0
