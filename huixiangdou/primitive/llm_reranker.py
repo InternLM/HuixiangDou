@@ -6,9 +6,20 @@ from typing import List
 
 import numpy as np
 import torch
-from langchain_core.retrievers import BaseRetriever
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from .embedder import Embedder
 
+# else:
+#     logger.warning(
+#         'For higher rerank precision, we strong advice using `BAAI/bge-reranker-v2-minicpm-layerwise`'
+#     )
+#     reranker_args = {
+#         'model': reranker_model_path,
+#         'top_n': rerank_topn,
+#         'device': 'cuda',
+#         'use_fp16': True
+#     }
+#     self.reranker = BCERerank(**reranker_args)
 
 class LLMReranker:
 
@@ -24,6 +35,23 @@ class LLMReranker:
             torch_dtype=torch.bfloat16).eval()
         self.model = self.model.to('cuda')
         self.topn = topn
+
+    def use_llm_reranker(self, model_path):
+        """Check reranker model is LLM reranker or not."""
+
+        config_path = os.path.join(model_path, 'config.json')
+        if not os.path.exists(config_path):
+            if 'bge-reranker-v2-minicpm-layerwise' in config_path.lower():
+                return True
+            return False
+        try:
+            with open(config_path) as f:
+                if 'bge-reranker-v2-minicpm-layerwise' in json.loads(
+                        f.read())['_name_or_path']:
+                    return True
+        except Exception as e:
+            logger.warning(e)
+        return False
 
     def get_inputs(self, pairs, prompt=None, max_length=1024):
         """Build input tokens with query and chunks."""
@@ -90,7 +118,7 @@ class LLMReranker:
 class LLMCompressionRetriever:
 
     def __init__(self, base_compressor: LLMReranker,
-                 base_retriever: BaseRetriever):
+                 base_retriever: Embedder):
         self.reranker = base_compressor
         self.retriever = base_retriever
 

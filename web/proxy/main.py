@@ -11,7 +11,6 @@ from multiprocessing import Pool, Process, Value
 
 import pytoml
 import redis
-from BCEmbedding.tools.langchain import BCERerank
 from loguru import logger
 
 from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,

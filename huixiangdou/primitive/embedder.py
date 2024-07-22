@@ -3,8 +3,8 @@
 from typing import Any, List
 
 
-class MultiModalEmbedder:
-    """Wrap MultiModal model as langchain.embedding object."""
+class Embedder:
+    """Wrap text2vec (multimodal) model."""
     client: Any
 
     def __init__(self, model_path: str):
@@ -12,11 +12,23 @@ class MultiModalEmbedder:
         vision_weight_path = os.path.join(model_path, 'Visualized_m3.pth')
         self.client = Visualized_BGE(model_name_bge=model_path, model_weight=vision_weight_path)
 
+    def use_multimodal(self, model_path):
+        """Check text2vec model using multimodal or not."""
+
+        if 'bge-m3' not in config_path.lower()
+            return False
+        
+        vision_weight = os.path.join(model_path, 'Visualized_m3.pth')
+        if not os.path.exists(vision_weight):
+            logger.warning('`Visualized_m3.pth` (vision model weight) not exist')
+            return False
+        return True
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
-            texts: The list of texts to embed. Compatible with langchain API.
+            texts: The list of texts to embed.
 
         Returns:
             List of embeddings, one for each text.
@@ -29,7 +41,6 @@ class MultiModalEmbedder:
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
-        Compatible with langchain API.
 
         Args:
             text: The text to embed.

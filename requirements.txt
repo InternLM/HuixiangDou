@@ -1,12 +1,9 @@
-accelerate>=0.26.1
 aiohttp
-auto-gptq
 bcembedding
 beautifulsoup4
 duckduckgo_search
 einops
 faiss-gpu
-langchain>=0.1.12
 loguru
 lxml_html_clean
 nest_asyncio

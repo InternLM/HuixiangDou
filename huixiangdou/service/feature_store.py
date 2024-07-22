@@ -10,12 +10,7 @@ from multiprocessing import Pool
 from typing import Any, List, Optional
 
 import pytoml
-from langchain.text_splitter import (MarkdownHeaderTextSplitter,
-                                     MarkdownTextSplitter,
-                                     RecursiveCharacterTextSplitter)
-from langchain.vectorstores.faiss import FAISS as Vectorstore
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_core.documents import Document
+from huixiangdou.primitive import (Chunk, MarkdownHeaderTextSplitter, MarkdownTextSplitter, RecursiveCharacterTextSplitter, Embedder, Faiss)
 from loguru import logger
 from torch.cuda import empty_cache
 from tqdm import tqdm
@@ -47,93 +42,12 @@ def read_and_save(file: FileName):
         f.write(content)
 
 
-def _split_text_with_regex_from_end(text: str, separator: str,
-                                    keep_separator: bool) -> List[str]:
-    # Now that we have the separator, split the text
-    if separator:
-        if keep_separator:
-            # The parentheses in the pattern keep the delimiters in the result.
-            _splits = re.split(f'({separator})', text)
-            splits = [''.join(i) for i in zip(_splits[0::2], _splits[1::2])]
-            if len(_splits) % 2 == 1:
-                splits += _splits[-1:]
-            # splits = [_splits[0]] + splits
-        else:
-            splits = re.split(separator, text)
-    else:
-        splits = list(text)
-    return [s for s in splits if s != '']
-
-
-# copy from https://github.com/chatchat-space/Langchain-Chatchat/blob/master/text_splitter/chinese_recursive_text_splitter.py
-class ChineseRecursiveTextSplitter(RecursiveCharacterTextSplitter):
-
-    def __init__(
-        self,
-        separators: Optional[List[str]] = None,
-        keep_separator: bool = True,
-        is_separator_regex: bool = True,
-        **kwargs: Any,
-    ) -> None:
-        """Create a new TextSplitter."""
-        super().__init__(keep_separator=keep_separator, **kwargs)
-        self._separators = separators or [
-            '\n\n', '\n', '。|！|？', '\.\s|\!\s|\?\s', '；|;\s', '，|,\s'
-        ]
-        self._is_separator_regex = is_separator_regex
-
-    def _split_text(self, text: str, separators: List[str]) -> List[str]:
-        """Split incoming text and return chunks."""
-        final_chunks = []
-        # Get appropriate separator to use
-        separator = separators[-1]
-        new_separators = []
-        for i, _s in enumerate(separators):
-            _separator = _s if self._is_separator_regex else re.escape(_s)
-            if _s == '':
-                separator = _s
-                break
-            if re.search(_separator, text):
-                separator = _s
-                new_separators = separators[i + 1:]
-                break
-
-        _separator = separator if self._is_separator_regex else re.escape(
-            separator)
-        splits = _split_text_with_regex_from_end(text, _separator,
-                                                 self._keep_separator)
-
-        # Now go merging things, recursively splitting longer texts.
-        _good_splits = []
-        _separator = '' if self._keep_separator else separator
-        for s in splits:
-            if self._length_function(s) < self._chunk_size:
-                _good_splits.append(s)
-            else:
-                if _good_splits:
-                    merged_text = self._merge_splits(_good_splits, _separator)
-                    final_chunks.extend(merged_text)
-                    _good_splits = []
-                if not new_separators:
-                    final_chunks.append(s)
-                else:
-                    other_info = self._split_text(s, new_separators)
-                    final_chunks.extend(other_info)
-        if _good_splits:
-            merged_text = self._merge_splits(_good_splits, _separator)
-            final_chunks.extend(merged_text)
-        return [
-            re.sub(r'\n{2,}', '\n', chunk.strip()) for chunk in final_chunks
-            if chunk.strip() != ''
-        ]
-
-
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
 
     def __init__(self,
-                 embeddings: HuggingFaceEmbeddings,
+                 embeddings: Embedder,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
                  chunk_size=832,
@@ -254,7 +168,7 @@ class FeatureStore:
         chunks = self.split_md(text=text,
                                source=os.path.abspath(file.copypath))
         for chunk in chunks:
-            new_doc = Document(page_content=chunk,
+            new_doc = Chunk(page_content=chunk,
                                metadata={
                                    'source': file.basename,
                                    'read': file.copypath
@@ -311,7 +225,7 @@ class FeatureStore:
 
         if len(documents) < 1:
             return
-        vs = Vectorstore.from_documents(documents, self.embeddings)
+        vs = Faiss.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
     def analyze(self, documents: list):
@@ -366,7 +280,7 @@ class FeatureStore:
                 chunks = self.split_md(text=text,
                                        source=os.path.abspath(file.copypath))
                 for chunk in chunks:
-                    new_doc = Document(page_content=chunk,
+                    new_doc = Chunk(page_content=chunk,
                                        metadata={
                                            'source': file.basename,
                                            'read': file.copypath
@@ -390,7 +304,7 @@ class FeatureStore:
         logger.info('analyze input text. {}'.format(log_str))
         logger.info('documents counter {}'.format(len(documents)))
         self.analyze(documents)
-        vs = Vectorstore.from_documents(documents, self.embeddings)
+        vs = Faiss.from_documents(documents, self.embeddings)
         vs.save_local(feature_dir)
 
     def preprocess(self, files: list, work_dir: str):
