@@ -425,7 +425,7 @@ def parse_args():
                         default='repodir',
                         help='Root directory where the docs are located.')
     parser.add_argument('--config_path',
-                        default='config-kg.ini',
+                        default='config.ini',
                         help='Configuration path. Default value is config.ini')
     parser.add_argument(
         '--standalone',
