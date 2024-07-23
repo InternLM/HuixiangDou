@@ -9,18 +9,6 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from .embedder import Embedder
 
-# else:
-#     logger.warning(
-#         'For higher rerank precision, we strong advice using `BAAI/bge-reranker-v2-minicpm-layerwise`'
-#     )
-#     reranker_args = {
-#         'model': reranker_model_path,
-#         'top_n': rerank_topn,
-#         'device': 'cuda',
-#         'use_fp16': True
-#     }
-#     self.reranker = BCERerank(**reranker_args)
-
 class LLMReranker:
 
     def __init__(

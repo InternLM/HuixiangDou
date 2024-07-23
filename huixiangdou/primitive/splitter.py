@@ -1,5 +1,4 @@
 # modified from langchain
-
 from abc import ABC, abstractmethod
 from .chunk import Chunk, Modal
 from typing import (
