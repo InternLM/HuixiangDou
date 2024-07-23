@@ -21,9 +21,8 @@ from typing import (
 )
 
 import numpy as np
+from loguru import logger
 from .embedder import Embedder
-
-logger = logging.getLogger(__name__)
 
 # modified from langchain
 def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
@@ -184,31 +183,33 @@ class Faiss():
             ]
         return docs[:k]
 
-    def save_local(self, folder_path: str, index_name: str = "index") -> None:
+    @classmethod
+    def save_local(self, folder_path: str, chunks: List[Chunk], embedder: Embedder) -> None:
         """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
             folder_path: folder path to save index, docstore,
                 and index_to_docstore_id to.
-            index_name: for saving with a specific index file name
         """
+
+        # TODO
+
         path = Path(folder_path)
         path.mkdir(exist_ok=True, parents=True)
 
         # save index separately since it is not picklable
         faiss = dependable_faiss_import()
-        faiss.write_index(self.index, str(path / f"{index_name}.faiss"))
+        faiss.write_index(self.index, str(path / "index.faiss"))
 
         # save docstore and index_to_docstore_id
-        with open(path / f"{index_name}.pkl", "wb") as f:
+        with open(path / "index.pkl", "wb") as f:
             pickle.dump((self.docstore, self.index_to_docstore_id), f)
 
     @classmethod
     def load_local(
         cls,
         folder_path: str,
-        embedder: Embeddings,
-        **kwargs: Any,
+        embedder: Embeddings
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id from disk.
 
@@ -218,19 +219,6 @@ class Faiss():
             embedder: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
         """
-        if not allow_dangerous_deserialization:
-            raise ValueError(
-                "The de-serialization relies loading a pickle file. "
-                "Pickle files can be modified to deliver a malicious payload that "
-                "results in execution of arbitrary code on your machine."
-                "You will need to set `allow_dangerous_deserialization` to `True` to "
-                "enable deserialization. If you do this, make sure that you "
-                "trust the source of the data. For example, if you are loading a "
-                "file that you created, and know that no one else has modified the "
-                "file, then this is safe to do. Do not set this to `True` if you are "
-                "loading a file from an untrusted source (e.g., some random site on "
-                "the internet.)."
-            )
         path = Path(folder_path)
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()
@@ -243,4 +231,4 @@ class Faiss():
                 index_to_docstore_id,
             ) = pickle.load(f)
 
-        return cls(embedder, index, docstore, index_to_docstore_id, **kwargs)
+        return cls(embedder, index, docstore, index_to_docstore_id)

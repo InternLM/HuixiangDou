@@ -198,7 +198,7 @@ class FeatureStore:
 
         # logger.info('glob {} in dir {}'.format(files, file_dir))
         file_opr = FileOperation()
-        documents = []
+        chunks = []
 
         for i, file in tqdm(enumerate(files)):
             # logger.debug('{}/{}.. {}'.format(i + 1, len(files), file.basename))
@@ -207,7 +207,7 @@ class FeatureStore:
 
             if file._type == 'md':
                 md_documents, md_length = self.get_md_documents(file)
-                documents += md_documents
+                chunks += md_documents
                 # logger.info('{} content length {}'.format(file._type, md_length))
                 file.reason = str(md_length)
 
@@ -221,11 +221,11 @@ class FeatureStore:
                 file.reason = str(len(text))
                 # logger.info('{} content length {}'.format(file._type, len(text)))
                 text = file.prefix + text
-                documents += self.get_text_documents(text, file)
+                chunks += self.get_text_documents(text, file)
 
-        if len(documents) < 1:
+        if len(chunks) < 1:
             return
-        vs = Faiss.from_documents(documents, self.embeddings)
+        vs = Faiss.from_documents(chunks, self.embeddings)
         vs.save_local(feature_dir)
 
     def analyze(self, documents: list):

@@ -18,7 +18,6 @@ def test_character_text_splitter():
             print(len(c.content_or_path))
             f.write(c.content_or_path)
             f.write('-----------\n')
-            f.write('-----------\n')
     return chunks
 
 def test_recursive_character_text_splitter():
@@ -87,8 +86,8 @@ def test_markdown_header_text_splitter():
     return chunks
 
 if __name__ == '__main__':
-    # test_character_text_splitter()
-    # test_recursive_character_text_splitter()
-    # test_chinese_recursive_text_splitter()
-    # test_markdown_text_splitter()
+    test_character_text_splitter()
+    test_recursive_character_text_splitter()
+    test_chinese_recursive_text_splitter()
+    test_markdown_text_splitter()
     test_markdown_header_text_splitter()
