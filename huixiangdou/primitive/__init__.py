@@ -1,5 +1,6 @@
 """primitive module."""
-form .chunk import Chunk, ChunkType  # noqa E401
-from .splitter import ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextSplitter, MarkdownHeaderTextSplitter
+from .chunk import Chunk, Modal  # noqa E401
+from .embedder import Embedder  # noqa E401
+from .faiss import Faiss  # noqa E401
 from .llm_reranker import LLMCompressionRetriever, LLMReranker  # noqa E401
-from .faiss import FAISS
+from .splitter import CharacterTextSplitter, ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextSplitter, MarkdownHeaderTextSplitter  # noqa E401

@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass, field
+from enum import Enum
 
 class Modal(Enum):
     TEXT = 'text'
@@ -21,8 +22,13 @@ class Chunk():
             )
     """
     modal: Modal = Modal.TEXT
-    content_or_path: str
-    metadata: dict
+    content_or_path: str = ''
+    metadata: dict = {}
+
+    def __init__(self, modal:Modal=Modal.TEXT, content_or_path:str='', metadata:dict={}):
+        self.modal = modal
+        self.content_or_path = content_or_path
+        self.metadata = metadata
 
     def __str__(self) -> str:
         """Override __str__ to restrict it to content_or_path and metadata."""
@@ -38,3 +44,6 @@ class Chunk():
             return f"modal='{self.modal}' content_or_path='{self.content_or_path}' metadata={self.metadata}"
         else:
             return f"modal='{self.modal}' content_or_path='{self.content_or_path}'"
+
+    def __repr__(self) -> str:
+        return self.__str__()

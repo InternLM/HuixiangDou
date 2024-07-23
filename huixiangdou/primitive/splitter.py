@@ -1,4 +1,11 @@
 # modified from langchain
+# 1. Use `Chunk` instead of `Document`
+# 2. Default chunksize using 832
+# 3. `MarkdownSplitter` support parsing URI (file or URI)
+import re
+import pdb
+import copy
+from loguru import logger
 from abc import ABC, abstractmethod
 from .chunk import Chunk, Modal
 from typing import (
@@ -37,8 +44,8 @@ class TextSplitter(ABC):
 
     def __init__(
         self,
-        chunk_size: int = 4000,
-        chunk_overlap: int = 200,
+        chunk_size: int = 832,
+        chunk_overlap: int = 32,
         length_function: Callable[[str], int] = len,
         keep_separator: Union[bool, Literal["start", "end"]] = False,
         add_start_index: bool = False,
@@ -54,7 +61,7 @@ class TextSplitter(ABC):
                             in each corresponding chunk (True='start')
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
-                              every document
+                              every chunk
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -72,12 +79,12 @@ class TextSplitter(ABC):
     def split_text(self, text: str) -> List[str]:
         """Split text into multiple components."""
 
-    def create_documents(
+    def create_chunks(
         self, texts: List[str], metadatas: Optional[List[dict]] = None
     ) -> List[Chunk]:
-        """Create documents from a list of texts."""
+        """Create chunks from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
-        documents = []
+        chunks = []
         for i, text in enumerate(texts):
             index = 0
             previous_chunk_len = 0
@@ -88,20 +95,12 @@ class TextSplitter(ABC):
                     index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
-                new_doc = Chunk(page_content=chunk, metadata=metadata)
-                documents.append(new_doc)
-        return documents
+                new_chunk = Chunk(content_or_path=chunk, metadata=metadata)
+                chunks.append(new_chunk)
+        return chunks
 
-    # def split_documents(self, documents: Iterable[Chunk]) -> List[Chunk]:
-    #     """Split documents."""
-    #     texts, metadatas = [], []
-    #     for doc in documents:
-    #         texts.append(doc.page_content)
-    #         metadatas.append(doc.metadata)
-    #     return self.create_documents(texts, metadatas=metadatas)
-
-    def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
-        text = separator.join(docs)
+    def _join_chunks(self, chunks: List[str], separator: str) -> Optional[str]:
+        text = separator.join(chunks)
         if self._strip_whitespace:
             text = text.strip()
         if text == "":
@@ -114,13 +113,13 @@ class TextSplitter(ABC):
         # chunks to send to the LLM.
         separator_len = self._length_function(separator)
 
-        docs = []
-        current_doc: List[str] = []
+        chunks = []
+        current_chunk: List[str] = []
         total = 0
         for d in splits:
             _len = self._length_function(d)
             if (
-                total + _len + (separator_len if len(current_doc) > 0 else 0)
+                total + _len + (separator_len if len(current_chunk) > 0 else 0)
                 > self._chunk_size
             ):
                 if total > self._chunk_size:
@@ -128,28 +127,28 @@ class TextSplitter(ABC):
                         f"Created a chunk of size {total}, "
                         f"which is longer than the specified {self._chunk_size}"
                     )
-                if len(current_doc) > 0:
-                    doc = self._join_docs(current_doc, separator)
-                    if doc is not None:
-                        docs.append(doc)
+                if len(current_chunk) > 0:
+                    chunk = self._join_chunks(current_chunk, separator)
+                    if chunk is not None:
+                        chunks.append(chunk)
                     # Keep on popping if:
                     # - we have a larger chunk than in the chunk overlap
                     # - or if we still have any chunks and the length is long
                     while total > self._chunk_overlap or (
-                        total + _len + (separator_len if len(current_doc) > 0 else 0)
+                        total + _len + (separator_len if len(current_chunk) > 0 else 0)
                         > self._chunk_size
                         and total > 0
                     ):
-                        total -= self._length_function(current_doc[0]) + (
-                            separator_len if len(current_doc) > 1 else 0
+                        total -= self._length_function(current_chunk[0]) + (
+                            separator_len if len(current_chunk) > 1 else 0
                         )
-                        current_doc = current_doc[1:]
-            current_doc.append(d)
-            total += _len + (separator_len if len(current_doc) > 1 else 0)
-        doc = self._join_docs(current_doc, separator)
-        if doc is not None:
-            docs.append(doc)
-        return docs
+                        current_chunk = current_chunk[1:]
+            current_chunk.append(d)
+            total += _len + (separator_len if len(current_chunk) > 1 else 0)
+        chunk = self._join_chunks(current_chunk, separator)
+        if chunk is not None:
+            chunks.append(chunk)
+        return chunks
 
 def _split_text_with_regex(
     text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
@@ -262,25 +261,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         return self._split_text(text, self._separators)
 
-def _split_text_with_regex_from_end(text: str, separator: str,
-                                    keep_separator: bool) -> List[str]:
-    # Now that we have the separator, split the text
-    if separator:
-        if keep_separator:
-            # The parentheses in the pattern keep the delimiters in the result.
-            _splits = re.split(f'({separator})', text)
-            splits = [''.join(i) for i in zip(_splits[0::2], _splits[1::2])]
-            if len(_splits) % 2 == 1:
-                splits += _splits[-1:]
-            # splits = [_splits[0]] + splits
-        else:
-            splits = re.split(separator, text)
-    else:
-        splits = list(text)
-    return [s for s in splits if s != '']
-
-# ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextSplitter, MarkdownHeaderTextSplitter
-
 # modified from https://github.com/chatchat-space/Langchain-Chatchat/blob/master/text_splitter/chinese_recursive_text_splitter.py
 class ChineseRecursiveTextSplitter(RecursiveCharacterTextSplitter):
 
@@ -298,6 +278,23 @@ class ChineseRecursiveTextSplitter(RecursiveCharacterTextSplitter):
         ]
         self._is_separator_regex = is_separator_regex
 
+    def _split_text_with_regex_from_end(self, text: str, separator: str,
+                                        keep_separator: bool) -> List[str]:
+        # Now that we have the separator, split the text
+        if separator:
+            if keep_separator:
+                # The parentheses in the pattern keep the delimiters in the result.
+                _splits = re.split(f'({separator})', text)
+                splits = [''.join(i) for i in zip(_splits[0::2], _splits[1::2])]
+                if len(_splits) % 2 == 1:
+                    splits += _splits[-1:]
+                # splits = [_splits[0]] + splits
+            else:
+                splits = re.split(separator, text)
+        else:
+            splits = list(text)
+        return [s for s in splits if s != '']
+
     def _split_text(self, text: str, separators: List[str]) -> List[str]:
         """Split incoming text and return chunks."""
         final_chunks = []
@@ -314,10 +311,8 @@ class ChineseRecursiveTextSplitter(RecursiveCharacterTextSplitter):
                 new_separators = separators[i + 1:]
                 break
 
-        _separator = separator if self._is_separator_regex else re.escape(
-            separator)
-        splits = _split_text_with_regex_from_end(text, _separator,
-                                                 self._keep_separator)
+        _separator = separator if self._is_separator_regex else re.escape(separator)
+        splits = self._split_text_with_regex_from_end(text, _separator, self._keep_separator)
 
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
@@ -348,28 +343,44 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize a MarkdownTextSplitter."""
-        separators = self.get_separators_for_language(Language.MARKDOWN)
+        separators = [
+            # First, try to split along Markdown headings (starting with level 2)
+            "\n#{1,6} ",
+            # Note the alternative syntax for headings (below) is not handled here
+            # Heading level 2
+            # ---------------
+            # End of code block
+            "```\n",
+            # Horizontal lines
+            "\n\\*\\*\\*+\n",
+            "\n---+\n",
+            "\n___+\n",
+            # Note that this splitter doesn't handle horizontal lines defined
+            # by *three or more* of ***, ---, or ___, but this is not handled
+            "\n\n",
+            "\n",
+            " ",
+            ""]
         super().__init__(separators=separators, **kwargs)
 
-
-class MarkdownHeaderTextSplitter:
+class MarkdownHeaderTextSplitter():
     """Splitting markdown files based on specified headers."""
 
     def __init__(
         self,
-        headers_to_split_on: List[Tuple[str, str]],
-        return_each_line: bool = False,
+        headers_to_split_on: List[Tuple[str, str]] = [
+            ('#', 'Header 1'),
+            ('##', 'Header 2'),
+            ('###', 'Header 3'),
+        ],
         strip_headers: bool = True,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
         Args:
             headers_to_split_on: Headers we want to track
-            return_each_line: Return each line w/ associated headers
             strip_headers: Strip split headers from the content of the chunk
         """
-        # Output line-by-line or aggregated into chunks w/ common headers
-        self.return_each_line = return_each_line
         # Given the headers we want to split on,
         # (e.g., "#, ##, etc") order by length
         self.headers_to_split_on = sorted(
@@ -377,8 +388,9 @@ class MarkdownHeaderTextSplitter:
         )
         # Strip headers split headers from the content of the chunk
         self.strip_headers = strip_headers
+        super().__init__()
 
-    def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Chunk]:
+    def aggregate_lines_to_chunks(self, lines: List[LineType], base_meta: dict) -> List[Chunk]:
         """Combine lines with common metadata into chunks
         Args:
             lines: Line of text / associated header metadata
@@ -416,11 +428,11 @@ class MarkdownHeaderTextSplitter:
                 aggregated_chunks.append(line)
 
         return [
-            Chunk(page_content=chunk["content"], metadata=chunk["metadata"])
+            Chunk(content_or_path=chunk["content"], metadata=dict(chunk["metadata"], **base_meta))
             for chunk in aggregated_chunks
         ]
 
-    def split_text(self, text: str) -> List[Chunk]:
+    def create_chunks(self, text: str, metadata: dict={}) -> List[Chunk]:
         """Split markdown file
         Args:
             text: Markdown file"""
@@ -534,10 +546,4 @@ class MarkdownHeaderTextSplitter:
 
         # lines_with_metadata has each line with associated header metadata
         # aggregate these into chunks based on common metadata
-        if not self.return_each_line:
-            return self.aggregate_lines_to_chunks(lines_with_metadata)
-        else:
-            return [
-                Chunk(page_content=chunk["content"], metadata=chunk["metadata"])
-                for chunk in lines_with_metadata
-            ]
+        return self.aggregate_lines_to_chunks(lines_with_metadata, base_meta=metadata)

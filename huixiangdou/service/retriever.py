@@ -13,8 +13,7 @@ from typing import Any
 from .file_operation import FileOperation
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
-from .llm_reranker import LLMCompressionRetriever, LLMReranker
-from .multimodal_embedder import MultiModalEmbedder
+from huixiangdou.primitive import LLMCompressionRetriever, LLMReranker, Embedder
 
 class Retriever:
     """Tokenize and extract features from the project's documents, for use in
@@ -248,7 +247,6 @@ class CacheRetriever:
 
         # load text2vec and rerank model
         logger.info('loading test2vec and rerank models')
-        if self.use_multimodal(embedding_model_path):
         self.embeddings = Embedder(model_path=embedding_model_path)
         self.reranker = LLMReranker(model_name_or_path=reranker_model_path, topn=rerank_topn)
 

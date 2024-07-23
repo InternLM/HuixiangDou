@@ -14,7 +14,7 @@ from openai import OpenAI
 
 from .helper import ErrorCode
 from .llm_client import ChatClient
-from .primitive import is_truth
+from .helper import is_truth
 from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
 from .web_search import WebSearch
