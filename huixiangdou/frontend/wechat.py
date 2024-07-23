@@ -148,6 +148,9 @@ class Message:
             return Exception('data not in wx_msg')
 
         data = wx_msg['data']
+        if 'self' in data:
+            if data['self']:
+                return Exception('self msg, return')
 
         if 'msgId' in data:
             self._id = data['msgId']
