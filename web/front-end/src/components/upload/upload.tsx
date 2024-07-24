@@ -13,6 +13,7 @@ import styles from './upload.module.less';
 export interface UploadProps {
     docs?: string[];
     afterUpload?: () => void;
+    afterDelete?: () => void;
     filesState?: FileState[];
     children?: ReactNode;
 }
@@ -89,6 +90,7 @@ const FileItem: FC<FileItemProps> = (props) => {
 const Upload: FC<UploadProps> = ({
     docs = [],
     afterUpload,
+    afterDelete,
     filesState = [], children
 }) => {
     const locales = useLocale('components');
@@ -226,9 +228,9 @@ const Upload: FC<UploadProps> = ({
         }
         (async () => {
             const res: any = await deleteDocs(checkedFiles);
-            if (res && res.docs) {
-                if (afterUpload) {
-                    afterUpload();
+            if (res && res.docBase) {
+                if (afterDelete) {
+                    afterDelete();
                 }
             }
         })();
