@@ -7,7 +7,7 @@ import pdb
 import copy
 from loguru import logger
 from abc import ABC, abstractmethod
-from .chunk import Chunk, Modal
+from .chunk import Chunk
 from typing import (
     AbstractSet,
     Any,

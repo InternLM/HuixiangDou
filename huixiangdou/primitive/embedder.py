@@ -5,6 +5,7 @@ from loguru import logger
 import os
 import torch
 import pdb
+import numpy as np
 
 class Embedder:
     """Wrap text2vec (multimodal) model."""
@@ -42,7 +43,7 @@ class Embedder:
             for text in texts:
                 feature = self.client.encode(text=text)
                 features.append(feature)
-        return torch.cat(features, dim=0)
+        return torch.cat(features, dim=0).cpu().numpy().astype(np.float32)
 
     def embed_text(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
@@ -70,7 +71,7 @@ class Embedder:
                 feature = self.client.encode(image=path)
                 features.append(feature)
         
-        return torch.cat(features, dim=0)
+        return torch.cat(features, dim=0).cpu().numpy().astype(np.float32)
 
     def embed_image(self, path: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
@@ -86,4 +87,4 @@ class Embedder:
     def embed_query(self, text: str=None, path: str=None) -> List[float]:
         with torch.no_grad():
             feature = self.client.encode(text=text, image=path)
-            return feature
+            return feature.cpu().numpy().astype(np.float32)

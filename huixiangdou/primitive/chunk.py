@@ -1,12 +1,6 @@
-from dataclasses import asdict, dataclass, field
-from enum import Enum
+from dataclasses import dataclass, field
 
-class Modal(Enum):
-    TEXT = 'text'
-    IMAGE = 'image'
-    AUDIO = 'audio'
-
-# modified from langchain
+@dataclass
 class Chunk():
     """Class for storing a piece of text and associated metadata.
 
@@ -21,14 +15,13 @@ class Chunk():
                 metadata={"source": "https://example.com"}
             )
     """
-    modal: Modal = Modal.TEXT
     content_or_path: str = ''
-    metadata: dict = {}
+    metadata: dict = field(default_factory=dict)
+    modal: str = 'text'
 
-    def __init__(self, modal:Modal=Modal.TEXT, content_or_path:str='', metadata:dict={}):
-        self.modal = modal
-        self.content_or_path = content_or_path
-        self.metadata = metadata
+    def __post_init__(self):
+        if self.modal not in ['text', 'image', 'audio']:
+            raise ValueError(f'Invalid modal: {self.modal}. Allowed values are: `text`, `image`, `audio`')
 
     def __str__(self) -> str:
         """Override __str__ to restrict it to content_or_path and metadata."""
