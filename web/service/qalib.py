@@ -160,11 +160,17 @@ class QaLibService:
             if not os.path.exists(path):
                 logger.warn(f"qalib: {name} has no file named {filename} to delete.")
                 continue
-            os.remove(path)
-
-        left_filenames = os.listdir(store_dir)
+            if path.startswith('.'):
+                continue
+            try:
+                os.remove(path)
+            except OSError as e:
+                logger.error(f'qalib: error: {e} when removing {path}')
+               
+        filenames = set(os.listdir(store_dir))
+        left_filenames = list(filenames - set(body.filenames))
         # update qalib in redis
-        if not QaLibCache().update_qalib_docs(feature_store_id, left_filenames,
+        if not QaLibCache().rewrite_qalib_docs(feature_store_id, left_filenames,
                                               store_dir):
             return BaseBody()
         # update to huixiangdou task queue
@@ -311,6 +317,32 @@ class QaLibCache:
         """
         return True if r.hdel(biz_const.RDS_KEY_QALIB_INFO,
                               feature_store_id) == 1 else False
+
+    @classmethod
+    def rewrite_qalib_docs(cls, feature_store_id: str, added_docs: List[str],
+                          file_base: str) -> bool:
+        """update qalib's docs.
+
+        :param feature_store_id:
+        :param added_docs:
+        :param file_base:
+        :return:
+        """
+        try:
+            info = cls.get_qalib_info(feature_store_id)
+            if not info:
+                return False
+
+            info.docs = list(set(added_docs))
+            info.docBase = file_base
+
+            cls.set_qalib_info(feature_store_id, info)
+            return True
+        except Exception as e:
+            logger.error(
+                f'[qalib] feature_store_id: {feature_store_id}, update docs failed: {e}'
+            )
+            return False
 
     @classmethod
     def update_qalib_docs(cls, feature_store_id: str, added_docs: List[str],
