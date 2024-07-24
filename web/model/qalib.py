@@ -44,6 +44,10 @@ class QalibPositiveNegative(BaseModel):
     negatives: Optional[List] = None
 
 
+class QalibDeleteDoc(BaseModel):
+    filenames: List[str]
+
+
 class QalibSample(QalibPositiveNegative):
     name: str
     featureStoreId: str
