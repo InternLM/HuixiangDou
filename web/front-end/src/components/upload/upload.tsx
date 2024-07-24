@@ -268,23 +268,8 @@ const Upload: FC<UploadProps> = ({
             {pendingFiles.length > 0 && (
                 <Button onClick={uploadFile}>{loading ? locales.uploading : locales.confirmUpload}</Button>
             )}
-            <h4>{locales.uploadedFiles}</h4>
-            <div className={styles.fileList}>
-                <div>
-                    {`${locales.total}: ${filesState.length},    `}
-                    {`${locales.failed}: ${filesState.filter((file) => !file.status).length}`}
-                </div>
-                <div className={styles.fileSearch}>
-                    <Input
-                        placeholder={locales.searchDesc}
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        onPressEnter={handleSearch}
-                    />
-                    <Button onClick={handleSearch}>
-                        {locales.search}
-                    </Button>
-                </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <h4>{locales.uploadedFiles}</h4>
                 {Array.isArray(docs) && docs.length > 0 && (
                     <div className={styles.checkboxWrapper}>
                         <input
@@ -301,6 +286,23 @@ const Upload: FC<UploadProps> = ({
                         <DeleteBtn onClick={deleteSelected} />
                     </div>
                 )}
+            </div>
+            <div className={styles.fileList}>
+                <div>
+                    {`${locales.total}: ${filesState.length},    `}
+                    {`${locales.failed}: ${filesState.filter((file) => !file.status).length}`}
+                </div>
+                <div className={styles.fileSearch}>
+                    <Input
+                        placeholder={locales.searchDesc}
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        onPressEnter={handleSearch}
+                    />
+                    <Button onClick={handleSearch}>
+                        {locales.search}
+                    </Button>
+                </div>
                 {/* 优先展示处理中文档 */}
                 {docs
                     .filter((doc) => doc.includes(searchValue))
