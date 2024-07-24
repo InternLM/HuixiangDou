@@ -35,7 +35,15 @@ const ImportDocs: FC<ImportDocsProps> = ({ refresh, docs, filesState }) => {
                 footer={(<div />)}
                 onClose={() => setOpenModal(false)}
             >
-                <Upload docs={docs} filesState={filesState} afterUpload={afterUpload}>
+                <Upload
+                    docs={[
+                        'xxxx.md',
+                        '步行街萨克斯.pdf',
+                        'Reference.txt'
+                    ]}
+                    filesState={filesState}
+                    afterUpload={afterUpload}
+                >
                     <IconFont icon="icon-PlusOutlined" />
                     <div>{locales.upload}</div>
                     <div>{locales.supportFiles}</div>

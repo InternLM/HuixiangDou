@@ -1,7 +1,7 @@
 // https://github.com/http-party/node-http-proxy#options
 const ProxyConfig = {
     '/api': {
-        target: 'http://10.1.52.13:7860',
+        target: 'http://10.1.52.60:23333',
         changeOrigin: true,
         secure: false,
         rewrite: path => {

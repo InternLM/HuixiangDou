@@ -1,11 +1,13 @@
 import {
-    FC, ReactNode, useRef, useState
+    FC, ReactNode, useEffect, useRef, useState
 } from 'react';
-import { addDocs, FileState } from '@services/home';
+import { addDocs, deleteDocs, FileState } from '@services/home';
 import Button from '@components/button/button';
-import { Input, message } from 'sea-lion-ui';
+import { IconFont, Input, message } from 'sea-lion-ui';
 import { useLocale } from '@hooks/useLocale';
 import UploadItem, { UploadItemProps, UploadStatus } from '@components/upload-item';
+import classNames from 'classnames';
+import DeleteBtn from '@components/upload/delete-btn';
 import styles from './upload.module.less';
 
 export interface UploadProps {
@@ -15,10 +17,73 @@ export interface UploadProps {
     children?: ReactNode;
 }
 
+interface FileItemProps {
+    doc: string;
+    color: string;
+    state: string;
+    checkedController: number;
+    checkHandler?: (doc: string) => void;
+}
+
+const enum CheckedController {
+    None = -1,
+    Partial = 0,
+    All = 1,
+}
+
 const acceptFileTypes = '.pdf,.txt,.md,.docx,.doc,.xlsx,.xls,.csv,.java,.cpp,.py,.js,.go,.html,.pptx';
 
 const getBytesLength = (str) => {
     return new Blob([str]).size;
+};
+
+const FileItem: FC<FileItemProps> = (props) => {
+    const {
+        doc,
+        color,
+        state,
+        checkedController,
+        checkHandler
+    } = props;
+
+    const [checked, setChecked] = useState(false);
+
+    const checkChange = (e) => {
+        setChecked(e.target.checked);
+        checkHandler(doc);
+    };
+
+    useEffect(() => {
+        if (checkedController === CheckedController.None) {
+            setChecked(false);
+        }
+        if (checkedController === CheckedController.All) {
+            setChecked(true);
+        }
+    }, [checkedController]);
+
+    return (
+        <div className={styles.fileItem}>
+            <input
+                className={styles.checkbox}
+                type="checkbox"
+                checked={checked}
+                onChange={checkChange}
+            />
+            <span
+                style={{ color }}
+                className={styles.fileState}
+            >
+                {state}
+            </span>
+            <span
+                className={styles.fileName}
+                title={doc}
+            >
+                {doc}
+            </span>
+        </div>
+    );
 };
 
 const Upload: FC<UploadProps> = ({
@@ -34,6 +99,30 @@ const Upload: FC<UploadProps> = ({
     const [pendingStatus, setPendingStatus] = useState<UploadItemProps[]>([]); // 待上传文件列表
     const [filter, setFilter] = useState('');
     const [searchValue, setSearchValue] = useState('');
+
+    const [checkedController, setCheckedController] = useState(CheckedController.Partial);
+    const [checkedFiles, setCheckedFiles] = useState([]);
+
+    const checkAll = (e) => {
+        if (e.target.checked) {
+            setCheckedController(CheckedController.All);
+            setCheckedFiles(docs);
+        } else {
+            setCheckedController(CheckedController.None);
+            setCheckedFiles([]);
+        }
+    };
+
+    const checkItem = (doc) => {
+        const _checkedFiles = [...checkedFiles];
+        const index = _checkedFiles.indexOf(doc);
+        if (index > -1) {
+            _checkedFiles.splice(index, 1);
+        } else {
+            _checkedFiles.push(doc);
+        }
+        setCheckedFiles(_checkedFiles);
+    };
 
     const handleSearch = () => {
         setSearchValue(filter);
@@ -130,6 +219,31 @@ const Upload: FC<UploadProps> = ({
             });
     };
 
+    const deleteSelected = () => {
+        if (checkedFiles.length === 0) {
+            message.warning(locales.noSelected);
+            return;
+        }
+        (async () => {
+            const res: any = await deleteDocs(checkedFiles);
+            if (res && res.docs) {
+                if (afterUpload) {
+                    afterUpload();
+                }
+            }
+        })();
+    };
+
+    useEffect(() => {
+        if (checkedFiles.length === 0) {
+            setCheckedController(CheckedController.None);
+        } else if (checkedFiles.length === docs.length) {
+            setCheckedController(CheckedController.All);
+        } else {
+            setCheckedController(CheckedController.Partial);
+        }
+    }, [checkedFiles]);
+
     return (
         <>
             <div className={styles.upload} onClick={handleClick}>
@@ -169,51 +283,50 @@ const Upload: FC<UploadProps> = ({
                         {locales.search}
                     </Button>
                 </div>
+                {Array.isArray(docs) && docs.length > 0 && (
+                    <div className={styles.checkboxWrapper}>
+                        <input
+                            type="checkbox"
+                            className={classNames(styles.checkbox, {
+                                [styles.mixedCheckbox]: checkedController === CheckedController.Partial
+                            })}
+                            checked={checkedController > CheckedController.None}
+                            onChange={checkAll}
+                        />
+                        <span onClick={checkAll}>
+                            {locales.selectAll}
+                        </span>
+                        <DeleteBtn onClick={deleteSelected} />
+                    </div>
+                )}
+                {/* 优先展示处理中文档 */}
                 {docs
                     .filter((doc) => doc.includes(searchValue))
                     .filter((doc) => !filesState.find((file) => file.file === doc))
                     .map((doc) => {
                         return (
-                            <div
+                            <FileItem
                                 key={doc}
-                                className={styles.fileItem}
-                            >
-                                <span
-                                    style={{ color: '#4e95e6' }}
-                                    className={styles.fileState}
-                                >
-                                    {locales.processing}
-                                </span>
-                                <span
-                                    className={styles.fileName}
-                                    title={doc}
-                                >
-                                    {doc}
-                                </span>
-                            </div>
+                                doc={doc}
+                                color="#4e95e6"
+                                state={locales.processing}
+                                checkedController={checkedController}
+                                checkHandler={checkItem}
+                            />
                         );
                     })}
+                {/* 按顺序显示已被处理的文档，有可能是失败状态 */}
                 {filesState
                     .filter((file) => file.file.includes(searchValue))
                     .map((file) => (
-                        <div
+                        <FileItem
                             key={file.file}
-                            className={styles.fileItem}
-                        >
-                            <span
-                                style={{ color: file.status ? undefined : 'red' }}
-                                className={styles.fileState}
-                                title={file.desc}
-                            >
-                                {file.desc || locales.uploadFailed}
-                            </span>
-                            <span
-                                className={styles.fileName}
-                                title={file.file}
-                            >
-                                {file.file}
-                            </span>
-                        </div>
+                            doc={file.file}
+                            color={file.status ? undefined : 'red'}
+                            state={file.desc || locales.uploadFailed}
+                            checkedController={checkedController}
+                            checkHandler={checkItem}
+                        />
                     ))}
             </div>
         </>
