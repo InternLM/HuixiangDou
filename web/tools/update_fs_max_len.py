@@ -15,11 +15,8 @@ def read_config_ini_files(directory):
                     # 读取并解析 config.ini 文件
                     with open(file_path, 'r', encoding='utf-8') as f:
                         config = pytoml.load(f)
-                    print((
-                        file_path,
-                        config['llm']['server']['remote_llm_max_text_length']))
-                    config['llm']['server'][
-                        'remote_llm_max_text_length'] = 30000
+                    print((file_path, config['llm']['server']['remote_llm_max_text_length']))
+                    config['llm']['server']['remote_llm_max_text_length'] = 40000
                     with open(file_path, 'w', encoding='utf8') as f:
                         pytoml.dump(config, f)
                 except Exception as e:

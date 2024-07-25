@@ -272,8 +272,9 @@ class HybridLLMServer:
         return output_text
 
     def call_internlm(self, prompt, history):
-        """See https://internlm.intern-ai.org.cn/api/document for internlm
-        remote api."""
+        """
+        See https://internlm.intern-ai.org.cn/api/document for internlm remote api
+        """
         url = 'https://internlm-chat.intern-ai.org.cn/puyu/api/v1/chat/completions'
 
         now = time.time()
@@ -304,15 +305,11 @@ class HybridLLMServer:
         output_text = ''
         self.rpm.wait()
 
-        res_json = requests.post(url,
-                                 headers=header,
-                                 data=json.dumps(data),
-                                 timeout=120).json()
+        res_json = requests.post(url, headers=header, data=json.dumps(data), timeout=120).json()
         logger.debug(res_json)
         if 'msgCode' in res_json:
             if res_json['msgCode'] == 'A0202':
-                logger.error(
-                    'Token error, check it starts with "Bearer " or not ?')
+                logger.error('Token error, check it starts with "Bearer " or not ?')
                 return ''
 
         res_data = res_json['choices'][0]['message']['content']
@@ -346,9 +343,50 @@ class HybridLLMServer:
         SYSTEM = '你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一些涉及恐怖主义，种族歧视，黄色暴力，政治宗教等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。'  # noqa E501
         # 20240531 hacking for kimi API incompatible
         # it is very very tricky, please do not change this magic prompt !!!
-        if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句' in prompt:
+        if '请仔细阅读以上内容' in prompt and '判断句子' in prompt:
             SYSTEM = '你是一个语文专家，擅长对句子的结构进行分析'
 
+        messages = build_messages(prompt=prompt,
+                                  history=history,
+                                  system=SYSTEM)
+
+        logger.debug('remote api sending: {}'.format(messages))
+        model = self.server_config['remote_llm_model']
+
+        prompt_len = len(prompt)
+        if prompt_len <= int(8192 * 1.5) - 1024:
+            model = 'moonshot-v1-8k'
+        elif prompt_len <= int(32768 * 1.5) - 1024:
+            model = 'moonshot-v1-32k'
+        else:
+            prompt = prompt[0:int(128000 * 1.5) - 1024]
+            model = 'moonshot-v1-128k'
+
+        logger.info('choose kimi model {}'.format(model))
+
+        completion = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.0,
+        )
+        return completion.choices[0].message.content
+
+    def call_step(self, prompt, history):
+        """Generate a response from step, see https://platform.stepfun.com/docs/overview/quickstart
+
+        Args:
+            prompt (str): The prompt to send to LLM.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response from LLM.
+        """
+        client = OpenAI(
+            api_key=self.server_config['remote_api_key'],
+            base_url='https://api.stepfun.com/v1',
+        )
+
+        SYSTEM = '你是由阶跃星辰提供的AI聊天助手，你擅长中文，英文，以及多种其他语言的对话。在保证用户数据安全的前提下，你能对用户的问题和请求，作出快速和精准的回答。同时，你的回答和建议应该拒绝黄赌毒，暴力恐怖主义的内容'  # noqa E501
         messages = build_messages(prompt=prompt,
                                   history=history,
                                   system=SYSTEM)
@@ -359,14 +397,16 @@ class HybridLLMServer:
         if model == 'auto':
             prompt_len = len(prompt)
             if prompt_len <= int(8192 * 1.5) - 1024:
-                model = 'moonshot-v1-8k'
+                model = 'step-1-8k'
             elif prompt_len <= int(32768 * 1.5) - 1024:
-                model = 'moonshot-v1-32k'
+                model = 'step-1-32k'
+            elif prompt_len <= int(128000 * 1.5) - 1024:
+                model = 'step-1-128k'
             else:
-                prompt = prompt[0:int(128000 * 1.5) - 1024]
-                model = 'moonshot-v1-128k'
+                prompt = prompt[0:int(256000 * 1.5) - 1024]
+                model = 'step-1-256k'
 
-        logger.info('choose kimi model {}'.format(model))
+        logger.info('choose step model {}'.format(model))
 
         completion = client.chat.completions.create(
             model=model,
@@ -496,7 +536,9 @@ class HybridLLMServer:
             base_url='https://open.bigmodel.cn/api/paas/v4/',
         )
 
-        messages = build_messages(prompt=prompt, history=history)  # noqa E501
+        messages = build_messages(
+            prompt=prompt,
+            history=history)  # noqa E501
 
         logger.debug('remote api sending: {}'.format(messages))
         completion = client.chat.completions.create(
@@ -539,14 +581,14 @@ class HybridLLMServer:
     def call_siliconcloud(self, prompt: str, history: list):
         self.rpm.wait()
 
-        url = 'https://api.siliconflow.cn/v1/chat/completions'
-
+        url = "https://api.siliconflow.cn/v1/chat/completions"
+        
         token = self.server_config['remote_api_key']
         if not token.startswith('Bearer '):
             token = 'Bearer ' + token
         headers = {
             'content-type': 'application/json',
-            'accept': 'application/json',
+            "accept": "application/json",
             'authorization': token
         }
 
@@ -554,7 +596,7 @@ class HybridLLMServer:
 
         payload = {
             'model': self.server_config['remote_llm_model'],
-            'stream': False,
+            "stream": False,
             'messages': messages,
             'temperature': 0.1
         }
@@ -617,8 +659,7 @@ class HybridLLMServer:
                                                         history=history)
 
                     elif backend == 'step':
-                        output_text = self.call_step(prompt=prompt,
-                                                     history=history)
+                        output_text = self.call_step(prompt=prompt, history=history)
 
                     elif backend == 'xi-api' or backend == 'gpt':
                         base_url = None
@@ -634,6 +675,9 @@ class HybridLLMServer:
                     elif backend == 'puyu':
                         output_text = self.call_puyu(prompt=prompt,
                                                      history=history)
+                    
+                    elif backend == 'internlm':
+                        output_text = self.call_internlm(prompt=prompt, history=history)
 
                     elif backend == 'internlm':
                         output_text = self.call_internlm(prompt=prompt,
@@ -643,8 +687,7 @@ class HybridLLMServer:
                         output_text = self.call_alles_apin(prompt=prompt,
                                                            history=history)
                     elif backend == 'siliconcloud':
-                        output_text = self.call_siliconcloud(prompt=prompt,
-                                                             history=history)
+                        output_text = self.call_siliconcloud(prompt=prompt, history=history)      
 
                     else:
                         error = 'unknown backend {}'.format(backend)
@@ -759,23 +802,11 @@ def main():
     if not args.unittest:
         llm_serve(args.config_path, server_ready)
     else:
-        queries = ['今天天气如何？']
-        repeat = 10
-
-        with open(args.config_path) as f:
-            llm_config = pytoml.load(f)['llm']
-            if llm_config['enable_local']:
-                model_path = llm_config['server']['local_llm_path']
-                wrapper = InferenceWrapper(model_path)
-                for query in queries:
-                    for i in range(repeat):
-                        print(wrapper.chat(prompt=query))
-                del wrapper
-
         start_llm_server(config_path=args.config_path)
 
         from .llm_client import ChatClient
         client = ChatClient(config_path=args.config_path)
+        queries = ['今天天气如何？']
         for query in queries:
             print(
                 client.generate_response(prompt=query,
