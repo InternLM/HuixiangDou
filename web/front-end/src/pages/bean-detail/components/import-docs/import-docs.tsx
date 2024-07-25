@@ -22,6 +22,10 @@ const ImportDocs: FC<ImportDocsProps> = ({ refresh, docs, filesState }) => {
     const afterUpload = () => {
         refresh();
     };
+    const closeModal = () => {
+        setOpenModal(false);
+        refresh();
+    };
     return (
         <div className={styles.importDocs}>
             <Button onClick={() => setOpenModal(true)}>
@@ -33,9 +37,14 @@ const ImportDocs: FC<ImportDocsProps> = ({ refresh, docs, filesState }) => {
                 open={openModal}
                 title={locales.addDocs}
                 footer={(<div />)}
-                onClose={() => setOpenModal(false)}
+                onClose={closeModal}
             >
-                <Upload docs={docs} filesState={filesState} afterUpload={afterUpload}>
+                <Upload
+                    docs={docs}
+                    filesState={filesState}
+                    afterUpload={afterUpload}
+                    afterDelete={closeModal}
+                >
                     <IconFont icon="icon-PlusOutlined" />
                     <div>{locales.upload}</div>
                     <div>{locales.supportFiles}</div>

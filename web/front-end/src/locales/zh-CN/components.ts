@@ -16,6 +16,13 @@ export default {
         total: '共计',
         failed: '失败',
         searchDesc: '输入文档名称进行搜索',
-        search: '搜索'
+        search: '搜索',
+        selectAll: '全选',
+        noSelected: '您还未选中任何文档',
+        deleteSelected: '删除',
+        deleteConfirm: '确定删除选中的文档吗？',
+        deleteDesc: '删除操作会重建知识库',
+        confirm: '删除',
+        cancel: '取消',
     }
 };

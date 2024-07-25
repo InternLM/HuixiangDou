@@ -117,6 +117,15 @@ export async function getInfo() {
     }, beanPrefix);
 }
 
+export async function deleteDocs(filenames: string[]) {
+    return request('/api/v1/qalib/v1/deleteDocs', {
+        method: 'POST',
+        data: {
+            filenames
+        }
+    }, beanPrefix);
+}
+
 export async function addDocs(files: File[]) {
     const data = new FormData();
     for (let i = 0; i < files.length; i++) {

@@ -15,6 +15,13 @@ export default {
         total: 'Total',
         failed: 'Failed',
         searchDesc: 'Enter the document name to search',
-        search: 'Search'
+        search: 'Search',
+        selectAll: 'Select all',
+        noSelected: 'No document selected',
+        deleteSelected: 'Delete selected',
+        deleteConfirm: 'Are you sure you want to delete the selected documents?',
+        deleteDesc: 'The delete operation will rebuild the bean',
+        confirm: 'Delete',
+        cancel: 'Cancel',
     }
 };

@@ -34,8 +34,8 @@ const BeanDetail: FC<BeanDetailProps> = () => {
     const navigate = useNavigate();
     const locales = useLocale('beanDetail');
     const [name, setName] = useState('');
-    const [docs, setDocs] = useState(['']);
-    const [filesState, setFilesState] = useState<FileState[]>([]);
+    const [docs, setDocs] = useState(['']); // 所有已上传的文档， 不一定已经处理
+    const [filesState, setFilesState] = useState<FileState[]>([]); // 所有已被处理的文档，包括处理状态
     const [weChatInfo, setWeChatInfo] = useState(null);
     const [feishuInfo, setFeishuInfo] = useState<Feishu>(null);
     const [suffix, setSuffix] = useState('');
