@@ -15,7 +15,7 @@ from web.model.huixiangdou import (HxdTask, HxdTaskPayload, HxdTaskType,
 from web.model.integrate import IntegrateLarkBody, IntegrateWebSearchBody
 from web.model.qalib import (AddDocError, AddDocsRes, Lark, QalibInfo,
                              QalibPositiveNegative, QalibSample, WebSearch,
-                             Wechat)
+                             Wechat, QalibDeleteDoc)
 from web.mq.hxd_task import HuixiangDouTask
 from web.orm.redis import r
 from web.util.log import log
@@ -149,6 +149,45 @@ class QaLibService:
         ret.docs = docs
         return BaseBody(data=ret)
 
+    async def delete_docs(self, body: QalibDeleteDoc):
+        feature_store_id = self.hxd_info.featureStoreId
+        name = self.hxd_info.name
+        logger.info(f'start to delete docs for qalib: {name}')
+
+        store_dir = get_store_dir(feature_store_id)
+        for filename in body.filenames:
+            path = os.path.join(store_dir, filename)
+            if not os.path.exists(path):
+                logger.warn(f"qalib: {name} has no file named {filename} to delete.")
+                continue
+            if path.startswith('.'):
+                continue
+            try:
+                os.remove(path)
+            except OSError as e:
+                logger.error(f'qalib: error: {e} when removing {path}')
+               
+        filenames = set(os.listdir(store_dir))
+        left_filenames = list(filenames - set(body.filenames))
+        # update qalib in redis
+        if not QaLibCache().rewrite_qalib_docs(feature_store_id, left_filenames,
+                                              store_dir):
+            return BaseBody()
+        # update to huixiangdou task queue
+        if not HuixiangDouTask().updateTask(
+                HxdTask(type=HxdTaskType.ADD_DOC,
+                        payload=HxdTaskPayload(
+                            name=name,
+                            feature_store_id=feature_store_id,
+                            file_list=left_filenames,
+                            file_abs_base=store_dir))):
+            return BaseBody()
+
+        ret = AddDocsRes(errors=[])
+        ret.docBase = store_dir
+        ret.docs = left_filenames
+        return BaseBody(data=ret)
+
     async def get_sample_info(self):
         sample_info = QaLibCache.get_sample_info(self.hxd_info.featureStoreId)
         return BaseBody(data=sample_info)
@@ -278,6 +317,32 @@ class QaLibCache:
         """
         return True if r.hdel(biz_const.RDS_KEY_QALIB_INFO,
                               feature_store_id) == 1 else False
+
+    @classmethod
+    def rewrite_qalib_docs(cls, feature_store_id: str, added_docs: List[str],
+                          file_base: str) -> bool:
+        """update qalib's docs.
+
+        :param feature_store_id:
+        :param added_docs:
+        :param file_base:
+        :return:
+        """
+        try:
+            info = cls.get_qalib_info(feature_store_id)
+            if not info:
+                return False
+
+            info.docs = list(set(added_docs))
+            info.docBase = file_base
+
+            cls.set_qalib_info(feature_store_id, info)
+            return True
+        except Exception as e:
+            logger.error(
+                f'[qalib] feature_store_id: {feature_store_id}, update docs failed: {e}'
+            )
+            return False
 
     @classmethod
     def update_qalib_docs(cls, feature_store_id: str, added_docs: List[str],
