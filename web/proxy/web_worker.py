@@ -192,8 +192,7 @@ class WebWorker:
                 tracker=tracker,
                 throttle=6,
                 default=2,
-                # backend='puyu'):
-                backend='kimi'):
+                backend='remote'):
             # not a question, give LLM response
             response = self.llm.generate_response(prompt=query,
                                                   history=history,
@@ -246,11 +245,9 @@ class WebWorker:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
             if not self.single_judge(prompt=prompt,
                                      tracker=tracker,
-                                     throttle=8,
+                                     throttle=9,
                                      default=0,
-                                    #  backend='puyu'):
-                                     backend='kimi'):
-
+                                     backend='remote'):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
                     return ErrorCode.SECURITY, '检测到敏感内容，无法显示', retrieve_ref
@@ -311,7 +308,7 @@ class WebWorker:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
             if self.single_judge(prompt=prompt,
                                  tracker=tracker,
-                                 throttle=8,
+                                 throttle=9,
                                  default=0,
                                  backend='remote'):
                 reborn_code = ErrorCode.BAD_ANSWER
