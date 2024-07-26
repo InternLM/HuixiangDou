@@ -1,7 +1,11 @@
 [English](README.md) | 简体中文
 
 <div align="center">
-
+<style>
+    p {
+        text-align: left;
+    }
+</style>
 <img src="resource/logo_black.svg" width="555px"/>
 
 <div align="center">
@@ -80,7 +84,10 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
         <b>检索方法</b>
       </td>
       <td>
-        <b>即时通讯软件</b>
+        <b>即时通讯</b>
+      </td>
+      <td>
+        <b>预处理</b>
       </td>
     </tr>
     <tr valign="top">
@@ -111,9 +118,11 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 <td>
 
-- [知识图谱](./huixiangdou/service/kg.py)
+- [知识图谱](./docs/knowledge_graph_zh.md)
 - [BCEmbedding](https://github.com/netease-youdao/BCEmbedding)
 - [bge/bge-m3](https://github.com/FlagOpen/FlagEmbedding)
+- [联网搜索](https://github.com/FlagOpen/FlagEmbedding)
+- [SourceGraph](https://sourcegraph.com)
 
 </td>
 
@@ -124,22 +133,32 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 </td>
 
+<td>
+
+- [指代消歧](https://arxiv.org/abs/2405.02817)
+
+</td>
+
 </tr>
   </tbody>
 </table>
 
 # 📦 硬件要求
 
-以下是运行茴香豆的硬件需求。建议遵循部署流程，从标准版开始，逐渐体验复杂特性。
+以下是不同特性所需显存，区别仅在**配置选项是否开启**。
 
-|  版本  | GPU显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
+|  配置示例  | 显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| 实惠版 |    1.5GB    | 用 [openai API](https://pypi.org/project/openai/)（如 [kimi](https://kimi.moonshot.cn) 和 [deepseek](https://platform.deepseek.com/usage)）替代本地 LLM，处理源码级问题。<br/>限额免费 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-| 标准版 |    19GB     |                                                                         本地部署 LLM，能回答领域知识的基础问题                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| 完整版 |    40GB     |                                                                      充分利用检索+长文本能力，能够回答源码级问题                                                                       | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+| [config-2G.ini](./config-2G.ini) |    1.5GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| [config-multimodal.ini](./config.ini) |10GB     | 用 openai API 做 LLM，多模态检索 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| 【标准版】[config.ini](./config.ini) |19GB     | 本地部署 LLM，单模态 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| [config-advanced.ini](./config-advanced.ini) |    80GB     |  本地 LLM，指代消歧，单模态，微信群实用 | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
-# 🔥 运行
+# 🔥 运行标准版
 
+我们以标准版（本地运行 LLM，纯文本检索）为例，介绍 HuixiangDou 功能。其他版本仅仅是配置选项不同。
+
+## 一、下载模型，安装依赖
 首先[点击同意 BCE 模型协议](https://huggingface.co/maidalun1020/bce-embedding-base_v1)，命令行登录 huggingface
 
 ```shell
@@ -157,13 +176,9 @@ pip install -r requirements.txt
 # python3.8 安装 faiss-gpu 而不是 faiss
 ```
 
-茴香豆是基于 `config.ini` 配置实现的，按机器显存可以分成标准版（19G）、实惠版（1.5G）和完整版（40G）。
+## 二、先不创建知识库，直接执行
 
-## 一、标准版
-
-标准版会在本地运行 text2vec、rerank 和 7B 模型。
-
-**STEP1.** 先不使用拒答流，直接运行一些测试用例：
+此时和知识库无关问题，都会拒答。
 
 ```shell
 # standalone 模式
@@ -175,6 +190,8 @@ python3 -m huixiangdou.main --standalone
 +=======================+=========================+===============+============+
 | 请问如何安装 mmpose ?   | Topics unrelated to the | ..            |            |
 |                       | knowledge base..        |               |            |
+| 今天天气如何？          | Topics unrelated to the | ..            |            |
+|                       | knowledge base..        |               |            |
 +-----------------------+-------------------------+---------------+------------+
 ```
 
@@ -184,9 +201,10 @@ python3 -m huixiangdou.main --standalone
 > 如果 huggingface 下载太慢，可以用国内镜像 <a href="https://hf-mirror.com">hf-mirror</a> 下载到本地。然后修改 <b>config.ini</b> 配置中模型的路径
 > </div>
 
-可以看到 `main.py` 示例问题处理结果相同，无论问深度学习相关的 mmpose 还是 `今天天气如何`。
 
-**STEP2.** 用 mmpose 的文档构建 mmpose 知识库，开启拒答流。如有自己的文档，放入 `repodir` 下即可。
+## 三、创建知识库，重新发问
+
+我们将用 mmpose 的文档构建 mmpose 知识库，开始过滤问题。如有自己的文档，放入 `repodir` 下即可。
 
 复制下面所有命令（包含 '#' 符号）执行。
 
@@ -201,7 +219,7 @@ mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-运行结束后再次测试 main，茴香豆能够回答 mmpose 问题，同时拒答天气问题。
+运行结束后再次测试 `python3 -m huixiangdou.main --standalone`，此时回复 mmpose 相关问题（和知识库相关），同时不响应天气问题。
 
 ```bash
 python3 -m huixiangdou.main --standalone
@@ -210,6 +228,7 @@ python3 -m huixiangdou.main --standalone
 |         Query         |  State  |         Part of Reply          |   References    |
 +=======================+=========+================================+=================+
 | 请问如何安装 mmpose ?   | success | 要安装 mmpose，请按照以下步骤操作..| installation.md |
+| 今天天气如何？          | Topics..| ..                             |            |
 +-----------------------+---------+--------------------------------+-----------------+
 ```
 
@@ -221,75 +240,69 @@ python3 -m huixiangdou.main --standalone
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
-**STEP3.** 测试发消息给飞书群\[可选\]
+## 四、集成到飞书、微信等
 
-这一步主要是验证算法 pipeline 可靠，**STEP4** 同样支持即时通讯软件。
+- [**单向**发送到飞书群](./docs/send_only_lark_group_zh.md)
+- [**双向**飞书群收发、撤回](./docs/add_lark_group_zh.md)
+- [个微 android 接入](./docs/add_wechat_accessibility_zh.md)
+- [个微 wkteam 接入](./docs/add_wechat_commercial_zh.md)
 
-点击[创建飞书自定义机器人](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot)，获取回调 WEBHOOK_URL，填写到 config.ini
+## 五、WEB 前后端部署，零编程集成飞书微信
 
-```ini
-# config.ini
-..
-[frontend]
-type = "lark"
-webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
-```
-
-运行。结束后，技术助手的答复将**单向**发送到飞书群。
-
-```shell
-python3 -m huixiangdou.main --standalone # 非 docker 用户
-python3 -m huixiangdou.main # docker 用户
-```
-
-<img src="./resource/figures/lark-example.png" width="400">
-
-- [算法 pipeline 集成飞书群收发、撤回功能](./docs/add_lark_group_zh.md)
-- [算法 pipeline 个微 android 接入](./docs/add_wechat_accessibility_zh.md)
-- [算法 pipeline 个微 wkteam 接入](./docs/add_wechat_commercial_zh.md)
-
-**STEP4.** WEB 前后端
-
-我们提供了完整的前端 UI 和后端服务，支持：
+我们提供了完整的前端 UI 和后端服务源码，支持：
 
 - 多租户管理
 - 零编程接入飞书、微信群
 
-效果见 [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，请阅读[web部署文档](./web/README.md)。
+效果同 [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，请阅读 [web 部署文档](./web/README.md)。
 
-## 二、实惠版
+# 🍴 其他版本
 
-如果你的机器显存只有 2G，或追求性价比，只需要看[这个知乎文档](https://zhuanlan.zhihu.com/p/685205206)。
+## 1.5G 实惠版
 
-实惠版仅扔掉了本地 LLM，使用 remote LLM 代替，其他功能和标准版相同。
+  如果你的显存只有 1.5G，或追求性价比。此配置扔掉了本地 LLM，使用 remote LLM 代替，其他和标准版相同。
 
-以 kimi 为例，把[官网申请](https://platform.moonshot.cn/) 的 API TOKEN 填入 `config-2G.ini`
+  以 kimi 为例，把[官网申请](https://platform.moonshot.cn/) 的 API TOKEN 填入 `config-2G.ini`
 
-```bash
-# config-2G.ini
-[llm]
-enable_local = 0
-enable_remote = 1
-..
-remote_type = "kimi"
-remote_api_key = "YOUR-API-KEY-HERE"
-```
+  ```toml
+  # config-2G.ini
+  [llm]
+  enable_local = 0   # 关掉本地 LLM
+  enable_remote = 1  # 只用远程
+  ..
+  remote_type = "kimi"   # 选择 kimi
+  remote_api_key = "YOUR-API-KEY-HERE"
+  ```
 
-> \[!NOTE\]
->
-> <div align="center">
-> 每次问答最坏情况要调用 7 次 LLM，受免费用户 RPM 限制，可修改 config.ini 中 <b>rpm</b> 参数
-> </div>
+  > \[!NOTE\]
+  >
+  > <div align="center">
+  > 每次问答最坏情况要调用 7 次 LLM，受免费用户 RPM 限制，可修改 config.ini 中 <b>rpm</b> 参数
+  > </div>
 
-执行命令获取问答结果
+  执行命令获取问答结果
 
-```shell
-python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启动所有服务
-```
+  ```shell
+  python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启动所有服务
+  ```
 
-## 三、完整版
+## 10G 多模态版
 
-微信群里的 “茴香豆” 开启了全部功能：
+  如果你有 10G 显存，那么可以进一步支持图片检索。仅需修改 config.ini 使用的模型。
+
+  ```toml
+  # config-multimodal.ini
+  embedding_model_path = "BAAI/bge-m3"
+  reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
+  ```
+  需要注意两件事：
+  
+  * 要手动下载 [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) 到 [bge-m3](https://huggingface.co/BAAI/bge-m3) 目录下
+  * 安装 [requirements-multimodal.txt](./requirements-multimodal.txt)，且 FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
+
+## 80G 完整版
+
+微信体验群里的 “茴香豆” 开启了全部功能：
 
 - Serper 搜索及 SourceGraph 搜索增强
 - 群聊图片、微信公众号解析
@@ -362,6 +375,7 @@ python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启
 # 🍀 致谢
 
 - [KIMI](https://kimi.moonshot.cn/): 长文本 LLM，支持直接上传文件
+- [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding): BAAI RAG 组
 - [BCEmbedding](https://github.com/netease-youdao/BCEmbedding): 中英双语特征模型
 - [Langchain-ChatChat](https://github.com/chatchat-space/Langchain-Chatchat): Langchain 和 ChatGLM 的应用
 - [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): 微信抢红包

@@ -1,6 +1,6 @@
 # 混合知识图谱和稠密检索
 
-通过混合知识图谱和稠密检索，拒答 F1 提升约 2 个点，它的本质是**给高频词加权**。介绍已同步到[飞书](https://aicarrier.feishu.cn/docx/F51pduYyMof8syxKe5RchiU1nIN)。
+通过混合知识图谱和稠密检索，拒答 F1 提升约 2 个点，它的本质是**给高频词加权**。介绍已同步到[飞书](https://aicarrier.feishu.cn/docx/F51pduYyMof8syxKe5RchiU1nIN) 和[知乎](https://zhuanlan.zhihu.com/p/709589834)。
 
 本方案对老版本完美兼容，以下是完整操作步骤。
 
