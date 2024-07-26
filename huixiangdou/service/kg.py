@@ -330,7 +330,7 @@ class KnowledgeGraph:
             })])
         for rel in self.relations:
             G.add_edge(rel['_from'], rel['to'], desc=rel['desc'])
-        logger.debug('number of nodes {}, number of edges {}'.format(
+        logger.debug('Loaded knowledge graph, number of nodes {}, number of edges {}'.format(
             G.number_of_nodes(), G.number_of_edges()))
 
         # save to pickle format

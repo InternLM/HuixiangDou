@@ -13,10 +13,10 @@ from typing import Any
 from .file_operation import FileOperation
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
-from huixiangdou.primitive import LLMCompressionRetriever, LLMReranker, Embedder
+from huixiangdou.primitive import LLMReranker, Embedder, Faiss, Query
 
 class Retriever:
-    """Tokenize and extract features from the project's documents, for use in
+    """Tokenize and extract features from the project's chunks, for use in
     the reject pipeline and response pipeline."""
 
     def __init__(self, config_path: str, embedder: Any, reranker: Any, work_dir: str,
@@ -24,9 +24,10 @@ class Retriever:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = reject_throttle
-        self.rejecter = None
-        self.retriever = None
-        self.compression_retriever = None
+
+        self.embedder = embedder
+        self.reranker = reranker
+        self.faiss = None
 
         if not os.path.exists(work_dir):
             logger.warning('!!!warning, workdir not exist.!!!')
@@ -36,75 +37,12 @@ class Retriever:
         self.kg = KnowledgeGraph(config_path=config_path)
 
         # dense retrieval, load refusal-to-answer and response feature database
-        rejection_path = os.path.join(work_dir, 'db_reject')
-        retriever_path = os.path.join(work_dir, 'db_response')
-
-        if os.path.exists(rejection_path):
-            self.rejecter = Faiss.load_local(
-                rejection_path,
-                embedder=embedder)
-
-        if os.path.exists(retriever_path):
-            self.retriever = Faiss.load_local(
-                retriever_path,
-                embedder=embedder
-            ).as_retriever(search_type='similarity',
-                           search_kwargs={
-                               'score_threshold': 0.15,
-                               'k': 30
-                           })
-
-            if 'LLMReranker' in type(reranker).__name__:
-                self.compression_retriever = LLMCompressionRetriever(
-                    base_compressor=reranker, base_retriever=self.retriever)
-            else:
-                self.compression_retriever = ContextualCompressionRetriever(
-                    base_compressor=reranker, base_retriever=self.retriever)
-
-        if self.rejecter is None:
-            logger.warning('rejecter is None')
-        if self.retriever is None:
-            logger.warning('retriever is None')
-
-    def is_relative(self,
-                    question,
-                    k=30,
-                    disable_throttle=False,
-                    disable_graph=False):
-        """If no search results below the threshold can be found, reject this query.
-        """
-
-        if self.rejecter is None:
-            return False, []
-
-        if disable_throttle:
-            # for searching throttle during update sample
-            docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
-                question, k=1)
-            if len(docs_with_score) < 1:
-                return False, docs_with_score
-            return True, docs_with_score
+        dense_path = os.path.join(work_dir, 'db_dense')
+        if not os.path.exists(dense_path):
+            logger.warning('retriever is None, skip load faiss')
+            self.faiss = None
         else:
-            # for retrieve result
-            # if no chunk passed the throttle, give the max
-            graph_delta = 0.0
-            if not disable_graph and self.kg.is_available():
-                candidates = self.kg.retrieve(query=question)
-                graph_delta = 0.2 * min(100, len(candidates)) / 100
-
-            docs_with_score = self.rejecter.similarity_search_with_relevance_scores(
-                question, k=k)
-            ret = []
-            max_score = -1
-            top1 = None
-            for (doc, score) in docs_with_score:
-                if score >= self.reject_throttle - graph_delta:
-                    ret.append(doc)
-                if score > max_score:
-                    max_score = score
-                    top1 = (doc, score)
-            relative = True if len(ret) > 0 else False
-            return relative, [top1]
+            self.faiss = Faiss.load_local(dense_path)
 
     def update_throttle(self,
                         config_path: str = 'config.ini',
@@ -116,13 +54,23 @@ class Retriever:
             raise Exception('good and bad question examples cat not be empty.')
         questions = good_questions + bad_questions
         predictions = []
-        for question in questions:
-            self.reject_throttle = -1
-            _, docs = self.is_relative(question=question,
-                                       disable_throttle=True)
-            score = docs[0][1]
-            predictions.append(max(0, score))
+        self.reject_throttle = -1
 
+        for question in questions:
+
+            graph_delta = 0.0
+            if self.kg.is_available():
+                try:
+                    docs = self.kg.retrieve(query=question)
+                    graph_delta = 0.2 * min(100, len(docs)) / 100
+                except Exception as e:
+                    logger.warning(str(e))
+                    logger.info('KG folder exists, but search failed, skip.')
+
+            query = Query(text=question)
+            pairs = self.faiss.similarity_search_with_query(embedder=self.embedder, query=query)
+            predictions.append(max(0, pairs[0][1] + graph_delta))
+            
         labels = [1 for _ in range(len(good_questions))
                   ] + [0 for _ in range(len(bad_questions))]
         precision, recall, thresholds = precision_recall_curve(
@@ -144,7 +92,7 @@ class Retriever:
 
     def query(self,
               question: str,
-              context_max_length: int = 16000,
+              context_max_length: int = 40000,
               tracker: QueryTracker = None):
         """Processes a query and returns the best match from the vector store
         database. If the question is rejected, returns None.
@@ -156,7 +104,7 @@ class Retriever:
             str: The best matching chunk, or None.
             str: The best matching text, or None
         """
-        if question is None or len(question) < 1:
+        if question is None or len(question) < 1 or self.faiss is None:
             return None, None, []
 
         if len(question) > 512:
@@ -167,35 +115,48 @@ class Retriever:
         context = ''
         references = []
 
-        relative, docs = self.is_relative(question=question)
+        graph_delta = 0.0
+        if self.kg.is_available():
+            try:
+                docs = self.kg.retrieve(query=question)
+                graph_delta = 0.2 * min(100, len(docs)) / 100
+            except Exception as e:
+                logger.warning(str(e))
+                logger.info('KG folder exists, but search failed, skip.')
+
+        threshold = self.reject_throttle - graph_delta
+        pairs = self.faiss.similarity_search_with_query(self.embedder, query=Query(question))
         # logger.debug('retriever.docs {}'.format(docs))
-        if not relative:
-            if len(docs) > 0:
-                references.append(docs[0][0].metadata['source'])
+
+        if len(pairs) < 1 or pairs[0][1] < threshold:
+            references.append(pairs[0][0].metadata['source'])
             return None, None, references
 
-        docs = self.compression_retriever.get_relevant_documents(question)
+        high_score_chunks = []
+        for pair in pairs:
+            if pair[1] >= threshold:
+                high_score_chunks.append(pair[0])
+
+        chunks = self.reranker.rerank(query=question, chunks=high_score_chunks)
         if tracker is not None:
-            tracker.log('retrieve', [doc.metadata['source'] for doc in docs])
+            tracker.log('retrieve', [c.metadata['source'] for c in chunks])
 
         # add file text to context, until exceed `context_max_length`
-
         file_opr = FileOperation()
-        for idx, doc in enumerate(docs):
-            chunk = doc.page_content
-            chunks.append(chunk)
+        splits = []
+        for idx, chunk in enumerate(chunks):
+            if chunk.modal == 'image':
+                continue
 
-            if 'read' not in doc.metadata:
-                logger.error(
-                    'If you are using the version before 20240319, please rerun `python3 -m huixiangdou.service.feature_store`'
-                )
-                raise Exception('huixiangdou version mismatch')
-            file_text, error = file_opr.read(doc.metadata['read'])
+            content = chunk.content_or_path
+            splits.append(content)
+
+            file_text, error = file_opr.read(chunk.metadata['read'])
             if error is not None:
                 # read file failed, skip
                 continue
 
-            source = doc.metadata['source']
+            source = chunk.metadata['source']
             logger.info('target {} file length {}'.format(
                 source, len(file_text)))
             if len(file_text) + len(context) > context_max_length:
@@ -206,14 +167,14 @@ class Retriever:
                 add_len = context_max_length - len(context)
                 if add_len <= 0:
                     break
-                chunk_index = file_text.find(chunk)
-                if chunk_index == -1:
-                    # chunk not in file_text
-                    context += chunk
+                content_index = file_text.find(content)
+                if content_index == -1:
+                    # content not in file_text
+                    context += content
                     context += '\n'
-                    context += file_text[0:add_len - len(chunk) - 1]
+                    context += file_text[0:add_len - len(content) - 1]
                 else:
-                    start_index = max(0, chunk_index - (add_len - len(chunk)))
+                    start_index = max(0, content_index - (add_len - len(content)))
                     context += file_text[start_index:start_index + add_len]
                 break
 
@@ -224,9 +185,16 @@ class Retriever:
 
         context = context[0:context_max_length]
         logger.debug('query:{} top1 file:{}'.format(question, references[0]))
-        return '\n'.join(chunks), context, [
+        return '\n'.join(splits), context, [
             os.path.basename(r) for r in references
         ]
+
+    def is_relative(self,
+                    question,
+                    k=30,
+                    disable_throttle=False,
+                    disable_graph=False):
+        raise ValueError('This api already deprecated, please `git checkout 20240722`')
 
 
 class CacheRetriever:
@@ -234,7 +202,7 @@ class CacheRetriever:
     def __init__(self,
                  config_path: str,
                  cache_size: int = 4,
-                 rerank_topn: int = 10):
+                 rerank_topn: int = 4):
         self.cache = dict()
         self.cache_size = cache_size
         with open(config_path, encoding='utf8') as f:
@@ -244,9 +212,8 @@ class CacheRetriever:
 
         # load text2vec and rerank model
         logger.info('loading test2vec and rerank models')
-        self.embeddings = Embedder(model_path=embedding_model_path)
+        self.embedder = Embedder(model_path=embedding_model_path)
         self.reranker = LLMReranker(model_name_or_path=reranker_model_path, topn=rerank_topn)
-
 
     def get(self,
             fs_id: str = 'default',
@@ -278,13 +245,11 @@ class CacheRetriever:
                 del del_value['retriever']
 
         retriever = Retriever(config_path=config_path,
-                              embeddings=self.embeddings,
+                              embedder=self.embedder,
                               reranker=self.reranker,
                               work_dir=work_dir,
                               reject_throttle=reject_throttle)
         self.cache[fs_id] = {'retriever': retriever, 'time': time.time()}
-        if retriever.rejecter is None:
-            logger.warning('retriever.rejecter is None, check workdir')
         return retriever
 
     def pop(self, fs_id: str):

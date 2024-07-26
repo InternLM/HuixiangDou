@@ -116,7 +116,7 @@ def calculate(chunk_size: int):
     # 按不同 chunk_size 和 chunk_size，构建特征库
     # 读 input.jsonl 计算 F1
     cache = CacheRetriever(config_path=config_path)
-    fs_init = FeatureStore(embeddings=cache.embeddings,
+    fs_init = FeatureStore(embedder=cache.embedder,
                            config_path=config_path,
                            chunk_size=chunk_size,
                            analyze_reject=True,

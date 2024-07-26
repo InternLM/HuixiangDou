@@ -2,12 +2,13 @@
 import json
 import os
 import pdb
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from .embedder import Embedder
+from .chunk import Chunk
 
 class LLMReranker:
 
@@ -83,12 +84,12 @@ class LLMReranker:
                                   pad_to_multiple_of=8,
                                   return_tensors='pt')
 
-    def sort(self, chunks: List[str], query: str):
-        """Rerank input chunks, return descending indexes, indexes[0] is the
+    def sort(self, texts: List[str], query: str):
+        """Rerank input texts, return descending indexes, indexes[0] is the
         nearest chunk."""
         pairs = []
-        for chunk in chunks:
-            pairs.append([query, chunk])
+        for text in texts:
+            pairs.append([query, text])
 
         with torch.no_grad():
             inputs = self.get_inputs(pairs).to(self.model.device)
@@ -103,20 +104,14 @@ class LLMReranker:
             return scores.argsort()[::-1][0:self.topn]
 
 
-class LLMCompressionRetriever:
-
-    def __init__(self, base_compressor: LLMReranker,
-                 base_retriever: Embedder):
-        self.reranker = base_compressor
-        self.retriever = base_retriever
-
-    def get_relevant_documents(self, query: str):
-        docs = self.retriever.get_relevant_documents(query)
-        if not docs:
+    def rerank(self, query: str, chunks: List[Chunk]):
+        """Rerank faiss search results."""
+        if not chunks:
             return []
-        chunks = []
-        for doc in docs:
-            chunks.append(doc.page_content)
 
-        indexes = self.reranker.sort(chunks=chunks, query=query)
-        return [docs[i] for i in indexes]
+        texts = []
+        for chunk in chunks:
+            texts.append(chunk.content_or_path)
+
+        indexes = self.sort(texts=texts, query=query)
+        return [chunks[i] for i in indexes]

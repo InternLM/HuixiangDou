@@ -11,6 +11,10 @@ def test_query():
     assert 'hello' in q_str
     assert 'image=' in q_str
 
+    p = Query('hello')
+    p_str ='{}'.format(p)
+    assert 'text=' in p_str
+
 if __name__ == '__main__':
     test_chunk()
     test_query()

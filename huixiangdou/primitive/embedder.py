@@ -30,7 +30,7 @@ class Embedder:
         return True
 
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """Compute doc embeddings using a HuggingFace transformer model.
+        """Compute text embeddings using a HuggingFace transformer model.
 
         Args:
             texts: The list of texts to embed.

@@ -21,6 +21,7 @@ from loguru import logger
 from .embedder import Embedder
 from .query import Query
 import pdb
+from tqdm import tqdm
 
 # heavily modified from langchain
 def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
@@ -53,21 +54,22 @@ class Faiss():
     def __init__(
         self,
         index: Any,
-        chunks: List[Chunk]
+        chunks: List[Chunk],
+        k: int = 30
     ):
         """Initialize with necessary components."""
         self.index = index
         self.chunks = chunks
+        self.k = k
 
     def similarity_search(
         self,
-        embedding: np.ndarray,
-        k: int = 30
+        embedding: np.ndarray
     ) -> List[Tuple[Chunk, float]]:
         """Return chunks most similar to query.
 
         Args:
-            embedding: Embedding vector to look up documents similar to.
+            embedding: Embedding vector to look up chunk similar to.
             k: Number of Documents to return. Defaults to 30.
 
         Returns:
@@ -76,7 +78,7 @@ class Faiss():
         """
         faiss = dependable_faiss_import()
 
-        scores, indices = self.index.search(embedding, k)
+        scores, indices = self.index.search(embedding, self.k)
         pairs = []
         for j, i in enumerate(indices[0]):
             if i == -1:
@@ -91,7 +93,7 @@ class Faiss():
         self,
         embedder: Embedder,
         query: Query,
-        threshold: float = -1.0
+        threshold: float=-1
     ):
         """Return chunks most similar to query.
 
@@ -109,7 +111,7 @@ class Faiss():
         np_feature = embedder.embed_query(text=query.text, path=query.image)
         pairs = self.similarity_search(embedding=np_feature)
         # ret = list(filter(lambda x: x[1] >= threshold, pairs))
-
+        
         ret = []
         for pair in pairs:
             if pair[1] >= threshold:
@@ -128,7 +130,8 @@ class Faiss():
 
         faiss = dependable_faiss_import()
         index = None
-        for chunk in chunks:
+
+        for chunk in tqdm(chunks):
             if chunk.modal == 'text':
                 np_feature = embedder.embed_query(text=chunk.content_or_path)
             elif chunk.modal == 'image':
