@@ -10,7 +10,7 @@ from multiprocessing import Pool
 from typing import Any, List, Optional
 
 import pytoml
-from huixiangdou.primitive import (Chunk, MarkdownHeaderTextSplitter, MarkdownTextSplitter, RecursiveCharacterTextSplitter, Embedder, Faiss)
+from huixiangdou.primitive import (Chunk, MarkdownHeaderTextSplitter, MarkdownTextSplitter, RecursiveCharacterTextSplitter, Embedder, Faiss, nested_split_markdown)
 from loguru import logger
 from torch.cuda import empty_cache
 from tqdm import tqdm
@@ -19,7 +19,7 @@ from .file_operation import FileName, FileOperation
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
-
+from typing import Dict, List
 
 def read_and_save(file: FileName):
     if os.path.exists(file.copypath):
@@ -41,13 +41,12 @@ def read_and_save(file: FileName):
     with open(file.copypath, 'w') as f:
         f.write(content)
 
-
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
 
     def __init__(self,
-                 embeddings: Embedder,
+                 embedder: Embedder,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
                  chunk_size=832,
@@ -68,17 +67,17 @@ class FeatureStore:
         )
 
         logger.debug('loading text2vec model..')
-        self.embeddings = embeddings
+        self.embedder = embedder
         self.compression_retriever = None
         self.rejecter = None
         self.retriever = None
         self.chunk_size = chunk_size
         self.analyze_reject = analyze_reject
-        self.rejecter_naive_splitter = rejecter_naive_splitter
+
+        if rejecter_naive_splitter:
+            raise ValueError('rejecter_naive_splitter option deprecated, please git checkout v20240722')
 
         logger.info('init fs with chunk_size {}'.format(chunk_size))
-        self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
-                                                chunk_overlap=32)
 
         if language == 'zh':
             self.text_splitter = ChineseRecursiveTextSplitter(
@@ -90,125 +89,41 @@ class FeatureStore:
             self.text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=chunk_size, chunk_overlap=32)
 
-        self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
-            ('#', 'Header 1'),
-            ('##', 'Header 2'),
-            ('###', 'Header 3'),
-        ])
-
-    def split_md(self, text: str, source: None):
-        """Split the markdown document in a nested way, first extracting the
-        header.
-
-        If the extraction result exceeds chunk_size, split it again according
-        to length.
-        """
-        docs = self.head_splitter.split_text(text)
-
-        final = []
-        for doc in docs:
-            header = ''
-            if len(doc.metadata) > 0:
-                if 'Header 1' in doc.metadata:
-                    header += doc.metadata['Header 1']
-                if 'Header 2' in doc.metadata:
-                    header += ' '
-                    header += doc.metadata['Header 2']
-                if 'Header 3' in doc.metadata:
-                    header += ' '
-                    header += doc.metadata['Header 3']
-
-            if len(doc.page_content) > self.chunk_size:
-                subdocs = self.md_splitter.create_documents([doc.page_content])
-                for subdoc in subdocs:
-                    if len(subdoc.page_content) >= 10:
-                        final.append('{} {}'.format(
-                            header, subdoc.page_content.lower()))
-            elif len(doc.page_content) >= 10:
-                final.append('{} {}'.format(
-                    header, doc.page_content.lower()))  # noqa E501
-
-        # for item in final:
-        #     if len(item) >= self.chunk_size:
-        #         logger.debug('source {} split length {}'.format(
-        #             source, len(item)))
-        return final
-
-    def clean_md(self, text: str):
-        """Remove parts of the markdown document that do not contain the key
-        question words, such as code blocks, URL links, etc."""
-        # remove ref
-        pattern_ref = r'\[(.*?)\]\(.*?\)'
-        new_text = re.sub(pattern_ref, r'\1', text)
-
-        # remove code block
-        pattern_code = r'```.*?```'
-        new_text = re.sub(pattern_code, '', new_text, flags=re.DOTALL)
-
-        # remove underline
-        new_text = re.sub('_{5,}', '', new_text)
-
-        # remove table
-        # new_text = re.sub('\|.*?\|\n\| *\:.*\: *\|.*\n(\|.*\|.*\n)*', '', new_text, flags=re.DOTALL)   # noqa E501
-
-        # use lower
-        new_text = new_text.lower()
-        return new_text
-
-    def get_md_documents(self, file: FileName):
-        documents = []
+    def parse_markdown(self, file: FileName, metadata:Dict):
         length = 0
         text = ''
         with open(file.copypath, encoding='utf8') as f:
             text = f.read()
-        text = file.prefix + '\n' + self.clean_md(text)
+        text = file.prefix + text
         if len(text) <= 1:
             return [], length
 
-        chunks = self.split_md(text=text,
-                               source=os.path.abspath(file.copypath))
-        for chunk in chunks:
-            new_doc = Chunk(page_content=chunk,
-                               metadata={
-                                   'source': file.basename,
-                                   'read': file.copypath
-                               })
-            length += len(chunk)
-            documents.append(new_doc)
-        return documents, length
+        chunks = nested_split_markdown(text=text, chunksize=self.chunk_size,  metadata=metadata)
+        for c in chunks:
+            length += len(c.content_or_path)
+        return chunks, length
 
-    def get_text_documents(self, text: str, file: FileName):
-        if len(text) <= 1:
-            return []
-        chunks = self.text_splitter.create_documents([text])
-        documents = []
-        for chunk in chunks:
-            # `source` is for return references
-            # `read` is for LLM response
-            chunk.metadata = {'source': file.basename, 'read': file.copypath}
-            documents.append(chunk)
-        return documents
-
-    def build_dense_response(self, files: list, work_dir: str):
+    def build_dense(self, files: list, work_dir: str):
         """Extract the features required for the response pipeline based on the
         document."""
-        feature_dir = os.path.join(work_dir, 'db_response')
+        feature_dir = os.path.join(work_dir, 'db_dense')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        # logger.info('glob {} in dir {}'.format(files, file_dir))
         file_opr = FileOperation()
         chunks = []
 
         for i, file in tqdm(enumerate(files)):
-            # logger.debug('{}/{}.. {}'.format(i + 1, len(files), file.basename))
             if not file.state:
                 continue
+            metadata = {
+                'source': file.origin,
+                'read': file.copypath
+            }
 
             if file._type == 'md':
-                md_documents, md_length = self.get_md_documents(file)
-                chunks += md_documents
-                # logger.info('{} content length {}'.format(file._type, md_length))
+                md_chunks, md_length = self.parse_markdown(file=file, metadata=metadata)
+                chunks += md_chunks
                 file.reason = str(md_length)
 
             else:
@@ -219,16 +134,14 @@ class FeatureStore:
                     file.reason = str(error)
                     continue
                 file.reason = str(len(text))
-                # logger.info('{} content length {}'.format(file._type, len(text)))
                 text = file.prefix + text
-                chunks += self.get_text_documents(text, file)
+                chunks += self.text_splitter.create_chunks(text=[text], metadatas=[metadata])
 
         if len(chunks) < 1:
             return
-        vs = Faiss.from_documents(chunks, self.embeddings)
-        vs.save_local(feature_dir)
+        Faiss.save_local(folder_path=feature_dir, chunks=chunks, embedder=self.embedder)
 
-    def analyze(self, documents: list):
+    def analyze(self, chunks: List[Chunk]):
         """Output documents length mean, median and histogram."""
         if not self.analyze_reject:
             return
@@ -236,15 +149,15 @@ class FeatureStore:
         text_lens = []
         token_lens = []
 
-        if self.embeddings is None:
-            logger.info('self.embeddings is None, skip `anaylze_output`')
+        if self.embedder is None:
+            logger.info('self.embedder is None, skip `anaylze_output`')
             return
-        for doc in documents:
-            content = doc.page_content
+        for chunk in chunks:
+            content = chunk.content_or_path
             text_lens.append(len(content))
             token_lens.append(
                 len(
-                    self.embeddings.client.tokenizer(
+                    self.embedder.client.tokenizer(
                         content, padding=False,
                         truncation=False)['input_ids']))
 
@@ -252,62 +165,7 @@ class FeatureStore:
         logger.info('document token histogram, {}'.format(
             histogram(token_lens)))
 
-    def build_dense_reject(self, files: list, work_dir: str):
-        """Extract the features required for the reject pipeline based on
-        documents."""
-        feature_dir = os.path.join(work_dir, 'db_reject')
-        if not os.path.exists(feature_dir):
-            os.makedirs(feature_dir)
-
-        lens = []
-        documents = []
-        file_opr = FileOperation()
-
-        logger.debug('build dense reject with chunk_size {}'.format(
-            self.chunk_size))
-        for i, file in tqdm(enumerate(files)):
-            if not file.state:
-                continue
-
-            if not self.rejecter_naive_splitter and file._type == 'md':
-                # reject base not clean md
-                text = file.basename + '\n'
-                with open(file.copypath, encoding='utf8') as f:
-                    text += f.read()
-                if len(text) <= 1:
-                    continue
-
-                chunks = self.split_md(text=text,
-                                       source=os.path.abspath(file.copypath))
-                for chunk in chunks:
-                    new_doc = Chunk(page_content=chunk,
-                                       metadata={
-                                           'source': file.basename,
-                                           'read': file.copypath
-                                       })
-                    documents.append(new_doc)
-
-            else:
-                text, error = file_opr.read(file.copypath)
-                if len(text) < 1:
-                    continue
-                if error is not None:
-                    continue
-                lens.append(len(text))
-                text = file.basename + text
-                documents += self.get_text_documents(text, file)
-
-        if len(documents) < 1:
-            return
-
-        log_str = histogram(values=lens)
-        logger.info('analyze input text. {}'.format(log_str))
-        logger.info('documents counter {}'.format(len(documents)))
-        self.analyze(documents)
-        vs = Faiss.from_documents(documents, self.embeddings)
-        vs.save_local(feature_dir)
-
-    def preprocess(self, files: list, work_dir: str):
+    def preprocess(self, files: List, work_dir: str):
         """Preprocesses files in a given directory. Copies each file to
         'preprocess' with new name formed by joining all subdirectories with
         '_'.
@@ -388,8 +246,7 @@ class FeatureStore:
         )
         self.preprocess(files=files, work_dir=work_dir)
         # build dense retrieval refusal-to-answer and response database
-        self.build_dense_response(files=files, work_dir=work_dir)
-        self.build_dense_reject(files=files, work_dir=work_dir)
+        self.build_dense(files=files, work_dir=work_dir)
 
 
 def parse_args():

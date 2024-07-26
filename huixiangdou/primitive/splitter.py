@@ -547,3 +547,51 @@ class MarkdownHeaderTextSplitter():
         # lines_with_metadata has each line with associated header metadata
         # aggregate these into chunks based on common metadata
         return self.aggregate_lines_to_chunks(lines_with_metadata, base_meta=metadata)
+
+def nested_split_markdown(text: str, chunksize: int=832, metadata: dict={}):
+    """First split by header, then by length. `header` should be part of content.
+    """
+    head_splitter = MarkdownHeaderTextSplitter()
+    chunks = head_splitter.create_chunks(text, metadata=metadata)
+    ret = []
+
+    text_splitter = MarkdownTextSplitter(chunk_size=chunksize)
+
+    for chunk in chunks:
+        header = ''
+
+        if 'Header 1' in chunk.metadata:
+            header += chunk.metadata['Header 1']
+        if 'Header 2' in chunk.metadata:
+            header += ' '
+            header += chunk.metadata['Header 2']
+        if 'Header 3' in chunk.metadata:
+            header += ' '
+            header += chunk.metadata['Header 3']
+
+        if len(chunk.content_or_path) > chunksize:
+            content = '{} {}'.format(header, chunk.content_or_path)
+            ret += text_splitter.create_chunks([content], [chunk.metadata])
+
+    return ret
+
+def clean_md(text: str):
+    """Remove parts of the markdown document that do not contain the key
+    question words, such as code blocks, URL links, etc."""
+    # remove ref
+    pattern_ref = r'\[(.*?)\]\(.*?\)'
+    new_text = re.sub(pattern_ref, r'\1', text)
+
+    # remove code block
+    pattern_code = r'```.*?```'
+    new_text = re.sub(pattern_code, '', new_text, flags=re.DOTALL)
+
+    # remove underline
+    new_text = re.sub('_{5,}', '', new_text)
+
+    # remove table
+    # new_text = re.sub('\|.*?\|\n\| *\:.*\: *\|.*\n(\|.*\|.*\n)*', '', new_text, flags=re.DOTALL)   # noqa E501
+
+    # use lower
+    new_text = new_text.lower()
+    return new_text

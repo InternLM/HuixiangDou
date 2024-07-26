@@ -42,12 +42,12 @@ class Retriever:
         if os.path.exists(rejection_path):
             self.rejecter = Faiss.load_local(
                 rejection_path,
-                embeddings=embeddings)
+                embedder=embedder)
 
         if os.path.exists(retriever_path):
             self.retriever = Faiss.load_local(
                 retriever_path,
-                embeddings=embeddings
+                embedder=embedder
             ).as_retriever(search_type='similarity',
                            search_kwargs={
                                'score_threshold': 0.15,
