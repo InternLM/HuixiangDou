@@ -108,6 +108,11 @@ class Faiss():
         if query.text is None and query.image is None:
             raise ValueError(f'Input query is None')
 
+        if query.text is None and query.image is not None:
+            if not embedder.support_image:
+                logger.info('Embedder not support image')
+                return []
+
         np_feature = embedder.embed_query(text=query.text, path=query.image)
         pairs = self.similarity_search(embedding=np_feature)
         # ret = list(filter(lambda x: x[1] >= threshold, pairs))
@@ -135,6 +140,8 @@ class Faiss():
             if chunk.modal == 'text':
                 np_feature = embedder.embed_query(text=chunk.content_or_path)
             elif chunk.modal == 'image':
+                if not embedder.support_image:
+                    continue
                 np_feature = embedder.embed_query(path=chunk.content_or_path)
             else:
                 raise ValueError(f'Unimplement chunk type: {chunk.modal}')

@@ -6,15 +6,21 @@ import os
 import torch
 import pdb
 import numpy as np
+from FlagEmbedding.visual.modeling import Visualized_BGE
+from BCEmbedding import EmbeddingModel
 
 class Embedder:
     """Wrap text2vec (multimodal) model."""
     client: Any
 
     def __init__(self, model_path: str):
-        from FlagEmbedding.visual.modeling import Visualized_BGE
-        vision_weight_path = os.path.join(model_path, 'Visualized_m3.pth')
-        self.client = Visualized_BGE(model_name_bge=model_path, model_weight=vision_weight_path).eval()
+        self.support_image = False
+        if self.use_multimodal:
+            self.support_image = True
+            vision_weight_path = os.path.join(model_path, 'Visualized_m3.pth')
+            self.client = Visualized_BGE(model_name_bge=model_path, model_weight=vision_weight_path).eval()
+        else:
+            self.client = EmbeddingModel(model_name_or_path=model_path)
 
     @classmethod
     def use_multimodal(self, model_path):
@@ -29,62 +35,12 @@ class Embedder:
             return False
         return True
 
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """Compute text embeddings using a HuggingFace transformer model.
-
-        Args:
-            texts: The list of texts to embed.
-
-        Returns:
-            List of embeddings, one for each text.
-        """
-        features = []
-        with torch.no_grad():
-            for text in texts:
-                feature = self.client.encode(text=text)
-                features.append(feature)
-        return torch.cat(features, dim=0).cpu().numpy().astype(np.float32)
-
-    def embed_text(self, text: str) -> List[float]:
-        """Compute query embeddings using a HuggingFace transformer model.
-
-        Args:
-            text: The text to embed.
-
-        Returns:
-            Embeddings for the text.
-        """
-        return self.embed_texts([text])[0]
-
-    def embed_images(self, paths: List[str]) -> List[List[float]]:
-        """Compute doc embeddings using a HuggingFace transformer model.
-
-        Args:
-            paths: The list of image paths to embed.
-
-        Returns:
-            List of embeddings, one for each image.
-        """
-        features = []
-        with torch.no_grad():
-            for path in paths:
-                feature = self.client.encode(image=path)
-                features.append(feature)
-        
-        return torch.cat(features, dim=0).cpu().numpy().astype(np.float32)
-
-    def embed_image(self, path: str) -> List[float]:
-        """Compute query embeddings using a HuggingFace transformer model.
-
-        Args:
-            path: Image path
-
-        Returns:
-            Embeddings for the image.
-        """
-        return self.embed_images([path])[0]
-
     def embed_query(self, text: str=None, path: str=None) -> List[float]:
-        with torch.no_grad():
-            feature = self.client.encode(text=text, image=path)
-            return feature.cpu().numpy().astype(np.float32)
+        if type(self.client) is Visualized_BGE:
+            with torch.no_grad():
+                feature = self.client.encode(text=text, image=path)
+                return feature.cpu().numpy().astype(np.float32)
+        else:
+            if text is None:
+                raise ValueError('This model only support text')
+            return self.client.encode([text])
