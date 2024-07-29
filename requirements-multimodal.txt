@@ -2,4 +2,6 @@ torchvision
 timm
 einops
 ftfy
+opencv-python-headless
+
 # donot install xformer and apex

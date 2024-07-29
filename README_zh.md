@@ -50,6 +50,7 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
+- \[2024/07\] [多模态图文检索]() & 移除 langchain
 - \[2024/07\] [混合知识图谱和稠密检索](./docs/knowledge_graph_zh.md)涨点 🎯
 - \[2024/07\] `config.ini` 支持 [LLM Reranker](./huixiangdou/service/llm_reranker.py)
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
@@ -299,6 +300,11 @@ python3 -m huixiangdou.main --standalone
   
   * 要手动下载 [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) 到 [bge-m3](https://huggingface.co/BAAI/bge-m3) 目录下
   * 安装 [requirements-multimodal.txt](./requirements-multimodal.txt)，且 FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
+
+  运行 graio 测试，多模检索效果见[这里](https://github.com/InternLM/HuixiangDou/pull/326).
+  ```bash
+  python3 tests/test_query_gradio.py 
+  ```
 
 ## 80G 完整版
 

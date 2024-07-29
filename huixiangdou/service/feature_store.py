@@ -10,12 +10,12 @@ from multiprocessing import Pool
 from typing import Any, List, Optional
 
 import pytoml
-from huixiangdou.primitive import (Chunk, RecursiveCharacterTextSplitter, ChineseRecursiveTextSplitter, Embedder, Faiss, nested_split_markdown)
+from ..primitive import (Chunk, RecursiveCharacterTextSplitter, ChineseRecursiveTextSplitter, Embedder, Faiss, nested_split_markdown)
+from ..primitive import FileName, FileOperation
 from loguru import logger
 from torch.cuda import empty_cache
 from tqdm import tqdm
 
-from .file_operation import FileName, FileOperation
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
@@ -92,7 +92,7 @@ class FeatureStore:
         if len(text) <= 1:
             return [], length
 
-        chunks = nested_split_markdown(text=text, chunksize=self.chunk_size,  metadata=metadata)
+        chunks = nested_split_markdown(file.origin, text=text, chunksize=self.chunk_size,  metadata=metadata)
         for c in chunks:
             length += len(c.content_or_path)
         return chunks, length
@@ -320,7 +320,7 @@ if __name__ == '__main__':
     # walk all files in repo dir
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=args.repo_dir)
-    # fs_init.initialize(files=files, work_dir=args.work_dir)
+    fs_init.initialize(files=files, work_dir=args.work_dir)
     file_opr.summarize(files)
     del fs_init
 
@@ -333,9 +333,9 @@ if __name__ == '__main__':
         good_questions = json.load(f)
     with open(os.path.join('resource', 'bad_questions.json')) as f:
         bad_questions = json.load(f)
-    # retriever.update_throttle(config_path=args.config_path,
-    #                           good_questions=good_questions,
-    #                           bad_questions=bad_questions)
+    retriever.update_throttle(config_path=args.config_path,
+                              good_questions=good_questions,
+                              bad_questions=bad_questions)
 
     cache.pop('default')
 

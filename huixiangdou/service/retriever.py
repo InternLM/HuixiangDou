@@ -9,8 +9,8 @@ import numpy as np
 import pytoml
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
-from typing import Any
-from .file_operation import FileOperation
+from typing import Any, Union
+from ..primitive import FileOperation
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
 from huixiangdou.primitive import LLMReranker, Embedder, Faiss, Query
@@ -91,25 +91,30 @@ class Retriever:
         )
 
     def query(self,
-              question: str,
+              query: Union[Query, str],
               context_max_length: int = 40000,
               tracker: QueryTracker = None):
         """Processes a query and returns the best match from the vector store
         database. If the question is rejected, returns None.
 
         Args:
-            question (str): The question asked by the user.
+            query (Query): The multimodal question asked by the user.
+            context_max_length (int): Max contenxt length for LLM.
+            tracker (QueryTracker): Log tracker.
 
         Returns:
             str: The best matching chunk, or None.
             str: The best matching text, or None
         """
-        if question is None or len(question) < 1 or self.faiss is None:
+        if type(query) is str:
+            query = Query(text=query)
+
+        if query.text is None or len(query.text) < 1 or self.faiss is None:
             return None, None, []
 
-        if len(question) > 512:
+        if len(query.text) > 512:
             logger.warning('input too long, truncate to 512')
-            question = question[0:512]
+            query.text = query.text[0:512]
 
         chunks = []
         context = ''
@@ -118,14 +123,14 @@ class Retriever:
         graph_delta = 0.0
         if self.kg.is_available():
             try:
-                docs = self.kg.retrieve(query=question)
+                docs = self.kg.retrieve(query=query.text)
                 graph_delta = 0.2 * min(100, len(docs)) / 100
             except Exception as e:
                 logger.warning(str(e))
                 logger.info('KG folder exists, but search failed, skip.')
 
         threshold = self.reject_throttle - graph_delta
-        pairs = self.faiss.similarity_search_with_query(self.embedder, query=Query(question))
+        pairs = self.faiss.similarity_search_with_query(self.embedder, query=query)
         # logger.debug('retriever.docs {}'.format(docs))
 
         if len(pairs) < 1 or pairs[0][1] < threshold:
@@ -137,7 +142,7 @@ class Retriever:
             if pair[1] >= threshold:
                 high_score_chunks.append(pair[0])
 
-        chunks = self.reranker.rerank(query=question, chunks=high_score_chunks)
+        chunks = self.reranker.rerank(query=query.text, chunks=high_score_chunks)
         if tracker is not None:
             tracker.log('retrieve', [c.metadata['source'] for c in chunks])
 
@@ -145,8 +150,6 @@ class Retriever:
         file_opr = FileOperation()
         splits = []
         for idx, chunk in enumerate(chunks):
-            if chunk.modal == 'image':
-                continue
 
             content = chunk.content_or_path
             splits.append(content)
@@ -184,7 +187,7 @@ class Retriever:
                 references.append(source)
 
         context = context[0:context_max_length]
-        logger.debug('query:{} top1 file:{}'.format(question, references[0]))
+        logger.debug('query:{} files:{}'.format(query, references))
         return '\n'.join(splits), context, [
             os.path.basename(r) for r in references
         ]

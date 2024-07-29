@@ -113,5 +113,6 @@ class LLMReranker:
         for chunk in chunks:
             texts.append(chunk.content_or_path)
 
+        # During reranking, we just take image path as text
         indexes = self.sort(texts=texts, query=query)
         return [chunks[i] for i in indexes]

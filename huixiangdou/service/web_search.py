@@ -15,7 +15,7 @@ from duckduckgo_search import DDGS
 from loguru import logger
 from readability import Document
 
-from .file_operation import FileOperation
+from ..primitive import FileOperation
 from .helper import check_str_useful
 
 import_pyppeteer = False

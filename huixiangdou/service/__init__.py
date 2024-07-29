@@ -2,7 +2,6 @@
 """LLM service module."""
 from .config import (feature_store_base_dir, redis_passwd, redis_port, redis_host)
 from .feature_store import FeatureStore  # noqa E401
-from .file_operation import FileName, FileOperation  # noqa E401
 from .helper import (Queue, TaskCode, ErrorCode, QueryTracker, build_reply_text,
                      check_str_useful, histogram, kimi_ocr, multimodal,
                      parse_json_str)

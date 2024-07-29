@@ -1,5 +1,5 @@
-# from .splitter import CharacterTextSplitter, ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextSplitter, MarkdownHeaderTextSplitter  # noqa E401
-from huixiangdou.primitive import CharacterTextSplitter, ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextSplitter, MarkdownHeaderTextSplitter
+# from .splitter import CharacterTextSplitter, ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextRefSplitter, MarkdownHeaderTextSplitter  # noqa E401
+from huixiangdou.primitive import CharacterTextSplitter, ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextRefSplitter, MarkdownHeaderTextSplitter
 from huixiangdou.primitive import nested_split_markdown
 import pdb
 
@@ -59,7 +59,7 @@ def test_markdown_text_splitter():
     path = 'README_zh.md'
     with open(path) as f:
         text = f.read()
-    s = MarkdownTextSplitter()
+    s = MarkdownTextRefSplitter()
     print(type(s))
     splits = s.split_text(text)
 
@@ -92,7 +92,7 @@ def test_nested_markdown_split():
         text = f.read()
     print(type('nested'))
 
-    chunks = nested_split_markdown(text=text, chunksize=768)
+    chunks = nested_split_markdown(filepath=path, text=text, chunksize=768)
     with open('/tmp/markdown_nested_split', 'w') as f:
         for c in chunks:
             print(len(c.content_or_path))

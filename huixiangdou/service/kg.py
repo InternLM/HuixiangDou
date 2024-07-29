@@ -17,7 +17,7 @@ import pytoml
 from loguru import logger
 from tqdm import tqdm
 
-from .file_operation import FileOperation
+from ..primitive import FileOperation
 from .helper import build_reply_text, extract_json_from_str
 from .llm_client import ChatClient
 from .llm_server_hybrid import start_llm_server

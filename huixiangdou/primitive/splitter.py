@@ -5,8 +5,10 @@
 import re
 import pdb
 import copy
+import os
 from loguru import logger
 from abc import ABC, abstractmethod
+from .file_operation import FileOperation
 from .chunk import Chunk
 from typing import (
     AbstractSet,
@@ -338,11 +340,11 @@ class ChineseRecursiveTextSplitter(RecursiveCharacterTextSplitter):
             if chunk.strip() != ''
         ]
 
-class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
+class MarkdownTextRefSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Markdown-formatted headings."""
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize a MarkdownTextSplitter."""
+        """Initialize a MarkdownTextRefSplitter."""
         separators = [
             # First, try to split along Markdown headings (starting with level 2)
             "\n#{1,6} ",
@@ -548,18 +550,20 @@ class MarkdownHeaderTextSplitter():
         # aggregate these into chunks based on common metadata
         return self.aggregate_lines_to_chunks(lines_with_metadata, base_meta=metadata)
 
-def nested_split_markdown(text: str, chunksize: int=832, metadata: dict={}):
+def nested_split_markdown(filepath: str, text: str, chunksize: int=832, metadata: dict={}):
     """First split by header, then by length. `header` should be part of content.
     """
     head_splitter = MarkdownHeaderTextSplitter()
     chunks = head_splitter.create_chunks(text, metadata=metadata)
-    ret = []
+    text_chunks = []
+    image_chunks = []
 
-    text_splitter = MarkdownTextSplitter(chunk_size=chunksize)
+    text_ref_splitter = MarkdownTextRefSplitter(chunk_size=chunksize)
+    ref_pattern = re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
+    file_opr = FileOperation()
 
     for chunk in chunks:
         header = ''
-
         if 'Header 1' in chunk.metadata:
             header += chunk.metadata['Header 1']
         if 'Header 2' in chunk.metadata:
@@ -571,9 +575,32 @@ def nested_split_markdown(text: str, chunksize: int=832, metadata: dict={}):
 
         if len(chunk.content_or_path) > chunksize:
             content = '{} {}'.format(header, chunk.content_or_path)
-            ret += text_splitter.create_chunks([content], [chunk.metadata])
+            text_chunks += text_ref_splitter.create_chunks([content], [chunk.metadata])
 
-    return ret
+        # extract images
+        matches = ref_pattern.findall(chunk.content_or_path)
+        dirname = os.path.dirname(filepath)
+        for match in matches:
+            # target = match[0]
+            image_path = match[1]
+            if file_opr.get_type(image_path) != 'image':
+                continue
+
+            if image_path.startswith('http'):
+                continue
+            
+            if not os.path.isabs(image_path):
+                image_path = os.path.join(dirname, image_path)
+            
+            if os.path.exists(image_path):
+                c = Chunk(content_or_path=image_path, metadata=metadata.copy(), modal='image')
+                image_chunks.append(c)
+            else:
+                logger.error(f'image cannot access. file: {filepath}, image path: {image_path}')
+
+    if len(image_chunks) > 0:
+        pdb.set_trace()
+    return text_chunks + image_chunks
 
 def clean_md(text: str):
     """Remove parts of the markdown document that do not contain the key
