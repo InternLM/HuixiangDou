@@ -49,7 +49,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 - \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
 - \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/knowledge_graph_en.md) improve 1.7% F1 score 🎯
 - \[2024/06\] [Evaluation of chunksize, splitter, and text2vec model](./evaluation) 🎯
-- \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_en.md), parsing image & URL, support coreference resolution
+- \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), parsing image & URL, support coreference resolution
 - \[2024/05\] [SFT LLM on NLP task, F1 increased by 29%](./sft/) 🎯
   <table>
       <tr>
@@ -60,9 +60,9 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
           <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>  
       </tr>
   </table>
-- \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/rag_annotate_sft_data_en.md)
+- \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/rag_annotate_sft_data_zh.md)
 - \[2024/04\] Release [Web Front and Back End Service Source Code](./web) 👍
-- \[2024/03\] New [Personal WeChat Integration Method](./docs/add_wechat_accessibility_en.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk)    !
+- \[2024/03\] New [Personal WeChat Integration Method](./docs/add_wechat_accessibility_zh.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk)    !
 - \[2024/02\] [Experimental Feature] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)    Integration of multimodal to achieve OCR
 
 # 📖 Support Status
