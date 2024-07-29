@@ -9,6 +9,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from .embedder import Embedder
 from .chunk import Chunk
+from BCEmbedding import RerankerModel
 
 class LLMReranker:
 
@@ -16,14 +17,19 @@ class LLMReranker:
             self,
             model_name_or_path: str = 'BAAI/bge-reranker-v2-minicpm-layerwise',
             topn: int = 10):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,
-                                                       trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name_or_path,
-            trust_remote_code=True,
-            torch_dtype=torch.bfloat16).eval().to('cuda')
+        self.llm_reranker = self.use_llm_reranker(model_path=model_name_or_path)
         self.topn = topn
-    
+
+        if self.llm_reranker:
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,
+                                                        trust_remote_code=True)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name_or_path,
+                trust_remote_code=True,
+                torch_dtype=torch.bfloat16).eval().to('cuda')
+        else:
+            self.bce_client = RerankerModel(model_name_or_path=model_name_or_path, use_fp16=True)
+
     @classmethod
     def use_llm_reranker(self, model_path):
         """Check reranker model is LLM reranker or not."""
@@ -42,7 +48,7 @@ class LLMReranker:
             logger.warning(e)
         return False
 
-    def get_inputs(self, pairs, prompt=None, max_length=1024):
+    def _get_inputs(self, pairs, prompt=None, max_length=1024):
         """Build input tokens with query and chunks."""
         if prompt is None:
             prompt = "Given a query A and a passage B, determine whether the passage contains an answer to the query by providing a prediction of either 'Yes' or 'No'."
@@ -84,24 +90,29 @@ class LLMReranker:
                                   pad_to_multiple_of=8,
                                   return_tensors='pt')
 
-    def sort(self, texts: List[str], query: str):
+    def _sort(self, texts: List[str], query: str):
         """Rerank input texts, return descending indexes, indexes[0] is the
         nearest chunk."""
         pairs = []
         for text in texts:
             pairs.append([query, text])
 
-        with torch.no_grad():
-            inputs = self.get_inputs(pairs).to(self.model.device)
-            all_scores = self.model(**inputs,
-                                    return_dict=True,
-                                    cutoff_layers=[28])
-            scores = [
-                scores[:, -1].view(-1, ).float() for scores in all_scores[0]
-            ]
-            scores = scores[0].cpu().numpy()
-            # get descending order
-            return scores.argsort()[::-1][0:self.topn]
+        if self.llm_reranker:
+            with torch.no_grad():
+                inputs = self._get_inputs(pairs).to(self.model.device)
+                all_scores = self.model(**inputs,
+                                        return_dict=True,
+                                        cutoff_layers=[28])
+                scores = [
+                    scores[:, -1].view(-1, ).float() for scores in all_scores[0]
+                ]
+                scores = scores[0].cpu().numpy()
+        else:
+            scores_list = self.bce_client.compute_score(pairs)
+            scores = np.array(scores_list)
+
+        # get descending order
+        return scores.argsort()[::-1][0:self.topn]
 
 
     def rerank(self, query: str, chunks: List[Chunk]):
@@ -114,5 +125,5 @@ class LLMReranker:
             texts.append(chunk.content_or_path)
 
         # During reranking, we just take image path as text
-        indexes = self.sort(texts=texts, query=query)
+        indexes = self._sort(texts=texts, query=query)
         return [chunks[i] for i in indexes]

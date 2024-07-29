@@ -15,12 +15,12 @@ class Embedder:
 
     def __init__(self, model_path: str):
         self.support_image = False
-        if self.use_multimodal:
+        if self.use_multimodal(model_path=model_path):
             self.support_image = True
             vision_weight_path = os.path.join(model_path, 'Visualized_m3.pth')
             self.client = Visualized_BGE(model_name_bge=model_path, model_weight=vision_weight_path).eval()
         else:
-            self.client = EmbeddingModel(model_name_or_path=model_path)
+            self.client = EmbeddingModel(model_name_or_path=model_path, use_fp16=True)
 
     @classmethod
     def use_multimodal(self, model_path):
@@ -43,4 +43,4 @@ class Embedder:
         else:
             if text is None:
                 raise ValueError('This model only support text')
-            return self.client.encode([text])
+            return self.client.encode([text], enable_tqdm=False)

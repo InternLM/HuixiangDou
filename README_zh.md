@@ -37,7 +37,7 @@
 茴香豆是一个基于 LLM 的**群聊**知识助手，优势：
 
 1. 设计预处理、拒答、响应三阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/knowledge_graph_zh.md)和[业务数据精度测试](./evaluation)
-2. 成本低至 1.5G 显存，无需训练适用各行业
+2. 成本低至 2G 显存，无需训练适用各行业
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
 查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
@@ -50,9 +50,8 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
-- \[2024/07\] [多模态图文检索]() & 移除 langchain
+- \[2024/07\] 图文检索 & 移除 `langchain` 👍
 - \[2024/07\] [混合知识图谱和稠密检索](./docs/knowledge_graph_zh.md)涨点 🎯
-- \[2024/07\] `config.ini` 支持 [LLM Reranker](./huixiangdou/service/llm_reranker.py)
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
 - \[2024/05\] [wkteam 微信接入](./docs/add_wechat_commercial_zh.md)，整合图片&公众号解析、集成指代消歧
 - \[2024/05\] [SFT 是否需要指代消歧，F1 提升 29%](./sft/) 🎯
@@ -120,10 +119,9 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 <td>
 
 - [知识图谱](./docs/knowledge_graph_zh.md)
-- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding)
-- [bge/bge-m3](https://github.com/FlagOpen/FlagEmbedding)
 - [联网搜索](https://github.com/FlagOpen/FlagEmbedding)
 - [SourceGraph](https://sourcegraph.com)
+- 图文混合（仅 markdown）
 
 </td>
 
@@ -150,8 +148,8 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 |  配置示例  | 显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| [config-2G.ini](./config-2G.ini) |    1.5GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-| [config-multimodal.ini](./config.ini) |10GB     | 用 openai API 做 LLM，多模态检索 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| [config-2G.ini](./config-2G.ini) |    2GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge) |
+| [config-multimodal.ini](./config.ini) |10GB     | 用 openai API 做 LLM，图文检索 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | 【标准版】[config.ini](./config.ini) |19GB     | 本地部署 LLM，单模态 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | [config-advanced.ini](./config-advanced.ini) |    80GB     |  本地 LLM，指代消歧，单模态，微信群实用 | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
@@ -177,35 +175,9 @@ pip install -r requirements.txt
 # python3.8 安装 faiss-gpu 而不是 faiss
 ```
 
-## 二、先不创建知识库，直接执行
+## 二、创建知识库，执行测试
 
-此时和知识库无关问题，都会拒答。
-
-```shell
-# standalone 模式
-# main 创建子进程运行 LLM API，然后向子进程发请求
-python3 -m huixiangdou.main --standalone
-..
-+-----------------------+-------------------------+---------------+------------+
-|         Query         |          State          | Part of Reply | References |
-+=======================+=========================+===============+============+
-| 请问如何安装 mmpose ?   | Topics unrelated to the | ..            |            |
-|                       | knowledge base..        |               |            |
-| 今天天气如何？          | Topics unrelated to the | ..            |            |
-|                       | knowledge base..        |               |            |
-+-----------------------+-------------------------+---------------+------------+
-```
-
-> \[!NOTE\]
->
-> <div align="center">
-> 如果 huggingface 下载太慢，可以用国内镜像 <a href="https://hf-mirror.com">hf-mirror</a> 下载到本地。然后修改 <b>config.ini</b> 配置中模型的路径
-> </div>
-
-
-## 三、创建知识库，重新发问
-
-我们将用 mmpose 的文档构建 mmpose 知识库，开始过滤问题。如有自己的文档，放入 `repodir` 下即可。
+我们将用 mmpose 的文档构建 mmpose 知识库，过滤问题。如有自己的文档，放入 `repodir` 下即可。
 
 复制下面所有命令（包含 '#' 符号）执行。
 
@@ -220,7 +192,7 @@ mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-运行结束后再次测试 `python3 -m huixiangdou.main --standalone`，此时回复 mmpose 相关问题（和知识库相关），同时不响应天气问题。
+运行结束后执行 `python3 -m huixiangdou.main --standalone`，此时回复 mmpose 相关问题（和知识库相关），同时不响应天气问题。
 
 ```bash
 python3 -m huixiangdou.main --standalone
@@ -229,7 +201,8 @@ python3 -m huixiangdou.main --standalone
 |         Query         |  State  |         Part of Reply          |   References    |
 +=======================+=========+================================+=================+
 | 请问如何安装 mmpose ?   | success | 要安装 mmpose，请按照以下步骤操作..| installation.md |
-| 今天天气如何？          | Topics..| ..                             |            |
+--------------------------------------------------------------------------------------
+| 今天天气如何？          | unrelated| ..                            |                 |
 +-----------------------+---------+--------------------------------+-----------------+
 ```
 
@@ -241,14 +214,14 @@ python3 -m huixiangdou.main --standalone
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
-## 四、集成到飞书、微信等
+## 三、集成到飞书、微信群
 
 - [**单向**发送到飞书群](./docs/send_only_lark_group_zh.md)
 - [**双向**飞书群收发、撤回](./docs/add_lark_group_zh.md)
 - [个微 android 接入](./docs/add_wechat_accessibility_zh.md)
 - [个微 wkteam 接入](./docs/add_wechat_commercial_zh.md)
 
-## 五、WEB 前后端部署，零编程集成飞书微信
+## 四、WEB 前后端部署，零编程集成飞书微信
 
 我们提供了完整的前端 UI 和后端服务源码，支持：
 
@@ -257,16 +230,16 @@ python3 -m huixiangdou.main --standalone
 
 效果同 [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，请阅读 [web 部署文档](./web/README.md)。
 
-# 🍴 其他版本
+# 🍴 其他配置
 
-## 1.5G 实惠版
+## 2G 实惠版
 
-  如果你的显存只有 1.5G，或追求性价比。此配置扔掉了本地 LLM，使用 remote LLM 代替，其他和标准版相同。
+  如果你的显存超过 1.8G，或追求性价比。此配置扔掉了本地 LLM，使用 remote LLM 代替，其他和标准版相同。
 
   以 kimi 为例，把[官网申请](https://platform.moonshot.cn/) 的 API TOKEN 填入 `config-2G.ini`
 
   ```toml
-  # config-2G.ini
+  # config-8G.ini
   [llm]
   enable_local = 0   # 关掉本地 LLM
   enable_remote = 1  # 只用远程
@@ -289,19 +262,22 @@ python3 -m huixiangdou.main --standalone
 
 ## 10G 多模态版
 
-  如果你有 10G 显存，那么可以进一步支持图片检索。仅需修改 config.ini 使用的模型。
+  如果你有 10G 显存，那么可以进一步支持图文检索。仅需修改 config.ini 使用的模型。
 
   ```toml
   # config-multimodal.ini
+  # !!! Download `https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth` to `bge-m3` folder !!!
   embedding_model_path = "BAAI/bge-m3"
   reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
   ```
-  需要注意两件事：
+
+  需要注意：
   
   * 要手动下载 [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) 到 [bge-m3](https://huggingface.co/BAAI/bge-m3) 目录下
-  * 安装 [requirements-multimodal.txt](./requirements-multimodal.txt)，且 FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
+  * FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
+  * 安装 [requirements-multimodal.txt](./requirements-multimodal.txt)
 
-  运行 graio 测试，多模检索效果见[这里](https://github.com/InternLM/HuixiangDou/pull/326).
+  运行 gradio 测试，图文检索效果见[这里](https://github.com/InternLM/HuixiangDou/pull/326).
   ```bash
   python3 tests/test_query_gradio.py 
   ```
@@ -319,10 +295,10 @@ python3 -m huixiangdou.main --standalone
 请阅读以下话题：
 
 - [参照 config-advanced.ini 配置提升效果](./docs/full_dev_zh.md)
-- [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
 - [群聊场景指代消歧训练](./sft)
 - [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
 - [混合知识图谱和稠密检索提升精度](./docs/knowledge_graph_zh.md)
+- [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
 
 # 🛠️ FAQ
 

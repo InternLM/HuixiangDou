@@ -13,12 +13,11 @@ import pytoml
 import redis
 from loguru import logger
 
-from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,
-                                 FileName, FileOperation, Queue, Retriever,
+from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore, Queue, Retriever,
                                  TaskCode, feature_store_base_dir,
                                  parse_json_str, redis_host, redis_passwd,
                                  redis_port)
-
+from huixiangdou.primitive import FileName, FileOperation
 from .web_worker import WebWorker
 
 

@@ -598,8 +598,6 @@ def nested_split_markdown(filepath: str, text: str, chunksize: int=832, metadata
             else:
                 logger.error(f'image cannot access. file: {filepath}, image path: {image_path}')
 
-    if len(image_chunks) > 0:
-        pdb.set_trace()
     return text_chunks + image_chunks
 
 def clean_md(text: str):

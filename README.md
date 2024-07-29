@@ -35,79 +35,69 @@ HuixiangDou is a **group chat** assistant based on LLM (Large Language Model).
 Advantages:
 
 1. Design a three-stage pipeline of preprocess, rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Search](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/).
-2. Low cost, requiring only 1.5GB memory and no need for training
+2. Low cost, requiring only 2GB memory and no need for training
 3. Offers a complete suite of Web, Android, and pipeline source code, which is industrial-grade and commercially viable
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](resource/figures/wechat.jpg) to try AI assistant inside.
 
 If this helps you, please give it a star ⭐
 
-# 🔆 News
+# 🔆 New Features
 
-🔥 Join the [InternLM Summer Camp3](https://www.wjx.cn/vm/PvefmG2.aspx?sojumpparm=github) now !
+Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can create knowledge base, update positive and negative examples, turn on web search, test chat, and integrate into Feishu/WeChat groups. See [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) and [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) !
 
-The web portal is available on [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can build your own knowledge assistant without any coding, using WeChat and Feishu groups.
-
-Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) and [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn).
-
-- \[2024/07\] [Hybrid knowledge graph and dense retrieval boost 1.7% F1 score](./docs/knowledge_graph_en.md) 🎯
-
-- \[2024/07\] `config.ini` support [LLM Reranker](./huixiangdou/service/llm_reranker.py)
-
-- \[2024/06\] [Evaluation of Chunk Size, Splitter and Model](./evaluation) 🎯
-
-- \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), support image, URL and reference resolution in group chat
-
-- \[2024/05\] Add [Coreference Resolution fine-tune](./sft) 🎯
-
+- \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
+- \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/knowledge_graph_en.md) improve 1.7% F1 score 🎯
+- \[2024/06\] [Evaluation of chunksize, splitter, and text2vec model](./evaluation) 🎯
+- \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_en.md), parsing image & URL, support coreference resolution
+- \[2024/05\] [SFT LLM on NLP task, F1 increased by 29%](./sft/) 🎯
   <table>
       <tr>
           <td>🤗</td>
-          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>
-          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>
+          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>  
+          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>  
           <td><a href="https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/tree/main">alpaca data</a></td>
-          <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
+          <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>  
       </tr>
   </table>
+- \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/rag_annotate_sft_data_en.md)
+- \[2024/04\] Release [Web Front and Back End Service Source Code](./web) 👍
+- \[2024/03\] New [Personal WeChat Integration Method](./docs/add_wechat_accessibility_en.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk)    !
+- \[2024/02\] [Experimental Feature] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)    Integration of multimodal to achieve OCR
 
-- \[2024/04\] Add [SFT data annotation and examples](./docs/rag_annotate_sft_data_zh.md)
-
-- \[2024/04\] Release [web server](./web) source code 👍
-
-- \[2024/03\] New [wechat integration method](./docs/add_wechat_accessibility_zh.md) with [**prebuilt android apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
-
-- \[2024/02\] \[experimental\] Integrated multimodal model into our [wechat group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) for OCR
-
-# 📖 Support
+# 📖 Support Status
 
 <table align="center">
   <tbody>
     <tr align="center" valign="bottom">
       <td>
-        <b>Model</b>
+        <b>LLM</b>
       </td>
       <td>
         <b>File Format</b>
       </td>
       <td>
-        <b>Retrieve Method</b>
+        <b>Retrieval Method</b>
       </td>
       <td>
-        <b>IM Application</b>
+        <b>Instant Messaging</b>
+      </td>
+      <td>
+        <b>Preprocessing</b>
       </td>
     </tr>
     <tr valign="top">
       <td>
 
-- [InternLM2](https://github.com/InternLM/InternLM)
-- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
-- [KIMI](https://kimi.moonshot.cn)
-- [DeepSeek](https://www.deepseek.com)
-- [Step](https://platform.stepfun.com)
-- [GLM (ZHIPU)](https://www.zhipuai.cn)
-- [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
-- [Xi-Api](https://api.xi-ai.cn)
-- [OpenAOE](https://github.com/InternLM/OpenAOE)
+- [InternLM2](https://github.com/InternLM/InternLM)   
+- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)   
+- [KIMI](https://kimi.moonshot.cn)   
+- [DeepSeek](https://www.deepseek.com)   
+- [Step](https://platform.stepfun.com)   
+- [GLM (ZHIPU)](https://www.zhipuai.cn)   
+- [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)   
+- [Xi-Api](https://api.xi-ai.cn)   
+- [OpenAOE](https://github.com/InternLM/OpenAOE)   
 
 </td>
 <td>
@@ -124,9 +114,10 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 
 <td>
 
-- [Knowledge Graph](./huixiangdou/service/kg.py)
-- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding)
-- [bge/bge-m3](https://github.com/FlagOpen/FlagEmbedding)
+- [Knowledge Graph](./docs/knowledge_graph_en.md)
+- [Internet Search](https://github.com/FlagOpen/FlagEmbedding)   
+- [SourceGraph](https://sourcegraph.com)   
+- Image and text hybrid (only markdown)
 
 </td>
 
@@ -137,29 +128,40 @@ Visit web portal usage video on [YouTube](https://www.youtube.com/watch?v=ylXrT-
 
 </td>
 
+<td>
+
+- [Anaphora Resolution](https://arxiv.org/abs/2405.02817)   
+
+</td>
+
 </tr>
-  </tbody>
+  
+</tbody>
 </table>
 
-# 📦 Hardware
+# 📦 Hardware Requirements
 
-The following are the hardware requirements for running. It is suggested to follow this document, starting with the basic version and gradually experiencing advanced features.
+The following are the GPU memory requirements for different features, the difference lies only in whether the **options are turned on**.
 
-|        Version         | GPU Memory Requirements |                                                                                               Features                                                                                               |                                Tested on Linux                                |
-| :--------------------: | :---------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| Cost-effective Edition |          1.5GB          | Use [openai API](https://pypi.org/project/openai/) (e.g., [kimi](https://kimi.moonshot.cn) and [deepseek](https://platform.deepseek.com)) to handle source code-level issues <br/> Free within quota | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-|    Standard Edition    |          19GB           |                                                                             Deploy local LLM can answer basic questions                                                                              | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|    Complete Edition    |          40GB           |                                                                Fully utilizing search + long-text, answer source code-level questions                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+|  Configuration Example  |  GPU mem Requirements  |                                                                                          Description                                                                                          |                             Verified Devices on Linux System                             |
+| :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+| [config-2G.ini](./config-2G.ini) |    2GB    | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [silicon cloud](https://siliconflow.cn/)) to search for text only    | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)    |
+| [config-multimodal.ini](./config.ini) |10GB     | Use openai API for LLM, image and text retrieval | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)     |
+| [Standard Edition] [config.ini](./config.ini) |19GB     | Local deployment of LLM, single modality | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)     |
+| [config-advanced.ini](./config-advanced.ini) |    80GB     |  local LLM, anaphora resolution, single modality, practical for WeChat group | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)     |
 
-# 🔥 Run
+# 🔥 Running the Standard Edition
 
-First [agree BCE license](https://huggingface.co/maidalun1020/bce-embedding-base_v1) and login huggingface.
+We take the standard edition (local running LLM, text retrieval) as an introduction example. Other versions are just different in configuration options.
+
+## I. Download the model and install dependencies
+[Click to agree to the BCE model agreement](https://huggingface.co/maidalun1020/bce-embedding-base_v1), log in huggingface
 
 ```shell
 huggingface-cli login
 ```
 
-Then install requirements.
+Install dependencies
 
 ```bash
 # parsing `word` format requirements
@@ -167,143 +169,132 @@ apt update
 apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 # python requirements
 pip install -r requirements.txt
+# For python3.8, install faiss-gpu instead of faiss
 ```
 
-## Standard Edition
+## II. Create a knowledge base and ask questions
 
-The standard edition runs [text2vec](https://huggingface.co/maidalun1020/bce-embedding-base_v1), rerank and a 7B model locally.
+Use mmpose documents to build the mmpose knowledge base and filtering questions. If you have your own documents, just put them under `repodir`.
 
-**STEP1.** First, without rejection pipeline, run test cases:
-
-```shell
-# Standalone mode
-# main creates a subprocess to run the LLM API, then sends requests to the subprocess
-python3 -m huixiangdou.main --standalone
-..
-+-------------------------+-------------------------+---------------+------------+
-|          Query          |          State          | Part of Reply | References |
-+=========================+=========================+===============+============+
-| How to install mmpose ? | Topics unrelated to the | ..            |            |
-|                         | knowledge base..        |               |            |
-+------------  -----------+-------------------------+---------------+------------+
-```
-
-You can see that the result of handling the example question in `main.py` is the same, whether it's about `mmpose installation` or `How's the weather tomorrow?`
-
-**STEP2.** Use mmpose and test documents to build a knowledge base and enable the rejection pipeline
-
-Copy all the commands below (including the '#' symbol) and execute them.
+Copy and execute all the following commands (including the '#' symbol).
 
 ```shell
-# Download knowledge base documents
+# Download the knowledge base, we only take the documents of mmpose as an example. You can put any of your own documents under `repodir`
 cd HuixiangDou
 mkdir repodir
-git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
-git clone https://github.com/tpoisonooo/huixiangdou-testdata --depth=1 repodir/testdata
+git clone https://github.com/open-mmlab/mmpose    --depth=1 repodir/mmpose
 
-# Save the features of repodir to workdir
+# Save the features of repodir to workdir, and update the positive and negative example thresholds into `config.ini`
 mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-> \[!NOTE\]
->
-> <div align="center">
-> If restarting local LLM is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>, then open a new terminal, and only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
-> </div>
-
-Then rerun `main`, Huixiangdou will be able to answer `mmpose installation` and reject casual chats.
+After running, test with `python3 -m huixiangdou.main --standalone`. At this time, reply to mmpose related questions (related to the knowledge base), while not responding to weather questions.
 
 ```bash
 python3 -m huixiangdou.main --standalone
 
++---------------------------+---------+----------------------------+-----------------+
+|         Query             |  State  |         Part of Reply      |   References    |
++===========================+=========+================================+=================+
+| How to install mmpose?    | success | To install mmpose, plea..  | installation.md |
+--------------------------------------------------------------------------------------
+| How is the weather today? | unrelated.. | ..                     |                 |
 +-----------------------+---------+--------------------------------+-----------------+
-|         Query         |  State  |         Part of Reply          |   References    |
-+=======================+=========+================================+=================+
-| How to install mmpose?| success | To install mmpose, please..    | installation.md |
-+-----------------------+---------+--------------------------------+-----------------+
 ```
 
-Please adjust the `repodir` documents, [good_questions](./resource/good_questions.json), and [bad_questions](./resource/bad_questions.json) to try your own domain knowledge (medical, financial, power, etc.).
+> \[!NOTE\]
+>
+> <div align="center">
+> If restarting LLM every time is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>; then open a new window, and each time only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
+> </div>
 
-**STEP3.** Test sending messages to Feishu group (optional)
+Please update the `repodir` documents, [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, financial, power, etc.).
 
-This step is just for testing algorithm pipeline, `STEP4` also support IM applications.
+## III. Integration into Feishu, WeChat Group
 
-Click [Create Feishu Custom Bot](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot) to obtain the callback WEBHOOK_URL and fill it in config.ini
+- [**One-way** sending to Feishu group](./docs/send_only_lark_group_zh.md)
+- [**Two-way** Feishu group receiving and sending, recalling](./docs/add_lark_group_zh.md)
+- [Personal WeChat Android access](./docs/add_wechat_accessibility_zh.md)
+- [Personal WeChat wkteam access](./docs/add_wechat_commercial_zh.md)
 
-```ini
-# config.ini
-...
-[frontend]
-type = "lark"
-webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
-```
+## IV. Web Front and Back End Deployment
 
-Run. After the end, the technical assistant's response will be sent to Feishu group.
-
-```shell
-python3 -m huixiangdou.main --standalone
-```
-
-<img src="./resource/figures/lark-example.png" width="400">
-
-- [Integrate Feishu group receiving, sending, and withdrawal](./docs/add_lark_group_zh.md)
-- [Integrate personal WeChat access](./docs/add_wechat_accessibility_zh.md)
-- [Integrate wkteam WeChat access](./docs/add_wechat_commercial_zh.md)
-
-**STEP4.** WEB service and IM applications
-
-We provide a complete front-end UI and backend service that supports:
+We provide a complete front-end UI and back-end service source code, supporting:
 
 - Multi-tenant management
-- Zero-programming access to Feishu, WeChat groups
+- Zero programming access to Feishu and WeChat
 
-See the effect at [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), please read the [web deployment document](./web/README.md).
+Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), please read the [web deployment document](./web/README.md).
 
-## Cost-effective Edition
+# 🍴 Other Configurations
 
-If your machine only has 2G GPU memory, or if you are pursuing cost-effectiveness, you only need to read [this Zhihu document](https://zhuanlan.zhihu.com/p/685205206).
+## 2G Cost-effective Edition
 
-The cost-effective version only discards the local LLM and uses the remote LLM instead, and other functions are the same as the standard version.
+  If your GPU mem exceeds 1.8G, or you pursue cost-effectiveness. This configuration discards the local LLM and uses remote LLM instead, which is the same as the standard edition.
 
-Take kimi as an example, fill in the API KEY applied from the [official website](https://platform.moonshot.cn/) into `config-2G.ini`
+  Take `kimi` as an example, fill in the API TOKEN applied from the [official website](https://platform.moonshot.cn/) into `config-2G.ini`
 
-```bash
-# config-2G.ini
-[llm]
-enable_local = 0
-enable_remote = 1
-...
-remote_type = "kimi"
-remote_api_key = "YOUR-API-KEY-HERE"
-```
+  ```toml
+  # config-8G.ini
+  [llm]
+  enable_local = 0   # Turn off local LLM
+  enable_remote = 1  # Only use remote
+  ..
+  remote_type = "kimi"   # Choose kimi
+  remote_api_key = "YOUR-API-KEY-HERE"
+  ```
 
-> \[!NOTE\]
->
-> <div align="center">
-> The worst case for each Q&A is to call the LLM 7 times, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
-> </div>
+  > \[!NOTE\]
+  >
+  > <div align="center">
+  > Each Q&A scenario requires calling the LLM 7 times at worst, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
+  > </div>
 
-Execute the command to get the Q&A result
+  Execute the following to get the Q&A results
 
-```shell
-python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all services at once
-```
+  ```shell
+  python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all services at once
+  ```
 
-## Complete Edition
+## 10G Multimodal Edition
 
-The HuixiangDou deployed in the WeChat group is the complete version.
+  If you have 10G GPU mem, you can further support image and text retrieval. Just modify the model used in config.ini.
 
-When 40G of GPU memory is available, long text + retrieval capabilities can be used to improve accuracy.
+  ```toml
+  # config-multimodal.ini
+  # !!! Download `https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth`    to `bge-m3` folder !!!
+  embedding_model_path = "BAAI/bge-m3"
+  reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
+  ```
 
-Please read following topics
+  Note:
 
-- [Refer to config-advanced.ini to improve precision](./docs/full_dev_en.md)
+  * You need to manually download [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) to the [bge-m3](https://huggingface.co/BAAI/bge-m3) directory
+  * Install FlagEmbedding on main branch, we have made [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)   
+  * Install [requirements-multimodal.txt](./requirements-multimodal.txt)
+
+  Run gradio to test, see the image and text retrieval result [here](https://github.com/InternLM/HuixiangDou/pull/326).   
+  ```bash
+  python3 tests/test_query_gradio.py 
+  ```
+
+## 80G Complete Edition
+
+The "HuiXiangDou" in the WeChat experience group has enabled all features:
+
+- Serper search and SourceGraph search enhancement
+- Group chat images, WeChat public account parsing
+- Text coreference resolution
+- Hybrid LLM
+- Knowledge base is related to openmmlab's 12 repositories (1700 documents), refusing small talk
+
+Please read the following topics:
+
+- [Refer to config-advanced.ini configuration to improve effects](./docs/full_dev_en.md)
+- [Group chat scenario anaphora resolution training](./sft)
+- [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/add_wechat_commercial_zh.md)
 - [Use rag.py to annotate SFT training data](./docs/rag_annotate_sft_data_zh.md)
-- [Coreference resolution fine-tune](./sft)
-- [Using the commercial WeChat integration, add image analysis, public account parsing, and reference resolution](./docs/add_wechat_commercial_zh.md)
-- [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_zh.md)
 
 # 🛠️ FAQ
 
@@ -353,16 +344,17 @@ Please read following topics
 
 # 🍀 Acknowledgements
 
-- [KIMI](https://kimi.moonshot.cn/): long context LLM
-- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding): Bilingual and Crosslingual Embedding (BCEmbedding) in English and Chinese
-- [Langchain-ChatChat](https://github.com/chatchat-space/Langchain-Chatchat): ChatGLM Application based on Langchain
-- [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): Grab Wechat RedEnvelope
+- [KIMI](https://kimi.moonshot.cn/): Long text LLM, supports direct file upload
+- [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding): BAAI RAG group
+- [BCEmbedding](https://github.com/netease-youdao/BCEmbedding): Chinese-English bilingual feature model
+- [Langchain-ChatChat](https://github.com/chatchat-space/Langchain-Chatchat): Application of Langchain and ChatGLM
+- [GrabRedEnvelope](https://github.com/xbdcc/GrabRedEnvelope): WeChat red packet grab
 
 # 📝 Citation
 
 ```shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
+      title={HuiXiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
@@ -371,11 +363,10 @@ Please read following topics
 }
 
 @misc{kong2024huixiangdoucr,
-      title={HuixiangDou-CR: Coreference Resolution in Group Chats},
+      title={HuiXiangDou-CR: Coreference Resolution in Group Chats},
       author={Huanjun Kong},
       year={2024},
       eprint={2405.02817},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
-}
-```
+}```
