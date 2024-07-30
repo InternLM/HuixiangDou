@@ -1,6 +1,5 @@
 aiohttp
 bcembedding
-BCEmbedding
 beautifulsoup4
 duckduckgo_search
 einops
