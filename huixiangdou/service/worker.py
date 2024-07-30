@@ -416,7 +416,7 @@ class SecurityNode(Node):
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query.text, sess.response)
         truth, logs = is_truth(llm=self.llm,
                                prompt=prompt,
-                               throttle=8,
+                               throttle=9,
                                default=0)
         sess.debug['SecurityNode_qa_perplex'] = logs
         if truth:
@@ -522,7 +522,7 @@ class Worker:
         generating responses from the language model.
 
         Args:
-            query (Query): User's multimodal query.
+            query (Union[Query,str]): User's multimodal query.
             history (str): Chat history.
             groupname (str): The group name in which user asked the query.
             groupchats (List[str]): The history conversation in group before user query.

@@ -51,10 +51,10 @@
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
-- \[2024/07\] [混合知识图谱和稠密检索](./docs/knowledge_graph_zh.md)涨点 🎯
+- \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/knowledge_graph_zh.md)涨点 🎯
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
 - \[2024/05\] [wkteam 微信接入](./docs/add_wechat_commercial_zh.md)，整合图片&公众号解析、集成指代消歧
-- \[2024/05\] [SFT 是否需要指代消歧，F1 提升 29%](./sft/) 🎯
+- \[2024/05\] [SFT LLM 处理 NLP 任务，F1 提升 29%](./sft/) 🎯
   <table>
       <tr>
           <td>🤗</td>
@@ -148,7 +148,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 |  配置示例  | 显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| [config-2G.ini](./config-2G.ini) |    2GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge) |
+| [config-2G.ini](./config-2G.ini) |    2GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config.ini) |10GB     | 用 openai API 做 LLM，图文检索 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | 【标准版】[config.ini](./config.ini) |19GB     | 本地部署 LLM，单模态 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | [config-advanced.ini](./config-advanced.ini) |    80GB     |  本地 LLM，指代消歧，单模态，微信群实用 | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
@@ -179,7 +179,7 @@ pip install -r requirements.txt
 
 我们将用 mmpose 的文档构建 mmpose 知识库，过滤问题。如有自己的文档，放入 `repodir` 下即可。
 
-复制下面所有命令（包含 '#' 符号）执行。
+复制下面所有命令（包含 '#' 符号）建立知识库。
 
 ```shell
 # 下载知识库，我们仅以 mmpose 的文档为例。repodir下可以放任何自己的文档
@@ -192,7 +192,7 @@ mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-运行结束后执行 `python3 -m huixiangdou.main --standalone`，此时回复 mmpose 相关问题（和知识库相关），同时不响应天气问题。
+结束后执行 `python3 -m huixiangdou.main --standalone`，此时回复 mmpose 相关问题（和知识库相关），同时不响应天气问题。
 
 ```bash
 python3 -m huixiangdou.main --standalone
@@ -211,6 +211,13 @@ python3 -m huixiangdou.main --standalone
 > <div align="center">
 > 如果每次重启 LLM 太慢，先 <b>python3 -m huixiangdou.service.llm_server_hybrid</b>；然后开新窗口，每次只执行 <b>python3 -m huixiangdou.main</b> 不重启 LLM。
 > </div>
+<br/>
+
+也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口
+
+```bash
+python3 -m tests.test_query_gradio
+```
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
@@ -223,10 +230,11 @@ python3 -m huixiangdou.main --standalone
 
 ## 四、WEB 前后端部署，零编程集成飞书微信
 
-我们提供了完整的前端 UI 和后端服务源码，支持：
+我们提供了完整的 typescript 前端和 python 后端服务源码：
 
-- 多租户管理
+- 支持多租户管理
 - 零编程接入飞书、微信群
+- 架构松散，适合 k8s
 
 效果同 [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，请阅读 [web 部署文档](./web/README.md)。
 
@@ -294,11 +302,12 @@ python3 -m huixiangdou.main --standalone
 
 请阅读以下话题：
 
+- [混合**知识图谱**和稠密检索提升精度](./docs/knowledge_graph_zh.md)
 - [参照 config-advanced.ini 配置提升效果](./docs/full_dev_zh.md)
 - [群聊场景指代消歧训练](./sft)
 - [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
-- [混合知识图谱和稠密检索提升精度](./docs/knowledge_graph_zh.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
+
 
 # 🛠️ FAQ
 

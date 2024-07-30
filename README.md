@@ -145,7 +145,7 @@ The following are the GPU memory requirements for different features, the differ
 
 |  Configuration Example  |  GPU mem Requirements  |                                                                                          Description                                                                                          |                             Verified Devices on Linux System                             |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| [config-2G.ini](./config-2G.ini) |    2GB    | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [silicon cloud](https://siliconflow.cn/)) to search for text only    | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)    |
+| [config-2G.ini](./config-2G.ini) |    2GB    | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [silicon cloud](https://siliconflow.cn/)) to search for text only    | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge)    |
 | [config-multimodal.ini](./config.ini) |10GB     | Use openai API for LLM, image and text retrieval | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)     |
 | [Standard Edition] [config.ini](./config.ini) |19GB     | Local deployment of LLM, single modality | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)     |
 | [config-advanced.ini](./config-advanced.ini) |    80GB     |  local LLM, anaphora resolution, single modality, practical for WeChat group | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)     |
@@ -196,7 +196,7 @@ python3 -m huixiangdou.main --standalone
 
 +---------------------------+---------+----------------------------+-----------------+
 |         Query             |  State  |         Part of Reply      |   References    |
-+===========================+=========+================================+=================+
++===========================+=========+============================+=================+
 | How to install mmpose?    | success | To install mmpose, plea..  | installation.md |
 --------------------------------------------------------------------------------------
 | How is the weather today? | unrelated.. | ..                     |                 |
@@ -209,6 +209,14 @@ python3 -m huixiangdou.main --standalone
 > If restarting LLM every time is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>; then open a new window, and each time only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
 > </div>
 
+<br/>
+
+Also run a simple Web UI with `gradio`:
+
+```bash
+python3 -m tests.test_query_gradio
+```
+
 Please update the `repodir` documents, [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, financial, power, etc.).
 
 ## III. Integration into Feishu, WeChat group
@@ -220,10 +228,11 @@ Please update the `repodir` documents, [good_questions](./resource/good_question
 
 ## IV. Deploy web front and back end
 
-We provide a complete front-end UI and back-end service source code, supporting:
+We provide `typescript` front-end and `python` back-end source code:
 
-- Multi-tenant management
+- Multi-tenant management supported
 - Zero programming access to Feishu and WeChat
+- k8s friendly
 
 Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), please read the [web deployment document](./web/README.md).
 
@@ -292,6 +301,7 @@ The "HuiXiangDou" in the WeChat experience group has enabled all features:
 
 Please read the following topics:
 
+- [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_en.md) 
 - [Refer to config-advanced.ini configuration to improve effects](./docs/full_dev_en.md)
 - [Group chat scenario anaphora resolution training](./sft)
 - [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/add_wechat_commercial_zh.md)
