@@ -6,10 +6,12 @@ from typing import List, Tuple
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from .embedder import Embedder
-from .chunk import Chunk
 from BCEmbedding import RerankerModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from .chunk import Chunk
+from .embedder import Embedder
+
 
 class LLMReranker:
 
@@ -17,18 +19,20 @@ class LLMReranker:
             self,
             model_name_or_path: str = 'BAAI/bge-reranker-v2-minicpm-layerwise',
             topn: int = 10):
-        self.llm_reranker = self.use_llm_reranker(model_path=model_name_or_path)
+        self.llm_reranker = self.use_llm_reranker(
+            model_path=model_name_or_path)
         self.topn = topn
 
         if self.llm_reranker:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,
-                                                        trust_remote_code=True)
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_name_or_path, trust_remote_code=True)
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name_or_path,
                 trust_remote_code=True,
                 torch_dtype=torch.bfloat16).eval().to('cuda')
         else:
-            self.bce_client = RerankerModel(model_name_or_path=model_name_or_path, use_fp16=True)
+            self.bce_client = RerankerModel(
+                model_name_or_path=model_name_or_path, use_fp16=True)
 
     @classmethod
     def use_llm_reranker(self, model_path):
@@ -104,7 +108,8 @@ class LLMReranker:
                                         return_dict=True,
                                         cutoff_layers=[28])
                 scores = [
-                    scores[:, -1].view(-1, ).float() for scores in all_scores[0]
+                    scores[:, -1].view(-1, ).float()
+                    for scores in all_scores[0]
                 ]
                 scores = scores[0].cpu().numpy()
         else:
@@ -113,7 +118,6 @@ class LLMReranker:
 
         # get descending order
         return scores.argsort()[::-1][0:self.topn]
-
 
     def rerank(self, query: str, chunks: List[Chunk]):
         """Rerank faiss search results."""

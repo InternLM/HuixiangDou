@@ -332,6 +332,7 @@ def build_reply_text(code, query: str, reply: str, refs: list):
     table.add_row([query, str(code), reply[0:20] + '..', ','.join(refs)])
     return table.draw()
 
+
 def is_truth(llm: Any,
              prompt: str,
              throttle: int,

@@ -7,19 +7,20 @@ import os
 import re
 import time
 from abc import ABC, abstractmethod
+from typing import List, Tuple, Union
 
 import pytoml
 from loguru import logger
 from openai import OpenAI
 
-from .helper import ErrorCode
+from huixiangdou.primitive import Query
+
+from .helper import ErrorCode, is_truth
 from .llm_client import ChatClient
-from .helper import is_truth
 from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
 from .web_search import WebSearch
-from huixiangdou.primitive import Query
-from typing import List, Tuple, Union
+
 
 class Session:
     """For compute graph, `session` takes all parameter."""
@@ -249,14 +250,16 @@ class Text2vecNode(Node):
 
         # retrieve from knowledge base
         sess.chunk, sess.knowledge, sess.references = self.retriever.query(
-            Query(sess.topic, sess.query.image), context_max_length=self.max_length)
+            Query(sess.topic, sess.query.image),
+            context_max_length=self.max_length)
         sess.debug['Text2vecNode_chunk'] = sess.chunk
         if sess.knowledge is None:
             sess.code = ErrorCode.UNRELATED
             return
 
         # get relavance between query and knowledge base
-        prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query.text, sess.chunk)
+        prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
+            sess.query.text, sess.chunk)
         truth, logs = is_truth(llm=self.llm,
                                prompt=prompt,
                                throttle=5,
@@ -340,7 +343,8 @@ class WebSearchNode(Node):
             sess.code = ErrorCode.NO_SEARCH_RESULT
             return
 
-        prompt = self.GENERATE_TEMPLATE.format(sess.web_knowledge, sess.query.text)
+        prompt = self.GENERATE_TEMPLATE.format(sess.web_knowledge,
+                                               sess.query.text)
         # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend="puyu")
         sess.response = self.llm.generate_response(prompt=prompt,
                                                    history=sess.history,
@@ -385,7 +389,8 @@ class SGSearchNode(Node):
             sess.code = ErrorCode.SG_SEARCH_FAIL
             return
 
-        prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge, sess.query.text)
+        prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge,
+                                               sess.query.text)
         # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
         sess.response = self.llm.generate_response(prompt=prompt,
                                                    history=sess.history,
@@ -413,7 +418,8 @@ class SecurityNode(Node):
         if len(sess.response) < 1:
             sess.code = ErrorCode.BAD_ANSWER
             return
-        prompt = self.PERPLESITY_TEMPLATE.format(sess.query.text, sess.response)
+        prompt = self.PERPLESITY_TEMPLATE.format(sess.query.text,
+                                                 sess.response)
         truth, logs = is_truth(llm=self.llm,
                                prompt=prompt,
                                throttle=9,
@@ -475,12 +481,16 @@ class Worker:
         return self.llm.generate_response(prompt=query, backend='remote')
 
     def notify_badcase(self):
-        """Receiving revert command means the current threshold is too low, use higher one."""
-        delta =  max(0, 1 - self.retriever.reject_throttle) * 0.02
-        logger.info('received badcase, use bigger reject_throttle. Current {}, delta {}'.format(self.retriever.reject_throttle, delta))
+        """Receiving revert command means the current threshold is too low, use
+        higher one."""
+        delta = max(0, 1 - self.retriever.reject_throttle) * 0.02
+        logger.info(
+            'received badcase, use bigger reject_throttle. Current {}, delta {}'
+            .format(self.retriever.reject_throttle, delta))
 
         # this throttle also means quality, cannot exceed 0.5
-        self.retriever.reject_throttle = min(self.retriever.reject_throttle+delta, 0.5)
+        self.retriever.reject_throttle = min(
+            self.retriever.reject_throttle + delta, 0.5)
         with open('throttle', 'w') as f:
             f.write(str(self.retriever.reject_throttle))
 
@@ -515,7 +525,11 @@ class Worker:
                 return True
         return False
 
-    def generate(self, query: Union[Query,str], history:List, groupname:str, groupchats:List[str]=[]):
+    def generate(self,
+                 query: Union[Query, str],
+                 history: List,
+                 groupname: str,
+                 groupchats: List[str] = []):
         """Processes user queries and generates appropriate responses. It
         involves several steps including checking for valid questions,
         extracting topics, querying the feature store, searching the web, and
@@ -575,6 +589,7 @@ class Worker:
 
         logger.debug(sess.debug)
         return sess.code, sess.response, sess.references
+
 
 def parse_args():
     """Parses command-line arguments."""

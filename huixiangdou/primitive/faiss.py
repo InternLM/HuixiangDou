@@ -1,41 +1,34 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from __future__ import annotations
 
 import logging
 import os
+import pdb
 import pickle
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sized,
-    Tuple,
-    Union,
-)
+from typing import (Any, Callable, Dict, Iterable, List, Optional, Sized,
+                    Tuple, Union)
 
 import numpy as np
 from loguru import logger
+from tqdm import tqdm
+
 from .embedder import Embedder
 from .query import Query
-import pdb
-from tqdm import tqdm
+
 
 # heavily modified from langchain
 def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
-    """
-    Import faiss if available, otherwise raise error.
-    If FAISS_NO_AVX2 environment variable is set, it will be considered
-    to load FAISS with no AVX2 optimization.
+    """Import faiss if available, otherwise raise error. If FAISS_NO_AVX2
+    environment variable is set, it will be considered to load FAISS with no
+    AVX2 optimization.
 
     Args:
         no_avx2: Load FAISS strictly with no AVX2 optimization
             so that the vectorstore is portable and compatible with other devices.
     """
-    if no_avx2 is None and "FAISS_NO_AVX2" in os.environ:
-        no_avx2 = bool(os.getenv("FAISS_NO_AVX2"))
+    if no_avx2 is None and 'FAISS_NO_AVX2' in os.environ:
+        no_avx2 = bool(os.getenv('FAISS_NO_AVX2'))
 
     try:
         if no_avx2:
@@ -44,28 +37,22 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
             import faiss
     except ImportError:
         raise ImportError(
-            "Could not import faiss python package. "
-            "Please install it with `pip install faiss-gpu` (for CUDA supported GPU) "
-            "or `pip install faiss-cpu` (depending on Python version)."
-        )
+            'Could not import faiss python package. '
+            'Please install it with `pip install faiss-gpu` (for CUDA supported GPU) '
+            'or `pip install faiss-cpu` (depending on Python version).')
     return faiss
 
+
 class Faiss():
-    def __init__(
-        self,
-        index: Any,
-        chunks: List[Chunk],
-        k: int = 30
-    ):
+
+    def __init__(self, index: Any, chunks: List[Chunk], k: int = 30):
         """Initialize with necessary components."""
         self.index = index
         self.chunks = chunks
         self.k = k
 
-    def similarity_search(
-        self,
-        embedding: np.ndarray
-    ) -> List[Tuple[Chunk, float]]:
+    def similarity_search(self,
+                          embedding: np.ndarray) -> List[Tuple[Chunk, float]]:
         """Return chunks most similar to query.
 
         Args:
@@ -89,12 +76,10 @@ class Faiss():
             pairs.append((chunk, score))
         return pairs
 
-    def similarity_search_with_query(
-        self,
-        embedder: Embedder,
-        query: Query,
-        threshold: float=-1
-    ):
+    def similarity_search_with_query(self,
+                                     embedder: Embedder,
+                                     query: Query,
+                                     threshold: float = -1):
         """Return chunks most similar to query.
 
         Args:
@@ -116,7 +101,7 @@ class Faiss():
         np_feature = embedder.embed_query(text=query.text, path=query.image)
         pairs = self.similarity_search(embedding=np_feature)
         # ret = list(filter(lambda x: x[1] >= threshold, pairs))
-        
+
         ret = []
         for pair in pairs:
             if pair[1] >= threshold:
@@ -124,7 +109,8 @@ class Faiss():
         return ret
 
     @classmethod
-    def save_local(self, folder_path: str, chunks: List[Chunk], embedder: Embedder) -> None:
+    def save_local(self, folder_path: str, chunks: List[Chunk],
+                   embedder: Embedder) -> None:
         """Save FAISS index and store to disk.
 
         Args:
@@ -145,21 +131,21 @@ class Faiss():
                 np_feature = embedder.embed_query(path=chunk.content_or_path)
             else:
                 raise ValueError(f'Unimplement chunk type: {chunk.modal}')
-            
+
             if index is None:
                 dimension = np_feature.shape[-1]
                 index = faiss.IndexFlatIP(dimension)
-            
+
             index.add(np_feature)
 
         path = Path(folder_path)
         path.mkdir(exist_ok=True, parents=True)
 
         # save index separately since it is not picklable
-        faiss.write_index(index, str(path / "embedding.faiss"))
+        faiss.write_index(index, str(path / 'embedding.faiss'))
 
         # save chunks
-        with open(path / "chunk.pkl", "wb") as f:
+        with open(path / 'chunk.pkl', 'wb') as f:
             pickle.dump(chunks, f)
 
     @classmethod
@@ -173,10 +159,10 @@ class Faiss():
         path = Path(folder_path)
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()
-        index = faiss.read_index(str(path / f"embedding.faiss"))
+        index = faiss.read_index(str(path / f'embedding.faiss'))
 
         # load docstore
-        with open(path / f"chunk.pkl", "rb") as f:
+        with open(path / f'chunk.pkl', 'rb') as f:
             chunks = pickle.load(f)
 
         return cls(index, chunks)

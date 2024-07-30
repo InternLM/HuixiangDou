@@ -276,8 +276,6 @@ class HybridLLMServer:
         remote api."""
         url = 'https://internlm-chat.intern-ai.org.cn/puyu/api/v1/chat/completions'
 
-        now = time.time()
-
         header = {
             'Content-Type': 'application/json',
             'Authorization': self.server_config['remote_api_key']

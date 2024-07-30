@@ -13,11 +13,12 @@ import pytoml
 import redis
 from loguru import logger
 
-from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore, Queue, Retriever,
-                                 TaskCode, feature_store_base_dir,
-                                 parse_json_str, redis_host, redis_passwd,
-                                 redis_port)
 from huixiangdou.primitive import FileName, FileOperation
+from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,
+                                 Queue, Retriever, TaskCode,
+                                 feature_store_base_dir, parse_json_str,
+                                 redis_host, redis_passwd, redis_port)
+
 from .web_worker import WebWorker
 
 
@@ -195,8 +196,7 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
     with open(os.path.join(BASE, fs_id, 'desc'), 'w', encoding='utf8') as f:
         f.write(payload.name)
 
-    fs = FeatureStore(config_path=configpath,
-                      embedder=cache.embedder)
+    fs = FeatureStore(config_path=configpath, embedder=cache.embedder)
     task_state = partial(callback_task_state,
                          feature_store_id=fs_id,
                          _type=TaskCode.FS_ADD_DOC.value)
