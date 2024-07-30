@@ -34,9 +34,9 @@ HuixiangDou is a **group chat** assistant based on LLM (Large Language Model).
 
 Advantages:
 
-1. Design a three-stage pipeline of preprocess, rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Search](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/).
-2. Low cost, requiring only 2GB memory and no need for training
-3. Offers a complete suite of Web, Android, and pipeline source code, which is industrial-grade and commercially viable
+1. Design a three-stage pipeline of preprocess, rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/).
+2. Low cost, minimum requirement of 2GB memory and no need for training
+3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](resource/figures/wechat.jpg) to try AI assistant inside.
 
@@ -54,16 +54,16 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
   <table>
       <tr>
           <td>🤗</td>
-          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>  
-          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>  
+          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B">LoRA-Qwen1.5-14B</a></td>
+          <td><a href="https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-32B">LoRA-Qwen1.5-32B</a></td>
           <td><a href="https://huggingface.co/datasets/tpoisonooo/HuixiangDou-CR/tree/main">alpaca data</a></td>
-          <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>  
+          <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
       </tr>
   </table>
 - \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/rag_annotate_sft_data_zh.md)
 - \[2024/04\] Release [Web Front and Back End Service Source Code](./web) 👍
-- \[2024/03\] New [Personal WeChat Integration Method](./docs/add_wechat_accessibility_zh.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk)    !
-- \[2024/02\] [Experimental Feature] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg)    Integration of multimodal to achieve OCR
+- \[2024/03\] New [Personal WeChat Integration](./docs/add_wechat_accessibility_zh.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
+- \[2024/02\] [Experimental Feature] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) Integration of multimodal to achieve OCR
 
 # 📖 Support Status
 
@@ -117,7 +117,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 - [Knowledge Graph](./docs/knowledge_graph_en.md)
 - [Internet Search](https://github.com/FlagOpen/FlagEmbedding)   
 - [SourceGraph](https://sourcegraph.com)   
-- Image and text hybrid (only markdown)
+- Image and text (only markdown)
 
 </td>
 
@@ -130,7 +130,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 <td>
 
-- [Anaphora Resolution](https://arxiv.org/abs/2405.02817)   
+- [Coreference Resolution](https://arxiv.org/abs/2405.02817)   
 
 </td>
 
@@ -154,7 +154,7 @@ The following are the GPU memory requirements for different features, the differ
 
 We take the standard edition (local running LLM, text retrieval) as an introduction example. Other versions are just different in configuration options.
 
-## I. Download the model and install dependencies
+## I. Download and install dependencies
 [Click to agree to the BCE model agreement](https://huggingface.co/maidalun1020/bce-embedding-base_v1), log in huggingface
 
 ```shell
@@ -172,7 +172,7 @@ pip install -r requirements.txt
 # For python3.8, install faiss-gpu instead of faiss
 ```
 
-## II. Create a knowledge base and ask questions
+## II. Create knowledge base and ask questions
 
 Use mmpose documents to build the mmpose knowledge base and filtering questions. If you have your own documents, just put them under `repodir`.
 
@@ -211,14 +211,14 @@ python3 -m huixiangdou.main --standalone
 
 Please update the `repodir` documents, [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, financial, power, etc.).
 
-## III. Integration into Feishu, WeChat Group
+## III. Integration into Feishu, WeChat group
 
 - [**One-way** sending to Feishu group](./docs/send_only_lark_group_zh.md)
 - [**Two-way** Feishu group receiving and sending, recalling](./docs/add_lark_group_zh.md)
 - [Personal WeChat Android access](./docs/add_wechat_accessibility_zh.md)
 - [Personal WeChat wkteam access](./docs/add_wechat_commercial_zh.md)
 
-## IV. Web Front and Back End Deployment
+## IV. Deploy web front and back end
 
 We provide a complete front-end UI and back-end service source code, supporting:
 
@@ -233,16 +233,17 @@ Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdo
 
   If your GPU mem exceeds 1.8G, or you pursue cost-effectiveness. This configuration discards the local LLM and uses remote LLM instead, which is the same as the standard edition.
 
-  Take `kimi` as an example, fill in the API TOKEN applied from the [official website](https://platform.moonshot.cn/) into `config-2G.ini`
+  Take `siliconcloud` as an example, fill in the API TOKEN applied from the [official website](https://siliconflow.cn/) into `config-2G.ini`
 
   ```toml
-  # config-8G.ini
+  # config-2G.ini
   [llm]
   enable_local = 0   # Turn off local LLM
   enable_remote = 1  # Only use remote
   ..
-  remote_type = "kimi"   # Choose kimi
-  remote_api_key = "YOUR-API-KEY-HERE"
+  remote_type = "siliconcloud"   # Choose siliconcloud
+  remote_api_key = "YOUR-API-KEY-HERE" # Your API key
+  remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
   ```
 
   > \[!NOTE\]

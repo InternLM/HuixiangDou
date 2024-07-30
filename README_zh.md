@@ -236,16 +236,16 @@ python3 -m huixiangdou.main --standalone
 
   如果你的显存超过 1.8G，或追求性价比。此配置扔掉了本地 LLM，使用 remote LLM 代替，其他和标准版相同。
 
-  以 kimi 为例，把[官网申请](https://platform.moonshot.cn/) 的 API TOKEN 填入 `config-2G.ini`
+  以 siliconcloud 为例，把[官网申请](https://siliconflow.cn/zh-cn/siliconcloud) 的 API TOKEN 填入 `config-2G.ini`
 
   ```toml
-  # config-8G.ini
   [llm]
   enable_local = 0   # 关掉本地 LLM
   enable_remote = 1  # 只用远程
   ..
-  remote_type = "kimi"   # 选择 kimi
-  remote_api_key = "YOUR-API-KEY-HERE"
+  remote_type = "siliconcloud"   # 选择 siliconcloud
+  remote_api_key = "YOUR-API-KEY-HERE" # 填 API key
+  remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
   ```
 
   > \[!NOTE\]
