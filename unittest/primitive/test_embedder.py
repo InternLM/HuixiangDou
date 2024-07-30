@@ -9,8 +9,8 @@ def test_embedder():
     sentence_16k = sentence * (16384 // len(sentence))
     image_path = 'resource/figures/wechat.jpg'
     
-    text_feature = emb.embed_text(text=sentence_16k)
-    image_feature = emb.embed_image(path=image_path)
+    text_feature = emb.embed_query(text=sentence_16k)
+    image_feature = emb.embed_query(path=image_path)
 
     query_feature = emb.embed_query(text=sentence_16k, path=image_path)
 

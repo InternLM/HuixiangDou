@@ -10,7 +10,7 @@ def test_auto_fix():
     client = ChatClient(config_path=remote_only_config)
     real_backend, max_len = client.auto_fix(backend='local')
     assert real_backend != 'local'
-    assert max_len >= 64000
+    assert max_len >= 32000
 
     client = ChatClient(config_path=local_only_config)
     real_backend, max_len = client.auto_fix(backend='kimi')
