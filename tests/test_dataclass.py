@@ -11,6 +11,4 @@ class KGType(Enum):
 
 
 x = KGType.IMAGE
-
-pdb.set_trace()
 print(x)

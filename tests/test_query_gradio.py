@@ -1,12 +1,15 @@
 import argparse
 import json
+import os
 import time
 from multiprocessing import Process, Value
 
+import cv2
 import gradio as gr
 import pytoml
 from loguru import logger
 
+from huixiangdou.primitive import Query
 from huixiangdou.service import ErrorCode, Worker, llm_serve, start_llm_server
 
 
@@ -30,8 +33,17 @@ def parse_args():
     return args
 
 
-def get_reply(query):
+def get_reply(text, image):
+    if image is not None:
+        filename = 'image.png'
+        image_path = os.path.join(args.work_dir, filename)
+        cv2.imwrite(image_path, image)
+    else:
+        image_path = None
+
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
+    query = Query(text, image_path)
+
     code, reply, references = assistant.generate(query=query,
                                                  history=[],
                                                  groupname='')
@@ -53,10 +65,13 @@ if __name__ == '__main__':
 
     with gr.Blocks() as demo:
         with gr.Row():
-            input_question = gr.Textbox(label='输入你的提问')
+            input_question = gr.Textbox(label='Input the question.')
+            input_image = gr.Image(label='Upload Image.')
             with gr.Column():
-                result = gr.Textbox(label='生成结果')
+                result = gr.Textbox(label='Generate response.')
                 run_button = gr.Button()
-        run_button.click(fn=get_reply, inputs=input_question, outputs=result)
+        run_button.click(fn=get_reply,
+                         inputs=[input_question, input_image],
+                         outputs=result)
 
     demo.launch(share=False, server_name='0.0.0.0', debug=True)

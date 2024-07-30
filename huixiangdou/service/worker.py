@@ -7,14 +7,16 @@ import os
 import re
 import time
 from abc import ABC, abstractmethod
+from typing import List, Tuple, Union
 
 import pytoml
 from loguru import logger
 from openai import OpenAI
 
-from .helper import ErrorCode
+from huixiangdou.primitive import Query
+
+from .helper import ErrorCode, is_truth
 from .llm_client import ChatClient
-from .primitive import is_truth
 from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
 from .web_search import WebSearch
@@ -24,7 +26,7 @@ class Session:
     """For compute graph, `session` takes all parameter."""
 
     def __init__(self,
-                 query: str,
+                 query: Query,
                  history: list,
                  groupname: str,
                  log_path: str = 'logs/generate.jsonl',
@@ -128,11 +130,11 @@ Analyze step by step, first identify what topics are included in the historical 
 
     def process(self, sess: Session):
         # check input
-        if sess.query is None or len(sess.query) < 6:
+        if sess.query.text is None or len(sess.query.text) < 6:
             sess.code = ErrorCode.QUESTION_TOO_SHORT
             return
 
-        prompt = self.SCORING_QUESTION_TEMPLTE.format(sess.query)
+        prompt = self.SCORING_QUESTION_TEMPLTE.format(sess.query.text)
         truth, logs = is_truth(llm=self.llm,
                                prompt=prompt,
                                throttle=6,
@@ -162,7 +164,7 @@ Analyze step by step, first identify what topics are included in the historical 
             talks.append({'sender': name_map[sender], 'content': msg.query})
 
         talk_str = json.dumps(talks, ensure_ascii=False)
-        prompt = self.CR_NEED.format(talk_str, sess.query)
+        prompt = self.CR_NEED.format(talk_str, sess.query.text)
 
         # need coreference resolution or not
         response = ''
@@ -191,7 +193,7 @@ Analyze step by step, first identify what topics are included in the historical 
         if not need_cr:
             return
 
-        prompt = self.CR.format(talk_str, sess.query)
+        prompt = self.CR.format(talk_str, sess.query.text)
         self.cr = self.llm.generate_response(prompt=prompt, backend='remote')
         if self.cr.startswith('“') and self.cr.endswith('”'):
             self.cr = self.cr[1:len(self.cr) - 1]
@@ -200,14 +202,14 @@ Analyze step by step, first identify what topics are included in the historical 
         sess.debug['cr'] = self.cr
 
         # rewrite query
-        queries = [sess.query, self.cr]
+        queries = [sess.query.text, self.cr]
         self.query = '\n'.join(queries)
         logger.debug('merge query and cr, query: {} cr: {}'.format(
             self.query, self.cr))
 
 
-class BCENode(Node):
-    """BCENode is for retrieve from knowledge base."""
+class Text2vecNode(Node):
+    """Text2vecNode is for retrieve from knowledge base."""
 
     def __init__(self, config: dict, llm: ChatClient, retriever: Retriever,
                  language: str):
@@ -234,13 +236,13 @@ class BCENode(Node):
         """Try get reply with text2vec & rerank model."""
 
         # get query topic
-        prompt = self.TOPIC_TEMPLATE.format(sess.query)
+        prompt = self.TOPIC_TEMPLATE.format(sess.query.text)
         sess.topic = self.llm.generate_response(prompt)
         for prefix in ['主题：', '这句话的主题是：']:
             if sess.topic.startswith(prefix):
                 sess.topic = sess.topic[len(prefix):]
 
-        sess.debug['BCENode_topic'] = sess.topic
+        sess.debug['Text2vecNode_topic'] = sess.topic
         if len(sess.topic) < 2:
             # topic too short, return
             sess.code = ErrorCode.NO_TOPIC
@@ -248,24 +250,26 @@ class BCENode(Node):
 
         # retrieve from knowledge base
         sess.chunk, sess.knowledge, sess.references = self.retriever.query(
-            sess.topic, context_max_length=self.max_length)
-        sess.debug['BCENode_chunk'] = sess.chunk
+            Query(sess.topic, sess.query.image),
+            context_max_length=self.max_length)
+        sess.debug['Text2vecNode_chunk'] = sess.chunk
         if sess.knowledge is None:
             sess.code = ErrorCode.UNRELATED
             return
 
         # get relavance between query and knowledge base
-        prompt = self.SCORING_RELAVANCE_TEMPLATE.format(sess.query, sess.chunk)
+        prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
+            sess.query.text, sess.chunk)
         truth, logs = is_truth(llm=self.llm,
                                prompt=prompt,
                                throttle=5,
                                default=10)
-        sess.debug['BCENode_chunk_relavance'] = logs
+        sess.debug['Text2vecNode_chunk_relavance'] = logs
         if not truth:
             return
 
         # answer the question
-        prompt = self.GENERATE_TEMPLATE.format(sess.knowledge, sess.query)
+        prompt = self.GENERATE_TEMPLATE.format(sess.knowledge, sess.query.text)
         # response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
         response = self.llm.generate_response(prompt=prompt,
                                               history=sess.history,
@@ -309,7 +313,7 @@ class WebSearchNode(Node):
 
         engine = WebSearch(config_path=self.config_path)
 
-        prompt = self.KEYWORDS_TEMPLATE.format(sess.groupname, sess.query)
+        prompt = self.KEYWORDS_TEMPLATE.format(sess.groupname, sess.query.text)
         search_keywords = self.llm.generate_response(prompt)
         sess.debug['WebSearchNode_keywords'] = prompt
         articles, error = engine.get(query=search_keywords, max_article=2)
@@ -321,7 +325,7 @@ class WebSearchNode(Node):
         for article_id, article in enumerate(articles):
             article.cut(0, self.max_length)
             prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
-                sess.query, article.brief)
+                sess.query.text, article.brief)
             # truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='puyu')
             truth, logs = is_truth(llm=self.llm,
                                    prompt=prompt,
@@ -339,7 +343,8 @@ class WebSearchNode(Node):
             sess.code = ErrorCode.NO_SEARCH_RESULT
             return
 
-        prompt = self.GENERATE_TEMPLATE.format(sess.web_knowledge, sess.query)
+        prompt = self.GENERATE_TEMPLATE.format(sess.web_knowledge,
+                                               sess.query.text)
         # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend="puyu")
         sess.response = self.llm.generate_response(prompt=prompt,
                                                    history=sess.history,
@@ -376,7 +381,7 @@ class SGSearchNode(Node):
         sg = SourceGraphProxy(config_path=self.config_path,
                               language=self.language)
         sess.sg_knowledge = sg.search(llm_client=self.llm,
-                                      question=sess.query,
+                                      question=sess.query.text,
                                       groupname=sess.groupname)
 
         sess.debug['SGSearchNode_knowledge'] = sess.sg_knowledge
@@ -384,7 +389,8 @@ class SGSearchNode(Node):
             sess.code = ErrorCode.SG_SEARCH_FAIL
             return
 
-        prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge, sess.query)
+        prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge,
+                                               sess.query.text)
         # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
         sess.response = self.llm.generate_response(prompt=prompt,
                                                    history=sess.history,
@@ -412,10 +418,11 @@ class SecurityNode(Node):
         if len(sess.response) < 1:
             sess.code = ErrorCode.BAD_ANSWER
             return
-        prompt = self.PERPLESITY_TEMPLATE.format(sess.query, sess.response)
+        prompt = self.PERPLESITY_TEMPLATE.format(sess.query.text,
+                                                 sess.response)
         truth, logs = is_truth(llm=self.llm,
                                prompt=prompt,
-                               throttle=8,
+                               throttle=9,
                                default=0)
         sess.debug['SecurityNode_qa_perplex'] = logs
         if truth:
@@ -474,12 +481,16 @@ class Worker:
         return self.llm.generate_response(prompt=query, backend='remote')
 
     def notify_badcase(self):
-        """Receiving revert command means the current threshold is too low, use higher one."""
-        delta =  max(0, 1 - self.retriever.reject_throttle) * 0.02
-        logger.info('received badcase, use bigger reject_throttle. Current {}, delta {}'.format(self.retriever.reject_throttle, delta))
+        """Receiving revert command means the current threshold is too low, use
+        higher one."""
+        delta = max(0, 1 - self.retriever.reject_throttle) * 0.02
+        logger.info(
+            'received badcase, use bigger reject_throttle. Current {}, delta {}'
+            .format(self.retriever.reject_throttle, delta))
 
         # this throttle also means quality, cannot exceed 0.5
-        self.retriever.reject_throttle = min(self.retriever.reject_throttle+delta, 0.5)
+        self.retriever.reject_throttle = min(
+            self.retriever.reject_throttle + delta, 0.5)
         with open('throttle', 'w') as f:
             f.write(str(self.retriever.reject_throttle))
 
@@ -514,23 +525,31 @@ class Worker:
                 return True
         return False
 
-    def generate(self, query, history, groupname, groupchats=[]):
+    def generate(self,
+                 query: Union[Query, str],
+                 history: List,
+                 groupname: str,
+                 groupchats: List[str] = []):
         """Processes user queries and generates appropriate responses. It
         involves several steps including checking for valid questions,
         extracting topics, querying the feature store, searching the web, and
         generating responses from the language model.
 
         Args:
-            query (str): User's query.
+            query (Union[Query,str]): User's multimodal query.
             history (str): Chat history.
             groupname (str): The group name in which user asked the query.
-            groupchats (history): The history conversation in group before user query.
+            groupchats (List[str]): The history conversation in group before user query.
 
         Returns:
             ErrorCode: An error code indicating the status of response generation.  # noqa E501
             str: Generated response to the user query.
             references: List for referenced filename or web url
         """
+        # format input
+        if type(query) is str:
+            query = Query(text=query)
+
         # build input session
         sess = Session(query=query,
                        history=history,
@@ -540,8 +559,8 @@ class Worker:
 
         # build pipeline
         preproc = PreprocNode(self.config, self.llm, self.language)
-        text2vec = BCENode(self.config, self.llm, self.retriever,
-                           self.language)
+        text2vec = Text2vecNode(self.config, self.llm, self.retriever,
+                                self.language)
         websearch = WebSearchNode(self.config, self.config_path, self.llm,
                                   self.language)
         sgsearch = SGSearchNode(self.config, self.config_path, self.llm,

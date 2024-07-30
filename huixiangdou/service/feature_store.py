@@ -7,20 +7,16 @@ import pdb
 import re
 import shutil
 from multiprocessing import Pool
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pytoml
-from langchain.text_splitter import (MarkdownHeaderTextSplitter,
-                                     MarkdownTextSplitter,
-                                     RecursiveCharacterTextSplitter)
-from langchain.vectorstores.faiss import FAISS as Vectorstore
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_core.documents import Document
 from loguru import logger
 from torch.cuda import empty_cache
 from tqdm import tqdm
 
-from .file_operation import FileName, FileOperation
+from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
+                         FileName, FileOperation,
+                         RecursiveCharacterTextSplitter, nested_split_markdown)
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
@@ -47,93 +43,12 @@ def read_and_save(file: FileName):
         f.write(content)
 
 
-def _split_text_with_regex_from_end(text: str, separator: str,
-                                    keep_separator: bool) -> List[str]:
-    # Now that we have the separator, split the text
-    if separator:
-        if keep_separator:
-            # The parentheses in the pattern keep the delimiters in the result.
-            _splits = re.split(f'({separator})', text)
-            splits = [''.join(i) for i in zip(_splits[0::2], _splits[1::2])]
-            if len(_splits) % 2 == 1:
-                splits += _splits[-1:]
-            # splits = [_splits[0]] + splits
-        else:
-            splits = re.split(separator, text)
-    else:
-        splits = list(text)
-    return [s for s in splits if s != '']
-
-
-# copy from https://github.com/chatchat-space/Langchain-Chatchat/blob/master/text_splitter/chinese_recursive_text_splitter.py
-class ChineseRecursiveTextSplitter(RecursiveCharacterTextSplitter):
-
-    def __init__(
-        self,
-        separators: Optional[List[str]] = None,
-        keep_separator: bool = True,
-        is_separator_regex: bool = True,
-        **kwargs: Any,
-    ) -> None:
-        """Create a new TextSplitter."""
-        super().__init__(keep_separator=keep_separator, **kwargs)
-        self._separators = separators or [
-            '\n\n', '\n', '。|！|？', '\.\s|\!\s|\?\s', '；|;\s', '，|,\s'
-        ]
-        self._is_separator_regex = is_separator_regex
-
-    def _split_text(self, text: str, separators: List[str]) -> List[str]:
-        """Split incoming text and return chunks."""
-        final_chunks = []
-        # Get appropriate separator to use
-        separator = separators[-1]
-        new_separators = []
-        for i, _s in enumerate(separators):
-            _separator = _s if self._is_separator_regex else re.escape(_s)
-            if _s == '':
-                separator = _s
-                break
-            if re.search(_separator, text):
-                separator = _s
-                new_separators = separators[i + 1:]
-                break
-
-        _separator = separator if self._is_separator_regex else re.escape(
-            separator)
-        splits = _split_text_with_regex_from_end(text, _separator,
-                                                 self._keep_separator)
-
-        # Now go merging things, recursively splitting longer texts.
-        _good_splits = []
-        _separator = '' if self._keep_separator else separator
-        for s in splits:
-            if self._length_function(s) < self._chunk_size:
-                _good_splits.append(s)
-            else:
-                if _good_splits:
-                    merged_text = self._merge_splits(_good_splits, _separator)
-                    final_chunks.extend(merged_text)
-                    _good_splits = []
-                if not new_separators:
-                    final_chunks.append(s)
-                else:
-                    other_info = self._split_text(s, new_separators)
-                    final_chunks.extend(other_info)
-        if _good_splits:
-            merged_text = self._merge_splits(_good_splits, _separator)
-            final_chunks.extend(merged_text)
-        return [
-            re.sub(r'\n{2,}', '\n', chunk.strip()) for chunk in final_chunks
-            if chunk.strip() != ''
-        ]
-
-
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
     the reject pipeline and response pipeline."""
 
     def __init__(self,
-                 embeddings: HuggingFaceEmbeddings,
+                 embedder: Embedder,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
                  chunk_size=832,
@@ -149,22 +64,18 @@ class FeatureStore:
             config = pytoml.load(f)['feature_store']
             self.reject_throttle = config['reject_throttle']
 
-        logger.warning(
-            '!!! If your feature generated by `text2vec-large-chinese` before 20240208, please rerun `python3 -m huixiangdou.service.feature_store`'  # noqa E501
-        )
-
         logger.debug('loading text2vec model..')
-        self.embeddings = embeddings
-        self.compression_retriever = None
-        self.rejecter = None
+        self.embedder = embedder
         self.retriever = None
         self.chunk_size = chunk_size
         self.analyze_reject = analyze_reject
-        self.rejecter_naive_splitter = rejecter_naive_splitter
+
+        if rejecter_naive_splitter:
+            raise ValueError(
+                'The `rejecter_naive_splitter` option deprecated, please `git checkout v20240722`'
+            )
 
         logger.info('init fs with chunk_size {}'.format(chunk_size))
-        self.md_splitter = MarkdownTextSplitter(chunk_size=chunk_size,
-                                                chunk_overlap=32)
 
         if language == 'zh':
             self.text_splitter = ChineseRecursiveTextSplitter(
@@ -176,125 +87,42 @@ class FeatureStore:
             self.text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=chunk_size, chunk_overlap=32)
 
-        self.head_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
-            ('#', 'Header 1'),
-            ('##', 'Header 2'),
-            ('###', 'Header 3'),
-        ])
-
-    def split_md(self, text: str, source: None):
-        """Split the markdown document in a nested way, first extracting the
-        header.
-
-        If the extraction result exceeds chunk_size, split it again according
-        to length.
-        """
-        docs = self.head_splitter.split_text(text)
-
-        final = []
-        for doc in docs:
-            header = ''
-            if len(doc.metadata) > 0:
-                if 'Header 1' in doc.metadata:
-                    header += doc.metadata['Header 1']
-                if 'Header 2' in doc.metadata:
-                    header += ' '
-                    header += doc.metadata['Header 2']
-                if 'Header 3' in doc.metadata:
-                    header += ' '
-                    header += doc.metadata['Header 3']
-
-            if len(doc.page_content) > self.chunk_size:
-                subdocs = self.md_splitter.create_documents([doc.page_content])
-                for subdoc in subdocs:
-                    if len(subdoc.page_content) >= 10:
-                        final.append('{} {}'.format(
-                            header, subdoc.page_content.lower()))
-            elif len(doc.page_content) >= 10:
-                final.append('{} {}'.format(
-                    header, doc.page_content.lower()))  # noqa E501
-
-        # for item in final:
-        #     if len(item) >= self.chunk_size:
-        #         logger.debug('source {} split length {}'.format(
-        #             source, len(item)))
-        return final
-
-    def clean_md(self, text: str):
-        """Remove parts of the markdown document that do not contain the key
-        question words, such as code blocks, URL links, etc."""
-        # remove ref
-        pattern_ref = r'\[(.*?)\]\(.*?\)'
-        new_text = re.sub(pattern_ref, r'\1', text)
-
-        # remove code block
-        pattern_code = r'```.*?```'
-        new_text = re.sub(pattern_code, '', new_text, flags=re.DOTALL)
-
-        # remove underline
-        new_text = re.sub('_{5,}', '', new_text)
-
-        # remove table
-        # new_text = re.sub('\|.*?\|\n\| *\:.*\: *\|.*\n(\|.*\|.*\n)*', '', new_text, flags=re.DOTALL)   # noqa E501
-
-        # use lower
-        new_text = new_text.lower()
-        return new_text
-
-    def get_md_documents(self, file: FileName):
-        documents = []
+    def parse_markdown(self, file: FileName, metadata: Dict):
         length = 0
         text = ''
         with open(file.copypath, encoding='utf8') as f:
             text = f.read()
-        text = file.prefix + '\n' + self.clean_md(text)
+        text = file.prefix + text
         if len(text) <= 1:
             return [], length
 
-        chunks = self.split_md(text=text,
-                               source=os.path.abspath(file.copypath))
-        for chunk in chunks:
-            new_doc = Document(page_content=chunk,
-                               metadata={
-                                   'source': file.basename,
-                                   'read': file.copypath
-                               })
-            length += len(chunk)
-            documents.append(new_doc)
-        return documents, length
+        chunks = nested_split_markdown(file.origin,
+                                       text=text,
+                                       chunksize=self.chunk_size,
+                                       metadata=metadata)
+        for c in chunks:
+            length += len(c.content_or_path)
+        return chunks, length
 
-    def get_text_documents(self, text: str, file: FileName):
-        if len(text) <= 1:
-            return []
-        chunks = self.text_splitter.create_documents([text])
-        documents = []
-        for chunk in chunks:
-            # `source` is for return references
-            # `read` is for LLM response
-            chunk.metadata = {'source': file.basename, 'read': file.copypath}
-            documents.append(chunk)
-        return documents
-
-    def build_dense_response(self, files: list, work_dir: str):
+    def build_dense(self, files: list, work_dir: str):
         """Extract the features required for the response pipeline based on the
         document."""
-        feature_dir = os.path.join(work_dir, 'db_response')
+        feature_dir = os.path.join(work_dir, 'db_dense')
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
 
-        # logger.info('glob {} in dir {}'.format(files, file_dir))
         file_opr = FileOperation()
-        documents = []
+        chunks = []
 
-        for i, file in tqdm(enumerate(files)):
-            # logger.debug('{}/{}.. {}'.format(i + 1, len(files), file.basename))
+        for i, file in enumerate(files):
             if not file.state:
                 continue
+            metadata = {'source': file.origin, 'read': file.copypath}
 
             if file._type == 'md':
-                md_documents, md_length = self.get_md_documents(file)
-                documents += md_documents
-                # logger.info('{} content length {}'.format(file._type, md_length))
+                md_chunks, md_length = self.parse_markdown(file=file,
+                                                           metadata=metadata)
+                chunks += md_chunks
                 file.reason = str(md_length)
 
             else:
@@ -305,16 +133,17 @@ class FeatureStore:
                     file.reason = str(error)
                     continue
                 file.reason = str(len(text))
-                # logger.info('{} content length {}'.format(file._type, len(text)))
                 text = file.prefix + text
-                documents += self.get_text_documents(text, file)
+                chunks += self.text_splitter.create_chunks(
+                    texts=[text], metadatas=[metadata])
 
-        if len(documents) < 1:
+        if len(chunks) < 1:
             return
-        vs = Vectorstore.from_documents(documents, self.embeddings)
-        vs.save_local(feature_dir)
+        Faiss.save_local(folder_path=feature_dir,
+                         chunks=chunks,
+                         embedder=self.embedder)
 
-    def analyze(self, documents: list):
+    def analyze(self, chunks: List[Chunk]):
         """Output documents length mean, median and histogram."""
         if not self.analyze_reject:
             return
@@ -322,15 +151,15 @@ class FeatureStore:
         text_lens = []
         token_lens = []
 
-        if self.embeddings is None:
-            logger.info('self.embeddings is None, skip `anaylze_output`')
+        if self.embedder is None:
+            logger.info('self.embedder is None, skip `anaylze_output`')
             return
-        for doc in documents:
-            content = doc.page_content
+        for chunk in chunks:
+            content = chunk.content_or_path
             text_lens.append(len(content))
             token_lens.append(
                 len(
-                    self.embeddings.client.tokenizer(
+                    self.embedder.client.tokenizer(
                         content, padding=False,
                         truncation=False)['input_ids']))
 
@@ -338,62 +167,7 @@ class FeatureStore:
         logger.info('document token histogram, {}'.format(
             histogram(token_lens)))
 
-    def build_dense_reject(self, files: list, work_dir: str):
-        """Extract the features required for the reject pipeline based on
-        documents."""
-        feature_dir = os.path.join(work_dir, 'db_reject')
-        if not os.path.exists(feature_dir):
-            os.makedirs(feature_dir)
-
-        lens = []
-        documents = []
-        file_opr = FileOperation()
-
-        logger.debug('build dense reject with chunk_size {}'.format(
-            self.chunk_size))
-        for i, file in tqdm(enumerate(files)):
-            if not file.state:
-                continue
-
-            if not self.rejecter_naive_splitter and file._type == 'md':
-                # reject base not clean md
-                text = file.basename + '\n'
-                with open(file.copypath, encoding='utf8') as f:
-                    text += f.read()
-                if len(text) <= 1:
-                    continue
-
-                chunks = self.split_md(text=text,
-                                       source=os.path.abspath(file.copypath))
-                for chunk in chunks:
-                    new_doc = Document(page_content=chunk,
-                                       metadata={
-                                           'source': file.basename,
-                                           'read': file.copypath
-                                       })
-                    documents.append(new_doc)
-
-            else:
-                text, error = file_opr.read(file.copypath)
-                if len(text) < 1:
-                    continue
-                if error is not None:
-                    continue
-                lens.append(len(text))
-                text = file.basename + text
-                documents += self.get_text_documents(text, file)
-
-        if len(documents) < 1:
-            return
-
-        log_str = histogram(values=lens)
-        logger.info('analyze input text. {}'.format(log_str))
-        logger.info('documents counter {}'.format(len(documents)))
-        self.analyze(documents)
-        vs = Vectorstore.from_documents(documents, self.embeddings)
-        vs.save_local(feature_dir)
-
-    def preprocess(self, files: list, work_dir: str):
+    def preprocess(self, files: List, work_dir: str):
         """Preprocesses files in a given directory. Copies each file to
         'preprocess' with new name formed by joining all subdirectories with
         '_'.
@@ -412,7 +186,7 @@ class FeatureStore:
         if not os.path.exists(preproc_dir):
             os.makedirs(preproc_dir)
 
-        pool = Pool(processes=16)
+        pool = Pool(processes=8)
         file_opr = FileOperation()
         for idx, file in enumerate(files):
             if not os.path.exists(file.origin):
@@ -474,8 +248,7 @@ class FeatureStore:
         )
         self.preprocess(files=files, work_dir=work_dir)
         # build dense retrieval refusal-to-answer and response database
-        self.build_dense_response(files=files, work_dir=work_dir)
-        self.build_dense_reject(files=files, work_dir=work_dir)
+        self.build_dense(files=files, work_dir=work_dir)
 
 
 def parse_args():
@@ -518,46 +291,6 @@ def parse_args():
     return args
 
 
-def test_reject(retriever: Retriever, sample: str = None):
-    """Simple test reject pipeline."""
-    if sample is None:
-        real_questions = [
-            'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
-            '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
-            'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
-            '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
-            '请问 ncnn 全称是什么',
-            '有啥中文的 text to speech 模型吗?',
-            '今天中午吃什么？',
-            'huixiangdou 是什么？',
-            'mmpose 如何安装？',
-            '使用科研仪器需要注意什么？'
-        ]
-    else:
-        with open(sample) as f:
-            real_questions = json.load(f)
-
-    for example in real_questions:
-        relative, _ = retriever.is_relative(example)
-
-        if relative:
-            logger.warning(f'process query: {example}')
-        else:
-            logger.error(f'reject query: {example}')
-
-        if sample is not None:
-            if relative:
-                with open('workdir/positive.txt', 'a+') as f:
-                    f.write(example)
-                    f.write('\n')
-            else:
-                with open('workdir/negative.txt', 'a+') as f:
-                    f.write(example)
-                    f.write('\n')
-
-    empty_cache()
-
-
 def test_query(retriever: Retriever, sample: str = None):
     """Simple test response pipeline."""
     from texttable import Texttable
@@ -566,7 +299,7 @@ def test_query(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
         logger.add('logs/feature_store_query.log', rotation='4MB')
     else:
-        real_questions = ['mmpose installation', 'how to use std::vector ?']
+        real_questions = ['mmpose installation', 'what day is today? ']
 
     table = Texttable()
     table.set_cols_valign(['t', 't', 't', 't'])
@@ -589,7 +322,7 @@ def test_query(retriever: Retriever, sample: str = None):
 if __name__ == '__main__':
     args = parse_args()
     cache = CacheRetriever(config_path=args.config_path)
-    fs_init = FeatureStore(embeddings=cache.embeddings,
+    fs_init = FeatureStore(embedder=cache.embedder,
                            config_path=args.config_path,
                            override=args.override)
 
@@ -602,6 +335,9 @@ if __name__ == '__main__':
 
     # update reject throttle
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
+    if retriever.kg.is_available():
+        start_llm_server(args.config_path)
+
     with open(os.path.join('resource', 'good_questions.json')) as f:
         good_questions = json.load(f)
     with open(os.path.join('resource', 'bad_questions.json')) as f:
@@ -614,7 +350,4 @@ if __name__ == '__main__':
 
     # test
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
-    if retriever.kg.is_available():
-        start_llm_server(args.config_path)
-    test_reject(retriever, args.sample)
     test_query(retriever, args.sample)

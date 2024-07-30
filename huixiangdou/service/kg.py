@@ -17,7 +17,7 @@ import pytoml
 from loguru import logger
 from tqdm import tqdm
 
-from .file_operation import FileOperation
+from ..primitive import FileOperation
 from .helper import build_reply_text, extract_json_from_str
 from .llm_client import ChatClient
 from .llm_server_hybrid import start_llm_server
@@ -330,8 +330,9 @@ class KnowledgeGraph:
             })])
         for rel in self.relations:
             G.add_edge(rel['_from'], rel['to'], desc=rel['desc'])
-        logger.debug('number of nodes {}, number of edges {}'.format(
-            G.number_of_nodes(), G.number_of_edges()))
+        logger.debug(
+            'Loaded knowledge graph, number of nodes {}, number of edges {}'.
+            format(G.number_of_nodes(), G.number_of_edges()))
 
         # save to pickle format
         with open(self.gpickle_path, 'wb') as f:

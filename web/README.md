@@ -33,7 +33,7 @@ netstat -nlpt | grep redis
 2. 设置环境变量，需要配置的环境变量如下（你可以将这些环境变量添加到~/.bashrc文件的末尾，然后 `source ~/.bashrc` 刷新配置）
 
 ```bash
-$ cat env.sh
+$ cat web/env.sh
 
 export PYTHONUNBUFFERED=1
 # Redis 的 IP 地址

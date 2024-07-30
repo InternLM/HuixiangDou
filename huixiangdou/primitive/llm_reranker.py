@@ -2,12 +2,15 @@
 import json
 import os
 import pdb
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import torch
-from langchain_core.retrievers import BaseRetriever
+from BCEmbedding import RerankerModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from .chunk import Chunk
+from .embedder import Embedder
 
 
 class LLMReranker:
@@ -16,16 +19,40 @@ class LLMReranker:
             self,
             model_name_or_path: str = 'BAAI/bge-reranker-v2-minicpm-layerwise',
             topn: int = 10):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,
-                                                       trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name_or_path,
-            trust_remote_code=True,
-            torch_dtype=torch.bfloat16).eval()
-        self.model = self.model.to('cuda')
+        self.llm_reranker = self.use_llm_reranker(
+            model_path=model_name_or_path)
         self.topn = topn
 
-    def get_inputs(self, pairs, prompt=None, max_length=1024):
+        if self.llm_reranker:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_name_or_path, trust_remote_code=True)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name_or_path,
+                trust_remote_code=True,
+                torch_dtype=torch.bfloat16).eval().to('cuda')
+        else:
+            self.bce_client = RerankerModel(
+                model_name_or_path=model_name_or_path, use_fp16=True)
+
+    @classmethod
+    def use_llm_reranker(self, model_path):
+        """Check reranker model is LLM reranker or not."""
+
+        config_path = os.path.join(model_path, 'config.json')
+        if not os.path.exists(config_path):
+            if 'bge-reranker-v2-minicpm-layerwise' in config_path.lower():
+                return True
+            return False
+        try:
+            with open(config_path) as f:
+                if 'bge-reranker-v2-minicpm-layerwise' in json.loads(
+                        f.read())['_name_or_path']:
+                    return True
+        except Exception as e:
+            logger.warning(e)
+        return False
+
+    def _get_inputs(self, pairs, prompt=None, max_length=1024):
         """Build input tokens with query and chunks."""
         if prompt is None:
             prompt = "Given a query A and a passage B, determine whether the passage contains an answer to the query by providing a prediction of either 'Yes' or 'No'."
@@ -67,40 +94,40 @@ class LLMReranker:
                                   pad_to_multiple_of=8,
                                   return_tensors='pt')
 
-    def sort(self, chunks: List[str], query: str):
-        """Rerank input chunks, return descending indexes, indexes[0] is the
+    def _sort(self, texts: List[str], query: str):
+        """Rerank input texts, return descending indexes, indexes[0] is the
         nearest chunk."""
         pairs = []
-        for chunk in chunks:
-            pairs.append([query, chunk])
+        for text in texts:
+            pairs.append([query, text])
 
-        with torch.no_grad():
-            inputs = self.get_inputs(pairs).to(self.model.device)
-            all_scores = self.model(**inputs,
-                                    return_dict=True,
-                                    cutoff_layers=[28])
-            scores = [
-                scores[:, -1].view(-1, ).float() for scores in all_scores[0]
-            ]
-            scores = scores[0].cpu().numpy()
-            # get descending order
-            return scores.argsort()[::-1][0:self.topn]
+        if self.llm_reranker:
+            with torch.no_grad():
+                inputs = self._get_inputs(pairs).to(self.model.device)
+                all_scores = self.model(**inputs,
+                                        return_dict=True,
+                                        cutoff_layers=[28])
+                scores = [
+                    scores[:, -1].view(-1, ).float()
+                    for scores in all_scores[0]
+                ]
+                scores = scores[0].cpu().numpy()
+        else:
+            scores_list = self.bce_client.compute_score(pairs)
+            scores = np.array(scores_list)
 
+        # get descending order
+        return scores.argsort()[::-1][0:self.topn]
 
-class LLMCompressionRetriever:
-
-    def __init__(self, base_compressor: LLMReranker,
-                 base_retriever: BaseRetriever):
-        self.reranker = base_compressor
-        self.retriever = base_retriever
-
-    def get_relevant_documents(self, query: str):
-        docs = self.retriever.get_relevant_documents(query)
-        if not docs:
+    def rerank(self, query: str, chunks: List[Chunk]):
+        """Rerank faiss search results."""
+        if not chunks:
             return []
-        chunks = []
-        for doc in docs:
-            chunks.append(doc.page_content)
 
-        indexes = self.reranker.sort(chunks=chunks, query=query)
-        return [docs[i] for i in indexes]
+        texts = []
+        for chunk in chunks:
+            texts.append(chunk.content_or_path)
+
+        # During reranking, we just take image path as text
+        indexes = self._sort(texts=texts, query=query)
+        return [chunks[i] for i in indexes]
