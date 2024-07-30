@@ -1,10 +1,13 @@
-from huixiangdou.primitive import Embedder, Faiss, Chunk, Query
-import pdb
 import os
+import pdb
+
+from huixiangdou.primitive import Chunk, Embedder, Faiss, Query
+
 
 def test_faiss():
     a = Chunk('hello world', {'source': 'unittest'})
-    b = Chunk('resource/figures/inside-mmpose.jpg', {'source': 'unittest'}, 'image')
+    b = Chunk('resource/figures/inside-mmpose.jpg', {'source': 'unittest'},
+              'image')
     c = Chunk('resource/figures/wechat.jpg', {'source': 'test image'}, 'image')
     chunks = [a, b, c]
 
@@ -14,7 +17,7 @@ def test_faiss():
 
     Faiss.save_local(folder_path=save_path, chunks=chunks, embedder=embedder)
     assert os.path.exists(os.path.join(save_path, 'embedding.faiss'))
-    
+
     g = Faiss.load_local(save_path)
     for idx, c in enumerate(g.chunks):
         assert str(chunks[idx]) == str(c)
@@ -25,6 +28,7 @@ def test_faiss():
     chunk, score = pairs[0]
     assert chunk.content_or_path == target
     assert score >= 0.9999
+
 
 if __name__ == '__main__':
     test_faiss()

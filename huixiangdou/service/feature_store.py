@@ -7,19 +7,20 @@ import pdb
 import re
 import shutil
 from multiprocessing import Pool
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pytoml
-from ..primitive import (Chunk, RecursiveCharacterTextSplitter, ChineseRecursiveTextSplitter, Embedder, Faiss, nested_split_markdown)
-from ..primitive import FileName, FileOperation
 from loguru import logger
 from torch.cuda import empty_cache
 from tqdm import tqdm
 
+from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
+                         FileName, FileOperation,
+                         RecursiveCharacterTextSplitter, nested_split_markdown)
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
-from typing import Dict, List
+
 
 def read_and_save(file: FileName):
     if os.path.exists(file.copypath):
@@ -40,6 +41,7 @@ def read_and_save(file: FileName):
 
     with open(file.copypath, 'w') as f:
         f.write(content)
+
 
 class FeatureStore:
     """Tokenize and extract features from the project's documents, for use in
@@ -69,7 +71,9 @@ class FeatureStore:
         self.analyze_reject = analyze_reject
 
         if rejecter_naive_splitter:
-            raise ValueError('The `rejecter_naive_splitter` option deprecated, please `git checkout v20240722`')
+            raise ValueError(
+                'The `rejecter_naive_splitter` option deprecated, please `git checkout v20240722`'
+            )
 
         logger.info('init fs with chunk_size {}'.format(chunk_size))
 
@@ -83,7 +87,7 @@ class FeatureStore:
             self.text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=chunk_size, chunk_overlap=32)
 
-    def parse_markdown(self, file: FileName, metadata:Dict):
+    def parse_markdown(self, file: FileName, metadata: Dict):
         length = 0
         text = ''
         with open(file.copypath, encoding='utf8') as f:
@@ -92,7 +96,10 @@ class FeatureStore:
         if len(text) <= 1:
             return [], length
 
-        chunks = nested_split_markdown(file.origin, text=text, chunksize=self.chunk_size,  metadata=metadata)
+        chunks = nested_split_markdown(file.origin,
+                                       text=text,
+                                       chunksize=self.chunk_size,
+                                       metadata=metadata)
         for c in chunks:
             length += len(c.content_or_path)
         return chunks, length
@@ -110,13 +117,11 @@ class FeatureStore:
         for i, file in enumerate(files):
             if not file.state:
                 continue
-            metadata = {
-                'source': file.origin,
-                'read': file.copypath
-            }
+            metadata = {'source': file.origin, 'read': file.copypath}
 
             if file._type == 'md':
-                md_chunks, md_length = self.parse_markdown(file=file, metadata=metadata)
+                md_chunks, md_length = self.parse_markdown(file=file,
+                                                           metadata=metadata)
                 chunks += md_chunks
                 file.reason = str(md_length)
 
@@ -129,11 +134,14 @@ class FeatureStore:
                     continue
                 file.reason = str(len(text))
                 text = file.prefix + text
-                chunks += self.text_splitter.create_chunks(texts=[text], metadatas=[metadata])
+                chunks += self.text_splitter.create_chunks(
+                    texts=[text], metadatas=[metadata])
 
         if len(chunks) < 1:
             return
-        Faiss.save_local(folder_path=feature_dir, chunks=chunks, embedder=self.embedder)
+        Faiss.save_local(folder_path=feature_dir,
+                         chunks=chunks,
+                         embedder=self.embedder)
 
     def analyze(self, chunks: List[Chunk]):
         """Output documents length mean, median and histogram."""
@@ -281,6 +289,7 @@ def parse_args():
         help='Remove old data and rebuild knowledge graph from scratch.')
     args = parser.parse_args()
     return args
+
 
 def test_query(retriever: Retriever, sample: str = None):
     """Simple test response pipeline."""

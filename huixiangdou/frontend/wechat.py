@@ -3,13 +3,16 @@ import argparse
 import hashlib
 import json
 import os
+import pdb
 import re
 import time
 import types
 import xml.etree.ElementTree as ET
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from multiprocessing import Process
-import pdb
+from typing import List
+
 import pytoml
 import redis
 import requests
@@ -17,8 +20,7 @@ from aiohttp import web
 from bs4 import BeautifulSoup as BS
 from loguru import logger
 from readability import Document
-from dataclasses import asdict, dataclass, field
-from typing import List
+
 
 def redis_host():
     host = os.getenv('REDIS_HOST')
@@ -253,8 +255,10 @@ class Message:
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
         return None
 
+
 def empty_list():
     return []
+
 
 @dataclass
 class Talk:
@@ -263,11 +267,19 @@ class Talk:
     refs: tuple = ()
     now: float = field(default_factory=time.time)
 
+
 def convert_talk_to_dict(talk: Talk):
-    return {'query': talk.query, 'reply': talk.reply, 'refs': talk.refs, 'now': talk.now}
+    return {
+        'query': talk.query,
+        'reply': talk.reply,
+        'refs': talk.refs,
+        'now': talk.now
+    }
+
 
 def convert_history_to_tuple(history: List[Talk]):
     return [(item.query, item.reply, item.refs, item.now) for item in history]
+
 
 class User:
 
@@ -788,7 +800,8 @@ class WkteamManager:
 
                     if len(query) >= 8:
                         groupchats = self.fetch_groupchats(user=user)
-                        tuple_history = convert_history_to_tuple(user.history[0:-1])
+                        tuple_history = convert_history_to_tuple(
+                            user.history[0:-1])
                         code, resp, refs = worker.generate(
                             query=query,
                             history=tuple_history,

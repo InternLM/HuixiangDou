@@ -4,23 +4,26 @@ import json
 import os
 import pdb
 import time
+from typing import Any, Union
 
 import numpy as np
 import pytoml
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
-from typing import Any, Union
+
+from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query
+
 from ..primitive import FileOperation
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
-from huixiangdou.primitive import LLMReranker, Embedder, Faiss, Query
+
 
 class Retriever:
-    """Tokenize and extract features from the project's chunks, for use in
-    the reject pipeline and response pipeline."""
+    """Tokenize and extract features from the project's chunks, for use in the
+    reject pipeline and response pipeline."""
 
-    def __init__(self, config_path: str, embedder: Any, reranker: Any, work_dir: str,
-                 reject_throttle: float) -> None:
+    def __init__(self, config_path: str, embedder: Any, reranker: Any,
+                 work_dir: str, reject_throttle: float) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = reject_throttle
@@ -68,9 +71,10 @@ class Retriever:
                     logger.info('KG folder exists, but search failed, skip.')
 
             query = Query(text=question)
-            pairs = self.faiss.similarity_search_with_query(embedder=self.embedder, query=query)
+            pairs = self.faiss.similarity_search_with_query(
+                embedder=self.embedder, query=query)
             predictions.append(max(0, pairs[0][1] + graph_delta))
-            
+
         labels = [1 for _ in range(len(good_questions))
                   ] + [0 for _ in range(len(bad_questions))]
         precision, recall, thresholds = precision_recall_curve(
@@ -130,7 +134,8 @@ class Retriever:
                 logger.info('KG folder exists, but search failed, skip.')
 
         threshold = self.reject_throttle - graph_delta
-        pairs = self.faiss.similarity_search_with_query(self.embedder, query=query)
+        pairs = self.faiss.similarity_search_with_query(self.embedder,
+                                                        query=query)
         # logger.debug('retriever.docs {}'.format(docs))
 
         if len(pairs) < 1 or pairs[0][1] < threshold:
@@ -142,7 +147,8 @@ class Retriever:
             if pair[1] >= threshold:
                 high_score_chunks.append(pair[0])
 
-        chunks = self.reranker.rerank(query=query.text, chunks=high_score_chunks)
+        chunks = self.reranker.rerank(query=query.text,
+                                      chunks=high_score_chunks)
         if tracker is not None:
             tracker.log('retrieve', [c.metadata['source'] for c in chunks])
 
@@ -177,7 +183,8 @@ class Retriever:
                     context += '\n'
                     context += file_text[0:add_len - len(content) - 1]
                 else:
-                    start_index = max(0, content_index - (add_len - len(content)))
+                    start_index = max(0,
+                                      content_index - (add_len - len(content)))
                     context += file_text[start_index:start_index + add_len]
                 break
 
@@ -197,7 +204,8 @@ class Retriever:
                     k=30,
                     disable_throttle=False,
                     disable_graph=False):
-        raise ValueError('This api already deprecated, please `git checkout 20240722`')
+        raise ValueError(
+            'This api already deprecated, please `git checkout 20240722`')
 
 
 class CacheRetriever:
@@ -216,13 +224,14 @@ class CacheRetriever:
         # load text2vec and rerank model
         logger.info('loading test2vec and rerank models')
         self.embedder = Embedder(model_path=embedding_model_path)
-        self.reranker = LLMReranker(model_name_or_path=reranker_model_path, topn=rerank_topn)
+        self.reranker = LLMReranker(model_name_or_path=reranker_model_path,
+                                    topn=rerank_topn)
 
     def get(self,
             fs_id: str = 'default',
             config_path='config.ini',
             work_dir='workdir'):
-        """Get database by id"""
+        """Get database by id."""
 
         if fs_id in self.cache:
             self.cache[fs_id]['time'] = time.time()
@@ -256,7 +265,7 @@ class CacheRetriever:
         return retriever
 
     def pop(self, fs_id: str):
-        """Drop database by id"""
+        """Drop database by id."""
 
         if fs_id not in self.cache:
             return

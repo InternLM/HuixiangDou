@@ -1,9 +1,11 @@
 aiohttp
 bcembedding
+BCEmbedding
 beautifulsoup4
 duckduckgo_search
 einops
 faiss-gpu
+FlagEmbedding==0.1.5
 loguru
 lxml_html_clean
 nest_asyncio
@@ -31,5 +33,3 @@ torch>=2.0.0
 transformers>=4.38
 transformers_stream_generator
 unstructured
-BCEmbedding
-FlagEmbedding==0.1.5

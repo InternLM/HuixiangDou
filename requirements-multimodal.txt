@@ -1,7 +1,7 @@
-torchvision
-timm
 einops
 ftfy
 opencv-python-headless
+timm
+torchvision
 
 # donot install xformer and apex

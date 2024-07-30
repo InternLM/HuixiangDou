@@ -1,4 +1,6 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from dataclasses import dataclass, field
+
 
 @dataclass
 class Chunk():
@@ -21,7 +23,9 @@ class Chunk():
 
     def __post_init__(self):
         if self.modal not in ['text', 'image', 'audio']:
-            raise ValueError(f'Invalid modal: {self.modal}. Allowed values are: `text`, `image`, `audio`')
+            raise ValueError(
+                f'Invalid modal: {self.modal}. Allowed values are: `text`, `image`, `audio`'
+            )
 
     def __str__(self) -> str:
         """Override __str__ to restrict it to content_or_path and metadata."""

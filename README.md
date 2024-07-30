@@ -63,7 +63,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 - \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/rag_annotate_sft_data_zh.md)
 - \[2024/04\] Release [Web Front and Back End Service Source Code](./web) 👍
 - \[2024/03\] New [Personal WeChat Integration](./docs/add_wechat_accessibility_zh.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
-- \[2024/02\] [Experimental Feature] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) Integration of multimodal to achieve OCR
+- \[2024/02\] \[Experimental Feature\] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) Integration of multimodal to achieve OCR
 
 # 📖 Support Status
 
@@ -89,15 +89,15 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
     <tr valign="top">
       <td>
 
-- [InternLM2](https://github.com/InternLM/InternLM)   
-- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)   
-- [KIMI](https://kimi.moonshot.cn)   
-- [DeepSeek](https://www.deepseek.com)   
-- [Step](https://platform.stepfun.com)   
-- [GLM (ZHIPU)](https://www.zhipuai.cn)   
-- [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)   
-- [Xi-Api](https://api.xi-ai.cn)   
-- [OpenAOE](https://github.com/InternLM/OpenAOE)   
+- [InternLM2](https://github.com/InternLM/InternLM)
+- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
+- [KIMI](https://kimi.moonshot.cn)
+- [DeepSeek](https://www.deepseek.com)
+- [Step](https://platform.stepfun.com)
+- [GLM (ZHIPU)](https://www.zhipuai.cn)
+- [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
+- [Xi-Api](https://api.xi-ai.cn)
+- [OpenAOE](https://github.com/InternLM/OpenAOE)
 
 </td>
 <td>
@@ -115,8 +115,8 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 <td>
 
 - [Knowledge Graph](./docs/knowledge_graph_en.md)
-- [Internet Search](https://github.com/FlagOpen/FlagEmbedding)   
-- [SourceGraph](https://sourcegraph.com)   
+- [Internet Search](https://github.com/FlagOpen/FlagEmbedding)
+- [SourceGraph](https://sourcegraph.com)
 - Image and text (only markdown)
 
 </td>
@@ -130,12 +130,12 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 <td>
 
-- [Coreference Resolution](https://arxiv.org/abs/2405.02817)   
+- [Coreference Resolution](https://arxiv.org/abs/2405.02817)
 
 </td>
 
 </tr>
-  
+
 </tbody>
 </table>
 
@@ -143,18 +143,19 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 The following are the GPU memory requirements for different features, the difference lies only in whether the **options are turned on**.
 
-|  Configuration Example  |  GPU mem Requirements  |                                                                                          Description                                                                                          |                             Verified Devices on Linux System                             |
-| :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| [config-2G.ini](./config-2G.ini) |    2GB    | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [silicon cloud](https://siliconflow.cn/)) to search for text only    | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge)    |
-| [config-multimodal.ini](./config-multimodal.ini) |10GB     | Use openai API for LLM, image and text retrieval | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)     |
-| [Standard Edition] [config.ini](./config.ini) |19GB     | Local deployment of LLM, single modality | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)     |
-| [config-advanced.ini](./config-advanced.ini) |    80GB     |  local LLM, anaphora resolution, single modality, practical for WeChat group | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)     |
+|              Configuration Example               | GPU mem Requirements |                                                                                   Description                                                                                   |                       Verified Devices on Linux System                        |
+| :----------------------------------------------: | :------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [silicon cloud](https://siliconflow.cn/)) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| [config-multimodal.ini](./config-multimodal.ini) |         10GB         |                                                                Use openai API for LLM, image and text retrieval                                                                 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| \[Standard Edition\] [config.ini](./config.ini)  |         19GB         |                                                                    Local deployment of LLM, single modality                                                                     | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|   [config-advanced.ini](./config-advanced.ini)   |         80GB         |                                                   local LLM, anaphora resolution, single modality, practical for WeChat group                                                   | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Running the Standard Edition
 
 We take the standard edition (local running LLM, text retrieval) as an introduction example. Other versions are just different in configuration options.
 
 ## I. Download and install dependencies
+
 [Click to agree to the BCE model agreement](https://huggingface.co/maidalun1020/bce-embedding-base_v1), log in huggingface
 
 ```shell
@@ -240,54 +241,55 @@ Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdo
 
 ## 2G Cost-effective Edition
 
-  If your GPU mem exceeds 1.8G, or you pursue cost-effectiveness. This configuration discards the local LLM and uses remote LLM instead, which is the same as the standard edition.
+If your GPU mem exceeds 1.8G, or you pursue cost-effectiveness. This configuration discards the local LLM and uses remote LLM instead, which is the same as the standard edition.
 
-  Take `siliconcloud` as an example, fill in the API TOKEN applied from the [official website](https://siliconflow.cn/) into `config-2G.ini`
+Take `siliconcloud` as an example, fill in the API TOKEN applied from the [official website](https://siliconflow.cn/) into `config-2G.ini`
 
-  ```toml
-  # config-2G.ini
-  [llm]
-  enable_local = 0   # Turn off local LLM
-  enable_remote = 1  # Only use remote
-  ..
-  remote_type = "siliconcloud"   # Choose siliconcloud
-  remote_api_key = "YOUR-API-KEY-HERE" # Your API key
-  remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
-  ```
+```toml
+# config-2G.ini
+[llm]
+enable_local = 0   # Turn off local LLM
+enable_remote = 1  # Only use remote
+..
+remote_type = "siliconcloud"   # Choose siliconcloud
+remote_api_key = "YOUR-API-KEY-HERE" # Your API key
+remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
+```
 
-  > \[!NOTE\]
-  >
-  > <div align="center">
-  > Each Q&A scenario requires calling the LLM 7 times at worst, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
-  > </div>
+> \[!NOTE\]
+>
+> <div align="center">
+> Each Q&A scenario requires calling the LLM 7 times at worst, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
+> </div>
 
-  Execute the following to get the Q&A results
+Execute the following to get the Q&A results
 
-  ```shell
-  python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all services at once
-  ```
+```shell
+python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all services at once
+```
 
 ## 10G Multimodal Edition
 
-  If you have 10G GPU mem, you can further support image and text retrieval. Just modify the model used in config.ini.
+If you have 10G GPU mem, you can further support image and text retrieval. Just modify the model used in config.ini.
 
-  ```toml
-  # config-multimodal.ini
-  # !!! Download `https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth`    to `bge-m3` folder !!!
-  embedding_model_path = "BAAI/bge-m3"
-  reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
-  ```
+```toml
+# config-multimodal.ini
+# !!! Download `https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth`    to `bge-m3` folder !!!
+embedding_model_path = "BAAI/bge-m3"
+reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
+```
 
-  Note:
+Note:
 
-  * You need to manually download [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) to the [bge-m3](https://huggingface.co/BAAI/bge-m3) directory
-  * Install FlagEmbedding on main branch, we have made [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)   
-  * Install [requirements-multimodal.txt](./requirements-multimodal.txt)
+- You need to manually download [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) to the [bge-m3](https://huggingface.co/BAAI/bge-m3) directory
+- Install FlagEmbedding on main branch, we have made [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
+- Install [requirements-multimodal.txt](./requirements-multimodal.txt)
 
-  Run gradio to test, see the image and text retrieval result [here](https://github.com/InternLM/HuixiangDou/pull/326).   
-  ```bash
-  python3 tests/test_query_gradio.py 
-  ```
+Run gradio to test, see the image and text retrieval result [here](https://github.com/InternLM/HuixiangDou/pull/326).
+
+```bash
+python3 tests/test_query_gradio.py
+```
 
 ## 80G Complete Edition
 
@@ -301,7 +303,7 @@ The "HuiXiangDou" in the WeChat experience group has enabled all features:
 
 Please read the following topics:
 
-- [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_en.md) 
+- [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_en.md)
 - [Refer to config-advanced.ini configuration to improve effects](./docs/full_dev_en.md)
 - [Group chat scenario anaphora resolution training](./sft)
 - [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/add_wechat_commercial_zh.md)
@@ -363,7 +365,7 @@ Please read the following topics:
 
 # 📝 Citation
 
-```shell
+````shell
 @misc{kong2024huixiangdou,
       title={HuiXiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
@@ -381,3 +383,4 @@ Please read the following topics:
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }```
+````

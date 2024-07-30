@@ -1,5 +1,7 @@
-from huixiangdou.primitive import Embedder
 import pdb
+
+from huixiangdou.primitive import Embedder
+
 
 def test_embedder():
     assert Embedder.use_multimodal(model_path='/data2/khj/bge-m3') is True
@@ -19,6 +21,7 @@ def test_embedder():
 
     assert sim1.item() >= 0.5
     assert sim2.item() >= 0.5
+
 
 if __name__ == '__main__':
     test_embedder()

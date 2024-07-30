@@ -98,8 +98,7 @@ def process(param: tuple):
     config_path = 'config.ini'
     cache = CacheRetriever(config_path=config_path)
 
-    fs_init = FeatureStore(embedder=cache.embedder,
-                           config_path=config_path)
+    fs_init = FeatureStore(embedder=cache.embedder, config_path=config_path)
 
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=filedir)

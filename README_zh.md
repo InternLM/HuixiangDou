@@ -146,18 +146,19 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 以下是不同特性所需显存，区别仅在**配置选项是否开启**。
 
-|  配置示例  | 显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
-| :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-| [config-2G.ini](./config-2G.ini) |    2GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-| [config-multimodal.ini](./config-multimodal.ini) |10GB     | 用 openai API 做 LLM，图文检索 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| 【标准版】[config.ini](./config.ini) |19GB     | 本地部署 LLM，单模态 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| [config-advanced.ini](./config-advanced.ini) |    80GB     |  本地 LLM，指代消歧，单模态，微信群实用 | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
+|                     配置示例                     | 显存需求 |                                                                                 描述                                                                                 |                             Linux 系统已验证设备                              |
+| :----------------------------------------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+|         [config-2G.ini](./config-2G.ini)         |   2GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+| [config-multimodal.ini](./config-multimodal.ini) |   10GB   |                                                                    用 openai API 做 LLM，图文检索                                                                    | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|       【标准版】[config.ini](./config.ini)       |   19GB   |                                                                         本地部署 LLM，单模态                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+|   [config-advanced.ini](./config-advanced.ini)   |   80GB   |                                                                本地 LLM，指代消歧，单模态，微信群实用                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 运行标准版
 
 我们以标准版（本地运行 LLM，纯文本检索）为例，介绍 HuixiangDou 功能。其他版本仅仅是配置选项不同。
 
 ## 一、下载模型，安装依赖
+
 首先[点击同意 BCE 模型协议](https://huggingface.co/maidalun1020/bce-embedding-base_v1)，命令行登录 huggingface
 
 ```shell
@@ -211,6 +212,7 @@ python3 -m huixiangdou.main --standalone
 > <div align="center">
 > 如果每次重启 LLM 太慢，先 <b>python3 -m huixiangdou.service.llm_server_hybrid</b>；然后开新窗口，每次只执行 <b>python3 -m huixiangdou.main</b> 不重启 LLM。
 > </div>
+
 <br/>
 
 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口
@@ -242,53 +244,54 @@ python3 -m tests.test_query_gradio
 
 ## 2G 实惠版
 
-  如果你的显存超过 1.8G，或追求性价比。此配置扔掉了本地 LLM，使用 remote LLM 代替，其他和标准版相同。
+如果你的显存超过 1.8G，或追求性价比。此配置扔掉了本地 LLM，使用 remote LLM 代替，其他和标准版相同。
 
-  以 siliconcloud 为例，把[官网申请](https://siliconflow.cn/zh-cn/siliconcloud) 的 API TOKEN 填入 `config-2G.ini`
+以 siliconcloud 为例，把[官网申请](https://siliconflow.cn/zh-cn/siliconcloud) 的 API TOKEN 填入 `config-2G.ini`
 
-  ```toml
-  [llm]
-  enable_local = 0   # 关掉本地 LLM
-  enable_remote = 1  # 只用远程
-  ..
-  remote_type = "siliconcloud"   # 选择 siliconcloud
-  remote_api_key = "YOUR-API-KEY-HERE" # 填 API key
-  remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
-  ```
+```toml
+[llm]
+enable_local = 0   # 关掉本地 LLM
+enable_remote = 1  # 只用远程
+..
+remote_type = "siliconcloud"   # 选择 siliconcloud
+remote_api_key = "YOUR-API-KEY-HERE" # 填 API key
+remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
+```
 
-  > \[!NOTE\]
-  >
-  > <div align="center">
-  > 每次问答最坏情况要调用 7 次 LLM，受免费用户 RPM 限制，可修改 config.ini 中 <b>rpm</b> 参数
-  > </div>
+> \[!NOTE\]
+>
+> <div align="center">
+> 每次问答最坏情况要调用 7 次 LLM，受免费用户 RPM 限制，可修改 config.ini 中 <b>rpm</b> 参数
+> </div>
 
-  执行命令获取问答结果
+执行命令获取问答结果
 
-  ```shell
-  python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启动所有服务
-  ```
+```shell
+python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启动所有服务
+```
 
 ## 10G 多模态版
 
-  如果你有 10G 显存，那么可以进一步支持图文检索。仅需修改 config.ini 使用的模型。
+如果你有 10G 显存，那么可以进一步支持图文检索。仅需修改 config.ini 使用的模型。
 
-  ```toml
-  # config-multimodal.ini
-  # !!! Download `https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth` to `bge-m3` folder !!!
-  embedding_model_path = "BAAI/bge-m3"
-  reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
-  ```
+```toml
+# config-multimodal.ini
+# !!! Download `https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth` to `bge-m3` folder !!!
+embedding_model_path = "BAAI/bge-m3"
+reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
+```
 
-  需要注意：
-  
-  * 要手动下载 [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) 到 [bge-m3](https://huggingface.co/BAAI/bge-m3) 目录下
-  * FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
-  * 安装 [requirements-multimodal.txt](./requirements-multimodal.txt)
+需要注意：
 
-  运行 gradio 测试，图文检索效果见[这里](https://github.com/InternLM/HuixiangDou/pull/326).
-  ```bash
-  python3 tests/test_query_gradio.py 
-  ```
+- 要手动下载 [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) 到 [bge-m3](https://huggingface.co/BAAI/bge-m3) 目录下
+- FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
+- 安装 [requirements-multimodal.txt](./requirements-multimodal.txt)
+
+运行 gradio 测试，图文检索效果见[这里](https://github.com/InternLM/HuixiangDou/pull/326).
+
+```bash
+python3 tests/test_query_gradio.py
+```
 
 ## 80G 完整版
 
@@ -307,7 +310,6 @@ python3 -m tests.test_query_gradio
 - [群聊场景指代消歧训练](./sft)
 - [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
-
 
 # 🛠️ FAQ
 

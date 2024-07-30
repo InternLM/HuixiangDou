@@ -1,7 +1,13 @@
 # from .splitter import CharacterTextSplitter, ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextRefSplitter, MarkdownHeaderTextSplitter  # noqa E401
-from huixiangdou.primitive import CharacterTextSplitter, ChineseRecursiveTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextRefSplitter, MarkdownHeaderTextSplitter
-from huixiangdou.primitive import nested_split_markdown
 import pdb
+
+from huixiangdou.primitive import (CharacterTextSplitter,
+                                   ChineseRecursiveTextSplitter,
+                                   MarkdownHeaderTextSplitter,
+                                   MarkdownTextRefSplitter,
+                                   RecursiveCharacterTextSplitter,
+                                   nested_split_markdown)
+
 
 def test_character_text_splitter():
     path = 'README_zh.md'
@@ -21,6 +27,7 @@ def test_character_text_splitter():
             f.write('-----------\n')
     return chunks
 
+
 def test_recursive_character_text_splitter():
     path = 'README_zh.md'
     with open(path) as f:
@@ -37,6 +44,7 @@ def test_recursive_character_text_splitter():
             f.write(c.content_or_path)
             f.write('\n-----------\n')
     return chunks
+
 
 def test_chinese_recursive_text_splitter():
     path = 'README_zh.md'
@@ -55,6 +63,7 @@ def test_chinese_recursive_text_splitter():
             f.write('\n-----------\n')
     return chunks
 
+
 def test_markdown_text_splitter():
     path = 'README_zh.md'
     with open(path) as f:
@@ -72,6 +81,7 @@ def test_markdown_text_splitter():
             f.write('\n-----------\n')
     return chunks
 
+
 def test_markdown_header_text_splitter():
     path = 'README_zh.md'
     with open(path) as f:
@@ -85,6 +95,7 @@ def test_markdown_header_text_splitter():
             f.write(c.content_or_path)
             f.write('\n-----------\n')
     return chunks
+
 
 def test_nested_markdown_split():
     path = 'README_zh.md'
