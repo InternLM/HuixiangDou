@@ -1,11 +1,6 @@
 [English](README.md) | 简体中文
 
 <div align="center">
-<style>
-    p {
-        text-align: left;
-    }
-</style>
 <img src="resource/logo_black.svg" width="555px"/>
 
 <div align="center">
