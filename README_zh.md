@@ -149,7 +149,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 |  配置示例  | 显存需求 |                                                                                          描述                                                                                          |                             Linux 系统已验证设备                              |
 | :----: | :---------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
 | [config-2G.ini](./config-2G.ini) |    2GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
-| [config-multimodal.ini](./config.ini) |10GB     | 用 openai API 做 LLM，图文检索 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
+| [config-multimodal.ini](./config-multimodal.ini) |10GB     | 用 openai API 做 LLM，图文检索 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | 【标准版】[config.ini](./config.ini) |19GB     | 本地部署 LLM，单模态 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | [config-advanced.ini](./config-advanced.ini) |    80GB     |  本地 LLM，指代消歧，单模态，微信群实用 | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
