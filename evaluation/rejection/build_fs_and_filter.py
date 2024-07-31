@@ -10,8 +10,8 @@ from loguru import logger
 from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 
-from huixiangdou.service import CacheRetriever, FeatureStore, FileOperation
-
+from huixiangdou.service import CacheRetriever, FeatureStore
+from huixiangdou.primitive import FileOperation
 save_hardcase = False
 
 
@@ -101,7 +101,7 @@ def load_dataset():
     return text_labels
 
 
-def calculate(chunk_size: int):
+def calculate_with_kg(chunk_size: int):
 
     config_path = 'config.ini'
     repo_dir = 'repodir'
@@ -125,9 +125,9 @@ def calculate(chunk_size: int):
     # walk all files in repo dir
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=repo_dir)
-    # fs_init.preprocess(files=files, work_dir=work_dir)
-    # fs_init.build_dense(files=files, work_dir=work_dir)
-    # del fs_init
+    fs_init.preprocess(files=files, work_dir=work_dir)
+    fs_init.build_dense(files=files, work_dir=work_dir)
+    del fs_init
 
     retriever = CacheRetriever(config_path=config_path).get(
         fs_id=str(chunk_size), work_dir=work_dir)
@@ -165,8 +165,8 @@ def calculate(chunk_size: int):
                     retriever.reject_throttle = max(
                         0.0,
                         throttle - scale * kg_score.evaluate(query=question))
-                    dt, _ = retriever.is_relative(question=question,
-                                                  disable_graph=True)
+                    dt = retriever.is_relative(query=question,
+                                                  enable_kg=True)
                     dts.append(dt)
                     gts.append(text_label[1])
 
@@ -213,6 +213,94 @@ def calculate(chunk_size: int):
     print(best_chunk_f1, best_level)
     return best_chunk_f1
 
+
+def calculate(chunk_size: int):
+    config_path = 'config.ini'
+    repo_dir = 'repodir'
+    work_dir_base = 'workdir'
+    work_dir = work_dir_base + str(chunk_size)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+
+    # export PYTHONWARNINGS=ignore
+    text_labels = load_dataset()
+
+    # 按不同 chunk_size 和 chunk_size，构建特征库
+    # 读 input.jsonl 计算 F1
+    cache = CacheRetriever(config_path=config_path)
+    fs_init = FeatureStore(embedder=cache.embedder,
+                           config_path=config_path,
+                           chunk_size=chunk_size)
+
+    # walk all files in repo dir
+    file_opr = FileOperation()
+    files = file_opr.scan_dir(repo_dir=repo_dir)
+    fs_init.preprocess(files=files, work_dir=work_dir)
+    fs_init.build_dense(files=files, work_dir=work_dir)
+    del fs_init
+
+    retriever = CacheRetriever(config_path=config_path).get(
+        fs_id=str(chunk_size), work_dir=work_dir)
+    start = 0.4
+    stop = 0.5
+    step = 0.01
+    throttles = [
+        round(start + step * i, 4)
+        for i in range(int((stop - start) / step) + 1)
+    ]
+
+    # start = 0.3
+    # stop = 0.5
+    # step = 0.01
+    # throttles = [
+    #     round(start + step * i, 4)
+    #     for i in range(int((stop - start) / step) + 1)
+    # ]
+
+    best_chunk_f1 = 0.0
+
+    for throttle in tqdm(throttles):
+        retriever.reject_throttle = throttle
+
+        dts = []
+        gts = []
+        for text_label in text_labels:
+            question = text_label[0]
+
+            retriever.reject_throttle = throttle
+            dt = retriever.is_relative(query=question,
+                                            enable_kg=False)
+            dts.append(dt)
+            gts.append(text_label[1])
+
+        f1 = f1_score(gts, dts)
+        f1 = round(f1, 4)
+        precision = precision_score(gts, dts)
+        precision = round(precision, 4)
+        recall = recall_score(gts, dts)
+        recall = round(recall, 4)
+
+        logger.info((throttle, precision, recall, f1))
+
+        data = {
+            'chunk_size': chunk_size,
+            'throttle': throttle,
+            'precision': precision,
+            'recall': recall,
+            'f1': f1
+        }
+        json_str = json.dumps(data)
+        with open(
+                osp.join(
+                    osp.dirname(__file__),
+                    'chunk{}.jsonl'.format(chunk_size)), 'a') as f:
+            f.write(json_str)
+            f.write('\n')
+
+        if f1 > best_chunk_f1:
+            best_chunk_f1 = f1
+    print(best_chunk_f1)
+    return best_chunk_f1
 
 def main():
     args = parse_args()

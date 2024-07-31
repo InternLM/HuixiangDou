@@ -49,4 +49,4 @@ class Embedder:
         else:
             if text is None:
                 raise ValueError('This model only support text')
-            return self.client.encode([text], enable_tqdm=False)
+            return self.client.encode([text], enable_tqdm=False, normalize_to_unit=True)

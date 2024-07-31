@@ -200,13 +200,30 @@ class Retriever:
         ]
 
     def is_relative(self,
-                    question,
+                    query,
                     k=30,
-                    disable_throttle=False,
-                    disable_graph=False):
-        raise ValueError(
-            'This api already deprecated, please `git checkout 20240722`')
+                    enable_kg=True):
+        if type(query) is str:
+            query = Query(text=query)
 
+        if query.text is None or len(query.text) < 1 or self.faiss is None:
+            return None, None, []
+
+        graph_delta = 0.0
+        if not enable_kg and self.kg.is_available():
+            try:
+                docs = self.kg.retrieve(query=query.text)
+                graph_delta = 0.2 * min(100, len(docs)) / 100
+            except Exception as e:
+                logger.warning(str(e))
+                logger.info('KG folder exists, but search failed, skip.')
+
+        threshold = self.reject_throttle - graph_delta
+        pairs = self.faiss.similarity_search_with_query(self.embedder,
+                                                        query=query, threshold=threshold)
+        if len(pairs) > 0:
+            return True
+        return False
 
 class CacheRetriever:
 

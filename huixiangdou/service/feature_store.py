@@ -75,7 +75,12 @@ class FeatureStore:
                 'The `rejecter_naive_splitter` option deprecated, please `git checkout v20240722`'
             )
 
-        logger.info('init fs with chunk_size {}'.format(chunk_size))
+        if analyze_reject:
+            raise ValueError(
+                'The `analyze_reject` option deprecated, please `git checkout v20240722`'
+            )
+
+        logger.info('init dense retrieval database with chunk_size {}'.format(chunk_size))
 
         if language == 'zh':
             self.text_splitter = ChineseRecursiveTextSplitter(
@@ -137,10 +142,15 @@ class FeatureStore:
                 chunks += self.text_splitter.create_chunks(
                     texts=[text], metadatas=[metadata])
 
+        if not self.embedder.support_image:
+            filtered_chunks = list(filter(lambda x: x.modal=='text', chunks))
+        else:
+            filtered_chunks = chunks
         if len(chunks) < 1:
             return
+        
         Faiss.save_local(folder_path=feature_dir,
-                         chunks=chunks,
+                         chunks=filtered_chunks,
                          embedder=self.embedder)
 
     def analyze(self, chunks: List[Chunk]):
