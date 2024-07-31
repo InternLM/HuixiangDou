@@ -6,6 +6,7 @@
 import copy
 import os
 import pdb
+import json
 import re
 from abc import ABC, abstractmethod
 from typing import (AbstractSet, Any, Callable, Collection, Dict, Iterable,
@@ -564,6 +565,23 @@ def nested_split_markdown(filepath: str,
     ref_pattern = re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
     file_opr = FileOperation()
 
+    with open('headersplit.result', 'a') as f:
+        for chunk in chunks:
+
+            header = ''
+            if 'Header 1' in chunk.metadata:
+                header += chunk.metadata['Header 1']
+            if 'Header 2' in chunk.metadata:
+                header += ' '
+                header += chunk.metadata['Header 2']
+            if 'Header 3' in chunk.metadata:
+                header += ' '
+                header += chunk.metadata['Header 3']
+
+            json_str = json.dumps({'data': header + ' ||| ' + chunk.content_or_path}, ensure_ascii=False)
+            f.write(json_str)
+            f.write('\n')
+
     for chunk in chunks:
         header = ''
         if 'Header 1' in chunk.metadata:
@@ -577,9 +595,15 @@ def nested_split_markdown(filepath: str,
 
         if len(chunk.content_or_path) > chunksize:
             content = '{} {}'.format(header, chunk.content_or_path)
-            text_chunks += text_ref_splitter.create_chunks([content],
+            subchunks = text_ref_splitter.create_chunks([content],
                                                            [chunk.metadata])
-
+            for subchunk in subchunks:
+                if len(subchunk.content_or_path) >= 10:
+                    subchunk.content_or_path = '{} {}'.format(header, subchunk.content_or_path)
+                    text_chunks.append(subchunk)
+        elif len(chunk.content_or_path) >= 10:
+            content = '{} {}'.format(header, chunk.content_or_path)
+            text_chunks.append(Chunk(content, metadata))
         # extract images
         matches = ref_pattern.findall(chunk.content_or_path)
         dirname = os.path.dirname(filepath)

@@ -94,10 +94,10 @@ class FeatureStore:
 
     def parse_markdown(self, file: FileName, metadata: Dict):
         length = 0
-        text = ''
+        text = file.basename + '\n'
+
         with open(file.copypath, encoding='utf8') as f:
-            text = f.read()
-        text = file.prefix + text
+            text += f.read()
         if len(text) <= 1:
             return [], length
 
@@ -148,15 +148,24 @@ class FeatureStore:
             filtered_chunks = chunks
         if len(chunks) < 1:
             return
-        
+
+        self.analyze(filtered_chunks)
+
+        with open('refactor.json', 'w') as f:
+            pass
+
+        with open('refactor.jsonl', 'a') as f:
+            for c in filtered_chunks:
+                json_str = json.dumps({'data': c.content_or_path}, ensure_ascii=False)
+                f.write(json_str)
+                f.write('\n')
+
         Faiss.save_local(folder_path=feature_dir,
                          chunks=filtered_chunks,
                          embedder=self.embedder)
 
     def analyze(self, chunks: List[Chunk]):
         """Output documents length mean, median and histogram."""
-        if not self.analyze_reject:
-            return
 
         text_lens = []
         token_lens = []
@@ -173,8 +182,8 @@ class FeatureStore:
                         content, padding=False,
                         truncation=False)['input_ids']))
 
-        logger.info('document text histogram, {}'.format(histogram(text_lens)))
-        logger.info('document token histogram, {}'.format(
+        logger.info('text histogram, {}'.format(histogram(text_lens)))
+        logger.info('token histogram, {}'.format(
             histogram(token_lens)))
 
     def preprocess(self, files: List, work_dir: str):
