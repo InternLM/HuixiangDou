@@ -135,7 +135,7 @@ class Faiss():
             if index is None:
                 dimension = np_feature.shape[-1]
                 index = faiss.IndexFlatIP(dimension)
-
+            np_feature = np.asarray(np_feature, dtype=np.float32)
             index.add(np_feature)
 
         path = Path(folder_path)
