@@ -66,7 +66,7 @@ class Faiss():
         """
         faiss = dependable_faiss_import()
 
-        embedding = np.asarray(embedding, dtype=np.float32)
+        embedding = embedding.astype(np.float32)
         scores, indices = self.index.search(embedding, self.k)
         pairs = []
         for j, i in enumerate(indices[0]):
