@@ -46,7 +46,7 @@
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
-- \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/knowledge_graph_zh.md)涨点 🎯
+- \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/knowledge_graph_zh.md) 🎯
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
 - \[2024/05\] [wkteam 微信接入](./docs/add_wechat_commercial_zh.md)，整合图片&公众号解析、集成指代消歧
 - \[2024/05\] [SFT LLM 处理 NLP 任务，F1 提升 29%](./sft/) 🎯
