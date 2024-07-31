@@ -1,6 +1,35 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from dataclasses import dataclass, field
+from enum import Enum
+import math
 
+# Copy from langchain
+class DistanceStrategy(str, Enum):
+    """Enumerator of the Distance strategies for calculating distances
+    between vectors."""
+    EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
+    MAX_INNER_PRODUCT = "MAX_INNER_PRODUCT"
+    UNKNOWN = 'UNKNOWN'
+
+    @staticmethod
+    def euclidean_relevance_score_fn(distance: float) -> float:
+        """Return a similarity score on a scale [0, 1]."""
+        # The 'correct' relevance function
+        # may differ depending on a few things, including:
+        # - the distance / similarity metric used by the VectorStore
+        # - the scale of your embeddings (OpenAI's are unit normed. Many
+        #  others are not!)
+        # - embedding dimensionality
+        # - etc.
+        # This function converts the Euclidean norm of normalized embeddings
+        # (0 is most similar, sqrt(2) most dissimilar)
+        # to a similarity function (0 to 1)
+        return 1.0 - distance / math.sqrt(2)
+
+    @staticmethod
+    def max_inner_product_relevance_score_fn(similarity: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+        return similarity
 
 @dataclass
 class Query():
