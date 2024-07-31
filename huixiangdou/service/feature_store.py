@@ -151,14 +151,14 @@ class FeatureStore:
 
         self.analyze(filtered_chunks)
 
-        with open('refactor.json', 'w') as f:
-            pass
+        # with open('refactor.json', 'w') as f:
+        #     pass
 
-        with open('refactor.jsonl', 'a') as f:
-            for c in filtered_chunks:
-                json_str = json.dumps({'data': c.content_or_path}, ensure_ascii=False)
-                f.write(json_str)
-                f.write('\n')
+        # with open('refactor.jsonl', 'a') as f:
+        #     for c in filtered_chunks:
+        #         json_str = json.dumps({'data': c.content_or_path}, ensure_ascii=False)
+        #         f.write(json_str)
+        #         f.write('\n')
 
         Faiss.save_local(folder_path=feature_dir,
                          chunks=filtered_chunks,
@@ -387,8 +387,8 @@ if __name__ == '__main__':
     # walk all files in repo dir
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=args.repo_dir)
-    # fs_init.initialize(files=files, work_dir=args.work_dir)
-    # file_opr.summarize(files)
+    fs_init.initialize(files=files, work_dir=args.work_dir)
+    file_opr.summarize(files)
     del fs_init
 
     # update reject throttle

@@ -577,23 +577,6 @@ def nested_split_markdown(filepath: str,
     ref_pattern = re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
     file_opr = FileOperation()
 
-    with open('headersplit.result', 'a') as f:
-        for chunk in chunks:
-
-            header = ''
-            if 'Header 1' in chunk.metadata:
-                header += chunk.metadata['Header 1']
-            if 'Header 2' in chunk.metadata:
-                header += ' '
-                header += chunk.metadata['Header 2']
-            if 'Header 3' in chunk.metadata:
-                header += ' '
-                header += chunk.metadata['Header 3']
-
-            json_str = json.dumps({'data': header + ' ||| ' + chunk.content_or_path}, ensure_ascii=False)
-            f.write(json_str)
-            f.write('\n')
-
     for chunk in chunks:
         header = ''
         if 'Header 1' in chunk.metadata:
