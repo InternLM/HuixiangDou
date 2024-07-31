@@ -77,7 +77,9 @@ The basis for choosing splitter is:
 
 ### **1.4 Comparison of Approaches**
 
-We also compared other methods and models:
+We also compared other methods and models.
+
+The following conclusions can be reproduced in the 20240722 branch, as we have recently removed `langchain`, and the main branch is still under bug fixing.
 
 |     Approach      | F1 score |                                                                                                     Description                                                                                                      |
 | :---------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |

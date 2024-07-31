@@ -14,7 +14,7 @@ from loguru import logger
 from tqdm import tqdm
 
 from .embedder import Embedder
-from .query import Query
+from .query import Query, DistanceStrategy
 
 
 # heavily modified from langchain
@@ -45,10 +45,11 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
 
 class Faiss():
 
-    def __init__(self, index: Any, chunks: List[Chunk], k: int = 30):
+    def __init__(self, index: Any, chunks: List[Chunk], strategy:DistanceStrategy, k: int = 30):
         """Initialize with necessary components."""
         self.index = index
         self.chunks = chunks
+        self.strategy = strategy
         self.k = k
 
     def similarity_search(self,
@@ -61,10 +62,11 @@ class Faiss():
 
         Returns:
             List of chunks most similar to the query text and L2 distance
-            in float for each. Lower score represents more similarity.
+            in float for each. High score represents more similarity.
         """
         faiss = dependable_faiss_import()
 
+        embedding = embedding.astype(np.float32)
         scores, indices = self.index.search(embedding, self.k)
         pairs = []
         for j, i in enumerate(indices[0]):
@@ -73,7 +75,17 @@ class Faiss():
                 continue
             chunk = self.chunks[i]
             score = scores[0][j]
-            pairs.append((chunk, score))
+
+            if self.strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+                rel_score = DistanceStrategy.euclidean_relevance_score_fn(score)
+            elif self.strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+                rel_score = DistanceStrategy.max_inner_product_relevance_score_fn(score)
+            else:
+                raise ValueError('self.strategy unset')
+            pairs.append((chunk, rel_score))
+        
+        if len(pairs) >= 2:
+            assert pairs[0][1] >= pairs[1][1]
         return pairs
 
     def similarity_search_with_query(self,
@@ -126,15 +138,17 @@ class Faiss():
             if chunk.modal == 'text':
                 np_feature = embedder.embed_query(text=chunk.content_or_path)
             elif chunk.modal == 'image':
-                if not embedder.support_image:
-                    continue
                 np_feature = embedder.embed_query(path=chunk.content_or_path)
             else:
                 raise ValueError(f'Unimplement chunk type: {chunk.modal}')
 
             if index is None:
                 dimension = np_feature.shape[-1]
-                index = faiss.IndexFlatIP(dimension)
+
+                if embedder.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+                    index = faiss.IndexFlatL2(dimension)
+                elif embedder.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+                    index = faiss.IndexFlatIP(dimension)
 
             index.add(np_feature)
 
@@ -160,9 +174,17 @@ class Faiss():
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()
         index = faiss.read_index(str(path / f'embedding.faiss'))
+        strategy = DistanceStrategy.UNKNOWN
+        
+        if type(index) is faiss.IndexFlatL2:
+            strategy = DistanceStrategy.EUCLIDEAN_DISTANCE
+        elif type(index) is faiss.IndexFlatIP:
+            strategy = DistanceStrategy.MAX_INNER_PRODUCT
+        else:
+            raise ValueError('Cannot decide self.index type')
 
         # load docstore
         with open(path / f'chunk.pkl', 'rb') as f:
             chunks = pickle.load(f)
 
-        return cls(index, chunks)
+        return cls(index, chunks, strategy)

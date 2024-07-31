@@ -4,7 +4,7 @@ import json
 import os
 import pdb
 import time
-from typing import Any, Union
+from typing import Any, Union, Tuple
 
 import numpy as np
 import pytoml
@@ -60,20 +60,9 @@ class Retriever:
         self.reject_throttle = -1
 
         for question in questions:
-
-            graph_delta = 0.0
-            if self.kg.is_available():
-                try:
-                    docs = self.kg.retrieve(query=question)
-                    graph_delta = 0.2 * min(100, len(docs)) / 100
-                except Exception as e:
-                    logger.warning(str(e))
-                    logger.info('KG folder exists, but search failed, skip.')
-
-            query = Query(text=question)
-            pairs = self.faiss.similarity_search_with_query(
-                embedder=self.embedder, query=query)
-            predictions.append(max(0, pairs[0][1] + graph_delta))
+            _, score = self.is_relative(query=question,
+                                       enable_kg=True, enable_threshold=False)
+            predictions.append(max(0, score))
 
         labels = [1 for _ in range(len(good_questions))
                   ] + [0 for _ in range(len(bad_questions))]
@@ -200,13 +189,35 @@ class Retriever:
         ]
 
     def is_relative(self,
-                    question,
+                    query,
                     k=30,
-                    disable_throttle=False,
-                    disable_graph=False):
-        raise ValueError(
-            'This api already deprecated, please `git checkout 20240722`')
+                    enable_kg=True,
+                    enable_threshold=True) -> Tuple[bool, float]:
+        """Is input query relative with knowledge base. Return true or false, and the maxisum score"""
+        if type(query) is str:
+            query = Query(text=query)
 
+        if query.text is None or len(query.text) < 1 or self.faiss is None:
+            return None, None, []
+
+        graph_delta = 0.0
+        if not enable_kg and self.kg.is_available():
+            try:
+                docs = self.kg.retrieve(query=query.text)
+                graph_delta = 0.2 * min(100, len(docs)) / 100
+            except Exception as e:
+                logger.warning(str(e))
+                logger.info('KG folder exists, but search failed, skip.')
+
+        threshold = self.reject_throttle - graph_delta
+
+        if enable_threshold:
+            pairs = self.faiss.similarity_search_with_query(self.embedder, query=query, threshold=threshold)
+        else:
+            pairs = self.faiss.similarity_search_with_query(self.embedder, query=query, threshold=-1)
+        if len(pairs) > 0:
+            return True, pairs[0][1]
+        return False, -1
 
 class CacheRetriever:
 

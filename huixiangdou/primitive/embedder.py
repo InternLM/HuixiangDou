@@ -9,7 +9,7 @@ import torch
 from BCEmbedding import EmbeddingModel
 from FlagEmbedding.visual.modeling import Visualized_BGE
 from loguru import logger
-
+from .query import DistanceStrategy
 
 class Embedder:
     """Wrap text2vec (multimodal) model."""
@@ -17,6 +17,8 @@ class Embedder:
 
     def __init__(self, model_path: str):
         self.support_image = False
+        self.distance_strategy = DistanceStrategy.EUCLIDEAN_DISTANCE
+        
         if self.use_multimodal(model_path=model_path):
             self.support_image = True
             vision_weight_path = os.path.join(model_path, 'Visualized_m3.pth')
@@ -41,7 +43,8 @@ class Embedder:
             return False
         return True
 
-    def embed_query(self, text: str = None, path: str = None) -> List[float]:
+    def embed_query(self, text: str = None, path: str = None) -> np.ndarray:
+        """Embed input text or image as feature, output np.ndarray with np.float32"""
         if type(self.client) is Visualized_BGE:
             with torch.no_grad():
                 feature = self.client.encode(text=text, image=path)
@@ -49,4 +52,8 @@ class Embedder:
         else:
             if text is None:
                 raise ValueError('This model only support text')
-            return self.client.encode([text], enable_tqdm=False)
+            emb = self.client.encode([text], enable_tqdm=False, normalize_to_unit=True, return_numpy=True)
+            emb = emb.astype(np.float32)
+            for norm in np.linalg.norm(emb, axis=1):
+                assert abs(norm - 1) < 0.001
+            return emb

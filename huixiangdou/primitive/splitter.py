@@ -6,6 +6,7 @@
 import copy
 import os
 import pdb
+import json
 import re
 from abc import ABC, abstractmethod
 from typing import (AbstractSet, Any, Callable, Collection, Dict, Iterable,
@@ -547,6 +548,18 @@ class MarkdownHeaderTextSplitter():
                                               base_meta=metadata)
 
 
+# def test_bridge_langchain_splitter(text: str, chunk_size:int, metadata):
+#     """This is for debugging"""
+#     from langchain.text_splitter import MarkdownTextSplitter
+#     md_splitter = MarkdownTextSplitter(chunk_size=chunk_size, chunk_overlap=32)
+#     docs = md_splitter.create_documents([text])
+    
+#     chunks = []
+#     for doc in docs:
+#         c = Chunk(content_or_path=doc.page_content, metadata=metadata)
+#         chunks.append(c)
+#     return chunks
+
 def nested_split_markdown(filepath: str,
                           text: str,
                           chunksize: int = 832,
@@ -577,9 +590,16 @@ def nested_split_markdown(filepath: str,
 
         if len(chunk.content_or_path) > chunksize:
             content = '{} {}'.format(header, chunk.content_or_path)
-            text_chunks += text_ref_splitter.create_chunks([content],
-                                                           [chunk.metadata])
-
+            subchunks = text_ref_splitter.create_chunks([content], [chunk.metadata])
+            
+            for subchunk in subchunks:
+                if len(subchunk.content_or_path) >= 10:
+                    subchunk.content_or_path = '{} {}'.format(header, subchunk.content_or_path.lower())
+                    text_chunks.append(subchunk)
+        elif len(chunk.content_or_path) >= 10:
+            content = '{} {}'.format(header, chunk.content_or_path.lower())
+            text_chunks.append(Chunk(content, metadata))
+        
         # extract images
         matches = ref_pattern.findall(chunk.content_or_path)
         dirname = os.path.dirname(filepath)

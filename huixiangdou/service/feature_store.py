@@ -75,7 +75,12 @@ class FeatureStore:
                 'The `rejecter_naive_splitter` option deprecated, please `git checkout v20240722`'
             )
 
-        logger.info('init fs with chunk_size {}'.format(chunk_size))
+        if analyze_reject:
+            raise ValueError(
+                'The `analyze_reject` option deprecated, please `git checkout v20240722`'
+            )
+
+        logger.info('init dense retrieval database with chunk_size {}'.format(chunk_size))
 
         if language == 'zh':
             self.text_splitter = ChineseRecursiveTextSplitter(
@@ -89,10 +94,10 @@ class FeatureStore:
 
     def parse_markdown(self, file: FileName, metadata: Dict):
         length = 0
-        text = ''
+        text = file.basename + '\n'
+
         with open(file.copypath, encoding='utf8') as f:
-            text = f.read()
-        text = file.prefix + text
+            text += f.read()
         if len(text) <= 1:
             return [], length
 
@@ -137,16 +142,30 @@ class FeatureStore:
                 chunks += self.text_splitter.create_chunks(
                     texts=[text], metadatas=[metadata])
 
+        if not self.embedder.support_image:
+            filtered_chunks = list(filter(lambda x: x.modal=='text', chunks))
+        else:
+            filtered_chunks = chunks
         if len(chunks) < 1:
             return
+
+        self.analyze(filtered_chunks)
+
+        # with open('refactor.json', 'w') as f:
+        #     pass
+
+        # with open('refactor.jsonl', 'a') as f:
+        #     for c in filtered_chunks:
+        #         json_str = json.dumps({'data': c.content_or_path}, ensure_ascii=False)
+        #         f.write(json_str)
+        #         f.write('\n')
+
         Faiss.save_local(folder_path=feature_dir,
-                         chunks=chunks,
+                         chunks=filtered_chunks,
                          embedder=self.embedder)
 
     def analyze(self, chunks: List[Chunk]):
         """Output documents length mean, median and histogram."""
-        if not self.analyze_reject:
-            return
 
         text_lens = []
         token_lens = []
@@ -163,8 +182,8 @@ class FeatureStore:
                         content, padding=False,
                         truncation=False)['input_ids']))
 
-        logger.info('document text histogram, {}'.format(histogram(text_lens)))
-        logger.info('document token histogram, {}'.format(
+        logger.info('text histogram, {}'.format(histogram(text_lens)))
+        logger.info('token histogram, {}'.format(
             histogram(token_lens)))
 
     def preprocess(self, files: List, work_dir: str):
@@ -290,6 +309,45 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def test_reject(retriever: Retriever, sample: str = None):
+    """Simple test reject pipeline."""
+    if sample is None:
+        real_questions = [
+            'SAM 10个T 的训练集，怎么比比较公平呢~？速度上还有缺陷吧？',
+            '想问下，如果只是推理的话，amp的fp16是不会省显存么，我看parameter仍然是float32，开和不开推理的显存占用都是一样的。能不能直接用把数据和model都 .half() 代替呢，相比之下amp好在哪里',  # noqa E501
+            'mmdeploy支持ncnn vulkan部署么，我只找到了ncnn cpu 版本',
+            '大佬们，如果我想在高空检测安全帽，我应该用 mmdetection 还是 mmrotate',
+            '请问 ncnn 全称是什么',
+            '有啥中文的 text to speech 模型吗?',
+            '今天中午吃什么？',
+            'huixiangdou 是什么？',
+            'mmpose 如何安装？',
+            '使用科研仪器需要注意什么？'
+        ]
+    else:
+        with open(sample) as f:
+            real_questions = json.load(f)
+
+    for example in real_questions:
+        relative = retriever.is_relative(example)
+
+        if relative:
+            logger.warning(f'process query: {example}')
+        else:
+            logger.error(f'reject query: {example}')
+
+        if sample is not None:
+            if relative:
+                with open('workdir/positive.txt', 'a+') as f:
+                    f.write(example)
+                    f.write('\n')
+            else:
+                with open('workdir/negative.txt', 'a+') as f:
+                    f.write(example)
+                    f.write('\n')
+
+    empty_cache()
+
 
 def test_query(retriever: Retriever, sample: str = None):
     """Simple test response pipeline."""
@@ -299,7 +357,7 @@ def test_query(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
         logger.add('logs/feature_store_query.log', rotation='4MB')
     else:
-        real_questions = ['mmpose installation', 'what day is today? ']
+        real_questions = ['mmpose installation', 'how to use std::vector ?']
 
     table = Texttable()
     table.set_cols_valign(['t', 't', 't', 't'])
@@ -350,4 +408,5 @@ if __name__ == '__main__':
 
     # test
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
+    test_reject(retriever, args.sample)
     test_query(retriever, args.sample)
