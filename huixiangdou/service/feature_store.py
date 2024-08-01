@@ -51,7 +51,7 @@ class FeatureStore:
                  embedder: Embedder,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
-                 chunk_size=832,
+                 chunk_size=900,
                  analyze_reject=False,
                  rejecter_naive_splitter=False,
                  override=False) -> None:
