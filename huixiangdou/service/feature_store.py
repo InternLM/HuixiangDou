@@ -151,9 +151,17 @@ class FeatureStore:
 
         self.analyze(filtered_chunks)
 
-        Faiss.save_local(folder_path=feature_dir,
-                         chunks=filtered_chunks,
-                         embedder=self.embedder)
+        pdb.set_trace()
+
+        # hook read
+        # filtered_chunks = []
+        # with open('/home/khj/hxd-baseline/baseline.jsonl') as f:
+        #     for line in f:
+        #         json_obj = json.loads(line)
+        #         c = Chunk(content_or_path=json_obj['data'], metadata=json_obj['metadata'])
+        #         filtered_chunks.append(c)
+
+        Faiss.save_local(folder_path=feature_dir, chunks=filtered_chunks, embedder=self.embedder)
 
     def analyze(self, chunks: List[Chunk]):
         """Output documents length mean, median and histogram."""

@@ -1,5 +1,4 @@
 aiohttp
-bcembedding
 beautifulsoup4
 duckduckgo_search
 einops
@@ -31,3 +30,4 @@ torch>=2.0.0
 transformers>=4.38
 transformers_stream_generator
 unstructured
+sentence_transformers

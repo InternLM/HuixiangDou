@@ -311,7 +311,7 @@ def main():
     best_f1 = 0.0
     best_chunk_size = -1
 
-    calculate(900)
+    calculate(832)
     # pool = NestablePool(6)
     # result = pool.map(calculate, range(128, 512, 32))
     # pool.close()

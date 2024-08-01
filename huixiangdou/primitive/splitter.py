@@ -617,8 +617,8 @@ def nested_split_markdown(filepath: str,
                     f'image cannot access. file: {filepath}, image path: {image_path}'
                 )
 
-    return text_chunks + image_chunks
-
+    # return text_chunks + image_chunks
+    return text_chunks
 
 def clean_md(text: str):
     """Remove parts of the markdown document that do not contain the key
