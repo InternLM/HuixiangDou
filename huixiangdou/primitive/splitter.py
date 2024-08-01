@@ -362,7 +362,7 @@ class MarkdownTextRefSplitter(RecursiveCharacterTextSplitter):
         super().__init__(separators=separators, **kwargs)
 
 
-class MarkdownHeaderTextSplitter():
+class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
     def __init__(
@@ -382,9 +382,9 @@ class MarkdownHeaderTextSplitter():
         """
         # Given the headers we want to split on,
         # (e.g., "#, ##, etc") order by length
-        self.headers_to_split_on = sorted(headers_to_split_on,
-                                          key=lambda split: len(split[0]),
-                                          reverse=True)
+        self.headers_to_split_on = sorted(
+            headers_to_split_on, key=lambda split: len(split[0]), reverse=True
+        )
         # Strip headers split headers from the content of the chunk
         self.strip_headers = strip_headers
         super().__init__()
@@ -398,34 +398,39 @@ class MarkdownHeaderTextSplitter():
         aggregated_chunks: List[LineType] = []
 
         for line in lines:
-            if (aggregated_chunks
-                    and aggregated_chunks[-1]['metadata'] == line['metadata']):
+            if (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] == line["metadata"]
+            ):
+
                 # If the last line in the aggregated list
                 # has the same metadata as the current line,
                 # append the current content to the last lines's content
-                aggregated_chunks[-1]['content'] += '  \n' + line['content']
-            elif (aggregated_chunks
-                  and aggregated_chunks[-1]['metadata'] != line['metadata']
-                  # may be issues if other metadata is present
-                  and len(aggregated_chunks[-1]['metadata']) < len(
-                      line['metadata']) and
-                  aggregated_chunks[-1]['content'].split('\n')[-1][0] == '#'
-                  and not self.strip_headers):
+                aggregated_chunks[-1]["content"] += "  \n" + line["content"]
+            elif (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] != line["metadata"]
+                # may be issues if other metadata is present
+                and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
+                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and not self.strip_headers
+            ):
                 # If the last line in the aggregated list
                 # has different metadata as the current line,
                 # and has shallower header level than the current line,
                 # and the last line is a header,
                 # and we are not stripping headers,
                 # append the current content to the last line's content
-                aggregated_chunks[-1]['content'] += '  \n' + line['content']
+                aggregated_chunks[-1]["content"] += "  \n" + line["content"]
                 # and update the last line's metadata
-                aggregated_chunks[-1]['metadata'] = line['metadata']
+                aggregated_chunks[-1]["metadata"] = line["metadata"]
+
             else:
                 # Otherwise, append the current line to the aggregated list
                 aggregated_chunks.append(line)
 
         return [
-            Chunk(content_or_path=chunk['content'],
+            Chunk(content_or_path=chunk["content"],
                   metadata=dict(chunk['metadata'], **base_meta))
             for chunk in aggregated_chunks
         ]
@@ -436,7 +441,7 @@ class MarkdownHeaderTextSplitter():
             text: Markdown file"""
 
         # Split the input text by newline character ("\n").
-        lines = text.split('\n')
+        lines = text.split("\n")
         # Final output
         lines_with_metadata: List[LineType] = []
         # Content and metadata of the chunk currently being processed
@@ -448,26 +453,25 @@ class MarkdownHeaderTextSplitter():
         initial_metadata: Dict[str, str] = {}
 
         in_code_block = False
-        opening_fence = ''
+        opening_fence = ""
 
         for line in lines:
             stripped_line = line.strip()
             # Remove all non-printable characters from the string, keeping only visible
             # text.
-            stripped_line = ''.join(filter(str.isprintable, stripped_line))
+            stripped_line = "".join(filter(str.isprintable, stripped_line))
             if not in_code_block:
                 # Exclude inline code spans
-                if stripped_line.startswith('```') and stripped_line.count(
-                        '```') == 1:
+                if stripped_line.startswith("```") and stripped_line.count("```") == 1:
                     in_code_block = True
-                    opening_fence = '```'
-                elif stripped_line.startswith('~~~'):
+                    opening_fence = "```"
+                elif stripped_line.startswith("~~~"):
                     in_code_block = True
-                    opening_fence = '~~~'
+                    opening_fence = "~~~"
             else:
                 if stripped_line.startswith(opening_fence):
                     in_code_block = False
-                    opening_fence = ''
+                    opening_fence = ""
 
             if in_code_block:
                 current_content.append(stripped_line)
@@ -477,45 +481,47 @@ class MarkdownHeaderTextSplitter():
             for sep, name in self.headers_to_split_on:
                 # Check if line starts with a header that we intend to split on
                 if stripped_line.startswith(sep) and (
-                        # Header with no text OR header is followed by space
-                        # Both are valid conditions that sep is being used a header
-                        len(stripped_line) == len(sep)
-                        or stripped_line[len(sep)] == ' '):
+                    # Header with no text OR header is followed by space
+                    # Both are valid conditions that sep is being used a header
+                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
+                ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
                         # Get the current header level
-                        current_header_level = sep.count('#')
+                        current_header_level = sep.count("#")
 
                         # Pop out headers of lower or same level from the stack
-                        while (header_stack and header_stack[-1]['level'] >=
-                               current_header_level):
+                        while (
+                            header_stack
+                            and header_stack[-1]["level"] >= current_header_level
+                        ):
                             # We have encountered a new header
                             # at the same or higher level
                             popped_header = header_stack.pop()
                             # Clear the metadata for the
                             # popped header in initial_metadata
-                            if popped_header['name'] in initial_metadata:
-                                initial_metadata.pop(popped_header['name'])
+                            if popped_header["name"] in initial_metadata:
+                                initial_metadata.pop(popped_header["name"])
 
                         # Push the current header to the stack
                         header: HeaderType = {
-                            'level': current_header_level,
-                            'name': name,
-                            'data': stripped_line[len(sep):].strip(),
+                            "level": current_header_level,
+                            "name": name,
+                            "data": stripped_line[len(sep) :].strip(),
                         }
                         header_stack.append(header)
                         # Update initial_metadata with the current header
-                        initial_metadata[name] = header['data']
+                        initial_metadata[name] = header["data"]
 
                     # Add the previous line to the lines_with_metadata
                     # only if current_content is not empty
                     if current_content:
-                        lines_with_metadata.append({
-                            'content':
-                            '\n'.join(current_content),
-                            'metadata':
-                            current_metadata.copy(),
-                        })
+                        lines_with_metadata.append(
+                            {
+                                "content": "\n".join(current_content),
+                                "metadata": current_metadata.copy(),
+                            }
+                        )
                         current_content.clear()
 
                     if not self.strip_headers:
@@ -526,39 +532,25 @@ class MarkdownHeaderTextSplitter():
                 if stripped_line:
                     current_content.append(stripped_line)
                 elif current_content:
-                    lines_with_metadata.append({
-                        'content':
-                        '\n'.join(current_content),
-                        'metadata':
-                        current_metadata.copy(),
-                    })
+                    lines_with_metadata.append(
+                        {
+                            "content": "\n".join(current_content),
+                            "metadata": current_metadata.copy(),
+                        }
+                    )
                     current_content.clear()
 
             current_metadata = initial_metadata.copy()
 
         if current_content:
-            lines_with_metadata.append({
-                'content': '\n'.join(current_content),
-                'metadata': current_metadata
-            })
+            lines_with_metadata.append(
+                {"content": "\n".join(current_content), "metadata": current_metadata}
+            )
 
         # lines_with_metadata has each line with associated header metadata
         # aggregate these into chunks based on common metadata
         return self.aggregate_lines_to_chunks(lines_with_metadata,
                                               base_meta=metadata)
-
-
-# def test_bridge_langchain_splitter(text: str, chunk_size:int, metadata):
-#     """This is for debugging"""
-#     from langchain.text_splitter import MarkdownTextSplitter
-#     md_splitter = MarkdownTextSplitter(chunk_size=chunk_size, chunk_overlap=32)
-#     docs = md_splitter.create_documents([text])
-    
-#     chunks = []
-#     for doc in docs:
-#         c = Chunk(content_or_path=doc.page_content, metadata=metadata)
-#         chunks.append(c)
-#     return chunks
 
 def nested_split_markdown(filepath: str,
                           text: str,
@@ -589,17 +581,17 @@ def nested_split_markdown(filepath: str,
             header += chunk.metadata['Header 3']
 
         if len(chunk.content_or_path) > chunksize:
-            content = '{} {}'.format(header, chunk.content_or_path)
-            subchunks = text_ref_splitter.create_chunks([content], [chunk.metadata])
-            
+            subchunks = text_ref_splitter.create_chunks([chunk.content_or_path], [chunk.metadata])
+
             for subchunk in subchunks:
                 if len(subchunk.content_or_path) >= 10:
                     subchunk.content_or_path = '{} {}'.format(header, subchunk.content_or_path.lower())
                     text_chunks.append(subchunk)
+            
         elif len(chunk.content_or_path) >= 10:
             content = '{} {}'.format(header, chunk.content_or_path.lower())
             text_chunks.append(Chunk(content, metadata))
-        
+    
         # extract images
         matches = ref_pattern.findall(chunk.content_or_path)
         dirname = os.path.dirname(filepath)
@@ -648,3 +640,75 @@ def clean_md(text: str):
     # use lower
     new_text = new_text.lower()
     return new_text
+
+
+"""
+# Useful debug code, TL;DR.
+
+def langchain_splitter(text: str, chunk_size:int, metadata):
+    """This is for debugging"""
+    from langchain.text_splitter import MarkdownTextSplitter
+    md_splitter = MarkdownTextSplitter(chunk_size=chunk_size, chunk_overlap=32)
+    docs = md_splitter.create_documents([text])
+    
+    chunks = []
+    for doc in docs:
+        c = Chunk(content_or_path=doc.page_content, metadata=metadata)
+        chunks.append(c)
+    return chunks
+
+# compare splitter
+if False:
+    # Here is for splitter result comparison, useless
+    gt_chunks = langchain_splitter(chunk.content_or_path, chunksize, chunk.metadata)
+    if len(subchunks) != len(gt_chunks):
+        pdb.set_trace()
+        pass
+    for ii in range(len(subchunks)):
+        if subchunks[ii].content_or_path != gt_chunks[ii].content_or_path:
+            pdb.set_trace()
+
+from langchain.text_splitter import MarkdownHeaderTextSplitter as LangChainMarkdownHeaderTextSplitter
+gt_head_splitter = LangChainMarkdownHeaderTextSplitter(headers_to_split_on=[
+        ('#', 'Header 1'),
+        ('##', 'Header 2'),
+        ('###', 'Header 3'),
+    ])
+docs = gt_head_splitter.split_text(text)
+if len(docs) != len(chunks):
+    pdb.set_trace()
+    print('len diff')
+for idx in range(len(docs)):
+    doc = docs[idx]
+    chunk = chunks[idx]
+    if doc.page_content != chunk.content_or_path:
+        pdb.set_trace()
+        print('content diff')
+
+with open('headersplit.result', 'a') as f:
+    for chunk in chunks:
+
+        header = ''
+        if len(chunk.metadata) > 0:
+            if 'Header 1' in chunk.metadata:
+                header += chunk.metadata['Header 1']
+            if 'Header 2' in chunk.metadata:
+                header += ' '
+                header += chunk.metadata['Header 2']
+            if 'Header 3' in chunk.metadata:
+                header += ' '
+                header += chunk.metadata['Header 3']
+
+        json_str = json.dumps({'data': header + ' ||| ' + chunk.content_or_path}, ensure_ascii=False)
+        f.write(json_str)
+        f.write('\n')
+
+with open('refactor.json', 'w') as f:
+    pass
+
+with open('refactor.jsonl', 'a') as f:
+    for c in text_chunks:
+        json_str = json.dumps({'data': c.content_or_path}, ensure_ascii=False)
+        f.write(json_str)
+        f.write('\n')
+"""

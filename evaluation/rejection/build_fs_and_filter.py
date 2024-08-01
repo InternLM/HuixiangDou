@@ -235,14 +235,14 @@ def calculate(chunk_size: int):
     # walk all files in repo dir
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=repo_dir)
-    # fs_init.preprocess(files=files, work_dir=work_dir)
-    # fs_init.build_dense(files=files, work_dir=work_dir)
+    fs_init.preprocess(files=files, work_dir=work_dir)
+    fs_init.build_dense(files=files, work_dir=work_dir)
     del fs_init
 
     retriever = CacheRetriever(config_path=config_path).get(
         fs_id=str(chunk_size), work_dir=work_dir)
-    start = 0.45
-    stop = 0.51
+    start = 0.43
+    stop = 0.50
     step = 0.01
     throttles = [
         round(start + step * i, 4)
@@ -311,7 +311,7 @@ def main():
     best_f1 = 0.0
     best_chunk_size = -1
 
-    calculate(832)
+    calculate(900)
     # pool = NestablePool(6)
     # result = pool.map(calculate, range(128, 512, 32))
     # pool.close()

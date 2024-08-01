@@ -198,7 +198,7 @@ class Retriever:
             query = Query(text=query)
 
         if query.text is None or len(query.text) < 1 or self.faiss is None:
-            return None, None, []
+            raise ValueError('input query {}, faiss {}'.format(query, self.faiss))
 
         graph_delta = 0.0
         if not enable_kg and self.kg.is_available():

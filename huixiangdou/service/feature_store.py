@@ -151,15 +151,6 @@ class FeatureStore:
 
         self.analyze(filtered_chunks)
 
-        # with open('refactor.json', 'w') as f:
-        #     pass
-
-        # with open('refactor.jsonl', 'a') as f:
-        #     for c in filtered_chunks:
-        #         json_str = json.dumps({'data': c.content_or_path}, ensure_ascii=False)
-        #         f.write(json_str)
-        #         f.write('\n')
-
         Faiss.save_local(folder_path=feature_dir,
                          chunks=filtered_chunks,
                          embedder=self.embedder)
