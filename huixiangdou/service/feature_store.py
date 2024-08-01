@@ -51,7 +51,7 @@ class FeatureStore:
                  embedder: Embedder,
                  config_path: str = 'config.ini',
                  language: str = 'zh',
-                 chunk_size=832,
+                 chunk_size=900,
                  analyze_reject=False,
                  rejecter_naive_splitter=False,
                  override=False) -> None:
@@ -150,15 +150,6 @@ class FeatureStore:
             return
 
         self.analyze(filtered_chunks)
-
-        # with open('refactor.json', 'w') as f:
-        #     pass
-
-        # with open('refactor.jsonl', 'a') as f:
-        #     for c in filtered_chunks:
-        #         json_str = json.dumps({'data': c.content_or_path}, ensure_ascii=False)
-        #         f.write(json_str)
-        #         f.write('\n')
 
         Faiss.save_local(folder_path=feature_dir,
                          chunks=filtered_chunks,

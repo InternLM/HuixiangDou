@@ -17,6 +17,7 @@ class Embedder:
 
     def __init__(self, model_path: str):
         self.support_image = False
+        # bce also use euclidean distance.
         self.distance_strategy = DistanceStrategy.EUCLIDEAN_DISTANCE
         
         if self.use_multimodal(model_path=model_path):
