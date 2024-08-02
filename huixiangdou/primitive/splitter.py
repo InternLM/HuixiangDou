@@ -619,7 +619,6 @@ def nested_split_markdown(filepath: str,
 
     return text_chunks + image_chunks
 
-
 def clean_md(text: str):
     """Remove parts of the markdown document that do not contain the key
     question words, such as code blocks, URL links, etc."""

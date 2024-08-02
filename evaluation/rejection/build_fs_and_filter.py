@@ -236,12 +236,12 @@ def calculate(chunk_size: int):
     file_opr = FileOperation()
     files = file_opr.scan_dir(repo_dir=repo_dir)
     fs_init.preprocess(files=files, work_dir=work_dir)
-    fs_init.build_dense(files=files, work_dir=work_dir)
+    fs_init.build_dense(files=files, work_dir=work_dir, markdown_as_txt=True)
     del fs_init
 
     retriever = CacheRetriever(config_path=config_path).get(
         fs_id=str(chunk_size), work_dir=work_dir)
-    start = 0.43
+    start = 0.41
     stop = 0.50
     step = 0.01
     throttles = [
@@ -311,7 +311,7 @@ def main():
     best_f1 = 0.0
     best_chunk_size = -1
 
-    calculate(900)
+    calculate(832)
     # pool = NestablePool(6)
     # result = pool.map(calculate, range(128, 512, 32))
     # pool.close()

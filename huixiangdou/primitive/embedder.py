@@ -6,7 +6,8 @@ from typing import Any, List
 
 import numpy as np
 import torch
-from BCEmbedding import EmbeddingModel
+# from BCEmbedding import EmbeddingModel
+from sentence_transformers import SentenceTransformer
 from FlagEmbedding.visual.modeling import Visualized_BGE
 from loguru import logger
 from .query import DistanceStrategy
@@ -27,8 +28,7 @@ class Embedder:
                 model_name_bge=model_path,
                 model_weight=vision_weight_path).eval()
         else:
-            self.client = EmbeddingModel(model_name_or_path=model_path,
-                                         use_fp16=True)
+            self.client = SentenceTransformer(model_name_or_path=model_path).half()
 
     @classmethod
     def use_multimodal(self, model_path):
@@ -53,7 +53,7 @@ class Embedder:
         else:
             if text is None:
                 raise ValueError('This model only support text')
-            emb = self.client.encode([text], enable_tqdm=False, normalize_to_unit=True, return_numpy=True)
+            emb = self.client.encode([text], show_progress_bar=False, normalize_embeddings=True)
             emb = emb.astype(np.float32)
             for norm in np.linalg.norm(emb, axis=1):
                 assert abs(norm - 1) < 0.001

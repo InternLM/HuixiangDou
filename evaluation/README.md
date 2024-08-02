@@ -79,8 +79,6 @@ The basis for choosing splitter is:
 
 We also compared other methods and models.
 
-The following conclusions can be reproduced in the 20240722 branch, as we have recently removed `langchain`, and the main branch is still under bug fixing.
-
 |     Approach      | F1 score |                                                                                                     Description                                                                                                      |
 | :---------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | bce+knowlegegraph |  77.57   |                                                                                       The weight of the knowledge graph is 20%                                                                                       |
