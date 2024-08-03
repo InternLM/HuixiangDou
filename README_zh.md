@@ -90,9 +90,9 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 - [InternLM2](https://github.com/InternLM/InternLM)
 - [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
+- [StepFun](https://platform.stepfun.com)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
-- [StepFun](https://platform.stepfun.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
 - [Xi-Api](https://api.xi-ai.cn)
