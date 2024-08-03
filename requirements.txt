@@ -3,7 +3,7 @@ beautifulsoup4
 duckduckgo_search
 einops
 faiss-gpu
-FlagEmbedding==0.1.5
+FlagEmbedding
 loguru
 lxml_html_clean
 nest_asyncio
