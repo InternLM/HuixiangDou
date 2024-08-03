@@ -93,7 +93,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 - [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
-- [Step](https://platform.stepfun.com)
+- [StepFun](https://platform.stepfun.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
 - [Xi-Api](https://api.xi-ai.cn)
