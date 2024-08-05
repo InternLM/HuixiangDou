@@ -306,6 +306,10 @@ python3 tests/test_query_gradio.py
 - [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
 
+## 移动端
+
+贡献者提供了[android工具](./android) 完成微信接入。方案基于系统层 API，原理上可以控制任何 UI（不限于通讯软件）。
+
 # 🛠️ FAQ
 
 1. 机器人太高冷/太嘴碎怎么办？
