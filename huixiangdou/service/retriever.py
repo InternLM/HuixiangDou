@@ -96,8 +96,9 @@ class Retriever:
             tracker (QueryTracker): Log tracker.
 
         Returns:
-            str: The best matching chunk, or None.
-            str: The best matching text, or None
+            str: Matched chunks, or empty string
+            str: Matched context from origin file content
+            List[str]: References 
         """
         if type(query) is str:
             query = Query(text=query)
@@ -141,9 +142,11 @@ class Retriever:
         if tracker is not None:
             tracker.log('retrieve', [c.metadata['source'] for c in chunks])
 
-        # add file text to context, until exceed `context_max_length`
         file_opr = FileOperation()
         splits = []
+        # Add file text to context, until exceed `context_max_length`
+        # If `file_length` > `context_max_length` (for example file_length=300 and context_max_length=100)
+        # then centered on the chunk, read a length of 200
         for idx, chunk in enumerate(chunks):
 
             content = chunk.content_or_path
