@@ -113,12 +113,14 @@ class InferenceWrapper:
                 model_path,
                 torch_dtype=torch.float16,
                 trust_remote_code=True).cuda().eval()
-        else:
+        elif 'internlm2' in model_path_lower:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 trust_remote_code=True,
                 device_map='auto',
                 torch_dtype='auto').eval()
+        else:
+            raise ValueError('Unknown model path {}'.format(model_path))
 
     def chat(self, prompt: str, history=[]):
         """Generate a response from local LLM.
@@ -155,7 +157,7 @@ class InferenceWrapper:
         elif type(self.model).__name__ == 'InternLM2ForCausalLM':
 
             if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。' in prompt:
-                prompt = '你是一个语言专家，擅长分析语句并打分，你会忽略不认识的名词，只关心句子结构本身。\n' + prompt
+                prompt = '你是一个语言专家，擅长分析语句并打分。\n' + prompt
 
             output_text, _ = self.model.chat(self.tokenizer, prompt, history, top_k=1, do_sample=False)
         else:
