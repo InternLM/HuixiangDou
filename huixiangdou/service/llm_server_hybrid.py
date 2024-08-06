@@ -113,12 +113,14 @@ class InferenceWrapper:
                 model_path,
                 torch_dtype=torch.float16,
                 trust_remote_code=True).cuda().eval()
-        else:
+        elif 'internlm2' in model_path_lower:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 trust_remote_code=True,
                 device_map='auto',
                 torch_dtype='auto').eval()
+        else:
+            raise ValueError('Unknown model path {}'.format(model_path))
 
     def chat(self, prompt: str, history=[]):
         """Generate a response from local LLM.
