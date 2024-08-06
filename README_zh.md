@@ -88,7 +88,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
     <tr valign="top">
       <td>
 
-- [InternLM2](https://github.com/InternLM/InternLM)
+- [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
 - [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
 - [StepFun](https://platform.stepfun.com)
 - [KIMI](https://kimi.moonshot.cn)

@@ -7,7 +7,8 @@ import random
 import time
 from datetime import datetime, timedelta
 from multiprocessing import Process, Value
-
+import torch
+import pdb
 import pytoml
 import requests
 from aiohttp import web
@@ -84,19 +85,22 @@ class InferenceWrapper:
 
     def __init__(self, model_path: str):
         """Init model handler."""
+        self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
 
-        if 'qwen2' in model_path.lower():
+        model_path_lower = model_path.lower()
+
+        if 'qwen2' in model_path_lower:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 torch_dtype='auto',
                 device_map='auto',
                 trust_remote_code=True).eval()
-        elif 'qwen1.5' in model_path.lower():
+        elif 'qwen1.5' in model_path_lower:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path, device_map='auto', trust_remote_code=True).eval()
-        elif 'qwen' in model_path.lower():
+        elif 'qwen' in model_path_lower:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 device_map='auto',
@@ -104,6 +108,11 @@ class InferenceWrapper:
                 use_cache_quantization=True,
                 use_cache_kernel=True,
                 use_flash_attn=False).eval()
+        elif 'internlm2_5' in model_path_lower:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                torch_dtype=torch.float16,
+                trust_remote_code=True).cuda().eval()
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
@@ -142,23 +151,15 @@ class InferenceWrapper:
 
             output_text = self.tokenizer.batch_decode(
                 generated_ids, skip_special_tokens=True)[0]
-        else:
+
+        elif type(self.model).__name__ == 'InternLM2ForCausalLM':
+
             if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。' in prompt:
-                prompt = '你是一个语言专家，擅长分析语句并打分。\n' + prompt
-                output_desc, _ = self.model.chat(self.tokenizer,
-                                                 prompt,
-                                                 history,
-                                                 top_k=1,
-                                                 do_sample=False)
-                prompt = '"{}"\n请仔细阅读上面的内容，最后的得分是多少？'.format(output_desc)
-                output_text, _ = self.model.chat(self.tokenizer, prompt,
-                                                 history)
-            else:
-                output_text, _ = self.model.chat(self.tokenizer,
-                                                 prompt,
-                                                 history,
-                                                 top_k=1,
-                                                 do_sample=False)
+                prompt = '你是一个语言专家，擅长分析语句并打分，你会忽略不认识的名词，只关心句子结构本身。\n' + prompt
+
+            output_text, _ = self.model.chat(self.tokenizer, prompt, history, top_k=1, do_sample=False)
+        else:
+            raise ValueError('Unknown model type {}'.format(type(self.model).__name__))
         return output_text
 
 

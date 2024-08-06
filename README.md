@@ -89,7 +89,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
     <tr valign="top">
       <td>
 
-- [InternLM2](https://github.com/InternLM/InternLM)
+- [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
 - [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
 - [StepFun](https://platform.stepfun.com)
 - [KIMI](https://kimi.moonshot.cn)
