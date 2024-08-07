@@ -2,11 +2,11 @@
 """LLM client."""
 import argparse
 import json
+import aiohttp
 
 import pytoml
 import requests
 from loguru import logger
-
 
 class ChatClient:
     """A class to handle client-side interactions with a chat service.
@@ -110,6 +110,7 @@ class ChatClient:
                 'history': data_history,
                 'backend': real_backend
             }
+
             resp = requests.post(url,
                                  headers=header,
                                  data=json.dumps(data),
@@ -131,6 +132,57 @@ class ChatClient:
             )
             return ''
 
+    async def generate_response_async(self, prompt, history=[], backend='local'):
+        """Generate a stream response from the chat service.
+
+        Args:
+            prompt (str): The prompt to send to the chat service.
+            history (list, optional): List of previous interactions. Defaults to [].
+            backend (str, optional): Determine which LLM should be called. Default to `local`
+
+        Returns:
+            str: Generated response from the chat service.
+        """
+        url = self.llm_config['client_stream_url']
+        real_backend, max_length = self.auto_fix(backend=backend)
+
+        if len(prompt) > max_length:
+            logger.warning(
+                f'prompt length {len(prompt)}  > max_length {max_length}, truncated'  # noqa E501
+            )
+            prompt = prompt[0:max_length]
+
+        try:
+            headers = {'Content-Type': 'application/json'}
+            data_history = []
+            for item in history:
+                data_history.append([item[0], item[1]])
+            data = {
+                'prompt': prompt,
+                'history': data_history,
+                'backend': real_backend
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, headers=headers, data=json.dumps(data)) as response:
+                    # 确保请求成功
+                    if response.status == 200:
+                        async for chunk in response.content.iter_any():
+                            chunk_str = chunk.decode().strip()
+                            mines = chunk_str.split('\r\n\r\n')
+
+                            for mime_str in mines:
+                                pos = mime_str.find('data: ') + len('data: ')
+                                content = mime_str[pos:]
+                                yield content
+                    else:
+                        raise Exception(response.status)
+
+        except Exception as e:
+            logger.error(str(e))
+            logger.error(
+                'See the HuixiangDou FAQ, feel free to `submit an issue` or `ask in the WeChat group`. '
+            )
 
 def parse_args():
     """Parse command-line arguments."""
@@ -148,12 +200,18 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     client = ChatClient(config_path=args.config_path)
-    question = '“{}”\n请仔细阅读以上问题，提取其中的实体词，结果直接用 list 表示，不要解释。'.format(
-        '请问triviaqa 5shot结果怎么在summarizer里输出呢')
-    print(client.generate_response(prompt=question, backend='local'))
+    # question = '“{}”\n请仔细阅读以上问题，提取其中的实体词，结果直接用 list 表示，不要解释。'.format(
+    #     '请问triviaqa 5shot结果怎么在summarizer里输出呢')
+    # print(client.generate_response(prompt=question, backend='local'))
 
-    print(
-        client.generate_response(prompt='请问 ncnn 的全称是什么',
-                                 history=[('ncnn 是什么',
-                                           'ncnn中的n代表nihui，cnn代表卷积神经网络。')],
-                                 backend='remote'))
+    # print(
+    #     client.generate_response(prompt='请问 ncnn 的全称是什么',
+    #                              history=[('ncnn 是什么',
+    #                                        'ncnn中的n代表nihui，cnn代表卷积神经网络。')],
+    #                              backend='remote'))
+
+    async def wrap_as_coroutine():
+        async for text in client.generate_response_async('请问 ncnn 全称是啥'):
+            print(text, end='', flush=True)
+    import asyncio
+    asyncio.run(wrap_as_coroutine())

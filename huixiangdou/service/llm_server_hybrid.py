@@ -17,8 +17,12 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import asyncio
 from termcolor import colored
 from fastapi import FastAPI, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
+
 import uvicorn
-from typing import List
+from typing import List, Tuple
 
 def os_run(cmd: str):
     ret = os.popen(cmd)
@@ -513,6 +517,10 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+class Talk(BaseModel):
+    prompt: str
+    backend: str = 'local'
+    history: List[Tuple[str, str]] = []
 
 def llm_serve(config_path: str, server_ready: Value):
     """Start the LLM server.
@@ -533,39 +541,42 @@ def llm_serve(config_path: str, server_ready: Value):
         server_ready.value = -1
         raise (e)
 
-    async def inference(request):
+    async def inference(talk: Talk):
         """Call local llm inference."""
 
-        input_json = await request.json()
-        # logger.debug(input_json)
+        prompt = talk.prompt
+        history = talk.history
+        backend = talk.backend
 
-        prompt = input_json['prompt']
-        history = input_json['history']
-        backend = input_json['backend']
-        # logger.debug(f'history: {history}')
-        text, error = server.chat(prompt=prompt,
-                                               history=history,
-                                               backend=backend)
-        return web.json_response({'text': text, 'error': error})
+        parts = []
+        try:
+            async for text in server.chat_stream(prompt=prompt, history=history, backend=backend):
+                parts.append(text)
+            return {'text': ''.join(parts), 'error': ''}
+        except Exception as e:
+            return {'text': '', 'error': str(e)}
 
-    async def stream_chat(request):
+    async def stream(talk: Talk):
         """Call local llm inference."""
 
-        input_json = await request.json()
-        # logger.debug(input_json)
+        prompt = talk.prompt
+        history = talk.history
+        backend = talk.backend
 
-        prompt = input_json['prompt']
-        history = input_json['history']
-        backend = input_json['backend']
-        # logger.debug(f'history: {history}')
-        # async for text, error in server.chat_stream(prompt=prompt, history=history, backend=backend)
+        async def generate():
+            async for text in server.chat_stream(prompt=prompt, history=history, backend=backend):
+                yield text
+        return EventSourceResponse(generate())
 
-        return web.json_response({'text': text, 'error': error})
-
-    app = FastAPI()
+    app = FastAPI(docs_url='/')
+    app.add_middleware(CORSMiddleware,
+                    allow_origins=['*'],
+                    allow_credentials=True,
+                    allow_methods=['*'],
+                    allow_headers=['*'])
     router = APIRouter()
-    router.add_api_route('/inference', inference, methods='POST')
-    router.add_api_route('/stream_chat', stream_chat, methods='POST')
+    router.add_api_route('/inference', inference, methods=['POST'])
+    router.add_api_route('/stream', stream, methods=['POST'])
     app.include_router(router)
     uvicorn.run(app, host='0.0.0.0', port=bind_port, log_level='info')
 
@@ -596,18 +607,6 @@ def main():
         llm_serve(args.config_path, server_ready)
     else:
         queries = ['今天天气如何？']
-        repeat = 10
-
-        with open(args.config_path) as f:
-            llm_config = pytoml.load(f)['llm']
-            if llm_config['enable_local']:
-                model_path = llm_config['server']['local_llm_path']
-                wrapper = InferenceWrapper(model_path)
-                for query in queries:
-                    for i in range(repeat):
-                        print(wrapper.chat(prompt=query))
-                del wrapper
-
         start_llm_server(config_path=args.config_path)
 
         from .llm_client import ChatClient
@@ -617,7 +616,6 @@ def main():
                 client.generate_response(prompt=query,
                                          history=[],
                                          backend='local'))
-
 
 if __name__ == '__main__':
     main()
