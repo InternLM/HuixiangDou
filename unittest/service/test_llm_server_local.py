@@ -2,6 +2,7 @@ import json
 import pdb
 import re
 import time
+import asyncio
 
 import pytoml
 from loguru import logger
@@ -22,15 +23,20 @@ def get_score(relation: str, default=0):
             str(e), default))
     return score
 
-
 def test_internlm_local():
     wrapper = InferenceWrapper('/data2/khj/internlm2-chat-7b')
-    repeat = 10
+    repeat = 1
     for i in range(repeat):
         resp = wrapper.chat(prompt=PROMPT)
         logger.info(resp)
         logger.info(get_score(relation=resp))
 
 
+async def test_internlm_local_stream():
+    wrapper = InferenceWrapper('/data2/khj/internlm2-chat-7b')
+    async for part in wrapper.chat_stream(prompt=PROMPT):
+        print(part, end="")
+
 if __name__ == '__main__':
     test_internlm_local()
+    # asyncio.run(test_internlm_local_stream())

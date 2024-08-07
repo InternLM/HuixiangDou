@@ -15,7 +15,8 @@ from aiohttp import web
 from loguru import logger
 from openai import OpenAI
 from transformers import AutoModelForCausalLM, AutoTokenizer
-
+import asyncio
+from termcolor import colored
 
 def os_run(cmd: str):
     ret = os.popen(cmd)
@@ -122,8 +123,8 @@ class InferenceWrapper:
         else:
             raise ValueError('Unknown model path {}'.format(model_path))
 
-    def chat(self, prompt: str, history=[]):
-        """Generate a response from local LLM.
+    async def chat_stream(self, prompt: str, history=[]):
+        """Generate a stream response from local LLM. Wrap transformer API to async generator
 
         Args:
             prompt (str): The prompt for inference.
@@ -153,16 +154,41 @@ class InferenceWrapper:
 
             output_text = self.tokenizer.batch_decode(
                 generated_ids, skip_special_tokens=True)[0]
+            yield output_text
 
         elif type(self.model).__name__ == 'InternLM2ForCausalLM':
 
             if '请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。' in prompt:
                 prompt = '你是一个语言专家，擅长分析语句并打分。\n' + prompt
 
-            output_text, _ = self.model.chat(self.tokenizer, prompt, history, top_k=1, do_sample=False)
+            length = 0
+            for response, _ in self.model.stream_chat(self.tokenizer, prompt, history, top_k=1, do_sample=False):
+                part = response[length:]
+                length = len(response)
+                yield part
+
         else:
             raise ValueError('Unknown model type {}'.format(type(self.model).__name__))
-        return output_text
+
+    def chat(self, prompt: str, history=[]):
+        """Generate a sync response from local LLM. Sync chat.
+
+        Args:
+            prompt (str): The prompt for inference.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response.
+        """
+        loop = asyncio.get_event_loop()
+
+        async def coroutine_wrapper():
+            messages = []
+            async for part in self.chat_stream(prompt=prompt, history=history):
+                messages.append(part)
+            return ''.join(messages)
+        content = loop.run_until_complete(coroutine_wrapper())
+        return content
 
 
 class HybridLLMServer:
@@ -565,9 +591,9 @@ class HybridLLMServer:
         text = resp_json['choices'][0]['message']['content']
         return text
 
-    def generate_response(self, prompt, history=[], backend='local'):
+    async def chat_stream(self, prompt, history=[], backend='local'):
         """Generate a response from the appropriate LLM based on the
-        configuration. If failed, use exponential backoff.
+        configuration. If failed, use exponential backoff. Async generator.
 
         Args:
             prompt (str): The prompt to send to the LLM.
@@ -576,11 +602,8 @@ class HybridLLMServer:
             backend (str): LLM type to call. Support 'local', 'remote' and specified LLM name ('kimi', 'deepseek' and so on)
 
         Returns:
-            str: Generated response from the LLM.
+            str: Generated response from the LLM. If LLM not support stream reply, just reply once.
         """
-        output_text = ''
-        error = ''
-        time_tokenizer = time.time()
 
         if backend == 'local' and self.inference is None:
             logger.error(
@@ -598,9 +621,10 @@ class HybridLLMServer:
             it's essential to ensure reproducibility. Thus `GenerationMode.GREEDY_SEARCH`  # noqa E501
             must enabled."""
 
-            output_text = self.inference.chat(prompt, history)
+            yield self.inference.chat(prompt, history)
 
         else:
+            output_text = ''
             prompt = prompt[0:self.remote_max_length]
 
             life = 0
@@ -669,15 +693,30 @@ class HybridLLMServer:
                     if backend == 'puyu':
                         # for puyu API, refresh token
                         self.token = (os_run('openxlab token'), time.time())
+            yield output_text
 
-        # logger.debug((prompt, output_text))
+    def chat(self, prompt: str, history=[], backend:str='local'):
+        """Generate a sync response from local LLM.
+
+        Args:
+            prompt (str): The prompt for inference.
+            history (list): List of previous interactions.
+
+        Returns:
+            str: Generated response.
+        """
+        time_tokenizer = time.time()
+        messages = []
+        loop = asyncio.get_event_loop()
+        for message in loop.run_until_complete(self.chat_stream(prompt=prompt, history=history, backend=backend)):
+            messages.append(message)
+
+        output_text = ''.join(messages)
         time_finish = time.time()
 
         logger.debug('Q:{} A:{} \t\t backend {} timecost {} '.format(
             prompt[-100:-1], output_text, backend,
             time_finish - time_tokenizer))
-        return output_text, error
-
 
 def parse_args():
     """Parse command-line arguments."""
@@ -725,7 +764,7 @@ def llm_serve(config_path: str, server_ready: Value):
         history = input_json['history']
         backend = input_json['backend']
         # logger.debug(f'history: {history}')
-        text, error = server.generate_response(prompt=prompt,
+        text, error = server.chat(prompt=prompt,
                                                history=history,
                                                backend=backend)
         return web.json_response({'text': text, 'error': error})
