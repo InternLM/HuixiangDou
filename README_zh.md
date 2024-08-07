@@ -90,13 +90,13 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 - [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
 - [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
+- [浦语](https://internlm.openxlab.org.cn/)
 - [StepFun](https://platform.stepfun.com)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
 - [Xi-Api](https://api.xi-ai.cn)
-- [OpenAOE](https://github.com/InternLM/OpenAOE)
 
 </td>
 <td>

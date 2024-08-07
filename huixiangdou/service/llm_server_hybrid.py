@@ -11,18 +11,19 @@ import torch
 import pdb
 import pytoml
 import requests
-from aiohttp import web
 from loguru import logger
 from openai import OpenAI
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import asyncio
 from termcolor import colored
+from fastapi import FastAPI, APIRouter
+import uvicorn
+from typing import List
 
 def os_run(cmd: str):
     ret = os.popen(cmd)
     ret = ret.read().rstrip().lstrip()
     return ret
-
 
 def check_gpu_max_memory_gb():
     try:
@@ -224,7 +225,6 @@ class HybridLLMServer:
         if 'rpm' in self.server_config:
             _rpm = self.server_config['rpm']
         self.rpm = RPM(_rpm)
-        self.token = ('', 0)
 
         if self.enable_local:
             self.inference = InferenceWrapper(model_path)
@@ -232,130 +232,7 @@ class HybridLLMServer:
             self.inference = None
             logger.warning('local LLM disabled.')
 
-    def call_puyu(self, prompt, history):
-        url = 'https://puyu.openxlab.org.cn/puyu/api/v1/chat/completion'
-
-        now = time.time()
-        if int(now - self.token[1]) >= 1800:
-            logger.debug('refresh token {}'.format(time.time()))
-            self.token = (os_run('openxlab token'), time.time())
-
-        header = {
-            'Content-Type': 'application/json',
-            'Authorization': self.token[0]
-        }
-
-        logger.info('prompt length {}'.format(len(prompt)))
-        history = history[-4:]
-
-        messages = []
-        for item in history:
-            messages.append({'role': 'user', 'content': item[0]})
-            messages.append({'role': 'assistant', 'content': item[1]})
-        messages.append({'role': 'user', 'content': prompt})
-
-        data = {
-            'model': 'internlm2-102b-latest',
-            'messages': messages,
-            'n': 1,
-            'disable_report': False,
-            'top_p': 0.9,
-            'temperature': 0.8,
-            'request_output_len': 2048
-        }
-
-        output_text = ''
-        self.rpm.wait()
-
-        res_json = requests.post(url,
-                                 headers=header,
-                                 data=json.dumps(data),
-                                 timeout=120).json()
-        logger.debug(res_json)
-
-        # fix token
-        if 'msgCode' in res_json and res_json['msgCode'] == 'A0202':
-            # token error retry
-            logger.error('token error, try refresh')
-            self.token = (os_run('openxlab token'), time.time())
-            header = {
-                'Content-Type': 'application/json',
-                'Authorization': self.token[0]
-            }
-            res_json = requests.post(url,
-                                     headers=header,
-                                     data=json.dumps(data),
-                                     timeout=120).json()
-            logger.debug(res_json)
-
-        res_data = res_json['data']
-        if len(res_data) < 1:
-            logger.error('debug:')
-            logger.error(res_json)
-            return output_text
-        output_text = res_data['choices'][0]['text']
-
-        logger.info(res_json)
-        if '仩嗨亾笁潪能實験厔' in output_text:
-            raise Exception('internlm model waterprint !!!')
-        return output_text
-
-    def call_internlm(self, prompt, history):
-        """See https://internlm.intern-ai.org.cn/api/document for internlm
-        remote api."""
-        url = 'https://internlm-chat.intern-ai.org.cn/puyu/api/v1/chat/completions'
-
-        header = {
-            'Content-Type': 'application/json',
-            'Authorization': self.server_config['remote_api_key']
-        }
-
-        logger.info('prompt length {}'.format(len(prompt)))
-
-        messages = []
-        for item in history:
-            messages.append({'role': 'user', 'text': item[0]})
-            messages.append({'role': 'assistant', 'text': item[1]})
-        messages.append({'role': 'user', 'text': prompt})
-
-        data = {
-            'model': 'internlm2-latest',
-            'messages': messages,
-            'n': 1,
-            'disable_report': False,
-            'top_p': 0.9,
-            'temperature': 0.8,
-            'request_output_len': 2048
-        }
-
-        output_text = ''
-        self.rpm.wait()
-
-        res_json = requests.post(url,
-                                 headers=header,
-                                 data=json.dumps(data),
-                                 timeout=120).json()
-        logger.debug(res_json)
-        if 'msgCode' in res_json:
-            if res_json['msgCode'] == 'A0202':
-                logger.error(
-                    'Token error, check it starts with "Bearer " or not ?')
-                return ''
-
-        res_data = res_json['choices'][0]['message']['content']
-        logger.debug(res_json['choices'])
-        if len(res_data) < 1:
-            logger.error('debug:')
-            logger.error(res_json)
-            return output_text
-        output_text = res_data
-
-        logger.info(output_text)
-        if '仩嗨亾笁潪能實験厔' in output_text:
-            raise Exception('internlm model waterprint !!!')
-        return output_text
-
-    def call_kimi(self, prompt, history):
+    async def call_kimi(self, prompt, history):
         """Generate a response from Kimi (a remote LLM).
 
         Args:
@@ -395,14 +272,19 @@ class HybridLLMServer:
 
         logger.info('choose kimi model {}'.format(model))
 
-        completion = client.chat.completions.create(
+        stream = client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=0.0,
+            stream=True
         )
-        return completion.choices[0].message.content
 
-    def call_step(self, prompt, history):
+        for chunk in stream:
+            delta = chunk.choices[0].delta
+            if delta.content:
+                yield delta.content
+
+    async def call_step(self, prompt, history):
         """Generate a response from step, see
         https://platform.stepfun.com/docs/overview/quickstart.
 
@@ -441,16 +323,20 @@ class HybridLLMServer:
 
         logger.info('choose step model {}'.format(model))
 
-        completion = client.chat.completions.create(
+        stream = client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=0.0,
+            stream=True
         )
-        return completion.choices[0].message.content
+        for chunk in stream:
+            delta = chunk.choices[0].delta
+            if delta.content:
+                yield delta.content
 
-    def call_gpt(self,
-                 prompt,
-                 history,
+    async def call_openai(self,
+                 prompt: str,
+                 history: List,
                  base_url: str = None,
                  system: str = None):
         """Generate a response from openai API.
@@ -466,6 +352,8 @@ class HybridLLMServer:
             client = OpenAI(api_key=self.server_config['remote_api_key'],
                             base_url=base_url)
         else:
+            import pdb
+            pdb.set_trace()
             client = OpenAI(api_key=self.server_config['remote_api_key'])
 
         messages = build_messages(prompt=prompt,
@@ -473,123 +361,18 @@ class HybridLLMServer:
                                   system=system)
 
         logger.debug('remote api sending: {}'.format(messages))
-        completion = client.chat.completions.create(
+        stream = client.chat.completions.create(
             model=self.server_config['remote_llm_model'],
             messages=messages,
             temperature=0.0,
+            stream=True
         )
-        return completion.choices[0].message.content
-
-    def call_deepseek(self, prompt, history):
-        """Generate a response from deepseek (a remote LLM).
-
-        Args:
-            prompt (str): The prompt to send.
-            history (list): List of previous interactions.
-
-        Returns:
-            str: Generated response.
-        """
-        client = OpenAI(
-            api_key=self.server_config['remote_api_key'],
-            base_url='https://api.deepseek.com/v1',
-        )
-
-        messages = build_messages(
-            prompt=prompt,
-            history=history,
-            system='You are a helpful assistant')  # noqa E501
-
-        logger.debug('remote api sending: {}'.format(messages))
-        completion = client.chat.completions.create(
-            model=self.server_config['remote_llm_model'],
-            messages=messages,
-            temperature=0.1,
-        )
-        return completion.choices[0].message.content
-
-    def call_zhipuai(self, prompt, history):
-        """Generate a response from zhipuai (a remote LLM).
-
-        Args:
-            prompt (str): The prompt to send.
-            history (list): List of previous interactions.
-
-        Returns:
-            str: Generated response.
-        """
-        client = OpenAI(
-            api_key=self.server_config['remote_api_key'],
-            base_url='https://open.bigmodel.cn/api/paas/v4/',
-        )
-
-        messages = build_messages(prompt=prompt, history=history)  # noqa E501
-
-        logger.debug('remote api sending: {}'.format(messages))
-        completion = client.chat.completions.create(
-            model=self.server_config['remote_llm_model'],
-            messages=messages,
-            temperature=0.1,
-        )
-        return completion.choices[0].message.content
-
-    def call_alles_apin(self, prompt: str, history: list):
-        self.rpm.wait()
-
-        url = 'https://openxlab.org.cn/gw/alles-apin-hub/v1/openai/v2/text/chat'
-        headers = {
-            'content-type': 'application/json',
-            'alles-apin-token': self.server_config['remote_api_key']
-        }
-
-        messages = build_messages(prompt=prompt, history=history)
-
-        payload = {
-            'model': self.server_config['remote_llm_model'],
-            'messages': messages,
-            'temperature': 0.1
-        }
-        text = ''
-        response = requests.post(url,
-                                 headers=headers,
-                                 data=json.dumps(payload))
-
-        logger.debug(response.text)
-        resp_json = response.json()
-        if resp_json['msgCode'] == '10000':
-            data = resp_json['data']
-            if len(data['choices']) > 0:
-                text = data['choices'][0]['message']['content']
-
-        return text
-
-    def call_siliconcloud(self, prompt: str, history: list):
-        self.rpm.wait()
-
-        url = 'https://api.siliconflow.cn/v1/chat/completions'
-
-        token = self.server_config['remote_api_key']
-        if not token.startswith('Bearer '):
-            token = 'Bearer ' + token
-        headers = {
-            'content-type': 'application/json',
-            'accept': 'application/json',
-            'authorization': token
-        }
-
-        messages = build_messages(prompt=prompt, history=history)
-
-        payload = {
-            'model': self.server_config['remote_llm_model'],
-            'stream': False,
-            'messages': messages,
-            'temperature': 0.1
-        }
-        response = requests.post(url, json=payload, headers=headers)
-        logger.debug(response.text)
-        resp_json = response.json()
-        text = resp_json['choices'][0]['message']['content']
-        return text
+        for chunk in stream:
+            if chunk.choices is None:
+                raise Exception(str(chunk))
+            delta = chunk.choices[0].delta
+            if delta.content:
+                yield delta.content
 
     async def chat_stream(self, prompt, history=[], backend='local'):
         """Generate a response from the appropriate LLM based on the
@@ -621,60 +404,50 @@ class HybridLLMServer:
             it's essential to ensure reproducibility. Thus `GenerationMode.GREEDY_SEARCH`  # noqa E501
             must enabled."""
 
-            yield self.inference.chat(prompt, history)
+            async for value in self.inference.chat_stream(prompt, history):
+                yield value
 
         else:
             output_text = ''
             prompt = prompt[0:self.remote_max_length]
 
+            map_fn = {
+                'kimi': self.call_kimi,
+                'step': self.call_step,
+                'puyu': self.call_openai,
+                'deepseek': self.call_openai,
+                'zhipuai': self.call_openai,
+                'xi-api': self.call_openai,
+                'gpt': self.call_openai,
+                'siliconcloud': self.call_openai
+            }
+
+            map_base_url = {
+                'xi-api': 'https://api.xi-ai.cn/v1',
+                'deepseek': 'https://api.deepseek.com/v1',
+                'zhipuai': 'https://open.bigmodel.cn/api/paas/v4/',
+                'puyu': 'https://puyu.openxlab.org.cn/puyu/api/v1/',
+                'siliconcloud': 'https://api.siliconflow.cn/v1'
+            }
+
+            if backend not in map_fn:
+                raise ValueError('unknown backend {}'.format(backend))
+            
+            target_fn = map_fn[backend]
+            args = {'prompt': prompt, 'history': history}
+
+            if backend in map_base_url:
+                args['base_url'] = map_base_url[backend]
+
+            if backend in ['xi-api', 'deepseek']:
+                args['system'] = 'You are a helpful assistant.'
+
             life = 0
             while life < self.retry:
-
                 try:
-                    if backend == 'kimi':
-                        output_text = self.call_kimi(prompt=prompt,
-                                                     history=history)
-                    elif backend == 'deepseek':
-                        output_text = self.call_deepseek(prompt=prompt,
-                                                         history=history)
-                    elif backend == 'zhipuai':
-                        output_text = self.call_zhipuai(prompt=prompt,
-                                                        history=history)
-
-                    elif backend == 'step':
-                        output_text = self.call_step(prompt=prompt,
-                                                     history=history)
-
-                    elif backend == 'xi-api' or backend == 'gpt':
-                        base_url = None
-                        system = None
-                        if backend == 'xi-api':
-                            base_url = 'https://api.xi-ai.cn/v1'
-                            system = 'You are a helpful assistant.'
-                        output_text = self.call_gpt(prompt=prompt,
-                                                    history=history,
-                                                    base_url=base_url,
-                                                    system=system)
-
-                    elif backend == 'puyu':
-                        output_text = self.call_puyu(prompt=prompt,
-                                                     history=history)
-
-                    elif backend == 'internlm':
-                        output_text = self.call_internlm(prompt=prompt,
-                                                         history=history)
-
-                    elif backend == 'alles-apin':
-                        output_text = self.call_alles_apin(prompt=prompt,
-                                                           history=history)
-                    elif backend == 'siliconcloud':
-                        output_text = self.call_siliconcloud(prompt=prompt,
-                                                             history=history)
-
-                    else:
-                        error = 'unknown backend {}'.format(backend)
-                        logger.error(error)
-
+                    self.rpm.wait()
+                    async for value in target_fn(**args):
+                        yield value                     
                     # skip retry
                     break
 
@@ -683,16 +456,13 @@ class HybridLLMServer:
                     error = str(e)
                     logger.error(error)
 
-                    if 'Error code: 401' in error or 'invalid api_key' in error:
-                        break
+                    if 'Error code: 401' in error or 'invalid api_key' in error or 'Authentication Fails' in error:
+                        raise e
 
                     life += 1
                     randval = random.randint(1, int(pow(2, life)))
                     time.sleep(randval)
 
-                    if backend == 'puyu':
-                        # for puyu API, refresh token
-                        self.token = (os_run('openxlab token'), time.time())
             yield output_text
 
     def chat(self, prompt: str, history=[], backend:str='local'):
@@ -706,17 +476,26 @@ class HybridLLMServer:
             str: Generated response.
         """
         time_tokenizer = time.time()
-        messages = []
         loop = asyncio.get_event_loop()
-        for message in loop.run_until_complete(self.chat_stream(prompt=prompt, history=history, backend=backend)):
-            messages.append(message)
+        
+        async def coroutine_wrapper():
+            messages = []
+            async for part in self.chat_stream(prompt=prompt, history=history, backend=backend):
+                messages.append(part)
+                print(part, end='')
+            return ''.join(messages)
 
-        output_text = ''.join(messages)
+        try:
+            output_text = loop.run_until_complete(coroutine_wrapper())
+        except Exception as e:
+            return '', e
+
         time_finish = time.time()
 
         logger.debug('Q:{} A:{} \t\t backend {} timecost {} '.format(
             prompt[-100:-1], output_text, backend,
             time_finish - time_tokenizer))
+        return output_text, None
 
 def parse_args():
     """Parse command-line arguments."""
@@ -769,9 +548,26 @@ def llm_serve(config_path: str, server_ready: Value):
                                                backend=backend)
         return web.json_response({'text': text, 'error': error})
 
-    app = web.Application()
-    app.add_routes([web.post('/inference', inference)])
-    web.run_app(app, host='0.0.0.0', port=bind_port)
+    async def stream_chat(request):
+        """Call local llm inference."""
+
+        input_json = await request.json()
+        # logger.debug(input_json)
+
+        prompt = input_json['prompt']
+        history = input_json['history']
+        backend = input_json['backend']
+        # logger.debug(f'history: {history}')
+        # async for text, error in server.chat_stream(prompt=prompt, history=history, backend=backend)
+
+        return web.json_response({'text': text, 'error': error})
+
+    app = FastAPI()
+    router = APIRouter()
+    router.add_api_route('/inference', inference, methods='POST')
+    router.add_api_route('/stream_chat', stream_chat, methods='POST')
+    app.include_router(router)
+    uvicorn.run(app, host='0.0.0.0', port=bind_port, log_level='info')
 
 
 def start_llm_server(config_path: str):
