@@ -9,6 +9,7 @@ import pytoml
 import requests
 from aiohttp import web
 from loguru import logger
+from termcolor import colored
 
 from .service import ErrorCode, Worker, build_reply_text, start_llm_server
 
@@ -59,7 +60,12 @@ def check_env(args):
 
 
 def show(assistant, fe_config: dict):
+    
     queries = ['请问如何安装 mmpose ?', '请问明天天气如何？']
+    print(colored('Running some examples..', 'yellow'))
+    for query in queries:
+        print(colored('[Example]' + query, 'yellow'))
+
     for query in queries:
         code, reply, refs = assistant.generate(query=query,
                                                history=[],
@@ -80,6 +86,18 @@ def show(assistant, fe_config: dict):
             logger.info(f'send {reply} and {refs} to lark group.')
             lark.send_text(msg=reply_text)
 
+    while True:
+        user_input = input("🔆 Input your question here, type `bye` for exit:\n")
+        if 'bye' in user_input:
+            break
+
+        code, reply, refs = assistant.generate(query=user_input, history=[], groupname='')
+        reply_text = build_reply_text(code=code,
+                                      query=user_input,
+                                      reply=reply,
+                                      refs=refs,
+                                      max_len=300)
+        print('\n' + reply_text)
 
 def lark_group_recv_and_send(assistant, fe_config: dict):
     from .frontend import (is_revert_command, revert_from_lark_group,
