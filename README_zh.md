@@ -90,13 +90,13 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 - [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
 - [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
+- [浦语](https://internlm.openxlab.org.cn/)
 - [StepFun](https://platform.stepfun.com)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
 - [Xi-Api](https://api.xi-ai.cn)
-- [OpenAOE](https://github.com/InternLM/OpenAOE)
 
 </td>
 <td>
@@ -114,7 +114,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 <td>
 
 - [知识图谱](./docs/knowledge_graph_zh.md)
-- [联网搜索](https://github.com/FlagOpen/FlagEmbedding)
+- [联网搜索](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - 图文混合（仅 markdown）
 
@@ -143,7 +143,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 |                     配置示例                     | 显存需求 |                                                                                 描述                                                                                 |                             Linux 系统已验证设备                              |
 | :----------------------------------------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-|         [config-2G.ini](./config-2G.ini)         |   2GB    | 用 openai API</a>（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [silicon cloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|         [config-2G.ini](./config-2G.ini)         |   2GB    | 用 openai API（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage)、[stepfun](https://platform.stepfun.com/) 和 [siliconcloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |   10GB   |                                                                    用 openai API 做 LLM，图文检索                                                                    | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |       【标准版】[config.ini](./config.ini)       |   19GB   |                                                                         本地部署 LLM，单模态                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |   [config-advanced.ini](./config-advanced.ini)   |   80GB   |                                                                本地 LLM，指代消歧，单模态，微信群实用                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
@@ -200,6 +200,8 @@ python3 -m huixiangdou.main --standalone
 --------------------------------------------------------------------------------------
 | 今天天气如何？          | unrelated| ..                            |                 |
 +-----------------------+---------+--------------------------------+-----------------+
+🔆 Input your question here, type `bye` for exit:
+..
 ```
 
 > \[!NOTE\]
@@ -210,10 +212,20 @@ python3 -m huixiangdou.main --standalone
 
 <br/>
 
-也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口
+💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
 
 ```bash
-python3 -m tests.test_query_gradio
+python3 -m huixiangdou.gradio
+```
+
+或者启动服务端，监听 23333 端口：
+```bash
+python3 -m huixiangdou.server
+
+# cURL 测试状态回调接口
+curl -X POST http://127.0.0.1:23333/huixiangdou_stream  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'
+# cURL 测试同步接口
+curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'
 ```
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。

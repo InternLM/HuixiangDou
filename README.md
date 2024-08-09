@@ -91,13 +91,13 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 - [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
 - [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
+- [puyu](https://internlm.openxlab.org.cn/)
 - [StepFun](https://platform.stepfun.com)
 - [KIMI](https://kimi.moonshot.cn)
 - [DeepSeek](https://www.deepseek.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
 - [Xi-Api](https://api.xi-ai.cn)
-- [OpenAOE](https://github.com/InternLM/OpenAOE)
 
 </td>
 <td>
@@ -115,7 +115,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 <td>
 
 - [Knowledge Graph](./docs/knowledge_graph_en.md)
-- [Internet Search](https://github.com/FlagOpen/FlagEmbedding)
+- [Internet Search](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - Image and text (only markdown)
 
@@ -145,7 +145,7 @@ The following are the GPU memory requirements for different features, the differ
 
 |              Configuration Example               | GPU mem Requirements |                                                                                   Description                                                                                   |                       Verified Devices on Linux System                        |
 | :----------------------------------------------: | :------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [silicon cloud](https://siliconflow.cn/)) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage), [stepfun](https://platform.stepfun.com/) and [siliconcloud](https://siliconflow.cn/)) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |         10GB         |                                                                Use openai API for LLM, image and text retrieval                                                                 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | \[Standard Edition\] [config.ini](./config.ini)  |         19GB         |                                                                    Local deployment of LLM, single modality                                                                     | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |   [config-advanced.ini](./config-advanced.ini)   |         80GB         |                                                   local LLM, anaphora resolution, single modality, practical for WeChat group                                                   | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
@@ -202,6 +202,8 @@ python3 -m huixiangdou.main --standalone
 --------------------------------------------------------------------------------------
 | How is the weather today? | unrelated.. | ..                     |                 |
 +-----------------------+---------+--------------------------------+-----------------+
+🔆 Input your question here, type `bye` for exit:
+..
 ```
 
 > \[!NOTE\]
@@ -212,11 +214,28 @@ python3 -m huixiangdou.main --standalone
 
 <br/>
 
-Also run a simple Web UI with `gradio`:
+💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
+
+```bash
+python3 -m huixiangdou.gradio
+```
+
+💡 Also run a simple Web UI with `gradio`:
 
 ```bash
 python3 -m tests.test_query_gradio
 ```
+
+Or run a server to listen 23333:
+```bash
+python3 -m huixiangdou.server
+
+# test async API 
+curl -X POST http://127.0.0.1:23333/huixiangdou_stream  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'
+# cURL sync API
+curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'
+```
+
 
 Please update the `repodir` documents, [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, financial, power, etc.).
 

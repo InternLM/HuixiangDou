@@ -1,4 +1,5 @@
 from huixiangdou.service.llm_client import ChatClient
+from huixiangdou.service.llm_server_hybrid import start_llm_server
 
 
 def test_auto_fix():
@@ -21,3 +22,8 @@ def test_auto_fix():
     assert real_backend == 'local'
     real_backend, max_len = client.auto_fix(backend='kimi')
     assert real_backend != 'local'
+
+def test_llm_client_stream():
+    start_llm_server('config.ini')
+
+    
