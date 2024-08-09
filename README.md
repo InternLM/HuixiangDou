@@ -115,7 +115,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 <td>
 
 - [Knowledge Graph](./docs/knowledge_graph_en.md)
-- [Internet Search](https://github.com/FlagOpen/FlagEmbedding)
+- [Internet Search](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - Image and text (only markdown)
 
@@ -145,7 +145,7 @@ The following are the GPU memory requirements for different features, the differ
 
 |              Configuration Example               | GPU mem Requirements |                                                                                   Description                                                                                   |                       Verified Devices on Linux System                        |
 | :----------------------------------------------: | :------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [silicon cloud](https://siliconflow.cn/)) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage), [stepfun](https://platform.stepfun.com/) and [siliconcloud](https://siliconflow.cn/)) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |         10GB         |                                                                Use openai API for LLM, image and text retrieval                                                                 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | \[Standard Edition\] [config.ini](./config.ini)  |         19GB         |                                                                    Local deployment of LLM, single modality                                                                     | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |   [config-advanced.ini](./config-advanced.ini)   |         80GB         |                                                   local LLM, anaphora resolution, single modality, practical for WeChat group                                                   | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |

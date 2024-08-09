@@ -12,7 +12,6 @@ from loguru import logger
 from huixiangdou.primitive import Query
 from huixiangdou.service import ErrorCode, Worker, llm_serve, start_llm_server
 
-
 def parse_args():
     """Parse args."""
     parser = argparse.ArgumentParser(description='Worker.')
@@ -73,5 +72,5 @@ if __name__ == '__main__':
         run_button.click(fn=get_reply,
                          inputs=[input_question, input_image],
                          outputs=result)
-
+    logger.warning('This file would move to `huixiangdou.gradio`')
     demo.launch(share=False, server_name='0.0.0.0', debug=True)

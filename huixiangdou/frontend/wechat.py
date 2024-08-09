@@ -805,11 +805,13 @@ class WkteamManager:
                         groupchats = self.fetch_groupchats(user=user)
                         tuple_history = convert_history_to_tuple(
                             user.history[0:-1])
-                        code, resp, refs = worker.generate(
+
+                        for sess in worker.generate(
                             query=query,
                             history=tuple_history,
                             groupname=groupname,
-                            groupchats=groupchats)
+                            groupchats=groupchats):
+                            code, resp, refs = sess.code, sess.response, sess.references
 
                     # user history may affect normal conversation, so delete last query
                     user.last_process_time = time.time()
