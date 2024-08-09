@@ -200,6 +200,8 @@ python3 -m huixiangdou.main --standalone
 --------------------------------------------------------------------------------------
 | 今天天气如何？          | unrelated| ..                            |                 |
 +-----------------------+---------+--------------------------------+-----------------+
+🔆 Input your question here, type `bye` for exit:
+..
 ```
 
 > \[!NOTE\]
@@ -210,10 +212,20 @@ python3 -m huixiangdou.main --standalone
 
 <br/>
 
-也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口
+💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
 
 ```bash
-python3 -m tests.test_query_gradio
+python3 -m huixiangdou.gradio
+```
+
+或者启动服务端，监听 23333 端口：
+```bash
+python3 -m huixiangdou.server
+
+# cURL 测试状态回调接口
+curl -X POST http://127.0.0.1:23333/huixiangdou_stream  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'
+# cURL 测试同步接口
+curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'
 ```
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。

@@ -202,6 +202,8 @@ python3 -m huixiangdou.main --standalone
 --------------------------------------------------------------------------------------
 | How is the weather today? | unrelated.. | ..                     |                 |
 +-----------------------+---------+--------------------------------+-----------------+
+🔆 Input your question here, type `bye` for exit:
+..
 ```
 
 > \[!NOTE\]
@@ -212,11 +214,28 @@ python3 -m huixiangdou.main --standalone
 
 <br/>
 
-Also run a simple Web UI with `gradio`:
+💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
+
+```bash
+python3 -m huixiangdou.gradio
+```
+
+💡 Also run a simple Web UI with `gradio`:
 
 ```bash
 python3 -m tests.test_query_gradio
 ```
+
+Or run a server to listen 23333:
+```bash
+python3 -m huixiangdou.server
+
+# test async API 
+curl -X POST http://127.0.0.1:23333/huixiangdou_stream  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'
+# cURL sync API
+curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'
+```
+
 
 Please update the `repodir` documents, [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, financial, power, etc.).
 

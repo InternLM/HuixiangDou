@@ -67,9 +67,10 @@ def show(assistant, fe_config: dict):
         print(colored('[Example]' + query, 'yellow'))
 
     for query in queries:
-        code, reply, refs = assistant.generate(query=query,
-                                               history=[],
-                                               groupname='')
+        for sess in assistant.generate(query=query, history=[], groupname=''):
+            pass
+
+        code, reply, refs = str(sess.code), sess.response, sess.references
         reply_text = build_reply_text(code=code,
                                       query=query,
                                       reply=reply,
@@ -91,7 +92,10 @@ def show(assistant, fe_config: dict):
         if 'bye' in user_input:
             break
 
-        code, reply, refs = assistant.generate(query=user_input, history=[], groupname='')
+        for sess in assistant.generate(query=user_input, history=[], groupname=''):
+            pass
+        code, reply, refs = str(sess.code), sess.response, sess.references
+
         reply_text = build_reply_text(code=code,
                                       query=user_input,
                                       reply=reply,
@@ -133,9 +137,9 @@ def lark_group_recv_and_send(assistant, fe_config: dict):
             sent_msg_ids = []
             continue
 
-        code, reply, references = assistant.generate(query=query,
-                                                     history=[],
-                                                     groupname='')
+        for sess in assistant.generate(query=query, history=[], groupname=''):
+            pass
+        code, reply, refs = str(sess.code), sess.response, sess.references
         if code == ErrorCode.SUCCESS:
             json_obj['reply'] = build_reply_text(reply=reply,
                                                  references=references)
@@ -162,9 +166,9 @@ def wechat_personal_run(assistant, fe_config: dict):
         if type(query) is dict:
             query = query['content']
 
-        code, reply, references = assistant.generate(query=query,
-                                                     history=[],
-                                                     groupname='')
+        for sess in assistant.generate(query=query, history=[], groupname=''):
+            pass
+        code, reply, refs = str(sess.code), sess.response, sess.references
         reply_text = build_reply_text(reply=reply, references=references)
 
         return web.json_response({'code': int(code), 'reply': reply_text})
