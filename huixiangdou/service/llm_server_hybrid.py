@@ -6,7 +6,7 @@ import os
 import random
 import time
 from datetime import datetime, timedelta
-from multiprocessing import Process, Value
+from multiprocessing import Process, Value, set_start_method
 import torch
 import pdb
 import pytoml
@@ -581,6 +581,7 @@ def llm_serve(config_path: str, server_ready: Value):
 
 
 def start_llm_server(config_path: str):
+    set_start_method('spawn')
     server_ready = Value('i', 0)
     server_process = Process(target=llm_serve,
                              args=(config_path, server_ready))
