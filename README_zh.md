@@ -292,7 +292,6 @@ reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
 
 - 要手动下载 [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) 到 [bge-m3](https://huggingface.co/BAAI/bge-m3) 目录下
 - FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
-- 安装 [requirements-multimodal.txt](./requirements-multimodal.txt)
 
 运行 gradio 测试，图文检索效果见[这里](https://github.com/InternLM/HuixiangDou/pull/326).
 
