@@ -151,8 +151,12 @@ class Faiss():
         faiss.write_index(index, str(path / 'embedding.faiss'))
 
         # save chunks
-        with open(path / 'chunk.pkl', 'wb') as f:
-            pickle.dump(chunks, f)
+        data = {
+            'chunks': chunks,
+            'strategy': str(embedder.distance_strategy)
+        }
+        with open(path / 'chunks_and_strategy.pkl', 'wb') as f:
+            pickle.dump(data, f)
 
     @classmethod
     def load_local(cls, folder_path: str) -> FAISS:
@@ -168,15 +172,17 @@ class Faiss():
         index = faiss.read_index(str(path / f'embedding.faiss'))
         strategy = DistanceStrategy.UNKNOWN
         
-        if type(index) is faiss.IndexFlatL2:
-            strategy = DistanceStrategy.EUCLIDEAN_DISTANCE
-        elif type(index) is faiss.IndexFlatIP:
-            strategy = DistanceStrategy.MAX_INNER_PRODUCT
-        else:
-            raise ValueError('Cannot decide self.index type {}, open https://github.com/InternLM/HuixiangDou/issues/346 for hotfix'.format(type(index)))
-
         # load docstore
-        with open(path / f'chunk.pkl', 'rb') as f:
-            chunks = pickle.load(f)
+        with open(path / f'chunks_and_strategy.pkl', 'rb') as f:
+            data = pickle.load(f)
+            chunks = data['chunks']
+            strategy_str = data['strategy']
+
+            if 'EUCLIDEAN_DISTANCE' in strategy_str:
+                strategy = DistanceStrategy.EUCLIDEAN_DISTANCE
+            elif 'MAX_INNER_PRODUCT' in strategy_str:
+                strategy = DistanceStrategy.MAX_INNER_PRODUCT
+            else:
+                raise ValueError('Unknown strategy type {}'.format(strategy_str))
 
         return cls(index, chunks, strategy)
