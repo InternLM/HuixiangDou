@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import time
+import pdb
 from multiprocessing import Process, Value
 
 import cv2
@@ -11,6 +12,7 @@ from loguru import logger
 
 from huixiangdou.primitive import Query
 from huixiangdou.service import ErrorCode, Worker, llm_serve, start_llm_server
+
 
 def parse_args():
     """Parse args."""
@@ -28,11 +30,14 @@ def parse_args():
                         action='store_true',
                         default=True,
                         help='Auto deploy required Hybrid LLM Service.')
+    parser.add_argument('--no-standalone',
+                        action='store_false',
+                        dest='standalone',  # 指定与上面参数相同的目标
+                        help='Do not auto deploy required Hybrid LLM Service.')
     args = parser.parse_args()
     return args
 
-
-def get_reply(text, image):
+def predict(text, image):
     if image is not None:
         filename = 'image.png'
         image_path = os.path.join(args.work_dir, filename)
@@ -43,16 +48,21 @@ def get_reply(text, image):
     assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
     query = Query(text, image_path)
 
-    code, reply, references = assistant.generate(query=query,
-                                                 history=[],
-                                                 groupname='')
-    ret = dict()
-    ret['text'] = str(reply)
-    ret['code'] = int(code)
-    ret['references'] = references
+    pipeline = {'step': []}
+    debug = dict()
+    for sess in assistant.generate(query=query, history=[], groupname=''):
+        status = {
+            "state":str(sess.code),
+            "response": sess.response,
+            "refs": sess.references
+        }
 
-    return json.dumps(ret, indent=2, ensure_ascii=False)
+        print(status)
+        pipeline['step'].append(status)
+        pipeline['debug'] = sess.debug
 
+        json_str = json.dumps(pipeline, indent=2, ensure_ascii=False)
+        yield json_str
 
 if __name__ == '__main__':
     args = parse_args()
@@ -64,13 +74,13 @@ if __name__ == '__main__':
 
     with gr.Blocks() as demo:
         with gr.Row():
-            input_question = gr.Textbox(label='Input the question.')
+            input_question = gr.TextArea(label='Input the question.')
             input_image = gr.Image(label='Upload Image.')
-            with gr.Column():
-                result = gr.Textbox(label='Generate response.')
-                run_button = gr.Button()
-        run_button.click(fn=get_reply,
-                         inputs=[input_question, input_image],
-                         outputs=result)
-    logger.warning('This file would move to `huixiangdou.gradio`')
+        with gr.Row():
+            run_button = gr.Button()
+        with gr.Row():
+            result = gr.TextArea(label='HuixiangDou pipline status', show_copy_button=True)
+        run_button.click(predict, [input_question, input_image], [result])
+
+    demo.queue()
     demo.launch(share=False, server_name='0.0.0.0', debug=True)

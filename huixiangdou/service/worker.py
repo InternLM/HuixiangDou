@@ -6,8 +6,9 @@ import json
 import os
 import re
 import time
+import pdb
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Generator
 
 import pytoml
 from loguru import logger
@@ -32,6 +33,7 @@ class Session:
                  groupname: str,
                  log_path: str = 'logs/generate.jsonl',
                  groupchats: list = []):
+        self.stage = 'init'
         self.query = query
         self.history = history
         self.groupname = groupname
@@ -75,7 +77,7 @@ class Node(ABC):
     """Base abstractfor compute graph."""
 
     @abstractmethod
-    def process(self, sess: Session):
+    def process(self, sess: Session) -> Generator[Session, None, None]:
         pass
 
 
@@ -102,10 +104,12 @@ class PreprocNode(Node):
             self.CR_NEED = CR_NEED_EN
             self.CR = CR_EN
 
-    def process(self, sess: Session):
+    def process(self, sess: Session) -> Generator[Session, None, None]:
         # check input
+        sess.stage = str(type(self).__name__)
         if sess.query.text is None or len(sess.query.text) < 6:
             sess.code = ErrorCode.QUESTION_TOO_SHORT
+            yield sess
             return
 
         prompt = self.SCORING_QUESTION_TEMPLTE.format(sess.query.text)
@@ -116,13 +120,16 @@ class PreprocNode(Node):
         sess.debug['PreprocNode_is_question'] = logs
         if not truth:
             sess.code = ErrorCode.NOT_A_QUESTION
+            yield sess
             return
 
         if not self.enable_cr:
+            yield sess
             return
 
         if len(sess.groupchats) < 1:
             logger.debug('history conversation empty, skip CR')
+            yield sess
             return
 
         talks = []
@@ -152,6 +159,7 @@ class PreprocNode(Node):
             response = completion.choices[0].message.content.lower()
         except Exception as e:
             logger.error(str(e))
+            yield sess
             return
         sess.debug['PreprocNode_need_cr'] = response
         need_cr = False
@@ -165,6 +173,7 @@ class PreprocNode(Node):
                     break
 
         if not need_cr:
+            yield sess
             return
 
         prompt = self.CR.format(talk_str, sess.query.text)
@@ -206,9 +215,10 @@ class Text2vecNode(Node):
         self.max_length = self.context_max_length - 2 * len(
             self.GENERATE_TEMPLATE)
 
-    def process(self, sess: Session):
+    def process(self, sess: Session) -> Generator[Session, None, None]:
         """Try get reply with text2vec & rerank model."""
 
+        sess.stage = str(type(self).__name__)
         # get query topic
         prompt = self.TOPIC_TEMPLATE.format(sess.query.text)
         sess.topic = self.llm.generate_response(prompt)
@@ -220,6 +230,7 @@ class Text2vecNode(Node):
         if len(sess.topic) < 2:
             # topic too short, return
             sess.code = ErrorCode.NO_TOPIC
+            yield sess
             return
 
         # retrieve from knowledge base
@@ -229,7 +240,10 @@ class Text2vecNode(Node):
         sess.debug['Text2vecNode_chunk'] = sess.chunk
         if sess.knowledge is None:
             sess.code = ErrorCode.UNRELATED
+            yield sess
             return
+
+        yield sess
 
         # get relavance between query and knowledge base
         prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
@@ -240,6 +254,7 @@ class Text2vecNode(Node):
                                default=10)
         sess.debug['Text2vecNode_chunk_relavance'] = logs
         if not truth:
+            yield sess
             return
 
         # answer the question
@@ -251,7 +266,7 @@ class Text2vecNode(Node):
 
         sess.code = ErrorCode.SUCCESS
         sess.response = response
-        return
+        yield sess
 
 
 class WebSearchNode(Node):
@@ -279,11 +294,14 @@ class WebSearchNode(Node):
         self.max_length = self.context_max_length - 2 * len(
             self.GENERATE_TEMPLATE)
 
-    def process(self, sess: Session):
+    def process(self, sess: Session) -> Generator[Session, None, None]:
         """Try web search."""
+        
         if not self.enable:
             logger.debug('disable web_search')
+            yield sess
             return
+        sess.stage = str(type(self).__name__)
 
         engine = WebSearch(config_path=self.config_path)
 
@@ -294,6 +312,7 @@ class WebSearchNode(Node):
 
         if error is not None:
             sess.code = ErrorCode.WEB_SEARCH_FAIL
+            yield sess
             return
 
         for article_id, article in enumerate(articles):
@@ -315,6 +334,7 @@ class WebSearchNode(Node):
         sess.web_knowledge = sess.web_knowledge[0:self.max_length].strip()
         if len(sess.web_knowledge) < 1:
             sess.code = ErrorCode.NO_SEARCH_RESULT
+            yield sess
             return
 
         prompt = self.GENERATE_TEMPLATE.format(sess.web_knowledge,
@@ -324,7 +344,7 @@ class WebSearchNode(Node):
                                                    history=sess.history,
                                                    backend='remote')
         sess.code = ErrorCode.SUCCESS
-
+        yield sess
 
 class SGSearchNode(Node):
     """SGSearchNode is for retrieve from source graph."""
@@ -341,15 +361,18 @@ class SGSearchNode(Node):
         else:
             self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
 
-    def process(self, sess: Session):
+    def process(self, sess: Session) -> Generator[Session, None, None]:
         """Try get reply with source graph."""
 
         if not self.enable:
             logger.debug('disable sg_search')
+            yield sess
             return
+        sess.stage = str(type(self).__name__)
 
         # if exit for other status (SECURITY or SEARCH_FAIL), still quit `sg_search`
         if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT and sess.code != ErrorCode.WEB_SEARCH_FAIL:
+            yield sess
             return
 
         sg = SourceGraphProxy(config_path=self.config_path,
@@ -361,6 +384,7 @@ class SGSearchNode(Node):
         sess.debug['SGSearchNode_knowledge'] = sess.sg_knowledge
         if sess.sg_knowledge is None or len(sess.sg_knowledge) < 1:
             sess.code = ErrorCode.SG_SEARCH_FAIL
+            yield sess
             return
 
         prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge,
@@ -371,9 +395,10 @@ class SGSearchNode(Node):
                                                    backend='remote')
         if sess.response is None or len(sess.response) < 1:
             sess.code = ErrorCode.LLM_NOT_RESPONSE_SG
+            yield sess
             return
         sess.code = ErrorCode.SUCCESS
-
+        yield sess
 
 class SecurityNode(Node):
     """SecurityNode is for result check."""
@@ -387,10 +412,13 @@ class SecurityNode(Node):
             self.PERPLESITY_TEMPLATE = PERPLESITY_TEMPLATE_EN
             self.SECURITY_TEMAPLTE = SECURITY_TEMAPLTE_EN
 
-    def process(self, sess: Session):
+    def process(self, sess: Session) -> Generator[Session, None, None]:
         """Check result with security."""
+        sess.stage = str(type(self).__name__)
+
         if len(sess.response) < 1:
             sess.code = ErrorCode.BAD_ANSWER
+            yield sess
             return
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query.text,
                                                  sess.response)
@@ -401,6 +429,7 @@ class SecurityNode(Node):
         sess.debug['SecurityNode_qa_perplex'] = logs
         if truth:
             sess.code = ErrorCode.BAD_ANSWER
+            yield sess
             return
 
         prompt = self.SECURITY_TEMAPLTE.format(sess.response)
@@ -411,7 +440,7 @@ class SecurityNode(Node):
         sess.debug['SecurityNode_template'] = logs
         if truth:
             sess.code = ErrorCode.SECURITY
-            return
+            yield sess
 
 
 class Worker:
@@ -516,9 +545,10 @@ class Worker:
             groupchats (List[str]): The history conversation in group before user query.
 
         Returns:
-            ErrorCode: An error code indicating the status of response generation.  # noqa E501
-            str: Generated response to the user query.
-            references: List for referenced filename or web url
+            Session: Sync generator, this function would yield session which contains:
+                ErrorCode: An error code indicating the status of response generation.  # noqa E501
+                str: Generated response to the user query.
+                references: List for referenced filename or web url
         """
         # format input
         if type(query) is str:
@@ -548,22 +578,25 @@ class Worker:
             ErrorCode.NO_TOPIC, ErrorCode.UNRELATED
         ]
         for node in pipeline:
-            node.process(sess)
+
+            for sess in node.process(sess):
+                yield sess
 
             # unrelated to knowledge base or bad input, exit
             if sess.code in exit_states:
                 break
 
             if sess.code == ErrorCode.SUCCESS:
-                check.process(sess)
+                for sess in check.process(sess):
+                    yield sess
 
             # check success, return
             if sess.code == ErrorCode.SUCCESS:
                 break
 
         logger.debug(sess.debug)
-        return sess.code, sess.response, sess.references
-
+        return sess
+        # return sess.code, sess.response, sess.references
 
 def parse_args():
     """Parses command-line arguments."""

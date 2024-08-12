@@ -30,5 +30,6 @@
     "那这里的mmdet的配置文件demo/topdown_demo_with_mmdet.py就不需要换吗，他里边的配置不是训练mmdet的配置吗，我觉得是不是要换一个新的py配置文件，然后调用yolo",
     "怎么训练llm",
     "哪种目标检测算法适合小目标",
-    "OpenCompass 大模型数据集评估分数查询"
+    "OpenCompass 大模型数据集评估分数查询",
+    "把某专业标准类知识pdf格式，如何创建成向量数据库？"
   ]

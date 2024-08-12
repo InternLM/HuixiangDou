@@ -31,3 +31,5 @@ transformers>=4.38
 transformers_stream_generator
 unstructured
 sentence_transformers
+fastapi
+uvicorn

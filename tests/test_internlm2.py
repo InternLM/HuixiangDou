@@ -1,14 +1,24 @@
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import asyncio
 
-model_path = '/internlm/ampere_7b_v1_7_0'
+# wrap to async generator
+async def chat_stream():
+    model_path = "/data2/khj/internlm2_5-7b-chat"
+    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, trust_remote_code=True).cuda()
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
-tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(model_path,
-                                             trust_remote_code=True,
-                                             device_map='auto',
-                                             torch_dtype='auto').eval()
+    model = model.eval()
+    length = 0
+    for response, history in model.stream_chat(tokenizer, "Hello", history=[]):
+        part = response[length:]
+        length = len(response)
+        yield part
+    yield '\n'
 
-queries = ['how to install mmdeploy ?']
-for query in queries:
-    output_text, _ = model.chat(tokenizer, query, top_k=1, do_sample=False)
-    print(query, output_text)
+# coroutine
+async def main():
+    async for part in chat_stream():
+        print(part, flush=True, end="")
+
+asyncio.run(main())
