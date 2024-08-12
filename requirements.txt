@@ -33,3 +33,10 @@ unstructured
 sentence_transformers
 fastapi
 uvicorn
+einops
+ftfy
+opencv-python-headless
+timm
+torchvision
+
+# donot install xformer and apex
