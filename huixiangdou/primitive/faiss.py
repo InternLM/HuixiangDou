@@ -19,22 +19,14 @@ from .query import Query, DistanceStrategy
 
 # heavily modified from langchain
 def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
-    """Import faiss if available, otherwise raise error. If FAISS_NO_AVX2
-    environment variable is set, it will be considered to load FAISS with no
-    AVX2 optimization.
+    """Import faiss if available, otherwise raise error.
 
     Args:
         no_avx2: Load FAISS strictly with no AVX2 optimization
             so that the vectorstore is portable and compatible with other devices.
     """
-    if no_avx2 is None and 'FAISS_NO_AVX2' in os.environ:
-        no_avx2 = bool(os.getenv('FAISS_NO_AVX2'))
-
     try:
-        if no_avx2:
-            from faiss import swigfaiss as faiss
-        else:
-            import faiss
+        import faiss
     except ImportError:
         raise ImportError(
             'Could not import faiss python package. '
@@ -181,7 +173,7 @@ class Faiss():
         elif type(index) is faiss.IndexFlatIP:
             strategy = DistanceStrategy.MAX_INNER_PRODUCT
         else:
-            raise ValueError('Cannot decide self.index type')
+            raise ValueError('Cannot decide self.index type {}, open https://github.com/InternLM/HuixiangDou/issues/346 for hotfix'.format(type(index)))
 
         # load docstore
         with open(path / f'chunk.pkl', 'rb') as f:

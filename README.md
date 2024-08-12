@@ -302,7 +302,6 @@ Note:
 
 - You need to manually download [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) to the [bge-m3](https://huggingface.co/BAAI/bge-m3) directory
 - Install FlagEmbedding on main branch, we have made [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
-- Install [requirements-multimodal.txt](./requirements-multimodal.txt)
 
 Run gradio to test, see the image and text retrieval result [here](https://github.com/InternLM/HuixiangDou/pull/326).
 
