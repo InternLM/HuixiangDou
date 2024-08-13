@@ -11,12 +11,12 @@ from aiohttp import web
 from loguru import logger
 from termcolor import colored
 
-from .service import ErrorCode, Worker, build_reply_text, start_llm_server
+from .service import ErrorCode, SerialPipeline, build_reply_text, start_llm_server
 
 
 def parse_args():
     """Parse args."""
-    parser = argparse.ArgumentParser(description='Worker.')
+    parser = argparse.ArgumentParser(description='SerialPipeline.')
     parser.add_argument('--work_dir',
                         type=str,
                         default='workdir',
@@ -25,7 +25,7 @@ def parse_args():
         '--config_path',
         default='config.ini',
         type=str,
-        help='Worker configuration path. Default value is config.ini')
+        help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
                         action='store_true',
                         default=False,
@@ -191,7 +191,7 @@ def run():
     with open(args.config_path, encoding='utf8') as f:
         fe_config = pytoml.load(f)['frontend']
     logger.info('Config loaded.')
-    assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
+    assistant = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
 
     fe_type = fe_config['type']
     if fe_type == 'none':

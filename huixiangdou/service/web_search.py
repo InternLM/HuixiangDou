@@ -138,6 +138,7 @@ class WebSearch:
             content = content.replace('  ', ' ')
 
             if not check_str_useful(content=content):
+                return None
                 logger.info('retry with chromium {}'.format(target_link))
                 nest_asyncio.apply()
                 content = asyncio.get_event_loop().run_until_complete(

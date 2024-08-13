@@ -8,7 +8,7 @@ from aiohttp import web
 from loguru import logger
 from termcolor import colored
 
-from .service import ErrorCode, Worker, start_llm_server
+from .service import ErrorCode, SerialPipeline, ParallelPipeline, start_llm_server
 from .primitive import Query
 import asyncio
 from fastapi import FastAPI, APIRouter
@@ -18,7 +18,7 @@ from pydantic import BaseModel
 import uvicorn
 import json
 
-assistant = Worker(work_dir='workdir', config_path='config.ini')
+assistant = SerialPipeline(work_dir='workdir', config_path='config.ini')
 app = FastAPI(docs_url='/')
 
 class Talk(BaseModel):

@@ -58,8 +58,8 @@ def openxlab_security(query: str, retry=1):
     return False
 
 
-class WebWorker:
-    """The Worker class orchestrates the logic of handling user queries,
+class OpenXLabWorker:
+    """The OpenXLab Worker class orchestrates the logic of handling user queries,
     generating responses and managing several aspects of a chat assistant. It
     enables feature storage, language model client setup, time scheduling and
     much more.
@@ -329,18 +329,18 @@ class WebWorker:
 
 def parse_args():
     """Parses command-line arguments."""
-    parser = argparse.ArgumentParser(description='Worker.')
+    parser = argparse.ArgumentParser(description='OpenXLabWorker.')
     parser.add_argument('work_dir', type=str, help='Working directory.')
     parser.add_argument(
         '--config_path',
         default='config.ini',
-        help='Worker configuration path. Default value is config.ini')
+        help='OpenXLabWorker configuration path. Default value is config.ini')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
-    bot = Worker(work_dir=args.work_dir, config_path=args.config_path)
+    bot = OpenXLabWorker(work_dir=args.work_dir, config_path=args.config_path)
     queries = ['茴香豆是怎么做的']
     for example in queries:
         print(bot.generate(query=example, history=[], groupname=''))

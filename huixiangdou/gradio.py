@@ -11,12 +11,12 @@ import pytoml
 from loguru import logger
 
 from huixiangdou.primitive import Query
-from huixiangdou.service import ErrorCode, Worker, llm_serve, start_llm_server
+from huixiangdou.service import ErrorCode, SerialPipeline, llm_serve, start_llm_server
 
 
 def parse_args():
     """Parse args."""
-    parser = argparse.ArgumentParser(description='Worker.')
+    parser = argparse.ArgumentParser(description='SerialPipeline.')
     parser.add_argument('--work_dir',
                         type=str,
                         default='workdir',
@@ -25,7 +25,7 @@ def parse_args():
         '--config_path',
         default='config.ini',
         type=str,
-        help='Worker configuration path. Default value is config.ini')
+        help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
                         action='store_true',
                         default=True,
@@ -45,7 +45,7 @@ def predict(text, image):
     else:
         image_path = None
 
-    assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
+    assistant = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
     query = Query(text, image_path)
 
     pipeline = {'step': []}
