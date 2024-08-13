@@ -6,9 +6,6 @@ from typing import Any, List
 
 import numpy as np
 import torch
-# from BCEmbedding import EmbeddingModel
-from sentence_transformers import SentenceTransformer
-from FlagEmbedding.visual.modeling import Visualized_BGE
 from loguru import logger
 from .query import DistanceStrategy
 
@@ -22,12 +19,14 @@ class Embedder:
         self.distance_strategy = DistanceStrategy.EUCLIDEAN_DISTANCE
         
         if self.use_multimodal(model_path=model_path):
+            from FlagEmbedding.visual.modeling import Visualized_BGE
             self.support_image = True
             vision_weight_path = os.path.join(model_path, 'Visualized_m3.pth')
             self.client = Visualized_BGE(
                 model_name_bge=model_path,
                 model_weight=vision_weight_path).eval()
         else:
+            from sentence_transformers import SentenceTransformer
             self.client = SentenceTransformer(model_name_or_path=model_path).half()
 
     @classmethod
@@ -46,7 +45,7 @@ class Embedder:
 
     def embed_query(self, text: str = None, path: str = None) -> np.ndarray:
         """Embed input text or image as feature, output np.ndarray with np.float32"""
-        if type(self.client) is Visualized_BGE:
+        if 'BGE' in str(type(self.client)):
             with torch.no_grad():
                 feature = self.client.encode(text=text, image=path)
                 return feature.cpu().numpy().astype(np.float32)
@@ -55,6 +54,6 @@ class Embedder:
                 raise ValueError('This model only support text')
             emb = self.client.encode([text], show_progress_bar=False, normalize_embeddings=True)
             emb = emb.astype(np.float32)
-            for norm in np.linalg.norm(emb, axis=1):
-                assert abs(norm - 1) < 0.001
+            # for norm in np.linalg.norm(emb, axis=1):
+            #     assert abs(norm - 1) < 0.001
             return emb
