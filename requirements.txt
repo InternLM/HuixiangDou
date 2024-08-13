@@ -33,3 +33,4 @@ sentence_transformers
 sse_starlette
 fastapi
 uvicorn
+BCEmbedding
