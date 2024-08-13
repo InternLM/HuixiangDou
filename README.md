@@ -258,7 +258,7 @@ Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdo
 
 # 🍴 Other Configurations
 
-## 2G Cost-effective Edition
+## **2G Cost-effective Edition**
 
 If your GPU mem exceeds 1.8G, or you pursue cost-effectiveness. This configuration discards the local LLM and uses remote LLM instead, which is the same as the standard edition.
 
@@ -287,7 +287,7 @@ Execute the following to get the Q&A results
 python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all services at once
 ```
 
-## 10G Multimodal Edition
+## **10G Multimodal Edition**
 
 If you have 10G GPU mem, you can further support image and text retrieval. Just modify the model used in config.ini.
 
@@ -301,7 +301,8 @@ reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
 Note:
 
 - You need to manually download [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) to the [bge-m3](https://huggingface.co/BAAI/bge-m3) directory
-- Install FlagEmbedding on main branch, we have made [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
+- Install FlagEmbedding on main branch, we have made [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3). [Here](https://github.com/FlagOpen/FlagEmbedding/blob/master/FlagEmbedding/visual/eva_clip/bpe_simple_vocab_16e6.txt.gz) you can download `bpe_simple_vocab_16e6.txt.gz` 
+- Install [requirments-multimodal.txt](./requirements-multimodal.txt)
 
 Run gradio to test, see the image and text retrieval result [here](https://github.com/InternLM/HuixiangDou/pull/326).
 
@@ -309,7 +310,7 @@ Run gradio to test, see the image and text retrieval result [here](https://githu
 python3 tests/test_query_gradio.py
 ```
 
-## 80G Complete Edition
+## **80G Complete Edition**
 
 The "HuiXiangDou" in the WeChat experience group has enabled all features:
 
@@ -326,6 +327,10 @@ Please read the following topics:
 - [Group chat scenario anaphora resolution training](./sft)
 - [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/add_wechat_commercial_zh.md)
 - [Use rag.py to annotate SFT training data](./docs/rag_annotate_sft_data_zh.md)
+
+## **Android Tools**
+
+Contributors have provided [Android tools](./android) to interact with WeChat. The solution is based on system-level APIs, and in principle, it can control any UI (not limited to communication software).
 
 # 🛠️ FAQ
 
@@ -356,22 +361,6 @@ Please read the following topics:
 
    At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
 
-6. `No module named 'faiss.swigfaiss_avx2'`
-   locate installed `faiss` package
-
-   ```python
-   import faiss
-   print(faiss.__file__)
-   # /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/__init__.py
-   ```
-
-   add soft link
-
-   ```Bash
-   # cd your_python_path/site-packages/faiss
-   cd /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/
-   ln -s swigfaiss.py swigfaiss_avx2.py
-   ```
 
 # 🍀 Acknowledgements
 

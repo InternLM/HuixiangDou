@@ -3,7 +3,6 @@ beautifulsoup4
 duckduckgo_search
 einops
 faiss-gpu
-FlagEmbedding
 loguru
 lxml_html_clean
 nest_asyncio
@@ -31,12 +30,6 @@ transformers>=4.38
 transformers_stream_generator
 unstructured
 sentence_transformers
+sse_starlette
 fastapi
 uvicorn
-einops
-ftfy
-opencv-python-headless
-timm
-torchvision
-
-# donot install xformer and apex
