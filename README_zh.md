@@ -291,7 +291,8 @@ reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
 需要注意：
 
 - 要手动下载 [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) 到 [bge-m3](https://huggingface.co/BAAI/bge-m3) 目录下
-- FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)
+- FlagEmbedding 需要安装新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)；[这里](https://github.com/FlagOpen/FlagEmbedding/blob/master/FlagEmbedding/visual/eva_clip/bpe_simple_vocab_16e6.txt.gz)可以下载 BGE 打包漏掉的 `bpe_simple_vocab_16e6.txt.gz`
+- 安装 [requirments-multimodal.txt](./requirements-multimodal.txt)
 
 运行 gradio 测试，图文检索效果见[这里](https://github.com/InternLM/HuixiangDou/pull/326).
 
@@ -350,30 +351,11 @@ python3 tests/test_query_gradio.py
 
    此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 
-6. `No module named 'faiss.swigfaiss_avx2'` 问题修复:
-
-   找到 faiss 的位置
-
-   ```python
-   import faiss
-   print(faiss.__file__)
-   # /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/__init__.py
-   ```
-
-   添加软链接
-
-   ```Bash
-   # cd your_python_path/site-packages/faiss
-   cd /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/
-   ln -s swigfaiss.py swigfaiss_avx2.py
-   ```
-
-7. 报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
+6. 报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
 
    - 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。检查结束后按 ctrl-c 关掉。
    - 检查 `config.ini` 中各种 TOKEN 书写正确。
 
-8. 如果使用 `deepseek` 进行 remote llm 调用，出现 400 错误可能是因为安全审查；在 [huixiangdou/main.py](huixiangdou/main.py) 中修改 `queries = ['请问如何安装 mmpose ?']` 为其他问题即可正常运行。
 
 # 🍀 致谢
 
