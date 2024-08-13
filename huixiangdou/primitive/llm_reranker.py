@@ -5,13 +5,10 @@ import pdb
 from typing import List, Tuple
 
 import numpy as np
-import torch
-from BCEmbedding import RerankerModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from .chunk import Chunk
 from .embedder import Embedder
-
+from .rpm import RPM
 
 class LLMReranker:
 
@@ -24,6 +21,9 @@ class LLMReranker:
         self.topn = topn
 
         if self.llm_reranker:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+
             self.tokenizer = AutoTokenizer.from_pretrained(
                 model_name_or_path, trust_remote_code=True)
             self.model = AutoModelForCausalLM.from_pretrained(
@@ -31,6 +31,7 @@ class LLMReranker:
                 trust_remote_code=True,
                 torch_dtype=torch.bfloat16).eval().to('cuda')
         else:
+            from BCEmbedding import RerankerModel
             self.bce_client = RerankerModel(
                 model_name_or_path=model_name_or_path, use_fp16=True)
 
@@ -102,6 +103,7 @@ class LLMReranker:
             pairs.append([query, text])
 
         if self.llm_reranker:
+            import torch
             with torch.no_grad():
                 inputs = self._get_inputs(pairs).to(self.model.device)
                 all_scores = self.model(**inputs,
