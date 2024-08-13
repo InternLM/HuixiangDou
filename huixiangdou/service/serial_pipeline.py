@@ -12,7 +12,6 @@ from typing import List, Tuple, Union, Generator
 
 import pytoml
 from loguru import logger
-from openai import OpenAI
 
 from huixiangdou.primitive import Query
 
@@ -20,66 +19,17 @@ from .helper import ErrorCode, is_truth
 from .llm_client import ChatClient
 from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
+from .session import Session
 from .web_search import WebSearch
 from .prompt import (SCORING_QUESTION_TEMPLTE_CN, CR_NEED_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, GENERATE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN)
 from .prompt import (SCORING_QUESTION_TEMPLTE_EN, CR_NEED_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, GENERATE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN)
 
-class Session:
-    """For compute graph, `session` takes all parameter."""
-
-    def __init__(self,
-                 query: Query,
-                 history: list,
-                 groupname: str,
-                 log_path: str = 'logs/generate.jsonl',
-                 groupchats: list = []):
-        self.stage = 'init'
-        self.query = query
-        self.history = history
-        self.groupname = groupname
-        self.groupchats = groupchats
-
-        # init
-        self.response = ''
-        self.references = []
-        self.topic = ''
-        self.code = ErrorCode.INIT
-
-        # coreference resolution results
-        self.cr = ''
-
-        # text2vec results
-        self.chunk = ''
-        self.knowledge = ''
-
-        # web search results
-        self.web_knowledge = ''
-
-        # source graph search results
-        self.sg_knowledge = ''
-
-        # debug logs
-        self.debug = dict()
-        self.log_path = log_path
-
-    def __del__(self):
-        dirname = os.path.dirname(self.log_path)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-        with open(self.log_path, 'a') as f:
-            json_str = json.dumps(self.debug, indent=2, ensure_ascii=False)
-            f.write(json_str)
-            f.write('\n')
-
-
 class Node(ABC):
-    """Base abstractfor compute graph."""
+    """Base abstract for compute graph."""
 
     @abstractmethod
     def process(self, sess: Session) -> Generator[Session, None, None]:
         pass
-
 
 class PreprocNode(Node):
     """PreprocNode is for coreference resolution and scoring based on group
@@ -91,17 +41,12 @@ class PreprocNode(Node):
     def __init__(self, config: dict, llm: ChatClient, language: str):
         self.llm = llm
         self.enable_cr = config['worker']['enable_cr']
-        self.cr_client = OpenAI(
-            base_url=config['coreference_resolution']['base_url'],
-            api_key=config['coreference_resolution']['api_key'])
 
         if language == 'zh':
             self.SCORING_QUESTION_TEMPLTE = SCORING_QUESTION_TEMPLTE_CN
-            self.CR_NEED = CR_NEED_CN
             self.CR = CR_CN
         else:
             self.SCORING_QUESTION_TEMPLTE = SCORING_QUESTION_TEMPLTE_EN
-            self.CR_NEED = CR_NEED_EN
             self.CR = CR_EN
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
@@ -145,36 +90,6 @@ class PreprocNode(Node):
             talks.append({'sender': name_map[sender], 'content': msg.query})
 
         talk_str = json.dumps(talks, ensure_ascii=False)
-        prompt = self.CR_NEED.format(talk_str, sess.query.text)
-
-        # need coreference resolution or not
-        response = ''
-        try:
-            completion = self.cr_client.chat.completions.create(
-                model='coref-res',
-                messages=[{
-                    'role': 'user',
-                    'content': prompt
-                }])
-            response = completion.choices[0].message.content.lower()
-        except Exception as e:
-            logger.error(str(e))
-            yield sess
-            return
-        sess.debug['PreprocNode_need_cr'] = response
-        need_cr = False
-
-        if response.startswith('b') or response == '需要':
-            need_cr = True
-        else:
-            for sentence in ['因此需要', '因此选择b', '需要进行指代消解', '需要指代消解', 'b：需要']:
-                if sentence in response:
-                    need_cr = True
-                    break
-
-        if not need_cr:
-            yield sess
-            return
 
         prompt = self.CR.format(talk_str, sess.query.text)
         self.cr = self.llm.generate_response(prompt=prompt, backend='remote')
@@ -443,8 +358,8 @@ class SecurityNode(Node):
             yield sess
 
 
-class Worker:
-    """The Worker class orchestrates the logic of handling user queries,
+class SerialPipeline:
+    """The SerialPipeline class orchestrates the logic of handling user queries,
     generating responses and managing several aspects of a chat assistant. It
     enables feature storage, language model client setup, time scheduling and
     much more.
@@ -600,18 +515,18 @@ class Worker:
 
 def parse_args():
     """Parses command-line arguments."""
-    parser = argparse.ArgumentParser(description='Worker.')
+    parser = argparse.ArgumentParser(description='SerialPipeline.')
     parser.add_argument('work_dir', type=str, help='Working directory.')
     parser.add_argument(
         '--config_path',
         default='config.ini',
-        help='Worker configuration path. Default value is config.ini')
+        help='SerialPipeline configuration path. Default value is config.ini')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
-    bot = Worker(work_dir=args.work_dir, config_path=args.config_path)
+    bot = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
     queries = ['茴香豆是怎么做的']
     for example in queries:
         print(bot.generate(query=example, history=[], groupname=''))

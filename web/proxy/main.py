@@ -19,7 +19,7 @@ from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,
                                  feature_store_base_dir, parse_json_str,
                                  redis_host, redis_passwd, redis_port)
 
-from .web_worker import WebWorker
+from .web_worker import OpenXLabWorker
 
 
 def callback_task_state(feature_store_id: str,
@@ -140,7 +140,7 @@ def chat_with_featue_store(cache: CacheRetriever,
                           config_path=configpath,
                           work_dir=workdir)
 
-    worker = WebWorker(work_dir=workdir, config_path=configpath)
+    worker = OpenXLabWorker(work_dir=workdir, config_path=configpath)
 
     history = format_history(payload.history)
     query_log = '{} {}\n'.format(fs_id, payload.content)

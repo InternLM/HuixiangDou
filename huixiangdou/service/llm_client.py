@@ -132,7 +132,7 @@ class ChatClient:
             )
             return ''
 
-    async def generate_response_async(self, prompt, history=[], backend='local'):
+    async def chat_stream(self, prompt, history=[], backend='local'):
         """Generate a stream response from the chat service.
 
         Args:
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     #                              backend='remote'))
 
     async def wrap_as_coroutine():
-        async for text in client.generate_response_async('请问 ncnn 全称是啥'):
+        async for text in client.chat_stream('请问 ncnn 全称是啥'):
             print(text, end='', flush=True)
     import asyncio
 

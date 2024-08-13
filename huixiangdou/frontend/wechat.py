@@ -845,7 +845,7 @@ class WkteamManager:
 
 def parse_args():
     """Parse args."""
-    parser = argparse.ArgumentParser(description='Worker.')
+    parser = argparse.ArgumentParser(description='wechat server.')
     parser.add_argument('--work_dir',
                         type=str,
                         default='workdir',
