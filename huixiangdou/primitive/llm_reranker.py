@@ -134,7 +134,7 @@ class LLMReranker:
                     for scores in all_scores[0]
                 ]
                 scores = scores[0].cpu().numpy()
-        elif 'bce' in self._type
+        elif 'bce' in self._type:
             scores_list = self.bce_client.compute_score(pairs)
             scores = np.array(scores_list)
         else:

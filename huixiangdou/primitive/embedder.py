@@ -9,7 +9,7 @@ from typing import Any, List
 
 import numpy as np
 from loguru import logger
-from .query import distance_strategy
+from .query import DistanceStrategy
 from .rpm import RPM
 
 class Embedder:
