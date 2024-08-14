@@ -1,8 +1,9 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 aiohttp
 beautifulsoup4
 duckduckgo_search
 einops
-faiss
+faiss-cpu
 loguru
 lxml_html_clean
 nest_asyncio
@@ -11,7 +12,6 @@ numpy<2.0.0
 openai>=1.0.0
 openpyxl
 pandas
-pickle
 pydantic>=1.10.13
 pymupdf
 python-docx
@@ -21,11 +21,11 @@ redis
 requests
 scikit-learn
 # See https://github.com/deanmalmgren/textract/issues/461
-# textract @ git+https://github.com/tpoisonooo/textract@master
-textract
+textract @ git+https://github.com/tpoisonooo/textract@master
+# textract
 texttable
 tiktoken
-torch --index-url https://download.pytorch.org/whl/cpu
+torch
 unstructured
 sse_starlette
 fastapi

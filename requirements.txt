@@ -11,7 +11,6 @@ numpy<2.0.0
 openai>=1.0.0
 openpyxl
 pandas
-pickle
 pydantic>=1.10.13
 pymupdf
 python-docx
@@ -22,7 +21,7 @@ requests
 scikit-learn
 # See https://github.com/deanmalmgren/textract/issues/461
 # textract @ git+https://github.com/tpoisonooo/textract@master
-textract
+# textract
 texttable
 tiktoken
 torch>=2.0.0

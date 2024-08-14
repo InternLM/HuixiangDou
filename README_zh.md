@@ -139,10 +139,11 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 # 📦 硬件要求
 
-以下是不同特性所需显存，区别仅在**配置选项是否开启**。
+以下是不同特性所需显存，区别仅在**配置选项是否开启**。 `Python<=3.11`
 
 |                     配置示例                     | 显存需求 |                                                                                 描述                                                                                 |                             Linux 系统已验证设备                              |
 | :----------------------------------------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+|         [config-cpu.ini](./config-cpu.ini)         |   -    | 用 siliconcloud API <br/>仅检索文本 | ![](https://img.shields.io/badge/x86-passed-blue?style=for-the-badge) |
 |         [config-2G.ini](./config-2G.ini)         |   2GB    | 用 openai API（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage)、[stepfun](https://platform.stepfun.com/) 和 [siliconcloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |   10GB   |                                                                    用 openai API 做 LLM，图文检索                                                                    | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |       【标准版】[config.ini](./config.ini)       |   19GB   |                                                                         本地部署 LLM，单模态                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
@@ -248,6 +249,9 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 效果同 [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，请阅读 [web 部署文档](./web/README.md)。
 
 # 🍴 其他配置
+
+## CPU 版
+
 
 ## 2G 实惠版
 
