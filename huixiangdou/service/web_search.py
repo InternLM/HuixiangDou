@@ -6,7 +6,6 @@ import json
 import os
 import time
 import types
-
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS
@@ -17,33 +16,33 @@ from readability import Document
 from ..primitive import FileOperation
 from .helper import check_str_useful
 
-import_pyppeteer = False
-try:
-    from pyppeteer import launch
-    import_pyppeteer = True
-except Exception as e:
-    # Fix ldd ~/.local/share/pyppeteer/local-chromium/1181205/chrome-linux/chrome | grep not
-    # apt install libgbm-dev
-    # See https://techoverflow.net/2020/09/29/how-to-fix-pyppeteer-pyppeteer-errors-browsererror-browser-closed-unexpectedly/
-    logger.warning(
-        'For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442'
-    )
+# import_pyppeteer = False
+# try:
+#     from pyppeteer import launch
+#     import_pyppeteer = True
+# except Exception as e:
+#     # Fix ldd ~/.local/share/pyppeteer/local-chromium/1181205/chrome-linux/chrome | grep not
+#     # apt install libgbm-dev
+#     # See https://techoverflow.net/2020/09/29/how-to-fix-pyppeteer-pyppeteer-errors-browsererror-browser-closed-unexpectedly/
+#     logger.warning(
+#         'For better URL parsing, try `pip install pyppeteer` and see https://github.com/pyppeteer/pyppeteer/issues/442'
+#     )
 
 
-async def fetch_chroumium_content(url):
-    browser = await launch(headless=True,
-                           args=[
-                               '--no-sandbox', '--disable-dev-shm-usage',
-                               '--disable-gpu',
-                               '--disable-software-rasterizer',
-                               '--disable-setuid-sandbox'
-                           ])
-    page = await browser.newPage()
-    await page.goto(url)
-    time.sleep(1)
-    content = await page.evaluate('document.body.innerText', force_expr=True)
-    await browser.close()
-    return content
+# async def fetch_chroumium_content(url):
+#     browser = await launch(headless=True,
+#                            args=[
+#                                '--no-sandbox', '--disable-dev-shm-usage',
+#                                '--disable-gpu',
+#                                '--disable-software-rasterizer',
+#                                '--disable-setuid-sandbox'
+#                            ])
+#     page = await browser.newPage()
+#     await page.goto(url)
+#     time.sleep(1)
+#     content = await page.evaluate('document.body.innerText', force_expr=True)
+#     await browser.close()
+#     return content
 
 
 class Article:
