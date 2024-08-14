@@ -5,7 +5,6 @@ einops
 faiss-gpu
 loguru
 lxml_html_clean
-nest_asyncio
 networkx>=3.0
 numpy<2.0.0
 openai>=1.0.0
