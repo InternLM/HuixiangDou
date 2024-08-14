@@ -13,7 +13,10 @@ def test_faiss():
 
     save_path = '/tmp/faiss'
 
-    embedder = Embedder('/data2/khj/bge-m3')
+    model_config = {
+        'embedding_model_path': '/data2/khj/bge-m3'
+    }
+    embedder = Embedder(model_config)
 
     Faiss.save_local(folder_path=save_path, chunks=chunks, embedder=embedder)
     assert os.path.exists(os.path.join(save_path, 'embedding.faiss'))

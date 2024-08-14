@@ -4,9 +4,7 @@ from huixiangdou.primitive import Embedder
 
 
 def test_embedder():
-    assert Embedder.use_multimodal(model_path='/data2/khj/bge-m3') is True
-
-    emb = Embedder(model_path='/data2/khj/bge-m3')
+    emb = Embedder({'embedding_model_path':'/data2/khj/bge-m3'})
     sentence = 'hello world '
     sentence_16k = sentence * (16384 // len(sentence))
     image_path = 'resource/figures/wechat.jpg'

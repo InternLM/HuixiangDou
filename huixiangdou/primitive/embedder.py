@@ -2,6 +2,9 @@
 #
 import os
 import pdb
+import requests
+import json
+
 from typing import Any, List
 
 import numpy as np
@@ -32,10 +35,15 @@ class Embedder:
                 model_name_bge=model_path,
                 model_weight=vision_weight_path).eval()
         elif 'siliconcloud' in self._type:
+            api_token = model_config['api_token'].strip()
+            if len(api_token) < 1:
+                raise ValueError('siliconclud remote embedder api token is None')
+            api_rpm = max(1, int(model_config['api_rpm']))
             self.client = {
-                'api_token': model_config['api_token'],
-                'api_rpm': model_config['api_rpm']
+                'api_token': api_token,
+                'api_rpm': RPM(api_rpm)
             }
+
         else:
             raise ValueError('Unknown type {}'.format(self._type))
 
@@ -71,7 +79,27 @@ class Embedder:
             #     assert abs(norm - 1) < 0.001
             return emb
         else:
+            self.client['api_rpm'].wait()
+
             # siliconcloud bce API
             if text is None:
-                raise ValueError('This model only support text')
-            # TODO
+                raise ValueError('This api only support text')
+            
+            url = "https://api.siliconflow.cn/v1/embeddings"
+
+            payload = {
+                "model": "netease-youdao/bce-embedding-base_v1",
+                "input": text,
+                "encoding_format": "float"
+            }
+            headers = {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "authorization": self.client['api_token']
+            }
+
+            response = requests.post(url, json=payload, headers=headers)
+            json_obj = json.loads(response.text)
+            emb_list = json_obj['data']['embedding']
+            emb = np.array(emb_list).astype(np.float32)
+            return emb

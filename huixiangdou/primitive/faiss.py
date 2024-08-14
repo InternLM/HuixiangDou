@@ -127,12 +127,15 @@ class Faiss():
         index = None
 
         for chunk in tqdm(chunks):
-            if chunk.modal == 'text':
-                np_feature = embedder.embed_query(text=chunk.content_or_path)
-            elif chunk.modal == 'image':
-                np_feature = embedder.embed_query(path=chunk.content_or_path)
-            else:
-                raise ValueError(f'Unimplement chunk type: {chunk.modal}')
+            try:
+                if chunk.modal == 'text':
+                    np_feature = embedder.embed_query(text=chunk.content_or_path)
+                elif chunk.modal == 'image':
+                    np_feature = embedder.embed_query(path=chunk.content_or_path)
+                else:
+                    raise ValueError(f'Unimplement chunk type: {chunk.modal}')
+            except Exception as e:
+                logger.error('{}, skip and continue'.format(e))
 
             if index is None:
                 dimension = np_feature.shape[-1]

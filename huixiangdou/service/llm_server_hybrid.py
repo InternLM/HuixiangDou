@@ -14,7 +14,6 @@ import requests
 from loguru import logger
 from openai import OpenAI
 from huixiangdou.primitive import RPM
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import asyncio
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,6 +56,7 @@ class InferenceWrapper:
 
     def __init__(self, model_path: str):
         """Init model handler."""
+        from transformers import AutoModelForCausalLM, AutoTokenizer
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
