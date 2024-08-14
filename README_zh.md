@@ -259,7 +259,9 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 ```bash
 # 启动容器
 docker run  -v /path/to/huixiangdou:/huixiangdou  -p 7860:7860 -p 23333:23333  -it continuumio/miniconda3 /bin/bash
-# 安装依赖
+# 装依赖
+apt update
+apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 python3 -m pip install -r requirements-cpu.txt
 # 建立知识库
 python3 -m huixiangdou.service.feature_store  --config_path config-cpu.ini
