@@ -7,7 +7,6 @@ import os
 import time
 import types
 
-import nest_asyncio
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS
@@ -138,12 +137,13 @@ class WebSearch:
             content = content.replace('  ', ' ')
 
             if not check_str_useful(content=content):
-                logger.info('retry with chromium {}'.format(target_link))
-                nest_asyncio.apply()
-                content = asyncio.get_event_loop().run_until_complete(
-                    fetch_chroumium_content(url=target_link))
-                if not check_str_useful(content=content):
-                    return None
+                return None
+                # logger.info('retry with chromium {}'.format(target_link))
+                # nest_asyncio.apply()
+                # content = asyncio.get_event_loop().run_until_complete(
+                #     fetch_chroumium_content(url=target_link))
+                # if not check_str_useful(content=content):
+                #     return None
 
             return Article(content=content, source=target_link, brief=brief)
         except Exception as e:

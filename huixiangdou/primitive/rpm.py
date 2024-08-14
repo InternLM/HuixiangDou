@@ -1,5 +1,5 @@
 import time
-import datetime
+from datetime import datetime, timedelta
 from loguru import logger
 
 class RPM:
@@ -14,7 +14,7 @@ class RPM:
         total_minutes_since_midnight = dt_object.hour * 60 + dt_object.minute
         return total_minutes_since_midnight
 
-    def wait(self):
+    def wait(self, silent=False):
         current = time.time()
         dt_object = datetime.fromtimestamp(current)
         minute_slot = self.get_minute_slot()
@@ -33,4 +33,6 @@ class RPM:
         else:
             self.record = {'slot': self.get_minute_slot(), 'counter': 0}
         self.record['counter'] += 1
-        logger.debug(self.record)
+
+        if not silent:
+            logger.debug(self.record)

@@ -106,10 +106,16 @@ class Faiss():
         pairs = self.similarity_search(embedding=np_feature)
         # ret = list(filter(lambda x: x[1] >= threshold, pairs))
 
+        highest_score = -1.0
         ret = []
         for pair in pairs:
             if pair[1] >= threshold:
                 ret.append(pair)
+            if highest_score < pair[1]:
+                highest_score = pair[1]
+
+        if len(ret) < 1:
+            logger.info('highest score {}, threshold {}'.format(highest_score, threshold))
         return ret
 
     @classmethod
@@ -127,6 +133,7 @@ class Faiss():
         index = None
 
         for chunk in tqdm(chunks):
+            np_feature = None
             try:
                 if chunk.modal == 'text':
                     np_feature = embedder.embed_query(text=chunk.content_or_path)
@@ -135,7 +142,11 @@ class Faiss():
                 else:
                     raise ValueError(f'Unimplement chunk type: {chunk.modal}')
             except Exception as e:
-                logger.error('{}, skip and continue'.format(e))
+                logger.error('{}'.format(e))
+
+            if np_feature is None:
+                logger.error('np_feature is None')
+                continue
 
             if index is None:
                 dimension = np_feature.shape[-1]

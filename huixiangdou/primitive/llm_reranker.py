@@ -42,7 +42,8 @@ class LLMReranker:
             api_token = model_config['api_token'].strip()
             if len(api_token) < 1:
                 raise ValueError('siliconclud remote embedder api token is None')
-
+            if 'Bearer' not in api_token:
+                api_token = 'Bearer ' + api_token
             api_rpm = max(1, int(model_config['api_rpm']))
             self.client = {
                 'api_token': api_token,
@@ -138,7 +139,7 @@ class LLMReranker:
             scores_list = self.bce_client.compute_score(pairs)
             scores = np.array(scores_list)
         else:
-            self.client['api_rpm'].wait()
+            self.client['api_rpm'].wait(silent=True)
             
             url = "https://api.siliconflow.cn/v1/rerank"
             payload = {
@@ -152,14 +153,14 @@ class LLMReranker:
             headers = {
                 "accept": "application/json",
                 "content-type": "application/json",
-                "authorization": "Bearer sk-ducerqngypudxuevovkmvsbatstjyikvbjdpylfsvkfqcgox"
+                "authorization": self.client['api_token']
             }
             response = requests.post(url, json=payload, headers=headers)
             json_obj = json.loads(response.text)
             results = json_obj['results']
-            scores_list = [item['index'] for index in results]
-            scores = np.array(scores_list).astype(np.float32)
-            return scores[0:self.topn]
+            indexes_list = [round(item['index']) for item in results]
+            indexes = np.array(indexes_list).astype(np.int32)
+            return indexes[0:self.topn]
 
         # get descending order
         return scores.argsort()[::-1][0:self.topn]

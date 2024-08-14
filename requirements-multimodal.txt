@@ -1,6 +1,5 @@
 einops
 ftfy
-opencv-python-headless
 timm
 torchvision
 FlagEmbedding

@@ -30,3 +30,6 @@ unstructured
 sse_starlette
 fastapi
 uvicorn
+termcolor
+opencv-python-headless
+gradio

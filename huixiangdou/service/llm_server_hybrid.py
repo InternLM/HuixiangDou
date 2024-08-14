@@ -5,7 +5,6 @@ import json
 import os
 import random
 import time
-from datetime import datetime, timedelta
 from multiprocessing import Process, Value, set_start_method
 import torch
 import pdb
@@ -322,8 +321,6 @@ class HybridLLMServer:
             client = OpenAI(api_key=self.server_config['remote_api_key'],
                             base_url=base_url)
         else:
-            import pdb
-            pdb.set_trace()
             client = OpenAI(api_key=self.server_config['remote_api_key'])
 
         messages = build_messages(prompt=prompt,

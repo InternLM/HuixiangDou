@@ -259,6 +259,27 @@ Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdo
 
 # 🍴 Other Configurations
 
+## **CPU-only Edition**
+
+If there is no GPU available, model inference can be completed using the [siliconcloud](https://siliconflow.cn/) API.
+
+Taking docker miniconda+Python3.11 as an example, install CPU dependencies and run:
+
+```bash
+# Start container
+docker run -v /path/to/huixiangdou:/huixiangdou -p 7860:7860 -p 23333:23333 -it continuumio/miniconda3 /bin/bash
+# Install dependencies
+python3 -m pip install -r requirements-cpu.txt
+# Establish knowledge base
+python3 -m huixiangdou.service.feature_store --config_path config-cpu.ini
+# Q&A test
+python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
+# gradio UI
+python3 -m huixiangdou.gradio --config_path config-cpu.ini
+```
+
+If you find the installation too slow, a pre-installed image is provided in [Docker Hub](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags). Simply replace it when starting the docker.
+
 ## **2G Cost-effective Edition**
 
 If your GPU mem exceeds 1.8G, or you pursue cost-effectiveness. This configuration discards the local LLM and uses remote LLM instead, which is the same as the standard edition.

@@ -38,6 +38,9 @@ class Embedder:
             api_token = model_config['api_token'].strip()
             if len(api_token) < 1:
                 raise ValueError('siliconclud remote embedder api token is None')
+
+            if 'Bearer' not in api_token:
+                api_token = 'Bearer ' + api_token
             api_rpm = max(1, int(model_config['api_rpm']))
             self.client = {
                 'api_token': api_token,
@@ -63,6 +66,12 @@ class Embedder:
             return 'bce'
         return 'bge'
 
+    def token_length(self, text: str) -> int:
+        if 'bge' in self._type or 'bce' in self._type:
+            return len(self.embedder.client.tokenizer(text, padding=False, truncation=False)['input_ids'])
+        else:
+            return len(text) // 2
+
     def embed_query(self, text: str = None, path: str = None) -> np.ndarray:
         """Embed input text or image as feature, output np.ndarray with np.float32"""
         if 'bge' in self._type:
@@ -79,7 +88,7 @@ class Embedder:
             #     assert abs(norm - 1) < 0.001
             return emb
         else:
-            self.client['api_rpm'].wait()
+            self.client['api_rpm'].wait(silent=True)
 
             # siliconcloud bce API
             if text is None:
@@ -89,7 +98,8 @@ class Embedder:
 
             payload = {
                 "model": "netease-youdao/bce-embedding-base_v1",
-                "input": text,
+                # Since siliconcloud API return 50400 for long input, we have to truncate it.
+                "input": text[0:512],
                 "encoding_format": "float"
             }
             headers = {
@@ -100,6 +110,6 @@ class Embedder:
 
             response = requests.post(url, json=payload, headers=headers)
             json_obj = json.loads(response.text)
-            emb_list = json_obj['data']['embedding']
-            emb = np.array(emb_list).astype(np.float32)
+            emb_list = json_obj['data'][0]['embedding']
+            emb = np.array(emb_list).astype(np.float32).reshape(1, -1)
             return emb
