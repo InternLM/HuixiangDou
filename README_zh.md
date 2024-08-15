@@ -254,7 +254,7 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 
 若没有 GPU，可以使用 [siliconcloud](https://siliconflow.cn/) API 完成模型推理。
 
-以 docker ubuntu 20.04 + Python3.11 为例，安装 cpu 依赖，运行：
+以 docker miniconda+Python3.11 为例，安装 cpu 依赖，运行：
 
 ```bash
 # 启动容器
@@ -271,7 +271,7 @@ python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
 python3 -m huixiangdou.gradio --config_path config-cpu.ini
 ```
 
-如果觉得装依赖太慢，[dockerhub 里](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags)提供了安装好依赖的镜像，docker 启动时替换即可。
+如果装依赖太慢，[dockerhub 里](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags)提供了安装好依赖的镜像，docker 启动时替换即可。
 
 ## **2G 实惠版**
 
