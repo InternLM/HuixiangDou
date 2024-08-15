@@ -35,7 +35,7 @@ HuixiangDou is a **group chat** assistant based on LLM (Large Language Model).
 Advantages:
 
 1. Design a three-stage pipeline of preprocess, rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/).
-2. Low cost, minimum requirement of 2GB memory and no need for training
+2. No training required, with CPU-only, 2G, 10G and 80G configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](resource/figures/wechat.jpg) to try AI assistant inside.
@@ -143,9 +143,10 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 The following are the GPU memory requirements for different features, the difference lies only in whether the **options are turned on**.
 
-|              Configuration Example               | GPU mem Requirements |                                                                                   Description                                                                                   |                       Verified Devices on Linux System                        |
+|              Configuration Example               | GPU mem Requirements |                                                                                   Description                                                                                   |                       Verified on Linux                        |
 | :----------------------------------------------: | :------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage), [stepfun](https://platform.stepfun.com/) and [siliconcloud](https://siliconflow.cn/)) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|         [config-cpu.ini](./config-cpu.ini)         |   -    | Use [siliconcloud](https://siliconflow.cn/) API <br/> for text only | ![](https://img.shields.io/badge/x86-passed-blue?style=for-the-badge) |
+|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [stepfun](https://platform.stepfun.com/) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |         10GB         |                                                                Use openai API for LLM, image and text retrieval                                                                 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 | \[Standard Edition\] [config.ini](./config.ini)  |         19GB         |                                                                    Local deployment of LLM, single modality                                                                     | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |   [config-advanced.ini](./config-advanced.ini)   |         80GB         |                                                   local LLM, anaphora resolution, single modality, practical for WeChat group                                                   | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
@@ -214,16 +215,10 @@ python3 -m huixiangdou.main --standalone
 
 <br/>
 
-💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
-
-```bash
-python3 -m huixiangdou.gradio
-```
-
 💡 Also run a simple Web UI with `gradio`:
 
 ```bash
-python3 -m tests.test_query_gradio
+python3 -m huixiangdou.gradio
 ```
 
 Or run a server to listen 23333:
@@ -257,6 +252,29 @@ We provide `typescript` front-end and `python` back-end source code:
 Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), please read the [web deployment document](./web/README.md).
 
 # 🍴 Other Configurations
+
+## **CPU-only Edition**
+
+If there is no GPU available, model inference can be completed using the [siliconcloud](https://siliconflow.cn/) API.
+
+Taking docker miniconda+Python3.11 as an example, install CPU dependencies and run:
+
+```bash
+# Start container
+docker run -v /path/to/huixiangdou:/huixiangdou -p 7860:7860 -p 23333:23333 -it continuumio/miniconda3 /bin/bash
+# Install dependencies
+apt update
+apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
+python3 -m pip install -r requirements-cpu.txt
+# Establish knowledge base
+python3 -m huixiangdou.service.feature_store --config_path config-cpu.ini
+# Q&A test
+python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
+# gradio UI
+python3 -m huixiangdou.gradio --config_path config-cpu.ini
+```
+
+If you find the installation too slow, a pre-installed image is provided in [Docker Hub](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags). Simply replace it when starting the docker.
 
 ## **2G Cost-effective Edition**
 

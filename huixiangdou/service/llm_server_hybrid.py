@@ -5,7 +5,6 @@ import json
 import os
 import random
 import time
-from datetime import datetime, timedelta
 from multiprocessing import Process, Value, set_start_method
 import torch
 import pdb
@@ -13,7 +12,7 @@ import pytoml
 import requests
 from loguru import logger
 from openai import OpenAI
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from huixiangdou.primitive import RPM
 import asyncio
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,45 +50,12 @@ def build_messages(prompt, history, system: str = None):
     return messages
 
 
-class RPM:
-
-    def __init__(self, rpm: int = 30):
-        self.rpm = rpm
-        self.record = {'slot': self.get_minute_slot(), 'counter': 0}
-
-    def get_minute_slot(self):
-        current_time = time.time()
-        dt_object = datetime.fromtimestamp(current_time)
-        total_minutes_since_midnight = dt_object.hour * 60 + dt_object.minute
-        return total_minutes_since_midnight
-
-    def wait(self):
-        current = time.time()
-        dt_object = datetime.fromtimestamp(current)
-        minute_slot = self.get_minute_slot()
-
-        if self.record['slot'] == minute_slot:
-            # check RPM exceed
-            if self.record['counter'] >= self.rpm:
-                # wait until next minute
-                next_minute = dt_object.replace(
-                    second=0, microsecond=0) + timedelta(minutes=1)
-                _next = next_minute.timestamp()
-                sleep_time = abs(_next - current)
-                time.sleep(sleep_time)
-
-                self.record = {'slot': self.get_minute_slot(), 'counter': 0}
-        else:
-            self.record = {'slot': self.get_minute_slot(), 'counter': 0}
-        self.record['counter'] += 1
-        logger.debug(self.record)
-
-
 class InferenceWrapper:
     """A class to wrapper kinds of inference framework."""
 
     def __init__(self, model_path: str):
         """Init model handler."""
+        from transformers import AutoModelForCausalLM, AutoTokenizer
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
@@ -355,8 +321,6 @@ class HybridLLMServer:
             client = OpenAI(api_key=self.server_config['remote_api_key'],
                             base_url=base_url)
         else:
-            import pdb
-            pdb.set_trace()
             client = OpenAI(api_key=self.server_config['remote_api_key'])
 
         messages = build_messages(prompt=prompt,
@@ -479,7 +443,6 @@ class HybridLLMServer:
             str: Generated response.
         """
         time_tokenizer = time.time()
-        loop = asyncio.get_event_loop()
         
         async def coroutine_wrapper():
             messages = []
@@ -488,6 +451,7 @@ class HybridLLMServer:
                 print(part, end='')
             return ''.join(messages)
 
+        loop = asyncio.get_event_loop()
         try:
             output_text = loop.run_until_complete(coroutine_wrapper())
         except Exception as e:

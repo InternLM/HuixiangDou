@@ -231,14 +231,12 @@ class CacheRetriever:
         self.cache = dict()
         self.cache_size = cache_size
         with open(config_path, encoding='utf8') as f:
-            config = pytoml.load(f)['feature_store']
-            embedding_model_path = config['embedding_model_path']
-            reranker_model_path = config['reranker_model_path']
+            fs_config = pytoml.load(f)['feature_store']
 
         # load text2vec and rerank model
         logger.info('loading test2vec and rerank models')
-        self.embedder = Embedder(model_path=embedding_model_path)
-        self.reranker = LLMReranker(model_name_or_path=reranker_model_path,
+        self.embedder = Embedder(model_config=fs_config)
+        self.reranker = LLMReranker(model_config=fs_config,
                                     topn=rerank_topn)
 
     def get(self,

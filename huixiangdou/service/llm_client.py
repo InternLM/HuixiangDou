@@ -214,4 +214,6 @@ if __name__ == '__main__':
         async for text in client.generate_response_async('请问 ncnn 全称是啥'):
             print(text, end='', flush=True)
     import asyncio
-    asyncio.run(wrap_as_coroutine())
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(wrap_as_coroutine())

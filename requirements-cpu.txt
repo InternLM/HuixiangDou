@@ -1,10 +1,12 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 aiohttp
 beautifulsoup4
 duckduckgo_search
 einops
-faiss-gpu
+faiss-cpu
 loguru
 lxml_html_clean
+nest_asyncio
 networkx>=3.0
 numpy<2.0.0
 openai>=1.0.0
@@ -23,11 +25,8 @@ textract @ git+https://github.com/tpoisonooo/textract@master
 # textract
 texttable
 tiktoken
-torch>=2.0.0
-transformers>=4.38
-transformers_stream_generator
+torch
 unstructured
-sentence_transformers
 sse_starlette
 fastapi
 uvicorn

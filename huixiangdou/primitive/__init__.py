@@ -13,3 +13,4 @@ from .splitter import (
     MarkdownTextRefSplitter,
     RecursiveCharacterTextSplitter,
     nested_split_markdown)
+from .rpm import RPM

@@ -6,8 +6,6 @@ import json
 import os
 import time
 import types
-
-# import nest_asyncio
 import pytoml
 import requests
 from bs4 import BeautifulSoup as BS

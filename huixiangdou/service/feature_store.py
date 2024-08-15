@@ -165,11 +165,7 @@ class FeatureStore:
         for chunk in chunks:
             content = chunk.content_or_path
             text_lens.append(len(content))
-            token_lens.append(
-                len(
-                    self.embedder.client.tokenizer(
-                        content, padding=False,
-                        truncation=False)['input_ids']))
+            token_lens.append(self.embedder.token_length(content))
 
         logger.info('text histogram, {}'.format(histogram(text_lens)))
         logger.info('token histogram, {}'.format(
