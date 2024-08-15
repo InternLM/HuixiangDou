@@ -215,16 +215,10 @@ python3 -m huixiangdou.main --standalone
 
 <br/>
 
-💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
-
-```bash
-python3 -m huixiangdou.gradio
-```
-
 💡 Also run a simple Web UI with `gradio`:
 
 ```bash
-python3 -m tests.test_query_gradio
+python3 -m huixiangdou.gradio
 ```
 
 Or run a server to listen 23333:
