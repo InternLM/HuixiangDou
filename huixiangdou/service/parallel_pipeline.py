@@ -267,7 +267,6 @@ class ParallelPipeline:
         fs: An instance of FeatureStore for loading and querying features.
         config_path: A string indicating the path of the configuration file.
         config: A dictionary holding the configuration settings.
-        language: A string indicating the language of the chat, default is 'zh' (Chinese).  # noqa E501
         context_max_length: An integer representing the maximum length of the context used by the language model.  # noqa E501
 
         Several template strings for various prompts are also defined.
@@ -286,31 +285,17 @@ class ParallelPipeline:
 
         self.config_path = config_path
         self.config = None
-        self.language = language
         with open(config_path, encoding='utf8') as f:
             self.config = pytoml.load(f)
         if self.config is None:
             raise Exception('worker config can not be None')
 
-    def notify_badcase(self):
-        """Receiving revert command means the current threshold is too low, use
-        higher one."""
-        delta = max(0, 1 - self.retriever.reject_throttle) * 0.02
-        logger.info(
-            'received badcase, use bigger reject_throttle. Current {}, delta {}'
-            .format(self.retriever.reject_throttle, delta))
-
-        # this throttle also means quality, cannot exceed 0.5
-        self.retriever.reject_throttle = min(
-            self.retriever.reject_throttle + delta, 0.5)
-        with open('throttle', 'w') as f:
-            f.write(str(self.retriever.reject_throttle))
 
     def generate(self,
                  query: Union[Query, str],
-                 history: List,
-                 groupname: str,
-                 groupchats: List[str] = []):
+                 history: List, 
+                 language='zh', 
+                 web_search_enable=True):
         """Processes user queries and generates appropriate responses. It
         involves several steps including checking for valid questions,
         extracting topics, querying the feature store, searching the web, and
@@ -335,44 +320,39 @@ class ParallelPipeline:
         # build input session
         sess = Session(query=query,
                        history=history,
-                       groupname=groupname,
-                       log_path=self.config['worker']['save_path'],
-                       groupchats=groupchats)
+                       log_path=self.config['worker']['save_path'])
 
         # build pipeline
-        preproc = PreprocNode(self.config, self.llm, self.language)
-        text2vec = Text2vecRetrieval(self.config, self.llm, self.retriever,
-                                self.language)
-        websearch = WebSearchRetrieval(self.config, self.config_path, self.llm,
-                                  self.language)
-        reduce = ReduceGenerate(self.llm, self.language)
+        preproc = PreprocNode(self.config, self.llm, language)
+        text2vec = Text2vecRetrieval(self.config, self.llm, self.retriever, language)
+        websearch = WebSearchRetrieval(self.config, self.config_path, self.llm, language)
+        reduce = ReduceGenerate(self.llm, self.retriever, language)
         pipeline = [preproc, [text2vec, websearch], reduce]
 
-        # run
-        exit_states = [
+        direct_chat_states = [
             ErrorCode.QUESTION_TOO_SHORT, ErrorCode.NOT_A_QUESTION,
             ErrorCode.NO_TOPIC, ErrorCode.UNRELATED
         ]
-        for node in pipeline:
 
-            for sess in node.process(sess):
-                yield sess
+        # if not a good question, return
+        for sess in preproc.process(sess):
+            if sess.code in direct_chat_states:
+                for resp in reduce.process(sess):
+                    yield resp
+                return
 
-            # unrelated to knowledge base or bad input, exit
-            if sess.code in exit_states:
-                break
+        # parallel run text2vec and websearch
+        tasks = [text2vec.process(sess.clone())]
+        if web_search_enable:
+            tasks.append(websearch.process(sess.clone()))
 
-            if sess.code == ErrorCode.SUCCESS:
-                for sess in check.process(sess):
-                    yield sess
+        results = asyncio.gather(tasks)
+        for result in task_results:
+            sess.parallel_chunks += result.parallel_chunks
 
-            # check success, return
-            if sess.code == ErrorCode.SUCCESS:
-                break
-
-        logger.debug(sess.debug)
-        return sess
-        # return sess.code, sess.response, sess.references
+        for sess in reduce.process(sess):
+            yield sess
+        return
 
 def parse_args():
     """Parses command-line arguments."""

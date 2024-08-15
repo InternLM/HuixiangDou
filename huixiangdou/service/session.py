@@ -9,7 +9,7 @@ class Session:
     def __init__(self,
                  query: Query,
                  history: list,
-                 groupname: str,
+                 groupname: str = '',
                  log_path: str = 'logs/generate.jsonl',
                  groupchats: list = []):
         self.stage = 'init'
@@ -21,6 +21,7 @@ class Session:
         # init
         # Same as `chunk.choices[0].delta`
         self.delta = ''
+        self.parallel_chunks = []
         self.response = ''
         self.references = []
         self.topic = ''
