@@ -2,55 +2,77 @@
 import json
 import os
 import pdb
+import requests
 from typing import List, Tuple
 
 import numpy as np
-import torch
-from BCEmbedding import RerankerModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from .chunk import Chunk
 from .embedder import Embedder
-
+from .rpm import RPM
 
 class LLMReranker:
+    _type: str
+    topn: int
 
     def __init__(
             self,
-            model_name_or_path: str = 'BAAI/bge-reranker-v2-minicpm-layerwise',
+            model_config: dict,
             topn: int = 10):
-        self.llm_reranker = self.use_llm_reranker(
-            model_path=model_name_or_path)
+
+        model_name_or_path = model_config['reranker_model_path']
+        self._type = self.model_type(model_path=model_name_or_path)
         self.topn = topn
 
-        if self.llm_reranker:
+        if 'bge' in self._type:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+
             self.tokenizer = AutoTokenizer.from_pretrained(
                 model_name_or_path, trust_remote_code=True)
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name_or_path,
                 trust_remote_code=True,
                 torch_dtype=torch.bfloat16).eval().to('cuda')
-        else:
+        elif 'bce' in self._type:
+            from BCEmbedding import RerankerModel
             self.bce_client = RerankerModel(
                 model_name_or_path=model_name_or_path, use_fp16=True)
+        elif 'siliconcloud' in self._type:
+            api_token = model_config['api_token'].strip()
+            if len(api_token) < 1:
+                raise ValueError('siliconclud remote embedder api token is None')
+            if 'Bearer' not in api_token:
+                api_token = 'Bearer ' + api_token
+            api_rpm = max(1, int(model_config['api_rpm']))
+            self.client = {
+                'api_token': api_token,
+                'api_rpm': RPM(api_rpm)
+            }
+
+        else:
+            raise ValueError('Unknown type {}'.format(self._type))
+
 
     @classmethod
-    def use_llm_reranker(self, model_path):
+    def model_type(self, model_path):
         """Check reranker model is LLM reranker or not."""
+        if model_path.startswith('https'):
+            return 'siliconcloud'        
 
         config_path = os.path.join(model_path, 'config.json')
         if not os.path.exists(config_path):
             if 'bge-reranker-v2-minicpm-layerwise' in config_path.lower():
-                return True
-            return False
+                return 'bge'
+            return 'bce'
         try:
             with open(config_path) as f:
                 if 'bge-reranker-v2-minicpm-layerwise' in json.loads(
                         f.read())['_name_or_path']:
-                    return True
+                    return 'bge'
         except Exception as e:
             logger.warning(e)
-        return False
+        return 'bce'
 
     def _get_inputs(self, pairs, prompt=None, max_length=1024):
         """Build input tokens with query and chunks."""
@@ -101,7 +123,8 @@ class LLMReranker:
         for text in texts:
             pairs.append([query, text])
 
-        if self.llm_reranker:
+        if 'bge' in self._type:
+            import torch
             with torch.no_grad():
                 inputs = self._get_inputs(pairs).to(self.model.device)
                 all_scores = self.model(**inputs,
@@ -112,9 +135,32 @@ class LLMReranker:
                     for scores in all_scores[0]
                 ]
                 scores = scores[0].cpu().numpy()
-        else:
+        elif 'bce' in self._type:
             scores_list = self.bce_client.compute_score(pairs)
             scores = np.array(scores_list)
+        else:
+            self.client['api_rpm'].wait(silent=True)
+            
+            url = "https://api.siliconflow.cn/v1/rerank"
+            payload = {
+                "model": "netease-youdao/bce-reranker-base_v1",
+                "query": query,
+                "documents": texts,
+                "return_documents": False,
+                "max_chunks_per_doc": 832,
+                "overlap_tokens": 32
+            }
+            headers = {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "authorization": self.client['api_token']
+            }
+            response = requests.post(url, json=payload, headers=headers)
+            json_obj = json.loads(response.text)
+            results = json_obj['results']
+            indexes_list = [round(item['index']) for item in results]
+            indexes = np.array(indexes_list).astype(np.int32)
+            return indexes[0:self.topn]
 
         # get descending order
         return scores.argsort()[::-1][0:self.topn]

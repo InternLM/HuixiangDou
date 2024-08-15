@@ -143,7 +143,8 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 |                     配置示例                     | 显存需求 |                                                                                 描述                                                                                 |                             Linux 系统已验证设备                              |
 | :----------------------------------------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-|         [config-2G.ini](./config-2G.ini)         |   2GB    | 用 openai API（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage)、[stepfun](https://platform.stepfun.com/) 和 [siliconcloud](https://siliconflow.cn/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|         [config-cpu.ini](./config-cpu.ini)         |   -    | 用 [siliconcloud](https://siliconflow.cn/) API <br/>仅检索文本 | ![](https://img.shields.io/badge/x86-passed-blue?style=for-the-badge) |
+|         [config-2G.ini](./config-2G.ini)         |   2GB    | 用 openai API（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [stepfun](https://platform.stepfun.com/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |   10GB   |                                                                    用 openai API 做 LLM，图文检索                                                                    | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |       【标准版】[config.ini](./config.ini)       |   19GB   |                                                                         本地部署 LLM，单模态                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
 |   [config-advanced.ini](./config-advanced.ini)   |   80GB   |                                                                本地 LLM，指代消歧，单模态，微信群实用                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
@@ -249,7 +250,30 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 
 # 🍴 其他配置
 
-## 2G 实惠版
+## **纯 CPU 版**
+
+若没有 GPU，可以使用 [siliconcloud](https://siliconflow.cn/) API 完成模型推理。
+
+以 docker miniconda+Python3.11 为例，安装 cpu 依赖，运行：
+
+```bash
+# 启动容器
+docker run  -v /path/to/huixiangdou:/huixiangdou  -p 7860:7860 -p 23333:23333  -it continuumio/miniconda3 /bin/bash
+# 装依赖
+apt update
+apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
+python3 -m pip install -r requirements-cpu.txt
+# 建立知识库
+python3 -m huixiangdou.service.feature_store  --config_path config-cpu.ini
+# 问答测试
+python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
+# gradio UI
+python3 -m huixiangdou.gradio --config_path config-cpu.ini
+```
+
+如果装依赖太慢，[dockerhub 里](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags)提供了安装好依赖的镜像，docker 启动时替换即可。
+
+## **2G 实惠版**
 
 如果你的显存超过 1.8G，或追求性价比。此配置扔掉了本地 LLM，使用 remote LLM 代替，其他和标准版相同。
 
@@ -277,7 +301,7 @@ remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
 python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启动所有服务
 ```
 
-## 10G 多模态版
+## **10G 多模态版**
 
 如果你有 10G 显存，那么可以进一步支持图文检索。仅需修改 config.ini 使用的模型。
 
@@ -300,7 +324,7 @@ reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
 python3 tests/test_query_gradio.py
 ```
 
-## 80G 完整版
+## **80G 完整版**
 
 微信体验群里的 “茴香豆” 开启了全部功能：
 
@@ -318,7 +342,7 @@ python3 tests/test_query_gradio.py
 - [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
 
-## 移动端
+## **移动端**
 
 贡献者提供了[android工具](./android) 完成微信接入。方案基于系统层 API，原理上可以控制任何 UI（不限于通讯软件）。
 
