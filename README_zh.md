@@ -32,7 +32,7 @@
 茴香豆是一个基于 LLM 的**群聊**知识助手，优势：
 
 1. 设计预处理、拒答、响应三阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/knowledge_graph_zh.md)和[业务数据精度测试](./evaluation)
-2. 成本低至 2G 显存，无需训练适用各行业
+2. 无需训练适用各行业，提供 CPU-only、2G、10G、80G 规格配置
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
 查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
