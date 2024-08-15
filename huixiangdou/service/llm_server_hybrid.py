@@ -443,7 +443,6 @@ class HybridLLMServer:
             str: Generated response.
         """
         time_tokenizer = time.time()
-        loop = asyncio.get_event_loop()
         
         async def coroutine_wrapper():
             messages = []
@@ -452,6 +451,7 @@ class HybridLLMServer:
                 print(part, end='')
             return ''.join(messages)
 
+        loop = asyncio.get_event_loop()
         try:
             output_text = loop.run_until_complete(coroutine_wrapper())
         except Exception as e:

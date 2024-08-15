@@ -68,7 +68,7 @@ class Embedder:
 
     def token_length(self, text: str) -> int:
         if 'bge' in self._type or 'bce' in self._type:
-            return len(self.embedder.client.tokenizer(text, padding=False, truncation=False)['input_ids'])
+            return len(self.client.tokenizer(text, padding=False, truncation=False)['input_ids'])
         else:
             return len(text) // 2
 
