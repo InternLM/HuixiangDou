@@ -4,7 +4,7 @@ import json
 import os
 import pdb
 import time
-from typing import Any, Union, Tuple
+from typing import Any, Union, Tuple, List
 
 import numpy as np
 import pytoml
@@ -83,36 +83,17 @@ class Retriever:
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
 
-    def query(self,
-              query: Union[Query, str],
-              context_max_length: int = 40000,
-              tracker: QueryTracker = None):
-        """Processes a query and returns the best match from the vector store
-        database. If the question is rejected, returns None.
-
+    def text2vec_retrieve(self, query: Union[Query, str]):
+        """Retrieve chunks by text2vec model or knowledge graph. 
+        
         Args:
             query (Query): The multimodal question asked by the user.
-            context_max_length (int): Max contenxt length for LLM.
-            tracker (QueryTracker): Log tracker.
-
+        
         Returns:
-            str: Matched chunks, or empty string
-            str: Matched context from origin file content
-            List[str]: References 
+            List[Chunk]: ref chunks.
         """
         if type(query) is str:
             query = Query(text=query)
-
-        if query.text is None or len(query.text) < 1 or self.faiss is None:
-            return None, None, []
-
-        if len(query.text) > 512:
-            logger.warning('input too long, truncate to 512')
-            query.text = query.text[0:512]
-
-        chunks = []
-        context = ''
-        references = []
 
         graph_delta = 0.0
         if self.kg.is_available():
@@ -126,28 +107,34 @@ class Retriever:
         threshold = self.reject_throttle - graph_delta
         pairs = self.faiss.similarity_search_with_query(self.embedder,
                                                         query=query)
-        # logger.debug('retriever.docs {}'.format(docs))
+        chunks = [pair[0] for pair in pairs]
+        return chunks
 
-        if len(pairs) < 1 or pairs[0][1] < threshold:
-            references.append(pairs[0][0].metadata['source'])
-            return None, None, references
+    def rerank_fuse(self, query: Union[Query, str], chunks: List[Chunk], context_max_length:int):
+        """Rerank chunks and extract content
+        
+        Args:
+            chunks (List[Chunk]): filtered chunks.
+        
+        Returns:
+            str: Joined chunks, or empty string
+            str: Matched context from origin file content
+            List[str]: References
+        """
+        if type(query) is str:
+            query = Query(text=query)
 
-        high_score_chunks = []
-        for pair in pairs:
-            if pair[1] >= threshold:
-                high_score_chunks.append(pair[0])
-
-        chunks = self.reranker.rerank(query=query.text,
-                                      chunks=high_score_chunks)
+        rerank_chunks = self.reranker.rerank(query=query.text,
+                                      chunks=chunks)
         if tracker is not None:
-            tracker.log('retrieve', [c.metadata['source'] for c in chunks])
+            tracker.log('retrieve', [c.metadata['source'] for c in rerank_chunks])
 
         file_opr = FileOperation()
         splits = []
         # Add file text to context, until exceed `context_max_length`
         # If `file_length` > `context_max_length` (for example file_length=300 and context_max_length=100)
         # then centered on the chunk, read a length of 200
-        for idx, chunk in enumerate(chunks):
+        for idx, chunk in enumerate(rerank_chunks):
 
             content = chunk.content_or_path
             splits.append(content)
@@ -190,6 +177,39 @@ class Retriever:
         return '\n'.join(splits), context, [
             os.path.basename(r) for r in references
         ]
+
+    def query(self,
+              query: Union[Query, str],
+              context_max_length: int = 40000,
+              tracker: QueryTracker = None):
+        """Processes a query and returns the best match from the vector store
+        database. If the question is rejected, returns None.
+
+        Args:
+            query (Query): The multimodal question asked by the user.
+            context_max_length (int): Max contenxt length for LLM.
+            tracker (QueryTracker): Log tracker.
+
+        Returns:
+            str: Matched chunks, or empty string
+            str: Matched context from origin file content
+            List[str]: References 
+        """
+        if type(query) is str:
+            query = Query(text=query)
+
+        if query.text is None or len(query.text) < 1 or self.faiss is None:
+            return None, None, []
+
+        if len(query.text) > 512:
+            logger.warning('input too long, truncate to 512')
+            query.text = query.text[0:512]
+
+        high_score_chunks = self.text2vec_retrieve(query=query)
+        if tracker is not None:
+            tracker.log('retrieve', [c.metadata['source'] for c in high_score_chunks])
+        
+        return self.rerank_fuse(query=query, high_score_chunks=high_score_chunks, context_max_length=context_max_length)
 
     def is_relative(self,
                     query,

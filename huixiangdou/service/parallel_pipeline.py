@@ -129,43 +129,9 @@ class Text2vecRetrieval:
         """Try get reply with text2vec & rerank model."""
 
         sess.stage = str(type(self).__name__)
-        # get query topic
-        prompt = self.TOPIC_TEMPLATE.format(sess.query.text)
-        sess.topic = self.llm.generate_response(prompt)
-        for prefix in ['主题：', '这句话的主题是：']:
-            if sess.topic.startswith(prefix):
-                sess.topic = sess.topic[len(prefix):]
-
-        sess.debug['Text2vecNode_topic'] = sess.topic
-        if len(sess.topic) < 2:
-            # topic too short, return
-            sess.code = ErrorCode.NO_TOPIC
-            yield sess
-            return
-
         # retrieve from knowledge base
-        sess.chunk, sess.knowledge, sess.references = self.retriever.query(
-            Query(sess.topic, sess.query.image),
-            context_max_length=self.max_length)
-        sess.debug['Text2vecNode_chunk'] = sess.chunk
-        if sess.knowledge is None:
-            sess.code = ErrorCode.UNRELATED
-            yield sess
-            return
-
+        sess.parallel_chunks = self.retriever.text2vec_retrieve(query=sess.query.text)
         yield sess
-
-        # get relavance between query and knowledge base
-        prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
-            sess.query.text, sess.chunk)
-        truth, logs = is_truth(llm=self.llm,
-                               prompt=prompt,
-                               throttle=5,
-                               default=10)
-        sess.debug['Text2vecNode_chunk_relavance'] = logs
-        if not truth:
-            yield sess
-            return
 
 
 class WebSearchRetrieval(Node):
@@ -212,6 +178,7 @@ class WebSearchRetrieval(Node):
 
         for article_id, article in enumerate(articles):
             article.cut(0, self.max_length)
+
             prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
                 sess.query.text, article.brief)
             # truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='puyu')
@@ -233,8 +200,7 @@ class WebSearchRetrieval(Node):
             return
 
 class ReduceGenerate(Node):
-    def __init__(self, config: dict, config_path: str, llm: ChatClient,
-                 language: str):
+    def __init__(self, llm: ChatClient, retriever: CacheRetriever, language: str):
         self.llm = llm
         self.config_path = config_path
         self.enable = config['worker']['enable_web_search']
@@ -254,7 +220,22 @@ class ReduceGenerate(Node):
             self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
         
     async def process(self, sess: Session) -> Generator[Session, None, None]:
-        
+        question = sess.query.text 
+        history = sess.history
+
+        if len(sess.parallel_chunks) < 1:
+            # direct chat
+            async for part in self.llm.chat_stream(prompt=question, history=history):
+                sess.delta = part
+                yield sess
+        else:
+            chunks = sess.parallel_chunks
+            _, context_str, references = self.retriever.rerank_fuse(query=sess.query, chunks=sess.parallel_chunks)
+            sess.references = references
+            prompt = self.GENERATE_TEMPLATE.format(context_str, sess.query)
+            async for part in self.llm.chat_stream(prompt=prompt, history=history):
+                sess.delta = part
+                yield sess
 
 class ParallelPipeline:
     """The ParallelPipeline class orchestrates the logic of handling user queries,
@@ -272,13 +253,12 @@ class ParallelPipeline:
         Several template strings for various prompts are also defined.
     """
 
-    def __init__(self, work_dir: str, config_path: str, language: str = 'zh'):
+    def __init__(self, work_dir: str, config_path: str):
         """Constructs all the necessary attributes for the worker object.
 
         Args:
             work_dir (str): The working directory where feature files are located.
             config_path (str): The location of the configuration file.
-            language (str, optional): Specifies the language to be used. Defaults to 'zh' (Chinese).  # noqa E501
         """
         self.llm = ChatClient(config_path=config_path)
         self.retriever = CacheRetriever(config_path=config_path).get()

@@ -37,7 +37,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def predict(text, image):
+def predict(text:str, image:str, language:str, pipeline:str, enable_web_search=str):
     if image is not None:
         filename = 'image.png'
         image_path = os.path.join(args.work_dir, filename)
@@ -45,24 +45,37 @@ def predict(text, image):
     else:
         image_path = None
 
-    assistant = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
     query = Query(text, image_path)
+    if pipeline is 'serial':
+        assistant = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
+        args = {'query':query, 'history':history, groupname:groupname}
+    else:
+        assistant = ParallelPipeline(work_dir=args.work_dir, config_path=args.config_path)
+        args = {'query':query, 'history':history, 'language':language}
+        if 'yes' in enable_web_search:
+            args['web_search_enable'] = True
+        else:
+            args['web_search_enable'] = False
 
     pipeline = {'step': []}
     debug = dict()
-    for sess in assistant.generate(query=query, history=[], groupname=''):
-        status = {
-            "state":str(sess.code),
-            "response": sess.response,
-            "refs": sess.references
-        }
+    stream_chat_content = ''
+    for sess in assistant.generate(**args):
+        if len(sess.delta) > 0:
+            # start chat, display
+            stream_chat_content += sess.delta
+            yield stream_chat_content
+        else:
+            status = {
+                "state":str(sess.code),
+                "response": sess.response,
+                "refs": sess.references
+            }
+            pipeline['step'].append(status)
+            pipeline['debug'] = sess.debug
 
-        print(status)
-        pipeline['step'].append(status)
-        pipeline['debug'] = sess.debug
-
-        json_str = json.dumps(pipeline, indent=2, ensure_ascii=False)
-        yield json_str
+            json_str = json.dumps(pipeline, indent=2, ensure_ascii=False)
+            yield json_str
 
 if __name__ == '__main__':
     args = parse_args()
@@ -74,13 +87,20 @@ if __name__ == '__main__':
 
     with gr.Blocks() as demo:
         with gr.Row():
+            with gr.Column():
+                languange = gr.Radio(["zh", "en"], label="Language", info="Use zh_cn by default."),
+            with gr.Column():
+                pipeline = gr.Radio(["serial", "parallel"], label="Pipeline type", info="Serial pipeline is slower but accurate, default value is `serial`"),
+            with gr.Column():
+                enable_web_search = gr.Radio(["yes", "no"], label="Enable web search"),
+        with gr.Row():
             input_question = gr.TextArea(label='Input the question.')
             input_image = gr.Image(label='Upload Image.')
         with gr.Row():
             run_button = gr.Button()
         with gr.Row():
             result = gr.TextArea(label='HuixiangDou pipline status', show_copy_button=True)
-        run_button.click(predict, [input_question, input_image], [result])
+        run_button.click(predict, [input_question, input_image, language, pipeline, enable_web_search], [result])
 
     demo.queue()
     demo.launch(share=False, server_name='0.0.0.0', debug=True)
