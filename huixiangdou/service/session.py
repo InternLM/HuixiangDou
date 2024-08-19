@@ -12,7 +12,6 @@ class Session:
                  groupname: str = '',
                  log_path: str = 'logs/generate.jsonl',
                  groupchats: list = []):
-        self.stage = 'init'
         self.query = query
         self.history = history
         self.groupname = groupname

@@ -51,7 +51,6 @@ class PreprocNode(Node):
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
         # check input
-        sess.stage = str(type(self).__name__)
         if sess.query.text is None or len(sess.query.text) < 6:
             sess.code = ErrorCode.QUESTION_TOO_SHORT
             yield sess
@@ -69,7 +68,6 @@ class PreprocNode(Node):
             return
 
         if not self.enable_cr:
-            yield sess
             return
 
         if len(sess.groupchats) < 1:
@@ -133,7 +131,6 @@ class Text2vecNode(Node):
     def process(self, sess: Session) -> Generator[Session, None, None]:
         """Try get reply with text2vec & rerank model."""
 
-        sess.stage = str(type(self).__name__)
         # get query topic
         prompt = self.TOPIC_TEMPLATE.format(sess.query.text)
         sess.topic = self.llm.generate_response(prompt)
@@ -216,7 +213,6 @@ class WebSearchNode(Node):
             logger.debug('disable web_search')
             yield sess
             return
-        sess.stage = str(type(self).__name__)
 
         engine = WebSearch(config_path=self.config_path)
 
@@ -283,7 +279,6 @@ class SGSearchNode(Node):
             logger.debug('disable sg_search')
             yield sess
             return
-        sess.stage = str(type(self).__name__)
 
         # if exit for other status (SECURITY or SEARCH_FAIL), still quit `sg_search`
         if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT and sess.code != ErrorCode.WEB_SEARCH_FAIL:
@@ -329,8 +324,6 @@ class SecurityNode(Node):
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
         """Check result with security."""
-        sess.stage = str(type(self).__name__)
-
         if len(sess.response) < 1:
             sess.code = ErrorCode.BAD_ANSWER
             yield sess
@@ -445,8 +438,8 @@ class SerialPipeline:
 
     def generate(self,
                  query: Union[Query, str],
-                 history: List,
-                 groupname: str,
+                 history: List[str] = [],
+                 groupname: str = '',
                  groupchats: List[str] = []):
         """Processes user queries and generates appropriate responses. It
         involves several steps including checking for valid questions,

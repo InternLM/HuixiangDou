@@ -126,14 +126,14 @@ class Retriever:
 
         rerank_chunks = self.reranker.rerank(query=query.text,
                                       chunks=chunks)
-        if tracker is not None:
-            tracker.log('retrieve', [c.metadata['source'] for c in rerank_chunks])
 
         file_opr = FileOperation()
-        splits = []
         # Add file text to context, until exceed `context_max_length`
         # If `file_length` > `context_max_length` (for example file_length=300 and context_max_length=100)
         # then centered on the chunk, read a length of 200
+        splits = []
+        context = ''
+        references = []
         for idx, chunk in enumerate(rerank_chunks):
 
             content = chunk.content_or_path
@@ -151,6 +151,7 @@ class Retriever:
                 if source in references:
                     continue
                 references.append(source)
+
                 # add and break
                 add_len = context_max_length - len(context)
                 if add_len <= 0:
@@ -209,7 +210,7 @@ class Retriever:
         if tracker is not None:
             tracker.log('retrieve', [c.metadata['source'] for c in high_score_chunks])
         
-        return self.rerank_fuse(query=query, high_score_chunks=high_score_chunks, context_max_length=context_max_length)
+        return self.rerank_fuse(query=query, chunks=high_score_chunks, context_max_length=context_max_length)
 
     def is_relative(self,
                     query,

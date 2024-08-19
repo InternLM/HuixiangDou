@@ -506,6 +506,7 @@ def llm_serve(config_path: str, server_ready: Value):
 
     async def inference(talk: Talk):
         """Call local llm inference."""
+        logger.info(talk)
 
         prompt = talk.prompt
         history = talk.history
@@ -521,6 +522,7 @@ def llm_serve(config_path: str, server_ready: Value):
 
     async def stream(talk: Talk):
         """Call local llm inference."""
+        logger.info(talk)
 
         prompt = talk.prompt
         history = talk.history

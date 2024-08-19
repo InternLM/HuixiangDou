@@ -1,12 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """Pipeline."""
 import argparse
+import asyncio
 import datetime
 import json
 import os
 import re
 import time
 import pdb
+import copy
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union, Generator
 
@@ -44,7 +46,6 @@ class PreprocNode:
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
         # check input
-        sess.stage = str(type(self).__name__)
         if sess.query.text is None or len(sess.query.text) < 6:
             sess.code = ErrorCode.QUESTION_TOO_SHORT
             yield sess
@@ -122,14 +123,13 @@ class Text2vecRetrieval:
         self.max_length = self.context_max_length - 2 * len(
             self.GENERATE_TEMPLATE)
 
-    async def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process_coroutine(self, sess: Session) -> Session:
         """Try get reply with text2vec & rerank model."""
 
-        sess.stage = str(type(self).__name__)
         # retrieve from knowledge base
-        sess.parallel_chunks = self.retriever.text2vec_retrieve(query=sess.query.text)
-        yield sess
-
+        sess.parallel_chunks = await asyncio.to_thread(self.retriever.text2vec_retrieve, sess.query.text) 
+        # sess.parallel_chunks = self.retriever.text2vec_retrieve(query=sess.query.text)
+        return sess
 
 class WebSearchRetrieval:
     """WebSearchNode is for web search, use `ddgs` or `serper`"""
@@ -159,7 +159,6 @@ class WebSearchRetrieval:
             logger.debug('disable web_search')
             yield sess
             return
-        sess.stage = str(type(self).__name__)
 
         engine = WebSearch(config_path=self.config_path)
 
@@ -174,7 +173,7 @@ class WebSearchRetrieval:
             return
 
         for article_id, article in enumerate(articles):
-            article.cut(0, self.max_length)
+            article.cut(0, self.context_max_length)
 
             prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
                 sess.query.text, article.brief)
@@ -190,21 +189,32 @@ class WebSearchRetrieval:
                 sess.web_knowledge += article.content
                 sess.references.append(article.source)
 
-        sess.web_knowledge = sess.web_knowledge[0:self.max_length].strip()
+        sess.web_knowledge = sess.web_knowledge[0:self.context_max_length].strip()
         if len(sess.web_knowledge) < 1:
             sess.code = ErrorCode.NO_SEARCH_RESULT
             yield sess
             return
 
+    async def process_coroutine(self, sess: Session) -> Session:
+        results = []
+        async for value in self.process(sess=sess):
+            results.append(value)
+        return results[-1]
+
 
 class ReduceGenerate:
-    def __init__(self, llm: ChatClient, retriever: CacheRetriever, language: str):
+    def __init__(self, config: dict, llm: ChatClient, retriever: CacheRetriever, language: str):
         self.llm = llm
+        self.retriever = retriever
         if language == 'zh':
             self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CN
         else:
             self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
-        
+        llm_config = config['llm']
+        self.context_max_length = llm_config['server']['local_llm_max_text_length']
+        if llm_config['enable_remote']:
+            self.context_max_length = llm_config['server']['remote_llm_max_text_length']
+
     async def process(self, sess: Session) -> Generator[Session, None, None]:
         question = sess.query.text 
         history = sess.history
@@ -215,8 +225,7 @@ class ReduceGenerate:
                 sess.delta = part
                 yield sess
         else:
-            chunks = sess.parallel_chunks
-            _, context_str, references = self.retriever.rerank_fuse(query=sess.query, chunks=sess.parallel_chunks)
+            _, context_str, references = self.retriever.rerank_fuse(query=sess.query, chunks=sess.parallel_chunks, context_max_length=self.context_max_length)
             sess.references = references
             prompt = self.GENERATE_TEMPLATE.format(context_str, sess.query)
             async for part in self.llm.chat_stream(prompt=prompt, history=history):
@@ -258,11 +267,11 @@ class ParallelPipeline:
             raise Exception('worker config can not be None')
 
 
-    def generate(self,
+    async def generate(self,
                  query: Union[Query, str],
-                 history: List, 
-                 language='zh', 
-                 web_search_enable=True):
+                 history: List[Tuple[str]]=[], 
+                 language: str='zh', 
+                 enable_web_search: bool=True):
         """Processes user queries and generates appropriate responses. It
         involves several steps including checking for valid questions,
         extracting topics, querying the feature store, searching the web, and
@@ -293,7 +302,7 @@ class ParallelPipeline:
         preproc = PreprocNode(self.config, self.llm, language)
         text2vec = Text2vecRetrieval(self.config, self.llm, self.retriever, language)
         websearch = WebSearchRetrieval(self.config, self.config_path, self.llm, language)
-        reduce = ReduceGenerate(self.llm, self.retriever, language)
+        reduce = ReduceGenerate(self.config, self.llm, self.retriever, language)
         pipeline = [preproc, [text2vec, websearch], reduce]
 
         direct_chat_states = [
@@ -304,20 +313,21 @@ class ParallelPipeline:
         # if not a good question, return
         for sess in preproc.process(sess):
             if sess.code in direct_chat_states:
-                for resp in reduce.process(sess):
+                async for resp in reduce.process(sess):
                     yield resp
                 return
 
         # parallel run text2vec and websearch
-        tasks = [text2vec.process(sess.clone())]
-        if web_search_enable:
-            tasks.append(websearch.process(sess.clone()))
+        
+        tasks = [text2vec.process_coroutine(copy.deepcopy(sess))]
+        if enable_web_search:
+            tasks.append(websearch.process_coroutine(copy.deepcopy(sess)))
 
-        results = asyncio.gather(tasks)
+        task_results = await asyncio.gather(*tasks, return_exceptions=True)
         for result in task_results:
             sess.parallel_chunks += result.parallel_chunks
 
-        for sess in reduce.process(sess):
+        async for sess in reduce.process(sess):
             yield sess
         return
 
@@ -336,7 +346,14 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     bot = ParallelPipeline(work_dir=args.work_dir, config_path=args.config_path)
-    queries = ['茴香豆是怎么做的']
+    loop = asyncio.get_event_loop()
+    queries = ['茴香豆是什么？', 'HuixiangDou 是什么？']
+
     for q in queries:
-        for sess in bot.generate(query=q, history=[]):
-            print(sess)
+        async def wrap_async_as_coroutine():
+            async for sess in bot.generate(query=q, history=[], enable_web_search=False):
+                print(sess.delta, end='', flush=True)
+                pass
+            print('\n')
+            print(sess.references)
+        loop.run_until_complete(wrap_async_as_coroutine())
