@@ -34,9 +34,6 @@ class PreprocNode:
     def __init__(self, config: dict, llm: ChatClient, language: str):
         self.llm = llm
         self.enable_cr = config['worker']['enable_cr']
-        self.cr_client = OpenAI(
-            base_url=config['coreference_resolution']['base_url'],
-            api_key=config['coreference_resolution']['api_key'])
 
         if language == 'zh':
             self.SCORING_QUESTION_TEMPLTE = SCORING_QUESTION_TEMPLTE_CN
@@ -134,7 +131,7 @@ class Text2vecRetrieval:
         yield sess
 
 
-class WebSearchRetrieval(Node):
+class WebSearchRetrieval:
     """WebSearchNode is for web search, use `ddgs` or `serper`"""
 
     def __init__(self, config: dict, config_path: str, llm: ChatClient,
@@ -199,24 +196,13 @@ class WebSearchRetrieval(Node):
             yield sess
             return
 
-class ReduceGenerate(Node):
+
+class ReduceGenerate:
     def __init__(self, llm: ChatClient, retriever: CacheRetriever, language: str):
         self.llm = llm
-        self.config_path = config_path
-        self.enable = config['worker']['enable_web_search']
-        llm_config = config['llm']
-        self.context_max_length = llm_config['server'][
-            'local_llm_max_text_length']
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server'][
-                'remote_llm_max_text_length']
         if language == 'zh':
-            self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
-            self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_CN
             self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CN
         else:
-            self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_EN
-            self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_EN
             self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
         
     async def process(self, sess: Session) -> Generator[Session, None, None]:
@@ -236,6 +222,7 @@ class ReduceGenerate(Node):
             async for part in self.llm.chat_stream(prompt=prompt, history=history):
                 sess.delta = part
                 yield sess
+
 
 class ParallelPipeline:
     """The ParallelPipeline class orchestrates the logic of handling user queries,
@@ -334,6 +321,7 @@ class ParallelPipeline:
             yield sess
         return
 
+
 def parse_args():
     """Parses command-line arguments."""
     parser = argparse.ArgumentParser(description='SerialPipeline.')
@@ -347,7 +335,8 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    bot = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
+    bot = ParallelPipeline(work_dir=args.work_dir, config_path=args.config_path)
     queries = ['茴香豆是怎么做的']
-    for example in queries:
-        print(bot.generate(query=example, history=[], groupname=''))
+    for q in queries:
+        for sess in bot.generate(query=q, history=[]):
+            print(sess)

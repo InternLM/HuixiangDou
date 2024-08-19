@@ -11,7 +11,7 @@ import pytoml
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
 
-from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query
+from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk
 
 from ..primitive import FileOperation
 from .helper import QueryTracker

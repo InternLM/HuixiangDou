@@ -78,7 +78,6 @@ def rag(process_id: int, task: list, output_dir: str):
     assistant = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
 
     # assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'
-
     output_path = os.path.join(output_dir, 'output{}.json'.format(process_id))
     for item in task:
         query = item.query

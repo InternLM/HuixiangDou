@@ -209,8 +209,5 @@ def run():
             f'unsupported fe_config.type {fe_type}, please read `config.ini` description.'  # noqa E501
         )
 
-    # server_process.join()
-
-
 if __name__ == '__main__':
     run()
