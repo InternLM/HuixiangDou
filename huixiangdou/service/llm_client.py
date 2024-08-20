@@ -177,13 +177,6 @@ class ChatClient:
                                 if '\r\ndata: ' in message:
                                     message = message.replace('\r\ndata: ', '\r\n')
                                 yield message
-                            # print(chunk_str)
-                            # mines = chunk_str.split('\r\n\r\n')
-
-                            # for mime_str in mines:
-                            #     pos = mime_str.find('data: ') + len('data: ')
-                            #     content = mime_str[pos:]
-                            #     yield content
                     else:
                         raise Exception(response.status)
 
