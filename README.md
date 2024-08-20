@@ -223,10 +223,8 @@ python3 -m huixiangdou.main --standalone
 ```bash
 python3 -m huixiangdou.gradio
 ```
-<video width="320" height="320" controls>
-  <source src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" type="video/mp4">
-  HuixiangDou AI assitant
-</video>
+
+https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554
 
 Or run a server to listen 23333, default pipeline is `chat_with_repo`:
 ```bash

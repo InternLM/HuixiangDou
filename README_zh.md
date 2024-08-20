@@ -223,10 +223,8 @@ python3 -m huixiangdou.gradio
 # 若已单独运行 `llm_server_hybrid.py`，可以 
 # python3 -m huixiangdou.gradio --no-standalone
 ```
-<video width="320" height="320" controls>
-  <source src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" type="video/mp4">
-  HuixiangDou AI assitant
-</video>
+
+https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554
 
 或者启动服务端，监听 23333 端口。默认使用 `chat_with_repo` pipeline：
 ```bash
