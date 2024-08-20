@@ -373,7 +373,7 @@ python3 tests/test_query_gradio.py
 3. 如何接入其他 local LLM / 接入后效果不理想怎么办？
 
    - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
-   - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./huixiangdou/service/worker.py)
+   - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [prompt.py](./huixiangdou/service/prompt.py)
 
 4. 响应太慢/网络请求总是失败怎么办？
 

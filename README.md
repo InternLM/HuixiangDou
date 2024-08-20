@@ -375,7 +375,7 @@ Contributors have provided [Android tools](./android) to interact with WeChat. T
 3. How to access other local LLM / After access, the effect is not ideal?
 
    - Open [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py), add a new LLM inference implementation.
-   - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [worker.py](./huixiangdou/service/worker.py).
+   - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [prompt.py](./huixiangdou/service/prompt.py).
 
 4. What if the response is too slow/request always fails?
 
