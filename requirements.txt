@@ -33,4 +33,4 @@ fastapi
 uvicorn
 termcolor
 opencv-python-headless
-gradio
+gradio>=4.41

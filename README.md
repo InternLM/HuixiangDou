@@ -30,12 +30,14 @@ English | [简体中文](README_zh.md)
 
 </div>
 
-HuixiangDou is a **group chat** assistant based on LLM (Large Language Model).
+HuixiangDou is a **professional knowledge assistant** based on LLM.
 
 Advantages:
 
-1. Design a three-stage pipeline of preprocess, rejection and response to cope with group chat scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/).
-2. No training required, with CPU-only, 2G, 10G and 80G configuration
+1. Design three-stage pipelines of preprocess, rejection and response
+  * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/)
+  * `chat_with_repo` for **real-time streaming** chat
+2. No training required, with CPU-only, 2G, 10G, 20G and 80G configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](resource/figures/wechat.jpg) to try AI assistant inside.
@@ -46,6 +48,7 @@ If this helps you, please give it a star ⭐
 
 Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can create knowledge base, update positive and negative examples, turn on web search, test chat, and integrate into Feishu/WeChat groups. See [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) and [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) !
 
+- \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 👍
 - \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
 - \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/knowledge_graph_en.md) improve 1.7% F1 score 🎯
 - \[2024/06\] [Evaluation of chunksize, splitter, and text2vec model](./evaluation) 🎯

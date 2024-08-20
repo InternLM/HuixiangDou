@@ -37,9 +37,9 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-language='zh'
-enable_web_search=True
-pipeline='parallel'
+language='en'
+enable_web_search=False
+pipeline='chat_with_repo'
 main_args = None
 paralle_assistant = None
 serial_assistant = None
@@ -71,7 +71,7 @@ def format_refs(refs: List[str]):
     if language == 'zh':
         text += '参考资料：\r\n'
     else:
-        text += 'references:\r\n'
+        text += '**References:**\r\n'
     
     for file_or_url in refs_filter:
         text += '* {}\r\n'.format(file_or_url)
@@ -95,7 +95,7 @@ async def predict(text:str, image:str):
         image_path = None
 
     query = Query(text, image_path)
-    if 'serial' in pipeline:
+    if 'chat_in_group' in pipeline:
         if serial_assistant is None:
             serial_assistant = SerialPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history': [], 'groupname':''}
@@ -125,15 +125,14 @@ async def predict(text:str, image:str):
         args = {'query':query, 'history':[], 'language':language}
         args['enable_web_search'] = enable_web_search
 
-        sentence = None
+        sentence = ''
         async for sess in paralle_assistant.generate(**args):
-            if len(sess.delta) > 0:
-                if sentence is None:
-                    sentence = format_refs(sess.references)
+            if sentence == '' and len(sess.references) > 0:
+                sentence = format_refs(sess.references)
 
+            if len(sess.delta) > 0:
                 sentence += sess.delta
                 yield sentence
-        
         
         yield sentence
 
@@ -145,25 +144,31 @@ if __name__ == '__main__':
         # hybrid llm serve
         start_llm_server(config_path=main_args.config_path)
 
-    with gr.Blocks(theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(theme=gr.themes.Soft(), title='HuixiangDou AI assistant', analytics_enabled=True) as demo:
+        with gr.Row():
+            gr.Markdown("""
+            #### [HuixiangDou](https://github.com/internlm/huixiangdou) AI assistant
+            """, label='Reply', header_links=True, line_breaks=True,)
         with gr.Row():
             with gr.Column():
-                ui_language = gr.Radio(["zh", "en"], label="Language", info="Use `zh` by default")
-                ui_language.change(fn=on_language_changed, inputs=ui_language, outputs=[])
-            with gr.Column():
-                ui_pipeline = gr.Radio(["parallel", "serial"], label="Pipeline type", info="Serial pipeline is very slow but more accurate, default value is `parallel`")
+                ui_pipeline = gr.Radio(["chat_with_repo", "chat_in_group"], label="Pipeline type", info="Group-chat is slow but accurate and safe, default value is `chat_with_repo`")
                 ui_pipeline.change(fn=on_pipeline_changed, inputs=ui_pipeline, outputs=[])
             with gr.Column():
-                ui_web_search = gr.Radio(["yes", "no"], label="Enable web search", info="Enable by default")
+                ui_language = gr.Radio(["en", "zh"], label="Language", info="Use `en` by default                                 ")
+                ui_language.change(fn=on_language_changed, inputs=ui_language, outputs=[])
+            with gr.Column():
+                ui_web_search = gr.Radio(["no", "yes"], label="Enable web search", info="Disable by default                                 ")
                 ui_web_search.change(on_web_search_changed, inputs=ui_web_search, outputs=[])
 
         with gr.Row():
-            input_question = gr.TextArea(label='Input your question.', placeholder='how to install opencompass ?', show_copy_button=True, lines=9)
+            input_question = gr.TextArea(label='Input your question', placeholder='how to install opencompass ?', show_copy_button=True, lines=9)
             input_image = gr.Image(label='[Optional] Image-text retrieval needs `config-multimodal.ini`')
         with gr.Row():
             run_button = gr.Button()
         with gr.Row():
-            result = gr.TextArea(label='Reply', show_copy_button=True, placeholder='Text Reply or inner status callback, depends on `pipeline type`')
+            result = gr.Markdown('>Text reply or inner status callback here, depends on `pipeline type`', label='Reply', show_label=True, header_links=True, line_breaks=True, show_copy_button=True)
+            # result = gr.TextArea(label='Reply', show_copy_button=True, placeholder='Text Reply or inner status callback, depends on `pipeline type`')
+            
         run_button.click(predict, [input_question, input_image], [result])
     demo.queue()
     demo.launch(share=False, server_name='0.0.0.0', debug=True)

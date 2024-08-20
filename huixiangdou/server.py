@@ -18,7 +18,7 @@ from pydantic import BaseModel
 import uvicorn
 import json
 
-assistant = SerialPipeline(work_dir='workdir', config_path='config.ini')
+assistant = None
 app = FastAPI(docs_url='/')
 
 class Talk(BaseModel):
@@ -66,5 +66,31 @@ async def huixiangdou_stream(talk: Talk):
             yield json.dumps(pipeline)
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
+def parse_args():
+    """Parse args."""
+    parser = argparse.ArgumentParser(description='SerialPipeline.')
+    parser.add_argument('--work_dir',
+                        type=str,
+                        default='workdir',
+                        help='Working directory.')
+    parser.add_argument(
+        '--config_path',
+        default='config.ini',
+        type=str,
+        help='Configuration path. Default value is config.ini')
+    parser.add_argument('--standalone',
+                        action='store_true',
+                        default=False,
+                        help='Auto deploy required Hybrid LLM Service.')
+    parser.add_argument('--pipeline', type=str, choices=['chat_with_repo', 'chat_in_group'], default='chat_with_repo', 
+                        help='Select pipeline type for difference scenario, default value is `chat_with_repo`')
+    args = parser.parse_args()
+    return args
+
 if __name__ == '__main__':
+    args = parse_args()
+    if 'chat_with_repo' in args.pipeline:
+        assistant = ParallelPipeline(work_dir=args.work_dir, config_path=args.config_path)
+    elif 'chat_in_group' in args.pipeline:
+        assistant = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
     uvicorn.run(app, host='0.0.0.0', port=23333, log_level='info')
