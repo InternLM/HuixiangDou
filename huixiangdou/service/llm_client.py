@@ -3,6 +3,7 @@
 import argparse
 import json
 import aiohttp
+import re
 
 import pytoml
 import requests
@@ -132,7 +133,7 @@ class ChatClient:
             )
             return ''
 
-    async def generate_response_async(self, prompt, history=[], backend='local'):
+    async def chat_stream(self, prompt, history=[], backend='local'):
         """Generate a stream response from the chat service.
 
         Args:
@@ -143,7 +144,8 @@ class ChatClient:
         Returns:
             str: Generated response from the chat service.
         """
-        url = self.llm_config['client_stream_url']
+        sync_url = self.llm_config['client_url']
+        stream_url = sync_url.replace('/inference', '/stream')
         real_backend, max_length = self.auto_fix(backend=backend)
 
         if len(prompt) > max_length:
@@ -152,6 +154,7 @@ class ChatClient:
             )
             prompt = prompt[0:max_length]
 
+        sse_pattern = re.compile(r'data: (.*?)(?=\r\n\r\n)', re.DOTALL)
         try:
             headers = {'Content-Type': 'application/json'}
             data_history = []
@@ -164,17 +167,16 @@ class ChatClient:
             }
 
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, data=json.dumps(data)) as response:
+                async with session.post(stream_url, headers=headers, data=json.dumps(data)) as response:
                     # 确保请求成功
                     if response.status == 200:
                         async for chunk in response.content.iter_any():
-                            chunk_str = chunk.decode().strip()
-                            mines = chunk_str.split('\r\n\r\n')
-
-                            for mime_str in mines:
-                                pos = mime_str.find('data: ') + len('data: ')
-                                content = mime_str[pos:]
-                                yield content
+                            chunk_data = chunk.decode()
+                            messages = sse_pattern.findall(chunk_data)
+                            for message in messages:
+                                if '\r\ndata: ' in message:
+                                    message = message.replace('\r\ndata: ', '\r\n')
+                                yield message
                     else:
                         raise Exception(response.status)
 
@@ -211,7 +213,7 @@ if __name__ == '__main__':
     #                              backend='remote'))
 
     async def wrap_as_coroutine():
-        async for text in client.generate_response_async('请问 ncnn 全称是啥'):
+        async for text in client.chat_stream('请问 ncnn 全称是啥'):
             print(text, end='', flush=True)
     import asyncio
 

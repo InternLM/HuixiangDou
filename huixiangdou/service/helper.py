@@ -24,7 +24,6 @@ class TaskCode(Enum):
     CHAT = 'chat'
     CHAT_RESPONSE = 'chat_response'
 
-
 class ErrorCode(Enum):
     """Define an enumerated type for error codes, each has a numeric value and
     a description.

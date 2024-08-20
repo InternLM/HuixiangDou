@@ -251,7 +251,6 @@ def metric(llm_type: str,
                 else:
                     unknow_count += 1
                     print(dt)
-                    pdb.set_trace()
                     dts.append(bool(1 - cr_need_gt))
 
     assert len(gts) == len(dts)

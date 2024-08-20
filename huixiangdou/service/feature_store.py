@@ -314,7 +314,7 @@ def test_reject(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
 
     for example in real_questions:
-        relative = retriever.is_relative(example)
+        relative, score = retriever.is_relative(example)
 
         if relative:
             logger.warning(f'process query: {example}')
@@ -330,7 +330,6 @@ def test_reject(retriever: Retriever, sample: str = None):
                 with open('workdir/negative.txt', 'a+') as f:
                     f.write(example)
                     f.write('\n')
-
     empty_cache()
 
 

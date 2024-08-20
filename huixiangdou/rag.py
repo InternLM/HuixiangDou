@@ -11,7 +11,7 @@ import pytoml
 import requests
 from loguru import logger
 
-from .service import ErrorCode, Worker, llm_serve
+from .service import ErrorCode, SerialPipeline, llm_serve
 
 
 class Task:
@@ -41,7 +41,7 @@ class Task:
 
 def parse_args():
     """Parse args."""
-    parser = argparse.ArgumentParser(description='Worker.')
+    parser = argparse.ArgumentParser(description='SerialPipeline.')
     parser.add_argument('--work_dir',
                         type=str,
                         default='workdir',
@@ -50,7 +50,7 @@ def parse_args():
         '--config_path',
         default='config-alignment.ini',
         type=str,
-        help='Worker configuration path. Default value is config.ini')
+        help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument(
         '--input',
         default='resource/rag_example_input.json',
@@ -75,10 +75,9 @@ def parse_args():
 def rag(process_id: int, task: list, output_dir: str):
     """Extract structured output with RAG."""
 
-    assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
+    assistant = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
 
     # assistant.TOPIC_TEMPLATE = '告诉我这句话的关键字和主题，直接说主题不要解释：“{}”'
-
     output_path = os.path.join(output_dir, 'output{}.json'.format(process_id))
     for item in task:
         query = item.query

@@ -12,7 +12,6 @@ sentences_2 = [
 
 import pdb
 
-pdb.set_trace()
 embeddings_1 = model.encode(sentences_1, max_length=512)['dense_vecs']
 embeddings_2 = model.encode(sentences_2)['dense_vecs']
 similarity = embeddings_1 @ embeddings_2.T

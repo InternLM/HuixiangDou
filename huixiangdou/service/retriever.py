@@ -4,14 +4,14 @@ import json
 import os
 import pdb
 import time
-from typing import Any, Union, Tuple
+from typing import Any, Union, Tuple, List
 
 import numpy as np
 import pytoml
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
 
-from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query
+from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk
 
 from ..primitive import FileOperation
 from .helper import QueryTracker
@@ -83,6 +83,106 @@ class Retriever:
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
 
+    def text2vec_retrieve(self, query: Union[Query, str]):
+        """Retrieve chunks by text2vec model or knowledge graph. 
+        
+        Args:
+            query (Query): The multimodal question asked by the user.
+        
+        Returns:
+            List[Chunk]: ref chunks.
+        """
+        if type(query) is str:
+            query = Query(text=query)
+
+        graph_delta = 0.0
+        if self.kg.is_available():
+            try:
+                docs = self.kg.retrieve(query=query.text)
+                graph_delta = 0.2 * min(100, len(docs)) / 100
+            except Exception as e:
+                logger.warning(str(e))
+                logger.info('KG folder exists, but search failed, skip.')
+
+        threshold = self.reject_throttle - graph_delta
+        pairs = self.faiss.similarity_search_with_query(self.embedder,
+                                                        query=query, threshold=threshold)
+        chunks = [pair[0] for pair in pairs]
+        return chunks
+
+    def rerank_fuse(self, query: Union[Query, str], chunks: List[Chunk], context_max_length:int):
+        """Rerank chunks and extract content
+        
+        Args:
+            chunks (List[Chunk]): filtered chunks.
+        
+        Returns:
+            str: Joined chunks, or empty string
+            str: Matched context from origin file content
+            List[str]: References
+        """
+        if type(query) is str:
+            query = Query(text=query)
+
+        rerank_chunks = self.reranker.rerank(query=query.text,
+                                      chunks=chunks)
+
+        file_opr = FileOperation()
+        # Add file text to context, until exceed `context_max_length`
+        # If `file_length` > `context_max_length` (for example file_length=300 and context_max_length=100)
+        # then centered on the chunk, read a length of 200
+        splits = []
+        context = ''
+        references = []
+        for idx, chunk in enumerate(rerank_chunks):
+
+            content = chunk.content_or_path
+            splits.append(content)
+
+            source = chunk.metadata['source']
+            if '://' in source:
+                # url
+                file_text = content
+            else:
+                file_text, error = file_opr.read(chunk.metadata['read'])
+                if error is not None:
+                    # read file failed, skip
+                    continue
+
+            logger.info('target {} content length {}'.format(
+                source, len(file_text)))
+            if len(file_text) + len(context) > context_max_length:
+                if source in references:
+                    continue
+                references.append(source)
+
+                # add and break
+                add_len = context_max_length - len(context)
+                if add_len <= 0:
+                    break
+                content_index = file_text.find(content)
+                if content_index == -1:
+                    # content not in file_text
+                    context += content
+                    context += '\n'
+                    context += file_text[0:add_len - len(content) - 1]
+                else:
+                    start_index = max(0,
+                                      content_index - (add_len - len(content)))
+                    context += file_text[start_index:start_index + add_len]
+                break
+
+            if source not in references:
+                context += file_text
+                context += '\n'
+                references.append(source)
+
+        context = context[0:context_max_length]
+        logger.debug('query:{} files:{}'.format(query, references))
+        return '\n'.join(splits), context, [
+            os.path.basename(r) for r in references
+        ]
+
     def query(self,
               query: Union[Query, str],
               context_max_length: int = 40000,
@@ -110,86 +210,11 @@ class Retriever:
             logger.warning('input too long, truncate to 512')
             query.text = query.text[0:512]
 
-        chunks = []
-        context = ''
-        references = []
-
-        graph_delta = 0.0
-        if self.kg.is_available():
-            try:
-                docs = self.kg.retrieve(query=query.text)
-                graph_delta = 0.2 * min(100, len(docs)) / 100
-            except Exception as e:
-                logger.warning(str(e))
-                logger.info('KG folder exists, but search failed, skip.')
-
-        threshold = self.reject_throttle - graph_delta
-        pairs = self.faiss.similarity_search_with_query(self.embedder,
-                                                        query=query)
-        # logger.debug('retriever.docs {}'.format(docs))
-
-        if len(pairs) < 1 or pairs[0][1] < threshold:
-            references.append(pairs[0][0].metadata['source'])
-            return None, None, references
-
-        high_score_chunks = []
-        for pair in pairs:
-            if pair[1] >= threshold:
-                high_score_chunks.append(pair[0])
-
-        chunks = self.reranker.rerank(query=query.text,
-                                      chunks=high_score_chunks)
+        high_score_chunks = self.text2vec_retrieve(query=query)
         if tracker is not None:
-            tracker.log('retrieve', [c.metadata['source'] for c in chunks])
-
-        file_opr = FileOperation()
-        splits = []
-        # Add file text to context, until exceed `context_max_length`
-        # If `file_length` > `context_max_length` (for example file_length=300 and context_max_length=100)
-        # then centered on the chunk, read a length of 200
-        for idx, chunk in enumerate(chunks):
-
-            content = chunk.content_or_path
-            splits.append(content)
-
-            file_text, error = file_opr.read(chunk.metadata['read'])
-            if error is not None:
-                # read file failed, skip
-                continue
-
-            source = chunk.metadata['source']
-            logger.info('target {} file length {}'.format(
-                source, len(file_text)))
-            if len(file_text) + len(context) > context_max_length:
-                if source in references:
-                    continue
-                references.append(source)
-                # add and break
-                add_len = context_max_length - len(context)
-                if add_len <= 0:
-                    break
-                content_index = file_text.find(content)
-                if content_index == -1:
-                    # content not in file_text
-                    context += content
-                    context += '\n'
-                    context += file_text[0:add_len - len(content) - 1]
-                else:
-                    start_index = max(0,
-                                      content_index - (add_len - len(content)))
-                    context += file_text[start_index:start_index + add_len]
-                break
-
-            if source not in references:
-                context += file_text
-                context += '\n'
-                references.append(source)
-
-        context = context[0:context_max_length]
-        logger.debug('query:{} files:{}'.format(query, references))
-        return '\n'.join(splits), context, [
-            os.path.basename(r) for r in references
-        ]
+            tracker.log('retrieve', [c.metadata['source'] for c in high_score_chunks])
+        
+        return self.rerank_fuse(query=query, chunks=high_score_chunks, context_max_length=context_max_length)
 
     def is_relative(self,
                     query,

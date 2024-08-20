@@ -21,7 +21,6 @@ scores = reranker.compute_score([
 print(scores)  # [-8.1875, 5.26171875]
 import pdb
 
-pdb.set_trace()
 # You can map the scores into 0-1 by set "normalize=True", which will apply sigmoid function to the score
 scores = reranker.compute_score([
     ['what is panda?', 'hi'],

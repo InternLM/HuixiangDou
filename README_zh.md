@@ -29,10 +29,12 @@
 
 </div>
 
-茴香豆是一个基于 LLM 的**群聊**知识助手，优势：
+茴香豆是一个基于 LLM 的专业知识助手，优势：
 
-1. 设计预处理、拒答、响应三阶段 pipeline 应对群聊场景，解答问题同时不会消息泛滥。精髓见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/knowledge_graph_zh.md)和[业务数据精度测试](./evaluation)
-2. 无需训练适用各行业，提供 CPU-only、2G、10G、80G 规格配置
+1. 设计预处理、拒答、响应三阶段 pipeline：
+    * `chat_in_group` 群聊场景，解答问题时不会消息泛滥。见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/knowledge_graph_zh.md)和[业务数据精度测试](./evaluation)
+    * `chat_with_repo` 实时聊天场景，响应更快
+2. 无需训练适用各行业，提供 CPU-only、2G、10G、20G、80G 规格配置
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
 查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
@@ -45,6 +47,7 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
+- \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
 - \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/knowledge_graph_zh.md) 🎯
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
@@ -216,10 +219,14 @@ python3 -m huixiangdou.main --standalone
 💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
 
 ```bash
-python3 -m huixiangdou.gradio
+python3 -m huixiangdou.gradio 
+# 若已单独运行 `llm_server_hybrid.py`，可以 
+# python3 -m huixiangdou.gradio --no-standalone
 ```
 
-或者启动服务端，监听 23333 端口：
+https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554
+
+或者启动服务端，监听 23333 端口。默认使用 `chat_with_repo` pipeline：
 ```bash
 python3 -m huixiangdou.server
 
@@ -364,7 +371,7 @@ python3 tests/test_query_gradio.py
 3. 如何接入其他 local LLM / 接入后效果不理想怎么办？
 
    - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
-   - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [worker.py](./huixiangdou/service/worker.py)
+   - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [prompt.py](./huixiangdou/service/prompt.py)
 
 4. 响应太慢/网络请求总是失败怎么办？
 
