@@ -35,8 +35,8 @@ HuixiangDou is a **professional knowledge assistant** based on LLM.
 Advantages:
 
 1. Design three-stage pipelines of preprocess, rejection and response
-  * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/)
-  * `chat_with_repo` for **real-time streaming** chat
+    * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/)
+    * `chat_with_repo` for **real-time streaming** chat
 2. No training required, with CPU-only, 2G, 10G, 20G and 80G configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
 
