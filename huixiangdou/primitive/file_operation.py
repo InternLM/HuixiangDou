@@ -252,12 +252,10 @@ if __name__ == '__main__':
         text, error = opr.read(pdf_path)
         print('processing {}'.format(pdf_path))
         if error is not None:
-            # pdb.set_trace()
             print('')
 
         else:
             if text is not None:
                 print(len(text))
             else:
-                # pdb.set_trace()
                 print('')

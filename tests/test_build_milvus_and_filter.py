@@ -190,7 +190,6 @@ def calculate(chunk_size: int):
     col = init_milvus(col_name='test2', max_length_bytes=3 * chunk_size)
 
     subdocs = split_by_group(docs)
-    pdb.set_trace()
     for idx, docs in enumerate(subdocs):
         print('build step {}'.format(idx))
         texts = []
@@ -209,7 +208,6 @@ def calculate(chunk_size: int):
             col.flush()
         except Exception as e:
             print(e)
-            pdb.set_trace()
 
     print('insert finished')
     # start = 0.4

@@ -9,7 +9,7 @@ import cv2
 import gradio as gr
 import pytoml
 from loguru import logger
-
+from typing import List
 from huixiangdou.primitive import Query
 from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline, llm_serve, start_llm_server
 
@@ -41,6 +41,8 @@ language='zh'
 enable_web_search=True
 pipeline='parallel'
 main_args = None
+paralle_assistant = None
+serial_assistant = None
 
 def on_language_changed(value:str):
     global language
@@ -60,11 +62,30 @@ def on_web_search_changed(value: str):
     else:
         enable_web_search = True
 
+
+def format_refs(refs: List[str]):
+    refs_filter = list(set(refs))
+    if len(refs) < 1:
+        return ''
+    text = ''
+    if language == 'zh':
+        text += '参考资料：\r\n'
+    else:
+        text += 'references:\r\n'
+    
+    for file_or_url in refs_filter:
+        text += '* {}\r\n'.format(file_or_url)
+    text += '\r\n'
+    return text
+
+
 async def predict(text:str, image:str):
     global language
     global enable_web_search
     global pipeline
     global main_args
+    global serial_assistant
+    global paralle_assistant
 
     if image is not None:
         filename = 'image.png'
@@ -75,7 +96,8 @@ async def predict(text:str, image:str):
 
     query = Query(text, image_path)
     if 'serial' in pipeline:
-        serial_assistant = SerialPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
+        if serial_assistant is None:
+            serial_assistant = SerialPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history': [], 'groupname':''}
         pipeline = {'status': {}}
         debug = dict()
@@ -96,21 +118,24 @@ async def predict(text:str, image:str):
 
                 json_str = json.dumps(pipeline, indent=2, ensure_ascii=False)
                 yield json_str
-        del serial_assistant
+
     else:
-        paralle_assistant = ParallelPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
+        if paralle_assistant is None:
+            paralle_assistant = ParallelPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history':[], 'language':language}
         args['enable_web_search'] = enable_web_search
 
-        sentence = ''
+        sentence = None
         async for sess in paralle_assistant.generate(**args):
             if len(sess.delta) > 0:
+                if sentence is None:
+                    sentence = format_refs(sess.references)
+
                 sentence += sess.delta
                 yield sentence
         
-        sentence += str(sess.references)
+        
         yield sentence
-        del paralle_assistant
 
 if __name__ == '__main__':
     main_args = parse_args()
@@ -120,25 +145,25 @@ if __name__ == '__main__':
         # hybrid llm serve
         start_llm_server(config_path=main_args.config_path)
 
-    with gr.Blocks() as demo:
+    with gr.Blocks(theme=gr.themes.Soft()) as demo:
         with gr.Row():
             with gr.Column():
-                ui_language = gr.Radio(["zh", "en"], label="Language", info="Use zh_cn by default.")
+                ui_language = gr.Radio(["zh", "en"], label="Language", info="Use `zh` by default")
                 ui_language.change(fn=on_language_changed, inputs=ui_language, outputs=[])
             with gr.Column():
-                ui_pipeline = gr.Radio(["parallel", "serial"], label="Pipeline type", info="Serial pipeline is slower but accurate, default value is `serial`")
+                ui_pipeline = gr.Radio(["parallel", "serial"], label="Pipeline type", info="Serial pipeline is very slow but more accurate, default value is `parallel`")
                 ui_pipeline.change(fn=on_pipeline_changed, inputs=ui_pipeline, outputs=[])
             with gr.Column():
-                ui_web_search = gr.Radio(["yes", "no"], label="Enable web search", info="Enable web search")
+                ui_web_search = gr.Radio(["yes", "no"], label="Enable web search", info="Enable by default")
                 ui_web_search.change(on_web_search_changed, inputs=ui_web_search, outputs=[])
 
         with gr.Row():
-            input_question = gr.TextArea(label='Input the question.')
-            input_image = gr.Image(label='Upload Image.')
+            input_question = gr.TextArea(label='Input your question.', placeholder='how to install opencompass ?', show_copy_button=True, lines=9)
+            input_image = gr.Image(label='[Optional] Image-text retrieval needs `config-multimodal.ini`')
         with gr.Row():
             run_button = gr.Button()
         with gr.Row():
-            result = gr.TextArea(label='HuixiangDou pipline status', show_copy_button=True)
+            result = gr.TextArea(label='Reply', show_copy_button=True, placeholder='Text Reply or inner status callback, depends on `pipeline type`')
         run_button.click(predict, [input_question, input_image], [result])
     demo.queue()
     demo.launch(share=False, server_name='0.0.0.0', debug=True)

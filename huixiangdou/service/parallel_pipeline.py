@@ -15,7 +15,7 @@ from typing import List, Tuple, Union, Generator
 import pytoml
 from loguru import logger
 
-from huixiangdou.primitive import Query
+from huixiangdou.primitive import Query, Chunk
 
 from .helper import ErrorCode, is_truth
 from .llm_client import ChatClient
@@ -142,6 +142,7 @@ class WebSearchRetrieval:
         llm_config = config['llm']
         self.context_max_length = llm_config['server'][
             'local_llm_max_text_length']
+        self.language = language
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server'][
                 'remote_llm_max_text_length']
@@ -160,40 +161,32 @@ class WebSearchRetrieval:
             yield sess
             return
 
-        engine = WebSearch(config_path=self.config_path)
+        engine = WebSearch(config_path=self.config_path, language=self.language)
 
         prompt = self.KEYWORDS_TEMPLATE.format(sess.groupname, sess.query.text)
         search_keywords = self.llm.generate_response(prompt)
+        search_keywords = search_keywords.replace('"', '')
         sess.debug['WebSearchNode_keywords'] = prompt
-        articles, error = engine.get(query=search_keywords, max_article=2)
+
+        articles, error = await asyncio.to_thread(engine.get, search_keywords, 4) 
 
         if error is not None:
             sess.code = ErrorCode.WEB_SEARCH_FAIL
+            sess.parallel_chunks = []
+            yield sess
+            return
+
+        if len(articles) < 1:
+            sess.code = ErrorCode.NO_SEARCH_RESULT
+            sess.parallel_chunks = []
             yield sess
             return
 
         for article_id, article in enumerate(articles):
             article.cut(0, self.context_max_length)
-
-            prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
-                sess.query.text, article.brief)
-            # truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='puyu')
-            truth, logs = is_truth(llm=self.llm,
-                                   prompt=prompt,
-                                   throttle=5,
-                                   default=10,
-                                   backend='remote')
-            sess.debug['WebSearchNode_relavance_{}'.format(article_id)] = logs
-            if truth:
-                sess.web_knowledge += '\n'
-                sess.web_knowledge += article.content
-                sess.references.append(article.source)
-
-        sess.web_knowledge = sess.web_knowledge[0:self.context_max_length].strip()
-        if len(sess.web_knowledge) < 1:
-            sess.code = ErrorCode.NO_SEARCH_RESULT
-            yield sess
-            return
+            c = Chunk(content_or_path=article.content, metadata={'source': article.source})
+            sess.parallel_chunks.append(c)
+        yield sess
 
     async def process_coroutine(self, sess: Session) -> Session:
         results = []
@@ -325,7 +318,10 @@ class ParallelPipeline:
 
         task_results = await asyncio.gather(*tasks, return_exceptions=True)
         for result in task_results:
-            sess.parallel_chunks += result.parallel_chunks
+            if type(result) is Session:
+                sess.parallel_chunks += result.parallel_chunks
+                continue
+            logger.error(result)
 
         async for sess in reduce.process(sess):
             yield sess

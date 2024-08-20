@@ -80,7 +80,7 @@ class WebSearch:
         get(query: str, max_article=1): Searches with cache. If the query already exists in the cache, return the cached result.  # noqa E501
     """
 
-    def __init__(self, config_path: str, retry: int = 1) -> None:
+    def __init__(self, config_path: str, retry: int = 1, language:str='zh') -> None:
         """Initializes the WebSearch object with the given config path and
         retry count."""
 
@@ -89,6 +89,7 @@ class WebSearch:
             config = pytoml.load(f)
             self.search_config = types.SimpleNamespace(**config['web_search'])
         self.retry = retry
+        self.language = language
 
     def fetch_url(self, query: str, target_link: str, brief: str = ''):
         if not target_link.startswith('http'):
@@ -182,7 +183,11 @@ class WebSearch:
         """
         url = 'https://google.serper.dev/search'
 
-        payload = json.dumps({'q': f'{query}', 'hl': 'zh-cn'})
+        if 'zh' in self.language:
+            lang = 'zh-cn'
+        else:
+            lang = 'en'
+        payload = json.dumps({'q': f'{query}', 'hl': lang})
         headers = {
             'X-API-KEY': self.search_config.serper_x_api_key,
             'Content-Type': 'application/json'
@@ -191,7 +196,7 @@ class WebSearch:
                                     url,
                                     headers=headers,
                                     data=payload,
-                                    timeout=15)  # noqa E501
+                                    timeout=5)  # noqa E501
         jsonobj = json.loads(response.text)
         logger.debug(jsonobj)
         keys = self.search_config.domain_partial_order

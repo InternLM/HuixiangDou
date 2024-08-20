@@ -139,13 +139,17 @@ class Retriever:
             content = chunk.content_or_path
             splits.append(content)
 
-            file_text, error = file_opr.read(chunk.metadata['read'])
-            if error is not None:
-                # read file failed, skip
-                continue
-
             source = chunk.metadata['source']
-            logger.info('target {} file length {}'.format(
+            if '://' in source:
+                # url
+                file_text = content
+            else:
+                file_text, error = file_opr.read(chunk.metadata['read'])
+                if error is not None:
+                    # read file failed, skip
+                    continue
+
+            logger.info('target {} content length {}'.format(
                 source, len(file_text)))
             if len(file_text) + len(context) > context_max_length:
                 if source in references:

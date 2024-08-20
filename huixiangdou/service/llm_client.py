@@ -144,7 +144,8 @@ class ChatClient:
         Returns:
             str: Generated response from the chat service.
         """
-        url = self.llm_config['client_stream']
+        sync_url = self.llm_config['client_url']
+        stream_url = sync_url.replace('/inference', '/stream')
         real_backend, max_length = self.auto_fix(backend=backend)
 
         if len(prompt) > max_length:
@@ -166,7 +167,7 @@ class ChatClient:
             }
 
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, data=json.dumps(data)) as response:
+                async with session.post(stream_url, headers=headers, data=json.dumps(data)) as response:
                     # 确保请求成功
                     if response.status == 200:
                         async for chunk in response.content.iter_any():
