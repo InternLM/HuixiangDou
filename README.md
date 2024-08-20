@@ -228,7 +228,7 @@ python3 -m huixiangdou.gradio
   HuixiangDou AI assitant
 </video>
 
-Or run a server to listen 23333:
+Or run a server to listen 23333, default pipeline is `chat_with_repo`:
 ```bash
 python3 -m huixiangdou.server
 

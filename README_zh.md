@@ -228,7 +228,7 @@ python3 -m huixiangdou.gradio
   HuixiangDou AI assitant
 </video>
 
-或者启动服务端，监听 23333 端口：
+或者启动服务端，监听 23333 端口。默认使用 `chat_with_repo` pipeline：
 ```bash
 python3 -m huixiangdou.server
 
