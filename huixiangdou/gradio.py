@@ -12,7 +12,7 @@ from loguru import logger
 from typing import List
 from huixiangdou.primitive import Query
 from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline, llm_serve, start_llm_server
-
+import json
 
 def parse_args():
     """Parse args."""
@@ -28,7 +28,7 @@ def parse_args():
         help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
                         action='store_true',
-                        default=False,
+                        default=True,
                         help='Auto deploy required Hybrid LLM Service.')
     parser.add_argument('--no-standalone',
                         action='store_false',
@@ -86,6 +86,10 @@ async def predict(text:str, image:str):
     global main_args
     global serial_assistant
     global paralle_assistant
+
+    with open('query.txt', 'a') as f:
+        f.write(json.dumps({'data': text}))
+        f.write('\n')
 
     if image is not None:
         filename = 'image.png'
@@ -161,7 +165,7 @@ if __name__ == '__main__':
                 ui_web_search.change(on_web_search_changed, inputs=ui_web_search, outputs=[])
 
         with gr.Row():
-            input_question = gr.TextArea(label='Input your question', placeholder='how to install opencompass ?', show_copy_button=True, lines=9)
+            input_question = gr.TextArea(label='Input your question', placeholder='how to install mmpose ?', show_copy_button=True, lines=9)
             input_image = gr.Image(label='[Optional] Image-text retrieval needs `config-multimodal.ini`')
         with gr.Row():
             run_button = gr.Button()

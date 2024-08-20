@@ -47,7 +47,7 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
-- \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 👍
+- \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
 - \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/knowledge_graph_zh.md) 🎯
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
@@ -219,8 +219,14 @@ python3 -m huixiangdou.main --standalone
 💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
 
 ```bash
-python3 -m huixiangdou.gradio
+python3 -m huixiangdou.gradio 
+# 若已单独运行 `llm_server_hybrid.py`，可以 
+# python3 -m huixiangdou.gradio --no-standalone
 ```
+<video width="320" height="320" controls>
+  <source src="./resource/20240820.mp4" type="video/mp4">
+  HuixiangDou AI assitant
+</video>
 
 或者启动服务端，监听 23333 端口：
 ```bash

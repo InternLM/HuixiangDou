@@ -223,6 +223,10 @@ python3 -m huixiangdou.main --standalone
 ```bash
 python3 -m huixiangdou.gradio
 ```
+<video width="320" height="320" controls>
+  <source src="./resource/20240820.mp4" type="video/mp4">
+  HuixiangDou AI assitant
+</video>
 
 Or run a server to listen 23333:
 ```bash

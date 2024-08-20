@@ -106,7 +106,7 @@ class Retriever:
 
         threshold = self.reject_throttle - graph_delta
         pairs = self.faiss.similarity_search_with_query(self.embedder,
-                                                        query=query)
+                                                        query=query, threshold=threshold)
         chunks = [pair[0] for pair in pairs]
         return chunks
 
