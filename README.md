@@ -224,7 +224,7 @@ python3 -m huixiangdou.main --standalone
 python3 -m huixiangdou.gradio
 ```
 <video width="320" height="320" controls>
-  <source src="./resource/20240820.mp4" type="video/mp4">
+  <source src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" type="video/mp4">
   HuixiangDou AI assitant
 </video>
 

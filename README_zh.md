@@ -32,8 +32,8 @@
 茴香豆是一个基于 LLM 的专业知识助手，优势：
 
 1. 设计预处理、拒答、响应三阶段 pipeline：
-  * `chat_in_group` 群聊场景，解答问题时不会消息泛滥。见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/knowledge_graph_zh.md)和[业务数据精度测试](./evaluation)
-  * `chat_with_repo` 实时聊天场景，响应更快
+    * `chat_in_group` 群聊场景，解答问题时不会消息泛滥。见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/knowledge_graph_zh.md)和[业务数据精度测试](./evaluation)
+    * `chat_with_repo` 实时聊天场景，响应更快
 2. 无需训练适用各行业，提供 CPU-only、2G、10G、20G、80G 规格配置
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
@@ -224,7 +224,7 @@ python3 -m huixiangdou.gradio
 # python3 -m huixiangdou.gradio --no-standalone
 ```
 <video width="320" height="320" controls>
-  <source src="./resource/20240820.mp4" type="video/mp4">
+  <source src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" type="video/mp4">
   HuixiangDou AI assitant
 </video>
 
