@@ -132,7 +132,7 @@ if __name__ == '__main__':
     # start service
     if args.standalone is True:
         # hybrid llm serve
-        start_llm_server(config_path=main_args.config_path)
+        start_llm_server(config_path=args.config_path)
     # setup chat service
     if 'chat_with_repo' in args.pipeline:
         assistant = ParallelPipeline(work_dir=args.work_dir, config_path=args.config_path)
