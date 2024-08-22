@@ -19,7 +19,7 @@ redis
 requests
 scikit-learn
 # See https://github.com/deanmalmgren/textract/issues/461
-textract @ git+https://github.com/tpoisonooo/textract@master
+# textract @ git+https://github.com/tpoisonooo/textract@master
 # textract
 texttable
 tiktoken

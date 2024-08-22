@@ -21,6 +21,7 @@ def parse_args():
                         type=str,
                         default='workdir',
                         help='Working directory.')
+    parser.add_argument('--pipeline-count', type=int, default=2, help='Support user choosing all pipeline types.')
     parser.add_argument(
         '--config_path',
         default='config.ini',
@@ -34,6 +35,10 @@ def parse_args():
                         action='store_false',
                         dest='standalone',  # 指定与上面参数相同的目标
                         help='Do not auto deploy required Hybrid LLM Service.')
+    parser.add_argument('--placeholder', type=str, default='How to install HuixiangDou ?', help='Placeholder for user query.')
+    parser.add_argument('--image', action='store_true', default=True, help='')
+    parser.add_argument('--no-image', action='store_false', dest='image', help='Close some components for readthedocs.')
+    parser.add_argument('--theme', type=str, default='soft', help='Gradio theme, default value is `soft`. Open https://www.gradio.app/guides/theming-guide for all themes.')
     args = parser.parse_args()
     return args
 
@@ -142,20 +147,42 @@ async def predict(text:str, image:str):
 
 if __name__ == '__main__':
     main_args = parse_args()
+    show_image = True
+    radio_options = ["chat_with_repo"]
 
+    if not main_args.image:
+        import pdb
+        pdb.set_trace()
+        show_image = False
+
+    if main_args.pipeline_count > 1:
+        radio_options.append('chat_in_group')
+    
     # start service
     if main_args.standalone is True:
         # hybrid llm serve
         start_llm_server(config_path=main_args.config_path)
 
-    with gr.Blocks(theme=gr.themes.Soft(), title='HuixiangDou AI assistant', analytics_enabled=True) as demo:
+    themes = {
+        'soft': gr.themes.Soft(),
+        'monochrome': gr.themes.Monochrome(),
+        'base': gr.themes.Base(),
+        'default': gr.themes.Default(),
+        'glass': gr.themes.Glass()
+    }
+    if main_args.theme in themes:
+        theme = themes[main_args.theme]
+    else:
+        theme = gr.themes.Soft()
+
+    with gr.Blocks(theme=theme, title='HuixiangDou AI assistant', analytics_enabled=True) as demo:
         with gr.Row():
             gr.Markdown("""
             #### [HuixiangDou](https://github.com/internlm/huixiangdou) AI assistant
             """, label='Reply', header_links=True, line_breaks=True,)
         with gr.Row():
             with gr.Column():
-                ui_pipeline = gr.Radio(["chat_with_repo", "chat_in_group"], label="Pipeline type", info="Group-chat is slow but accurate and safe, default value is `chat_with_repo`")
+                ui_pipeline = gr.Radio(radio_options, label="Pipeline type", info="Group-chat is slow but accurate and safe, default value is `chat_with_repo`")
                 ui_pipeline.change(fn=on_pipeline_changed, inputs=ui_pipeline, outputs=[])
             with gr.Column():
                 ui_language = gr.Radio(["en", "zh"], label="Language", info="Use `en` by default                                 ")
@@ -165,8 +192,8 @@ if __name__ == '__main__':
                 ui_web_search.change(on_web_search_changed, inputs=ui_web_search, outputs=[])
 
         with gr.Row():
-            input_question = gr.TextArea(label='Input your question', placeholder='how to install mmpose ?', show_copy_button=True, lines=9)
-            input_image = gr.Image(label='[Optional] Image-text retrieval needs `config-multimodal.ini`')
+            input_question = gr.TextArea(label='Input your question', placeholder=main_args.placeholder, show_copy_button=True, lines=9)
+            input_image = gr.Image(label='[Optional] Image-text retrieval needs `config-multimodal.ini`', render=show_image)
         with gr.Row():
             run_button = gr.Button()
         with gr.Row():
