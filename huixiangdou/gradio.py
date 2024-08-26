@@ -93,7 +93,7 @@ async def predict(text:str, image:str):
 
     if image is not None:
         filename = 'image.png'
-        image_path = os.path.join(args.work_dir, filename)
+        image_path = os.path.join(main_args.work_dir, filename)
         cv2.imwrite(image_path, image)
     else:
         image_path = None

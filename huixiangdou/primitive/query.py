@@ -50,11 +50,11 @@ class Query():
 
         formatted = ''
         if self.text is not None:
-            formatted += f"text='{self.text}'"
+            formatted += f"text='{self.text}' "
         if self.image is not None:
-            formatted += f"image='{self.image}'"
+            formatted += f"image='{self.image}' "
         if self.audio is not None:
-            formatted += f"audio='{self.audio}'"
+            formatted += f"audio='{self.audio}' "
         return formatted
 
     def __repr__(self) -> str:

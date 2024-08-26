@@ -83,7 +83,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
         <b>Retrieval Method</b>
       </td>
       <td>
-        <b>Instant Messaging</b>
+        <b>Integration</b>
       </td>
       <td>
         <b>Preprocessing</b>
@@ -126,8 +126,11 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 <td>
 
-- WeChat
+- WeChat([android](./docs/add_wechat_accessibility_zh.md)/[wkteam](./docs/add_wechat_commercial_zh.md))
 - Lark
+- [OpenXLab Web](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)
+- [Gradio Demo](./huixiangdou/gradio.py)
+- [HTTP Server](./huixiangdou/server.py)
 
 </td>
 
