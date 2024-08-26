@@ -566,7 +566,8 @@ def nested_split_markdown(filepath: str,
     image_chunks = []
 
     text_ref_splitter = MarkdownTextRefSplitter(chunk_size=chunksize)
-    ref_pattern = re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
+    md_image_pattern = re.compile(r'\[([^\]]+)\]\(([a-zA-Z0-9:/._~#-]+)?\)')
+    html_image_pattern = re.compile(r'<img\s+[^>]*?src=["\']([^"\']*)["\'][^>]*>')
     file_opr = FileOperation()
 
     for chunk in chunks:
@@ -592,12 +593,15 @@ def nested_split_markdown(filepath: str,
             content = '{} {}'.format(header, chunk.content_or_path.lower())
             text_chunks.append(Chunk(content, metadata))
     
-        # extract images
-        matches = ref_pattern.findall(chunk.content_or_path)
+        # extract images path
         dirname = os.path.dirname(filepath)
-        for match in matches:
-            # target = match[0]
-            image_path = match[1]
+
+        image_paths = []
+        for match in md_image_pattern.findall(chunk.content_or_path):
+            image_paths.append(match[1])
+        for match in html_image_pattern.findall(chunk.content_or_path):
+            image_paths.append(match)
+        for image_path in image_paths:
             if file_opr.get_type(image_path) != 'image':
                 continue
 

@@ -1,5 +1,7 @@
 # Code Structure Explanation
 
+<img src="./figures/huixiangdou.png" width="400">
+
 This document primarily explains the directory structure and functionalities of HuixiangDou. The documentation may not be updated in real-time with the code, but the definitions that are in place will no longer change.
 
 ## First Layer: Project Introduction

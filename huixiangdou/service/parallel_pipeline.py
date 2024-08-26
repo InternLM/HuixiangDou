@@ -46,7 +46,7 @@ class PreprocNode:
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
         # check input
-        if sess.query.text is None or len(sess.query.text) < 6:
+        if sess.query.text is None or len(sess.query.text) < 2:
             sess.code = ErrorCode.QUESTION_TOO_SHORT
             yield sess
             return
@@ -127,7 +127,7 @@ class Text2vecRetrieval:
         """Try get reply with text2vec & rerank model."""
 
         # retrieve from knowledge base
-        sess.parallel_chunks = await asyncio.to_thread(self.retriever.text2vec_retrieve, sess.query.text) 
+        sess.parallel_chunks = await asyncio.to_thread(self.retriever.text2vec_retrieve, sess.query) 
         # sess.parallel_chunks = self.retriever.text2vec_retrieve(query=sess.query.text)
         return sess
 
@@ -220,7 +220,7 @@ class ReduceGenerate:
         else:
             _, context_str, references = self.retriever.rerank_fuse(query=sess.query, chunks=sess.parallel_chunks, context_max_length=self.context_max_length)
             sess.references = references
-            prompt = self.GENERATE_TEMPLATE.format(context_str, sess.query)
+            prompt = self.GENERATE_TEMPLATE.format(context_str, sess.query.text)
             async for part in self.llm.chat_stream(prompt=prompt, history=history):
                 sess.delta = part
                 yield sess
