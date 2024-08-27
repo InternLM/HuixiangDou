@@ -35,7 +35,7 @@ HuixiangDou is a **professional knowledge assistant** based on LLM.
 Advantages:
 
 1. Design three-stage pipelines of preprocess, rejection and response
-    * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/)
+    * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/en/doc_knowledge_graph.md) and [Precision Report](./evaluation/)
     * `chat_with_repo` for **real-time streaming** chat
 2. No training required, with CPU-only, 2G, 10G, 20G and 80G configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
@@ -50,7 +50,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 - \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 👍
 - \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
-- \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/knowledge_graph_en.md) improve 1.7% F1 score 🎯
+- \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/en/doc_knowledge_graph.md) improve 1.7% F1 score 🎯
 - \[2024/06\] [Evaluation of chunksize, splitter, and text2vec model](./evaluation) 🎯
 - \[2024/05\] [wkteam WeChat access](./docs/zh/doc_add_wechat_commercial.md), parsing image & URL, support coreference resolution
 - \[2024/05\] [SFT LLM on NLP task, F1 increased by 29%](./sft/) 🎯
@@ -117,7 +117,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 <td>
 
-- [Knowledge Graph](./docs/knowledge_graph_en.md)
+- [Knowledge Graph](./docs/en/doc_knowledge_graph.md)
 - [Internet Search](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - Image and text (only markdown)
@@ -328,7 +328,7 @@ Note:
 
 - You need to manually download [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) to the [bge-m3](https://huggingface.co/BAAI/bge-m3) directory
 - Install FlagEmbedding on main branch, we have made [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3). [Here](https://github.com/FlagOpen/FlagEmbedding/blob/master/FlagEmbedding/visual/eva_clip/bpe_simple_vocab_16e6.txt.gz) you can download `bpe_simple_vocab_16e6.txt.gz` 
-- Install [requirments-multimodal.txt](./requirements-multimodal.txt)
+- Install [requirements/multimodal.txt](./requirements/multimodal.txt)
 
 Run gradio to test, see the image and text retrieval result [here](https://github.com/InternLM/HuixiangDou/pull/326).
 
@@ -348,8 +348,8 @@ The "HuiXiangDou" in the WeChat experience group has enabled all features:
 
 Please read the following topics:
 
-- [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_en.md)
-- [Refer to config-advanced.ini configuration to improve effects](./docs/full_dev_en.md)
+- [Hybrid knowledge graph and dense retrieval](./docs/en/doc_knowledge_graph.md)
+- [Refer to config-advanced.ini configuration to improve effects](./docs/en/doc_full_dev.md)
 - [Group chat scenario anaphora resolution training](./sft)
 - [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/zh/doc_add_wechat_commercial.md)
 - [Use rag.py to annotate SFT training data](./docs/zh/doc_rag_annotate_sft_data.md)

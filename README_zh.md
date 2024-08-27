@@ -62,7 +62,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
           <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
       </tr>
   </table>
-- \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/zh/rag_annotate_sft_data.md)
+- \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/zh/doc_rag_annotate_sft_data.md)
 - \[2024/04\] 发布 [web 前后端服务源码](./web) 👍
 - \[2024/03\] 新的[个人微信集成方法](./docs/zh/doc_add_wechat_accessibility.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
 - \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
@@ -125,7 +125,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 <td>
 
-- 微信（[android](./docs/zh/doc_add_wechat_accessibility.md)/[wkteam](./docs/zh/add_wechat_commercial.md)）
+- 微信（[android](./docs/zh/doc_add_wechat_accessibility.md)/[wkteam](./docs/zh/doc_add_wechat_commercial.md)）
 - 飞书
 - [OpenXLab Web](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)
 - [Gradio Demo](./huixiangdou/gradio.py)
@@ -326,7 +326,7 @@ reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
 
 - 先下载 [bge-m3](https://huggingface.co/BAAI/bge-m3)，然后把 [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) 放进 `bge-m3` 目录
 - FlagEmbedding 需要安装 master 最新版，我们做了 [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3)；[这里](https://github.com/FlagOpen/FlagEmbedding/blob/master/FlagEmbedding/visual/eva_clip/bpe_simple_vocab_16e6.txt.gz)可以下载 BGE 打包漏掉的 `bpe_simple_vocab_16e6.txt.gz`
-- 安装 [requirments-multimodal.txt](./requirements-multimodal.txt)
+- 安装 [requirements/multimodal.txt](./requirements/multimodal.txt)
 
 运行 gradio 测试，图文检索效果见[这里](https://github.com/InternLM/HuixiangDou/pull/326).
 
