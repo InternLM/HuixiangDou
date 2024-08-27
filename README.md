@@ -52,7 +52,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 - \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
 - \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/knowledge_graph_en.md) improve 1.7% F1 score 🎯
 - \[2024/06\] [Evaluation of chunksize, splitter, and text2vec model](./evaluation) 🎯
-- \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), parsing image & URL, support coreference resolution
+- \[2024/05\] [wkteam WeChat access](./docs/zh/doc_add_wechat_commercial.md), parsing image & URL, support coreference resolution
 - \[2024/05\] [SFT LLM on NLP task, F1 increased by 29%](./sft/) 🎯
   <table>
       <tr>
@@ -63,9 +63,9 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
           <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
       </tr>
   </table>
-- \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/rag_annotate_sft_data_zh.md)
+- \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/zh/doc_rag_annotate_sft_data.md)
 - \[2024/04\] Release [Web Front and Back End Service Source Code](./web) 👍
-- \[2024/03\] New [Personal WeChat Integration](./docs/add_wechat_accessibility_zh.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
+- \[2024/03\] New [Personal WeChat Integration](./docs/zh/doc_add_wechat_accessibility.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
 - \[2024/02\] \[Experimental Feature\] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) Integration of multimodal to achieve OCR
 
 # 📖 Support Status
@@ -126,7 +126,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 <td>
 
-- WeChat([android](./docs/add_wechat_accessibility_zh.md)/[wkteam](./docs/add_wechat_commercial_zh.md))
+- WeChat([android](./docs/zh/doc_add_wechat_accessibility.md)/[wkteam](./docs/zh/doc_add_wechat_commercial.md))
 - Lark
 - [OpenXLab Web](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)
 - [Gradio Demo](./huixiangdou/gradio.py)
@@ -244,10 +244,10 @@ Please update the `repodir` documents, [good_questions](./resource/good_question
 
 ## III. Integration into Feishu, WeChat group
 
-- [**One-way** sending to Feishu group](./docs/send_only_lark_group_zh.md)
-- [**Two-way** Feishu group receiving and sending, recalling](./docs/add_lark_group_zh.md)
-- [Personal WeChat Android access](./docs/add_wechat_accessibility_zh.md)
-- [Personal WeChat wkteam access](./docs/add_wechat_commercial_zh.md)
+- [**One-way** sending to Feishu group](./docs/zh/doc_send_only_lark_group.md)
+- [**Two-way** Feishu group receiving and sending, recalling](./docs/zh/doc_add_lark_group.md)
+- [Personal WeChat Android access](./docs/zh/doc_add_wechat_accessibility.md)
+- [Personal WeChat wkteam access](./docs/zh/doc_add_wechat_commercial.md)
 
 ## IV. Deploy web front and back end
 
@@ -351,8 +351,8 @@ Please read the following topics:
 - [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_en.md)
 - [Refer to config-advanced.ini configuration to improve effects](./docs/full_dev_en.md)
 - [Group chat scenario anaphora resolution training](./sft)
-- [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/add_wechat_commercial_zh.md)
-- [Use rag.py to annotate SFT training data](./docs/rag_annotate_sft_data_zh.md)
+- [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/zh/doc_add_wechat_commercial.md)
+- [Use rag.py to annotate SFT training data](./docs/zh/doc_rag_annotate_sft_data.md)
 
 ## **Android Tools**
 

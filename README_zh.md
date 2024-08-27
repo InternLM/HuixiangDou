@@ -32,7 +32,7 @@
 茴香豆是一个基于 LLM 的专业知识助手，优势：
 
 1. 设计预处理、拒答、响应三阶段 pipeline：
-    * `chat_in_group` 群聊场景，解答问题时不会消息泛滥。见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/knowledge_graph_zh.md)和[业务数据精度测试](./evaluation)
+    * `chat_in_group` 群聊场景，解答问题时不会消息泛滥。见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/zh/doc_knowledge_graph.md)和[业务数据精度测试](./evaluation)
     * `chat_with_repo` 实时聊天场景，响应更快
 2. 无需训练适用各行业，提供 CPU-only、2G、10G、20G、80G 规格配置
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
@@ -49,9 +49,9 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 - \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
-- \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/knowledge_graph_zh.md) 🎯
+- \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/zh/doc_knowledge_graph.md) 🎯
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
-- \[2024/05\] [wkteam 微信接入](./docs/add_wechat_commercial_zh.md)，整合图片&公众号解析、集成指代消歧
+- \[2024/05\] [wkteam 微信接入](./docs/zh/doc_add_wechat_commercial.md)，整合图片&公众号解析、集成指代消歧
 - \[2024/05\] [SFT LLM 处理 NLP 任务，F1 提升 29%](./sft/) 🎯
   <table>
       <tr>
@@ -62,9 +62,9 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
           <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
       </tr>
   </table>
-- \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/rag_annotate_sft_data_zh.md)
+- \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/zh/rag_annotate_sft_data.md)
 - \[2024/04\] 发布 [web 前后端服务源码](./web) 👍
-- \[2024/03\] 新的[个人微信集成方法](./docs/add_wechat_accessibility_zh.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
+- \[2024/03\] 新的[个人微信集成方法](./docs/zh/doc_add_wechat_accessibility.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
 - \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
 
 # 📖 支持情况
@@ -116,7 +116,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 <td>
 
-- [知识图谱](./docs/knowledge_graph_zh.md)
+- [知识图谱](./docs/zh/doc_knowledge_graph.md)
 - [联网搜索](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - 图文混合（仅 markdown）
@@ -125,7 +125,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 <td>
 
-- 微信（[android](./docs/add_wechat_accessibility_zh.md)/[wkteam](./docs/add_wechat_commercial_zh.md)）
+- 微信（[android](./docs/zh/doc_add_wechat_accessibility.md)/[wkteam](./docs/zh/add_wechat_commercial.md)）
 - 飞书
 - [OpenXLab Web](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)
 - [Gradio Demo](./huixiangdou/gradio.py)
@@ -243,10 +243,10 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 
 ## 三、集成到飞书、微信群
 
-- [**单向**发送到飞书群](./docs/send_only_lark_group_zh.md)
-- [**双向**飞书群收发、撤回](./docs/add_lark_group_zh.md)
-- [个微 android 接入](./docs/add_wechat_accessibility_zh.md)
-- [个微 wkteam 接入](./docs/add_wechat_commercial_zh.md)
+- [**单向**发送到飞书群](./docs/zh/doc_send_only_lark_group.md)
+- [**双向**飞书群收发、撤回](./docs/zh/doc_add_lark_group.md)
+- [个微 android 接入](./docs/zh/doc_add_wechat_accessibility.md)
+- [个微 wkteam 接入](./docs/zh/doc_add_wechat_commercial.md)
 
 ## 四、WEB 前后端部署，零编程集成飞书微信
 
@@ -346,11 +346,11 @@ python3 tests/test_query_gradio.py
 
 请阅读以下话题：
 
-- [混合**知识图谱**和稠密检索提升精度](./docs/knowledge_graph_zh.md)
-- [参照 config-advanced.ini 配置提升效果](./docs/full_dev_zh.md)
+- [混合**知识图谱**和稠密检索提升精度](./docs/zh/doc_knowledge_graph.md)
+- [参照 config-advanced.ini 配置提升效果](./docs/zh/doc_full_dev.md)
 - [群聊场景指代消歧训练](./sft)
-- [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/add_wechat_commercial_zh.md)
-- [使用 rag.py 标注 SFT 训练数据](./docs/rag_annotate_sft_data_zh.md)
+- [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/zh/doc_add_wechat_commercial.md)
+- [使用 rag.py 标注 SFT 训练数据](./docs/zh/doc_rag_annotate_sft_data.md)
 
 ## **移动端**
 

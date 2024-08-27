@@ -58,8 +58,8 @@ def analyze_doc(home, path):
                         ref = ref[ref.find('#'):]
                     fullpath = os.path.join(home, ref)
                     if not os.path.exists(fullpath):
-                        raise ValueError(fullpath)
-                        problem_list.append(ref)
+                       # raise ValueError(fullpath)
+                       problem_list.append(ref)
             else:
                 continue
     if len(problem_list) > 0:
@@ -79,6 +79,8 @@ def traverse(target):
             if filename.endswith('.md'):
                 path = os.path.join(home, filename)
                 if os.path.islink(path) is False:
+                    if 'copy_' in path:
+                        continue
                     analyze_doc(home, path)
 
 

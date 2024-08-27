@@ -21,7 +21,7 @@
 
 本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 魔法接入（ipadLogin 方式），限时免费。
 
-需要注意，**wechaty 很早就不维护了**，如果是个人使用，推荐用 [accessibility 方法](./add_wechat_accessibility_zh.md)。
+需要注意，**wechaty 很早就不维护了**，如果是个人使用，推荐用 [accessibility 方法](./doc_add_wechat_accessibility.md)。
 
 ## 一、准备工作
 

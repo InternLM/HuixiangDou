@@ -1,6 +1,6 @@
 # 集成个人微信 android 免费版示例
 
-在之前的 [魔改 wechaty 方案](./add_wechat_group_zh.md) 我们一共介绍了 7 种方法。这次提供第 5 种方案的具体实现，基于 Android Accessibility 读写前端，和“抢红包”软件原理相同。
+在之前的 [魔改 wechaty 方案](./doc_add_wechat_group.md) 我们一共介绍了 7 种方法。这次提供第 5 种方案的具体实现，基于 Android Accessibility 读写前端，和“抢红包”软件原理相同。
 
 由于没有 Appium/Selenium 框架做中间商，比较稳定。
 

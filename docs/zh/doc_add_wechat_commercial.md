@@ -1,6 +1,6 @@
 # 集成个人微信服务器商业版
 
-用户反馈[免费版](./add_wechat_accessibility_zh.md)不能同时支持多个群，事实上要获取群里的视频和语音也很难用 accessibility 方式完成。
+用户反馈[免费版](./doc_add_wechat_accessibility.md)不能同时支持多个群，事实上要获取群里的视频和语音也很难用 accessibility 方式完成。
 
 因此我们介绍[商业版 wkteam](https://wkteam.cn) 接入方式，支持图片、公众号解析。
 
@@ -98,7 +98,7 @@ cat wkteam/license.json
 
 > 为什么不在公网统一处理所有微信收发？看起来设计简化了，实际上开发调试都巨麻烦。
 
-填写 `config.ini`，运行。[config-wkteam-example.ini](../config-wkteam-example.ini) 是一个填写示例：
+填写 `config.ini`，运行。[config-wkteam-example.ini](../../config-wkteam-example.ini) 是一个填写示例：
 
 - LLM 只使用 kimi
 - 群列表为茴香豆用户群。`wkteam/wechat_message.jsonl` 记录了所有消息、可以得知群号
@@ -115,7 +115,7 @@ python3 -m huixiangdou.main
 
 ## 四、【可选】指代消歧
 
-根据 [2405.02817](../sft/)，我们基于真实数据微调了 Qwen 系列模型。
+根据 [2405.02817](../../sft/)，我们基于真实数据微调了 Qwen 系列模型。
 从 [HuggingFace](https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B) 下载 LoRA 权重，合并权重并部署成 openai API
 
 ```bash
