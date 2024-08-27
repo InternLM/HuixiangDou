@@ -230,7 +230,7 @@ python3 -m huixiangdou.main --standalone
 python3 -m huixiangdou.gradio
 ```
 
-https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554
+<video src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" ></video>
 
 Or run a server to listen 23333, default pipeline is `chat_with_repo`:
 ```bash

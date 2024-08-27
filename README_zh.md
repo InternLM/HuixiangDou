@@ -230,7 +230,7 @@ python3 -m huixiangdou.gradio
 # python3 -m huixiangdou.gradio --no-standalone
 ```
 
-https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554
+<video src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" ></video>
 
 或者启动服务端，监听 23333 端口。默认使用 `chat_with_repo` pipeline：
 ```bash
