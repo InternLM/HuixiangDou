@@ -8,8 +8,11 @@ English | [简体中文](README_zh.md)
   <a href="resource/figures/wechat.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
-  <a href="https://huixiangdou.readthedocs.io/en/latest/" target="_blank">
+  <!-- <a href="https://huixiangdou.readthedocs.io/en/latest/" target="_blank">
     <img alt="Readthedocs" src="https://img.shields.io/badge/readthedocs-chat%20with%20AI-brightgreen?logo=readthedocs&logoColor=white" />
+  </a> -->
+  <a href="https://huixiangdou.readthedocs.io/zh-cn/latest/" target="_blank">
+    <img alt="Readthedocs" src="https://img.shields.io/badge/readthedocs-black?logo=readthedocs&logoColor=white" />
   </a>
   <a href="https://youtu.be/ylXrT-Tei-Y" target="_blank">
     <img alt="YouTube" src="https://img.shields.io/badge/YouTube-black?logo=youtube&logoColor=red" />
