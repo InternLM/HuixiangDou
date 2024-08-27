@@ -1,6 +1,6 @@
 # 集成个人微信 android 免费版示例
 
-在之前的 [魔改 wechaty 方案](./add_wechat_group_zh.md) 我们一共介绍了 7 种方法。这次提供第 5 种方案的具体实现，基于 Android Accessibility 读写前端，和“抢红包”软件原理相同。
+在之前的 [魔改 wechaty 方案](./doc_add_wechat_group.md) 我们一共介绍了 7 种方法。这次提供第 5 种方案的具体实现，基于 Android Accessibility 读写前端，和“抢红包”软件原理相同。
 
 由于没有 Appium/Selenium 框架做中间商，比较稳定。
 
@@ -29,11 +29,11 @@
 
 从 [这里](https://github.com/InternLM/HuixiangDou/releases) 下载编译好的 apk，填入回调地址，开启服务，跳入微信。
 
-<img src="./figures/wechat-android-homepage.jpg" width="400">
+<img src="https://github.com/user-attachments/assets/6c2a2e11-b773-408d-a8f0-1a469f3fee3c" width="400">
 
 现在这个效果，记得关掉手机自动熄屏：
 
-<img src="./figures/wechat-android-example.jpg" width="200">
+<img src="https://github.com/user-attachments/assets/4f52df3a-a661-4f2a-a8d5-83817a5f9e14" width="200">
 
 ## FAQ
 

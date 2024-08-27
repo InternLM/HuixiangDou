@@ -4,7 +4,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 1. Use higher accuracy local LLM
 
-   Adjust the `llm.local` model in config.ini to others, seed [opencompass leaderboard](https://rank.opencompass.org.cn/leaderboard-llm).
+   Adjust the `llm.local` model in config.ini to others, see [opencompass leaderboard](https://rank.opencompass.org.cn/leaderboard-llm).
 
    This option has a significant effect.
 
@@ -74,6 +74,6 @@ The basic version may not perform well. You can enable these features to enhance
 
    It is often unavoidable to adjust parameters with respect to business scenarios.
 
-   - Refer to [data.json](../tests/data.json) to add real data, run [test_intention_prompt.py](../tests/test_intention_prompt.py) to get suitable prompts and thresholds, and update them into [prompt.py](../huixiangdou/service/prompt.py).
-   - Adjust the [number of search results](../huixiangdou/service/serial_pipeline.py) based on the maximum length supported by the model.
+   - Refer to [data.json](../../tests/data.json) to add real data, run [test_intention_prompt.py](../../tests/test_intention_prompt.py) to get suitable prompts and thresholds, and update them into [prompt.py](../../huixiangdou/service/prompt.py).
+   - Adjust the [number of search results](../../huixiangdou/service/serial_pipeline.py) based on the maximum length supported by the model.
    - Update `web_search.domain_partial_order` in `config.ini` according to your scenarios.

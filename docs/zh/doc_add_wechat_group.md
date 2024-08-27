@@ -21,7 +21,7 @@
 
 本文介绍 [python-wechaty](https://github.com/Wechaty/python-wechaty/) 魔法接入（ipadLogin 方式），限时免费。
 
-需要注意，**wechaty 很早就不维护了**，如果是个人使用，推荐用 [accessibility 方法](./add_wechat_accessibility_zh.md)。
+需要注意，**wechaty 很早就不维护了**，如果是个人使用，推荐用 [accessibility 方法](./doc_add_wechat_accessibility.md)。
 
 ## 一、准备工作
 
@@ -107,11 +107,11 @@ python3 bot.py  # 确保这两句没有崩溃
 
 `bot.py` 应能看到这些日志：
 
-<img src="./figures/wechat-puppet-log.png" width="400">
+<img src="https://github.com/user-attachments/assets/105bf4cf-e632-44d6-af0e-1f9ff36fa954" width="400">
 
 成功后打开微信，发送 `ding` 可以收到 `dong`
 
-<img src="./figures/wechat-dingdong.png" width="400">
+<img src="https://github.com/user-attachments/assets/4065344f-01e3-49ad-9728-0c5478975775" width="400">
 
 **STEP5.** 集成 HuixiangDou
 
@@ -141,7 +141,7 @@ python3 -m huixiangdou.main # docker 用户
 - 左下是 `app.py`
 - 右下是 python-wechaty gateway
 
-<img src="./figures/wechat-run-state.jpg" width="600">
+<img src="https://github.com/user-attachments/assets/da69b09b-0999-4d89-924a-f03c3f028242" width="600">
 
 ## FAQ
 

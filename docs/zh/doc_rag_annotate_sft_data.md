@@ -9,7 +9,7 @@ RAG 标注训练数据是否有用，请参考论文：
 
 ## 一、调整配置文件
 
-基于 [config-alignment-example.json](../config-alignment-example.ini) 做几处修改：
+基于 [config-alignment-example.json](../../config-alignment-example.ini) 做几处修改：
 
 1. 设置 bce 模型路径，执行 `python3 -m huixiangdou.service.feature_store --config_path config-alignment-example.ini`，用自己的知识库提取特征
 2. 配置 config 中网络搜索 key
@@ -18,7 +18,7 @@ RAG 标注训练数据是否有用，请参考论文：
 
 ## 二、运行
 
-[大佬数据集](../resource/rag_example_input.json) 是一个例子，从 openmmlab 用户问题中筛选包含 “大佬” 二字的 86 句并脱敏。
+[大佬数据集](../../resource/rag_example_input.json) 是一个例子，从 openmmlab 用户问题中筛选包含 “大佬” 二字的 86 句并脱敏。
 
 启动 LLM 代理服务监听 9999 端口
 
@@ -39,7 +39,7 @@ python3 -m huixiangdou.rag --config_path config-alignment-example.ini
 
 ## 三、结果分析
 
-[大佬结果](../resource/rag_example_output.json) 是真实运行的结果。
+[大佬结果](../../resource/rag_example_output.json) 是真实运行的结果。
 
 由于数据挺脏，所以并非所有 prompt 都应该处理。例如
 

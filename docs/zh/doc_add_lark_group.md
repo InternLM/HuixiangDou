@@ -4,7 +4,7 @@
 
 常见地，有公网 IP 的机器往往没有 GPU，我们将分开部署 LLM 和飞书消息存储，**请注意命令执行时所在机器**。
 
-<img src="./figures/lark-arch.jpg" width="400">
+<img src="https://github.com/user-attachments/assets/16723ac4-6d2c-41e5-b674-2bcca8515ddc" width="400">
 
 ## 一、创建测试企业
 
@@ -12,15 +12,15 @@
 
 **STEP1.** 打开[飞书开发者平台-开发者后台-创建企业自建应用](https://open.feishu.cn/app?lang=zh-CN)
 
-<img src="./figures/lark-create-app.png" width="400">
+<img src="https://github.com/user-attachments/assets/c560bc34-a048-4443-8267-0bbfed4c4140" width="400">
 
 **STEP2.** 点击应用头像，创建测试企业
 
-<img src="./figures/lark-create-corp.png" width="400">
+<img src="https://github.com/user-attachments/assets/d51b65ad-70f8-44aa-84a0-78791c7b1f10" width="400">
 
 **STEP3.** 切换到测试企业，开始配置
 
-<img src="./figures/lark-switch-corp.png" width="400">
+<img src="https://github.com/user-attachments/assets/e3569b2b-1f2b-47b4-8d8d-21ea71483864" width="400">
 
 ## 二、配置机器人权限
 
@@ -61,13 +61,13 @@ Press CTRL+C to quit
 
 **STEP2.** 飞书开发者平台-添加应用能力-机器人
 
-<img src="./figures/lark-add-ability.png" width="400">
+<img src="https://github.com/user-attachments/assets/22d3f565-2fcb-4404-9232-2a3d3d077019" width="400">
 
 **STEP3.** 配置机器人的回调地址
 
 我们以`http://101.133.161.20:6666/event` 为例，点击右侧“验证”按钮，ECS 应能收到一条消息，此时还未配置 key 和 token 会报错。
 
-<img src="./figures/lark-bot-add-callback.png" width="400">
+<img src="https://github.com/user-attachments/assets/f6228d80-a330-4d96-9fa6-4dfe899c8acb" width="400">
 
 这一步也需要同步配置加解密策略，防止解析报错：
 ![image](https://github.com/InternLM/HuixiangDou/assets/40042370/8205cbc7-b7a1-4b50-ac46-8f6860be0ba0)
@@ -91,7 +91,7 @@ Press CTRL+C to quit
 
 配置请求地址，假设 key 是 `abc`，token 是 `def`；添加事件 “接收消息 v2.0”
 
-<img src="./figures/lark-bot-sub.png" width="400">
+<img src="https://github.com/user-attachments/assets/4f98bfc8-ed5e-4dce-a143-30c0b322c1be" width="400">
 
 此时可在飞书 APP 上，**打开测试企业**，把应用“茴香豆” 加进群组。
 
@@ -135,7 +135,7 @@ python3 -m huixiangdou.main  --standalone
 
 输入技术问题，茴香豆会作答；在群组里输入“豆哥撤回”，助手将撤回发送过的所有消息。
 
-<img src="./figures/lark-bot-reply.png" width="400">
+<img src="https://github.com/user-attachments/assets/e057f413-f60e-440e-8b8a-d0e9b0bce4e7" width="400">
 
 ## 四、正式上线
 

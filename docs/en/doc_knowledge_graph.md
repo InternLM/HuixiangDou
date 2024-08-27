@@ -64,4 +64,4 @@ Test it.
 python3 -m huixiangdou.main --standalone
 ```
 
-For precision report, see [evaluation](../evaluation/README.md).
+For precision report, see [evaluation](../../evaluation/README.md).

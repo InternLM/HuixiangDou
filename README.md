@@ -8,8 +8,11 @@ English | [简体中文](README_zh.md)
   <a href="resource/figures/wechat.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
-  <a href="https://pypi.org/project/huixiangdou" target="_blank">
-    <img alt="PyPI" src="https://img.shields.io/badge/PyPI-install-blue?logo=pypi&logoColor=white" />
+  <!-- <a href="https://huixiangdou.readthedocs.io/en/latest/" target="_blank">
+    <img alt="Readthedocs" src="https://img.shields.io/badge/readthedocs-chat%20with%20AI-brightgreen?logo=readthedocs&logoColor=white" />
+  </a> -->
+  <a href="https://huixiangdou.readthedocs.io/zh-cn/latest/" target="_blank">
+    <img alt="Readthedocs" src="https://img.shields.io/badge/readthedocs-black?logo=readthedocs&logoColor=white" />
   </a>
   <a href="https://youtu.be/ylXrT-Tei-Y" target="_blank">
     <img alt="YouTube" src="https://img.shields.io/badge/YouTube-black?logo=youtube&logoColor=red" />
@@ -35,7 +38,7 @@ HuixiangDou is a **professional knowledge assistant** based on LLM.
 Advantages:
 
 1. Design three-stage pipelines of preprocess, rejection and response
-    * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/knowledge_graph_en.md) and [Precision Report](./evaluation/)
+    * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/en/doc_knowledge_graph.md) and [Precision Report](./evaluation/)
     * `chat_with_repo` for **real-time streaming** chat
 2. No training required, with CPU-only, 2G, 10G, 20G and 80G configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
@@ -50,9 +53,9 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 - \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 👍
 - \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
-- \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/knowledge_graph_en.md) improve 1.7% F1 score 🎯
+- \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/en/doc_knowledge_graph.md) improve 1.7% F1 score 🎯
 - \[2024/06\] [Evaluation of chunksize, splitter, and text2vec model](./evaluation) 🎯
-- \[2024/05\] [wkteam WeChat access](./docs/add_wechat_commercial_zh.md), parsing image & URL, support coreference resolution
+- \[2024/05\] [wkteam WeChat access](./docs/zh/doc_add_wechat_commercial.md), parsing image & URL, support coreference resolution
 - \[2024/05\] [SFT LLM on NLP task, F1 increased by 29%](./sft/) 🎯
   <table>
       <tr>
@@ -63,9 +66,9 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
           <td><a href="https://arxiv.org/abs/2405.02817">arXiv</a></td>
       </tr>
   </table>
-- \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/rag_annotate_sft_data_zh.md)
+- \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/zh/doc_rag_annotate_sft_data.md)
 - \[2024/04\] Release [Web Front and Back End Service Source Code](./web) 👍
-- \[2024/03\] New [Personal WeChat Integration](./docs/add_wechat_accessibility_zh.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
+- \[2024/03\] New [Personal WeChat Integration](./docs/zh/doc_add_wechat_accessibility.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
 - \[2024/02\] \[Experimental Feature\] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) Integration of multimodal to achieve OCR
 
 # 📖 Support Status
@@ -117,7 +120,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 <td>
 
-- [Knowledge Graph](./docs/knowledge_graph_en.md)
+- [Knowledge Graph](./docs/en/doc_knowledge_graph.md)
 - [Internet Search](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - Image and text (only markdown)
@@ -126,7 +129,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 <td>
 
-- WeChat([android](./docs/add_wechat_accessibility_zh.md)/[wkteam](./docs/add_wechat_commercial_zh.md))
+- WeChat([android](./docs/zh/doc_add_wechat_accessibility.md)/[wkteam](./docs/zh/doc_add_wechat_commercial.md))
 - Lark
 - [OpenXLab Web](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)
 - [Gradio Demo](./huixiangdou/gradio.py)
@@ -244,10 +247,10 @@ Please update the `repodir` documents, [good_questions](./resource/good_question
 
 ## III. Integration into Feishu, WeChat group
 
-- [**One-way** sending to Feishu group](./docs/send_only_lark_group_zh.md)
-- [**Two-way** Feishu group receiving and sending, recalling](./docs/add_lark_group_zh.md)
-- [Personal WeChat Android access](./docs/add_wechat_accessibility_zh.md)
-- [Personal WeChat wkteam access](./docs/add_wechat_commercial_zh.md)
+- [**One-way** sending to Feishu group](./docs/zh/doc_send_only_lark_group.md)
+- [**Two-way** Feishu group receiving and sending, recalling](./docs/zh/doc_add_lark_group.md)
+- [Personal WeChat Android access](./docs/zh/doc_add_wechat_accessibility.md)
+- [Personal WeChat wkteam access](./docs/zh/doc_add_wechat_commercial.md)
 
 ## IV. Deploy web front and back end
 
@@ -328,7 +331,7 @@ Note:
 
 - You need to manually download [Visualized_m3.pth](https://huggingface.co/BAAI/bge-visualized/blob/main/Visualized_m3.pth) to the [bge-m3](https://huggingface.co/BAAI/bge-m3) directory
 - Install FlagEmbedding on main branch, we have made [bugfix](https://github.com/FlagOpen/FlagEmbedding/commit/3f84da0796d5badc3ad519870612f1f18ff0d1d3). [Here](https://github.com/FlagOpen/FlagEmbedding/blob/master/FlagEmbedding/visual/eva_clip/bpe_simple_vocab_16e6.txt.gz) you can download `bpe_simple_vocab_16e6.txt.gz` 
-- Install [requirments-multimodal.txt](./requirements-multimodal.txt)
+- Install [requirements/multimodal.txt](./requirements/multimodal.txt)
 
 Run gradio to test, see the image and text retrieval result [here](https://github.com/InternLM/HuixiangDou/pull/326).
 
@@ -348,11 +351,11 @@ The "HuiXiangDou" in the WeChat experience group has enabled all features:
 
 Please read the following topics:
 
-- [Hybrid knowledge graph and dense retrieval](./docs/knowledge_graph_en.md)
-- [Refer to config-advanced.ini configuration to improve effects](./docs/full_dev_en.md)
+- [Hybrid knowledge graph and dense retrieval](./docs/en/doc_knowledge_graph.md)
+- [Refer to config-advanced.ini configuration to improve effects](./docs/en/doc_full_dev.md)
 - [Group chat scenario anaphora resolution training](./sft)
-- [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/add_wechat_commercial_zh.md)
-- [Use rag.py to annotate SFT training data](./docs/rag_annotate_sft_data_zh.md)
+- [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/zh/doc_add_wechat_commercial.md)
+- [Use rag.py to annotate SFT training data](./docs/zh/doc_rag_annotate_sft_data.md)
 
 ## **Android Tools**
 

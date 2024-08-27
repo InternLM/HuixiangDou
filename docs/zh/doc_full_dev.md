@@ -1,6 +1,6 @@
 # 高精度配置参考
 
-标准版可能效果不佳，可开启以下特性来提升效果。配置模板请参照 [config-advanced.ini](../config-advanced.ini)
+标准版可能效果不佳，可开启以下特性来提升效果。配置模板请参照 [config-advanced.ini](../../config-advanced.ini)
 
 1. 使用更高精度 local LLM
 
@@ -73,6 +73,6 @@
 
    针对业务场景调参往往不可避免。
 
-   - 参照 [data.json](../tests/data.json) 增加真实数据，运行 [test_intention_prompt.py](../tests/test_intention_prompt.py) 得到合适的 prompt 和阈值，更新进 [prompt.py](../huixiangdou/service/prompt.py)
-   - 根据模型支持的最大长度，调整[搜索结果个数](../huixiangdou/service/serial_pipeline.py)
+   - 参照 [data.json](../../tests/data.json) 增加真实数据，运行 [test_intention_prompt.py](../../tests/test_intention_prompt.py) 得到合适的 prompt 和阈值，更新进 [prompt.py](../../huixiangdou/service/prompt.py)
+   - 根据模型支持的最大长度，调整[搜索结果个数](../../huixiangdou/service/serial_pipeline.py)
    - 按照场景偏好，修改 config.ini 中的 `web_search.domain_partial_order`，即搜索结果偏序
