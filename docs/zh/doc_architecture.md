@@ -11,7 +11,7 @@
 ```bash
 .
 ├── config-advanced.ini
-├── config-2G.ini # 高级版和体验版配置范例，轻微修改了 `config.ini`
+├── config-2G.ini   # 高级版和体验版配置范例，轻微修改了 `config.ini`
 ├── config.ini      # 基础配置范例，包含算法所有选项和参数
 ..
 ├── huixiangdou     # python module
@@ -41,7 +41,7 @@ module 内只有 3 个部分：
 
 ## 第三层：service
 
-这里是茴香豆算法主体。
+这里是 HuixiangDou 算法主体。
 
 ```bash
 .

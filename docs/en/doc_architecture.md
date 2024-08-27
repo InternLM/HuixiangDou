@@ -22,7 +22,7 @@ The outermost layer of the project contains only the huixiangdou python module a
 
 The configuration is actually in toml format, but to avoid unfamiliarity for users, it was renamed to the commonly seen .ini in Windows.
 
-## Second Layer: huixiangdou Module
+## Second Layer: HuixiangDou Module
 
 The module contains only 3 parts:
 

@@ -16,24 +16,27 @@ HuixiangDou 上手路线
    :maxdepth: 1
    :caption: 配置说明
 
-   full_dev_zh.md
-   knowledge_graph_zh.md
+   doc_full_dev.md
+   doc_knowledge_graph.md
 
 .. _接入即时通讯软件:
 .. toctree::
    :maxdepth: 1
    :caption: 接入即时通讯软件
 
-   add_wechat_accessibility_zh.md
-   add_wechat_commercial_zh.md
-   add_wechat_group_zh.md
+   doc_add_wechat_accessibility.md
+   doc_add_wechat_commercial.md
+   doc_add_wechat_group.md
+   doc_add_lark_group.md
+   doc_send_only_lark_group.md
 
 .. _其他:
 .. toctree::
    :maxdepth: 1
    :caption: 其他
 
-   architecture_zh.md
+   doc_architecture.md
+   doc_rag_annotate_sft_data.md
 
 索引与表格
 ==================
