@@ -19,4 +19,4 @@ python3 -m huixiangdou.main --standalone # 非 docker 用户
 python3 -m huixiangdou.main # docker 用户
 ```
 
-<img src="../resource/figures/lark-example.png" width="400">
+<img src="https://github.com/user-attachments/assets/80ea52ea-babf-4ded-8481-ded8a1ee9fd4" width="400">

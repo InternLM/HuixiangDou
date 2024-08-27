@@ -31,7 +31,7 @@
 - **消息回调** 接收 wkteam 提供的推送，转存到 redis，需要公网
 - **算法 pipeline** 从 redis 拉取消息处理，结果直接发给 wkteam
 
-<img src="figures/wechat-wkteam.jpg" width="600">
+<img src="https://github.com/user-attachments/assets/5630b523-ca4b-417f-af83-5f965140a3a0" width="600">
 
 这么设计的好处是：
 
