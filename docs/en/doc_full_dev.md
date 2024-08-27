@@ -4,7 +4,7 @@ The basic version may not perform well. You can enable these features to enhance
 
 1. Use higher accuracy local LLM
 
-   Adjust the `llm.local` model in config.ini to others, seed [opencompass leaderboard](https://rank.opencompass.org.cn/leaderboard-llm).
+   Adjust the `llm.local` model in config.ini to others, see [opencompass leaderboard](https://rank.opencompass.org.cn/leaderboard-llm).
 
    This option has a significant effect.
 

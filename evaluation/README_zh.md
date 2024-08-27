@@ -1,4 +1,4 @@
-# HuixiangDou Evaluation
+# 精度测试
 
 ## Rejection
 

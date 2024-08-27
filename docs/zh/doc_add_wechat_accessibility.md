@@ -29,11 +29,11 @@
 
 从 [这里](https://github.com/InternLM/HuixiangDou/releases) 下载编译好的 apk，填入回调地址，开启服务，跳入微信。
 
-<img src="./figures/wechat-android-homepage.jpg" width="400">
+<img src="https://github.com/user-attachments/assets/6c2a2e11-b773-408d-a8f0-1a469f3fee3c" width="400">
 
 现在这个效果，记得关掉手机自动熄屏：
 
-<img src="./figures/wechat-android-example.jpg" width="200">
+<img src="https://github.com/user-attachments/assets/4f52df3a-a661-4f2a-a8d5-83817a5f9e14" width="200">
 
 ## FAQ
 

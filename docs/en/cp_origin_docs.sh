@@ -6,6 +6,6 @@ for filename in $(find ../zh/ -name '*.md' -printf "%P\n");
 do
     mkdir -p $(dirname $filename)
     cp -n ../zh/$filename ./$filename
-    cp -n ../../README.md ./
-    cp -rf ../zh/figures ./
+    cp -n ../../README.md ./copy_quickstart.md
+    cp -n ../../evaluation/README.md ./copy_precision.md
 done

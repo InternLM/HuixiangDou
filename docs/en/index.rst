@@ -11,13 +11,23 @@ To help you quickly familiarized with it, we recommend you to walk through the f
 
 We warmly welcome users' PRs and Issues!
 
+.. _QuickStart:
+.. toctree::
+   :maxdepth: 1
+   :caption: Quick Start
+
+   copy_quickstart.md
+
 .. _AdvanceConfiguration:
 .. toctree::
    :maxdepth: 1
    :caption: Advance Configuration
 
+   copy_precision.md
    doc_full_dev.md
    doc_knowledge_graph.md
+   doc_architecture.md
+   doc_rag_annotate_sft_data.md
 
 .. _IMApplicaion:
 .. toctree::
@@ -34,9 +44,6 @@ We warmly welcome users' PRs and Issues!
 .. toctree::
    :maxdepth: 1
    :caption: Others
-
-   doc_architecture.md
-   doc_rag_annotate_sft_data.md
 
 Indexes & Tables
 ==================

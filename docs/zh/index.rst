@@ -11,13 +11,23 @@ HuixiangDou 上手路线
 
 我们非常欢迎用户的 PR 和 Issue ！
 
-.. _配置说明:
+.. _快速运行:
+.. toctree::
+   :maxdepth: 1
+   :caption: 基础入门
+
+   copy_quickstart.md
+
+.. _进阶参考:
 .. toctree::
    :maxdepth: 1
    :caption: 配置说明
 
+   copy_precision.md
    doc_full_dev.md
    doc_knowledge_graph.md
+   doc_rag_annotate_sft_data.md
+   doc_architecture.md
 
 .. _接入即时通讯软件:
 .. toctree::
@@ -29,14 +39,6 @@ HuixiangDou 上手路线
    doc_add_wechat_group.md
    doc_add_lark_group.md
    doc_send_only_lark_group.md
-
-.. _其他:
-.. toctree::
-   :maxdepth: 1
-   :caption: 其他
-
-   doc_architecture.md
-   doc_rag_annotate_sft_data.md
 
 索引与表格
 ==================

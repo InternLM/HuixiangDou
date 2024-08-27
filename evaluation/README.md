@@ -1,4 +1,4 @@
-# HuixiangDou Evaluation
+# Precision Result
 
 ## Rejection
 
