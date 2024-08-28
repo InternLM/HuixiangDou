@@ -29,10 +29,10 @@ def parse_args():
                         type=str,
                         default='workdir',
                         help='Working directory.')
-    parser.add_argument('--pipeline-count', type=int, default=1, help='Support user choosing all pipeline types.')
+    parser.add_argument('--pipeline-count', type=int, default=2, help='Support user choosing all pipeline types.')
     parser.add_argument(
         '--config_path',
-        default='config-cpu.ini',
+        default='config.ini',
         type=str,
         help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
@@ -41,10 +41,11 @@ def parse_args():
                         help='Auto deploy required Hybrid LLM Service.')
     parser.add_argument('--no-standalone',
                         action='store_false',
-                        dest='standalone',  # 指定与上面参数相同的目标
+                        dest='standalone', 
                         help='Do not auto deploy required Hybrid LLM Service.')
     parser.add_argument('--placeholder', type=str, default='How to install HuixiangDou ?', help='Placeholder for user query.')
-    parser.add_argument('--image', action='store_false', default=True, help='')
+    parser.add_argument('--image', action='store_true', default=True, help='')
+    parser.add_argument('--no-image', action='store_false', dest='image', help='Close some components for readthedocs.')
     parser.add_argument('--theme', type=str, default='soft', help='Gradio theme, default value is `soft`. Open https://www.gradio.app/guides/theming-guide for all themes.')
 
     args = parser.parse_args()
