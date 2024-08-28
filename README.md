@@ -132,8 +132,9 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 - WeChat([android](./docs/zh/doc_add_wechat_accessibility.md)/[wkteam](./docs/zh/doc_add_wechat_commercial.md))
 - Lark
 - [OpenXLab Web](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)
-- [Gradio Demo](./huixiangdou/gradio.py)
+- [Gradio Demo](./huixiangdou/gradio_ui.py)
 - [HTTP Server](./huixiangdou/server.py)
+- [Read the Docs](./docs/zh/doc_add_readthedocs.md)
 
 </td>
 

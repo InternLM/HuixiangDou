@@ -131,8 +131,9 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 - 微信（[android](./docs/zh/doc_add_wechat_accessibility.md)/[wkteam](./docs/zh/doc_add_wechat_commercial.md)）
 - 飞书
 - [OpenXLab Web](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)
-- [Gradio Demo](./huixiangdou/gradio.py)
+- [Gradio Demo](./huixiangdou/gradio_ui.py)
 - [HTTP Server](./huixiangdou/server.py)
+- [Read the Docs](./docs/zh/doc_add_readthedocs.md)
 
 </td>
 
