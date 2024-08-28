@@ -208,7 +208,7 @@ class HybridLLMServer:
             "deepseek": "deepseek-chat",
             "zhipuai": "glm-4",
             "puyu": "internlm2-latest",
-            "siliconcloud": "alibaba/Qwen1.5-110B-Chat"
+            "siliconcloud": "internlm/internlm2_5-20b-chat"
         }
 
     async def call_kimi(self, prompt:str, history:List[Tuple], remote_api_key:str, model:str):

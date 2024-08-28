@@ -1,0 +1,12 @@
+apscheduler==3.10.4
+fastapi==0.103.0
+flask==3.0.2
+lark-oapi==1.2.1
+passlib==1.7.4
+pydantic==2.4.2
+PyJWT==2.8.0
+python-multipart==0.0.9
+redis==4.5.5
+starlette==0.27.0
+tqdm==4.65.0
+uvicorn==0.27.0

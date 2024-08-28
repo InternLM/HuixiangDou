@@ -1,0 +1,12 @@
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/app_description"
+    android:accessibilityEventTypes="typeAllMask"
+    android:packageNames="com.tencent.mm"
+    android:accessibilityFeedbackType="feedbackAllMask"
+    android:notificationTimeout="100"
+    android:settingsActivity="com.carlos.grabredenvelope.demo.MainActivity"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="true"
+    android:canPerformGestures = "true"
+    />

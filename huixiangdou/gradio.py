@@ -29,10 +29,10 @@ def parse_args():
                         type=str,
                         default='workdir',
                         help='Working directory.')
-    parser.add_argument('--pipeline-count', type=int, default=2, help='Support user choosing all pipeline types.')
+    parser.add_argument('--pipeline-count', type=int, default=1, help='Support user choosing all pipeline types.')
     parser.add_argument(
         '--config_path',
-        default='config.ini',
+        default='config-cpu.ini',
         type=str,
         help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',

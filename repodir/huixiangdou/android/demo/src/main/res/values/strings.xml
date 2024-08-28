@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">茴香豆 Android 助手</string>
+    <string name="app_description">这是 [茴香豆](https://github.com/internlm/huixiangdou) 的 Android 部分。\n开启后停留在微信对话界面，将读最新消息，调用大语言模型自动回复主题相关内容。如果是主题无关的闲聊，则不处理。\n如果对你有用，请 star 一下！</string>
+    <string name="wechat_service_demo">抢微信红包</string>
+    <string name="emoji_send_demo">茴香豆 LLM RAG 回复</string>
+
+    <string name="usage0">如果对你有用，请给 https://github.com/internlm/huixiangdou 点个 star，这对我们真的很重要qaq</string>
+    <string name="usage1">第一步：打开 openxlab.org.cn 应用中心，搜索“茴香豆”，创建知识库直接获取回调地址；或自行部署开源版茴香豆得到服务器地址。\n输入框里是个可用的地址，仅仅用于调试 app 是否正常，并不会真的回答问题。</string>
+    <string name="addr_hint">http://139.224.198.162:18443/api/v1/message/v1/wechat/Qlyq</string>
+    <string name="btn_confirm">确定</string>
+    <string name="usage2">第二步：点击下方按钮进入辅助功能，找到（茴香豆）开启或关闭</string>
+    <string name="usage3">第三步：直接进入微信（注意 github 文档中微信版本要求）聊天界面，请对方发个消息被动扫描屏幕、或上滑聊天框主动触发扫描。\n群聊或单聊都支持。\n注意不要关闭本应用，它默认后台运行。</string>
+    <string name="tips">tips:助手只回答知识库相关话题，碰到无关闲聊会跳过。adb log 可以看到完整处理日志。</string>
+    <string name="usage_go">点我</string>
+    <string name="debug">调试模式，默认开启。\n确认功能正常后需关闭，否则收到啥都响应</string>
+</resources>

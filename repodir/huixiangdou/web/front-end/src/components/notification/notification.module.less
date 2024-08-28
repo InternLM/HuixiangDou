@@ -1,0 +1,136 @@
+.notification {
+    position: absolute;
+    right: 24px;
+    top: 48px;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 2px 2px 10px #80808033;
+    background: #FFFFFF;
+    font-size: 16px;
+    line-height: 24px;
+    max-width: 360px;
+    white-space: pre-wrap;
+    .footer {
+        margin-top: 24px;
+        display: flex;
+        gap: 16px;
+        justify-content: flex-end;
+        .btn {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .confirm {
+            .btn();
+            background: #def9dc;
+            color: #198a1e;
+        }
+        .cancel {
+            color: #d5d5d5;
+            .btn();
+        }
+    }
+}
+
+.emoji-wrapper {
+    position: relative;
+    .emoji1 {
+        position: absolute;
+        display: none;
+        bottom: 35px;
+        right: 15px;
+        width: 36px;
+        transform: rotate(-10deg);
+    }
+    .emoji2 {
+        position: absolute;
+        display: none;
+        bottom: 35px;
+        right: 15px;
+        width: 30px;
+        opacity: 0.1;
+    }
+    .emoji3 {
+        position: absolute;
+        display: none;
+        bottom: 35px;
+        right: 15px;
+        width: 40px;
+        opacity: 0.1;
+        transform: rotate(20deg);
+    }
+}
+.emoji-wrapper:hover .emoji1 {
+    display: block;
+    animation: 2.1s ease-in-out -1s sparkling1 infinite;
+}
+.emoji-wrapper:hover .emoji2 {
+    display: block;
+    animation: 2s ease-in-out -1s sparkling2 infinite;
+}
+.emoji-wrapper:hover .emoji3 {
+    display: block;
+    animation: 2.2s ease-in-out -1s sparkling3 infinite;
+}
+@keyframes sparkling1 {
+    0% {
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.2;
+    }
+    60% {
+        opacity: 0.8;
+    }
+    70% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0;
+        bottom: 90px;
+        right: 80px;
+        font-size: 30px;
+        transform: rotate(-20deg);
+    }
+}
+@keyframes sparkling2 {
+    0% {
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.2;
+    }
+    60% {
+        opacity: 0.8;
+    }
+    70% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0;
+        bottom: 100px;
+        right: 45px;
+        font-size: 40px;
+        transform: rotate(-5deg);
+    }
+}
+@keyframes sparkling3 {
+    0% {
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.2;
+    }
+    60% {
+        opacity: 0.8;
+    }
+    70% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0;
+        bottom: 90px;
+        right: 10px;
+        font-size: 35px;
+    }
+}

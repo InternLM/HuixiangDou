@@ -1,0 +1,24 @@
+name: Check markdown local file link available
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Check doc link
+        run: |
+          python .github/scripts/doc_link_checker.py --target README_zh.md
+          python .github/scripts/doc_link_checker.py --target README.md
+          python -m pip install pylint interrogate
+          pylint huixiangdou || true
+          interrogate huixiangdou -v || true

@@ -1,0 +1,80 @@
+.btn {
+    padding: 8px 12px;
+    background: #c7eaba;
+    color: #286500;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    &[aria-disabled="true"] {
+        background: #dcdcdc;
+        color: #9d9d9d;
+        cursor: not-allowed;
+    }
+}
+.bean-detail {
+    min-height: 700px;
+    min-width: 860px;
+    margin: auto;
+    text-align: center;
+    position: absolute;
+    top: 200px;
+    left: 50%;
+    transform: translateX(-50%);
+    .logo {
+        width: 800px;
+        margin: 0 auto 72px;
+        img {
+            width: 100%;
+        }
+    }
+    .bean-state {
+        background-color: #e3f9dd;
+        border-radius: 8px;
+        padding: 4px 8px;
+        margin-left: 4px;
+    }
+    .fail-state {
+        background-color: #f1bcbc;
+    }
+    .name-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .statistics-wrapper {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-gap: 20px;
+        margin: 24px auto;
+        text-align: center;
+    }
+    .statistics-item {
+        text-align: left;
+        .title-img {
+            height: 16px;
+        }
+        .statistics-item-title {
+            color: #9D9D9D;
+            font-size: 16px;
+            margin-bottom: 12px;
+            line-height: 20px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+    }
+    .refresh {
+        margin-left: auto;
+        cursor: pointer;
+        color: #286500;
+    }
+    .logout {
+        //margin-left: auto;
+        cursor: pointer;
+        color: #9D9D9D;
+    }
+}

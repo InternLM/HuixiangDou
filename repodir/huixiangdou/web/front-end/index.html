@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/css/normalize.css">
+    <title>HuixiangDou</title>
+    <style>
+      /* 动态设置rem */
+      html {
+          font-size: 16px;
+      }
+      .seal-message-root-wrapper {
+          z-index: 1000;
+      }
+      .seal-modal-root .seal-modal-right {
+          width: calc(100% - 28px) !important;
+      }
+      .seal-modal-root .seal-modal-wrapper {
+          top: min(10%, 200px) !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

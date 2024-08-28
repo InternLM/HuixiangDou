@@ -1,0 +1,2 @@
+accelerate>=0.26.1
+auto-gptq

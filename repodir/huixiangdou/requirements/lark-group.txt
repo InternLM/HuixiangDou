@@ -1,0 +1,4 @@
+flask
+lark_oapi
+pytoml
+redis

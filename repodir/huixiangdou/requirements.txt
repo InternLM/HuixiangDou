@@ -1,0 +1,37 @@
+aiohttp
+beautifulsoup4
+duckduckgo_search
+einops
+faiss-gpu
+loguru
+lxml_html_clean
+networkx>=3.0
+numpy<2.0.0
+openai>=1.0.0
+openpyxl
+pandas
+pydantic>=1.10.13
+pymupdf
+python-docx
+pytoml
+readability-lxml
+redis
+requests
+scikit-learn
+# See https://github.com/deanmalmgren/textract/issues/461
+textract @ git+https://github.com/tpoisonooo/textract@master
+# textract
+texttable
+tiktoken
+torch>=2.0.0
+transformers>=4.38
+transformers_stream_generator
+unstructured
+sentence_transformers
+sse_starlette
+fastapi
+uvicorn
+termcolor
+opencv-python-headless
+gradio>=4.41
+bcembedding

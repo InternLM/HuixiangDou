@@ -1,0 +1,7 @@
+einops
+ftfy
+timm
+torchvision
+FlagEmbedding
+
+# donot install xformer and apex
