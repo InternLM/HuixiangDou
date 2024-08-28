@@ -412,7 +412,7 @@ Contributors have provided [Android tools](./android) to interact with WeChat. T
 }
 
 @misc{kong2024huixiangdoucr,
-      title={HuiXiangDou-CR: Coreference Resolution in Group Chats},
+      title={Labeling supervised fine-tuning data with the scaling law},
       author={Huanjun Kong},
       year={2024},
       eprint={2405.02817},
