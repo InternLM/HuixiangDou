@@ -29,6 +29,13 @@ We warmly welcome users' PRs and Issues!
    doc_architecture.md
    doc_rag_annotate_sft_data.md
 
+.. _readthedocs:
+.. toctree::
+   :maxdepth: 1
+   :caption: readthedocs Integration
+
+   doc_add_readthedocs.md
+
 .. _IMApplicaion:
 .. toctree::
    :maxdepth: 1

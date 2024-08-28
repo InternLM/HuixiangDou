@@ -51,7 +51,7 @@ If this helps you, please give it a star ⭐
 
 Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), where you can create knowledge base, update positive and negative examples, turn on web search, test chat, and integrate into Feishu/WeChat groups. See [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) and [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y) !
 
-- \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 👍
+- \[2024/08\] [chat_with_readthedocs](https://huixiangdou.readthedocs.io/en/latest/), see [how to integrate](./docs/zh/doc_add_readthedocs.md) 👍
 - \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
 - \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/en/doc_knowledge_graph.md) improve 1.7% F1 score 🎯
 - \[2024/06\] [Evaluation of chunksize, splitter, and text2vec model](./evaluation) 🎯
@@ -227,7 +227,7 @@ python3 -m huixiangdou.main --standalone
 💡 Also run a simple Web UI with `gradio`:
 
 ```bash
-python3 -m huixiangdou.gradio
+python3 -m huixiangdou.gradio_ui
 ```
 
 <video src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" ></video>
@@ -282,7 +282,7 @@ python3 -m huixiangdou.service.feature_store --config_path config-cpu.ini
 # Q&A test
 python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
 # gradio UI
-python3 -m huixiangdou.gradio --config_path config-cpu.ini
+python3 -m huixiangdou.gradio_ui --config_path config-cpu.ini
 ```
 
 If you find the installation too slow, a pre-installed image is provided in [Docker Hub](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags). Simply replace it when starting the docker.

@@ -29,6 +29,13 @@ HuixiangDou 上手路线
    doc_rag_annotate_sft_data.md
    doc_architecture.md
 
+.. _接入readthedocs:
+.. toctree::
+   :maxdepth: 1
+   :caption: 接入readthedocs
+
+   doc_add_readthedocs.md
+
 .. _接入即时通讯软件:
 .. toctree::
    :maxdepth: 1

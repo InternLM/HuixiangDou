@@ -7,12 +7,12 @@
   <a href="resource/figures/wechat.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
-  <!-- <a href="https://huixiangdou.readthedocs.io/zh-cn/latest/" target="_blank">
-    <img alt="Readthedocs" src="https://img.shields.io/badge/readthedocs-chat%20with%20AI-brightgreen?logo=readthedocs&logoColor=white" />
-  </a> -->
   <a href="https://huixiangdou.readthedocs.io/zh-cn/latest/" target="_blank">
-    <img alt="Readthedocs" src="https://img.shields.io/badge/readthedocs-black?logo=readthedocs&logoColor=white" />
+    <img alt="Readthedocs" src="https://img.shields.io/badge/readthedocs-chat%20with%20AI-brightgreen?logo=readthedocs&logoColor=white" />
   </a>
+  <!-- <a href="https://huixiangdou.readthedocs.io/zh-cn/latest/" target="_blank">
+    <img alt="Readthedocs" src="https://img.shields.io/badge/readthedocs-black?logo=readthedocs&logoColor=white" />
+  </a> -->
   <a href="https://youtu.be/ylXrT-Tei-Y" target="_blank">
     <img alt="YouTube" src="https://img.shields.io/badge/YouTube-black?logo=youtube&logoColor=red" />
   </a>
@@ -50,7 +50,7 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
-- \[2024/08\] `chat_with_repo` [pipeline](./huixiangdou/service/parallel_pipeline.py) 
+- \[2024/08\] ["chat_with readthedocs"](https://huixiangdou.readthedocs.io/zh-cn/latest/) ，见[集成说明](./docs/zh/doc_add_readthedocs.md)
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
 - \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/zh/doc_knowledge_graph.md) 🎯
 - \[2024/06\] [评估 chunksize，splitter 和 text2vec 模型](./evaluation) 🎯
@@ -225,9 +225,9 @@ python3 -m huixiangdou.main --standalone
 💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
 
 ```bash
-python3 -m huixiangdou.gradio 
+python3 -m huixiangdou.gradio_ui
 # 若已单独运行 `llm_server_hybrid.py`，可以 
-# python3 -m huixiangdou.gradio --no-standalone
+# python3 -m huixiangdou.gradio_ui --no-standalone
 ```
 
 <video src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" ></video>
@@ -281,7 +281,7 @@ python3 -m huixiangdou.service.feature_store  --config_path config-cpu.ini
 # 问答测试
 python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
 # gradio UI
-python3 -m huixiangdou.gradio --config_path config-cpu.ini
+python3 -m huixiangdou.gradio_ui --config_path config-cpu.ini
 ```
 
 如果装依赖太慢，[dockerhub 里](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags)提供了安装好依赖的镜像，docker 启动时替换即可。
