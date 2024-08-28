@@ -41,7 +41,9 @@ class LLMReranker:
         elif 'siliconcloud' in self._type:
             api_token = model_config['api_token'].strip()
             if len(api_token) < 1:
-                raise ValueError('siliconclud remote embedder api token is None')
+                api_token = os.getenv('SILICONCLOUD_TOKEN')
+                if len(api_token) < 1:
+                    raise ValueError('siliconclud remote reranker api token is None')
             if 'Bearer' not in api_token:
                 api_token = 'Bearer ' + api_token
             api_rpm = max(1, int(model_config['api_rpm']))

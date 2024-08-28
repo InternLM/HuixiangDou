@@ -201,7 +201,17 @@ class HybridLLMServer:
             self.inference = None
             logger.warning('local LLM disabled.')
 
-    async def call_kimi(self, prompt, history):
+        self.backend2model = {
+            "kimi": "auto",
+            "step": "auto",
+            "xi-api": "gpt-4-0613",
+            "deepseek": "deepseek-chat",
+            "zhipuai": "glm-4",
+            "puyu": "internlm2-latest",
+            "siliconcloud": "alibaba/Qwen1.5-110B-Chat"
+        }
+
+    async def call_kimi(self, prompt:str, history:List[Tuple], remote_api_key:str, model:str):
         """Generate a response from Kimi (a remote LLM).
 
         Args:
@@ -212,7 +222,7 @@ class HybridLLMServer:
             str: Generated response from Kimi.
         """
         client = OpenAI(
-            api_key=self.server_config['remote_api_key'],
+            api_key=remote_api_key,
             base_url='https://api.moonshot.cn/v1',
         )
 
@@ -227,8 +237,6 @@ class HybridLLMServer:
                                   system=SYSTEM)
 
         logger.debug('remote api sending: {}'.format(messages))
-        model = self.server_config['remote_llm_model']
-
         if model == 'auto':
             prompt_len = len(prompt)
             if prompt_len <= int(8192 * 1.5) - 1024:
@@ -253,7 +261,7 @@ class HybridLLMServer:
             if delta.content:
                 yield delta.content
 
-    async def call_step(self, prompt, history):
+    async def call_step(self, prompt:str, history:List, remote_api_key:str, model:str):
         """Generate a response from step, see
         https://platform.stepfun.com/docs/overview/quickstart.
 
@@ -275,8 +283,6 @@ class HybridLLMServer:
                                   system=SYSTEM)
 
         logger.debug('remote api sending: {}'.format(messages))
-
-        model = self.server_config['remote_llm_model']
 
         if model == 'auto':
             prompt_len = len(prompt)
@@ -306,6 +312,8 @@ class HybridLLMServer:
     async def call_openai(self,
                  prompt: str,
                  history: List,
+                 remote_api_key: str,
+                 model: str,
                  base_url: str = None,
                  system: str = None):
         """Generate a response from openai API.
@@ -318,18 +326,19 @@ class HybridLLMServer:
             str: Generated response from RPC.
         """
         if base_url is not None:
-            client = OpenAI(api_key=self.server_config['remote_api_key'],
+            client = OpenAI(api_key=remote_api_key,
                             base_url=base_url)
         else:
-            client = OpenAI(api_key=self.server_config['remote_api_key'])
+            client = OpenAI(api_key=remote_api_key)
 
         messages = build_messages(prompt=prompt,
                                   history=history,
                                   system=system)
 
         logger.debug('remote api sending: {}'.format(messages))
+
         stream = client.chat.completions.create(
-            model=self.server_config['remote_llm_model'],
+            model=model,
             messages=messages,
             temperature=0.0,
             stream=True
@@ -401,13 +410,19 @@ class HybridLLMServer:
                 raise ValueError('unknown backend {}'.format(backend))
             
             target_fn = map_fn[backend]
-            args = {'prompt': prompt, 'history': history}
 
+            # build args for `target_fn`
+            args = {'prompt': prompt, 'history': history, 'model':self.backend2model[backend]}
             if backend in map_base_url:
                 args['base_url'] = map_base_url[backend]
 
             if backend in ['xi-api', 'deepseek']:
                 args['system'] = 'You are a helpful assistant.'
+
+            remote_api_key = self.server_config['remote_api_key']
+            if len(remote_api_key) < 1:
+                remote_api_key = os.getenv('LLM_API_TOKEN')
+            args['remote_api_key'] = remote_api_key
 
             life = 0
             while life < self.retry:
@@ -419,7 +434,7 @@ class HybridLLMServer:
                     break
 
                 except Exception as e:
-                    # exponential backoff
+                    # retry with exponential backoff
                     error = str(e)
                     logger.error(error)
 
