@@ -42,7 +42,7 @@ class LLMReranker:
             api_token = model_config['api_token'].strip()
             if len(api_token) < 1:
                 api_token = os.getenv('SILICONCLOUD_TOKEN')
-                if len(api_token) < 1:
+                if api_token is None or len(api_token) < 1:
                     raise ValueError('siliconclud remote reranker api token is None')
             if 'Bearer' not in api_token:
                 api_token = 'Bearer ' + api_token

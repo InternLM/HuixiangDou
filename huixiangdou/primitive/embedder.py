@@ -38,7 +38,7 @@ class Embedder:
             api_token = model_config['api_token'].strip()
             if len(api_token) < 1:
                 api_token = os.getenv('SILICONCLOUD_TOKEN')
-                if len(api_token) < 1:
+                if api_token is None or len(api_token) < 1:
                     raise ValueError('siliconclud remote embedder api token is None')
 
             if 'Bearer' not in api_token:
