@@ -151,8 +151,6 @@ if __name__ == '__main__':
     radio_options = ["chat_with_repo"]
 
     if not main_args.image:
-        import pdb
-        pdb.set_trace()
         show_image = False
 
     if main_args.pipeline_count > 1:
