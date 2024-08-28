@@ -39,6 +39,9 @@ def parse_args():
     parser.add_argument('--image', action='store_true', default=True, help='')
     parser.add_argument('--no-image', action='store_false', dest='image', help='Close some components for readthedocs.')
     parser.add_argument('--theme', type=str, default='soft', help='Gradio theme, default value is `soft`. Open https://www.gradio.app/guides/theming-guide for all themes.')
+    parser.add_argument('--feature-url', type=str, default=None, help='Zipped feature directory, `https://github.com/tpoisonooo/huixiangdou-readthedocs/raw/main/wordir.zip` is an example.')
+    parser.add_argument('--feature-local', type=str, default='/home/xlab-app-center/', help='Local directory for unzipped feature. Use `/home/xlab-app-center/` for OpenXLab.')
+
     args = parser.parse_args()
     return args
 
@@ -145,8 +148,29 @@ async def predict(text:str, image:str):
         
         yield sentence
 
+def download_and_unzip(main_args):
+    zip_filepath = os.path.join(main_args.feature_local, 'workdir.zip')
+    zip_dir = os.path.join(main_args.feature_local, 'workdir')
+    logger.info(f'assign {zip_dir} to args.work_dir')
+    main_args.work_dir = zip_dir
+
+    download_cmd = f'wget -O {zip_filepath} {main_args.feature_url}'
+    os.system(download_cmd)
+
+    if not os.path.exists(zip_filepath):
+        raise Exception(f'zip filepath {zip_filepath} not exist.')
+
+    unzip_cmd = f'unzip -o {zip_filepath} -d {zip_dir}'
+    os.system(unzip_cmd)
+    if not os.path.exists(zip_dir):
+        raise Exception(f'feature dir {zip_dir} not exist.')
+
+
 if __name__ == '__main__':
     main_args = parse_args()
+    if main_args.feature_url is not None:
+        download_and_unzip(main_args)
+
     show_image = True
     radio_options = ["chat_with_repo"]
 
