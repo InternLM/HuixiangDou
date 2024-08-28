@@ -212,10 +212,10 @@ def test_rpm():
 
 
 if __name__ == '__main__':
-    # test_siliconcloud_pass()
-    # test_kimi_pass()
-    # test_step_pass()
-    # test_zhipu_pass()
-    # test_deepseek_pass()
-    # test_puyu_pass()
+    test_siliconcloud_pass()
+    test_kimi_pass()
+    test_step_pass()
+    test_zhipu_pass()
+    test_deepseek_pass()
+    test_puyu_pass()
     test_llm_backend_fail()
