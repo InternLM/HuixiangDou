@@ -179,9 +179,10 @@ if __name__ == '__main__':
             #### [HuixiangDou](https://github.com/internlm/huixiangdou) AI assistant
             """, label='Reply', header_links=True, line_breaks=True,)
         with gr.Row():
-            with gr.Column():
-                ui_pipeline = gr.Radio(radio_options, label="Pipeline type", info="Group-chat is slow but accurate and safe, default value is `chat_with_repo`")
-                ui_pipeline.change(fn=on_pipeline_changed, inputs=ui_pipeline, outputs=[])
+            if len(radio_options) > 1:
+                with gr.Column():
+                    ui_pipeline = gr.Radio(radio_options, label="Pipeline type", info="Group-chat is slow but accurate and safe, default value is `chat_with_repo`")
+                    ui_pipeline.change(fn=on_pipeline_changed, inputs=ui_pipeline, outputs=[])
             with gr.Column():
                 ui_language = gr.Radio(["en", "zh"], label="Language", info="Use `en` by default                                 ")
                 ui_language.change(fn=on_language_changed, inputs=ui_language, outputs=[])

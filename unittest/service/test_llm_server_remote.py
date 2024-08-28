@@ -71,7 +71,7 @@ def test_kimi_pass():
     secrets = load_secret()
     llm_config['server']['remote_type'] = 'kimi'
     llm_config['server']['remote_api_key'] = secrets['kimi']
-    llm_config['server']['remote_llm_model'] = 'auto'
+    # llm_config['server']['remote_llm_model'] = 'auto'
     print('testing {}'.format(llm_config['server']))
     server = HybridLLMServer(llm_config=llm_config)
 
@@ -93,7 +93,7 @@ def test_zhipu_pass():
     secrets = load_secret()
     llm_config['server']['remote_type'] = 'zhipuai'
     llm_config['server']['remote_api_key'] = secrets['zhipuai']
-    llm_config['server']['remote_llm_model'] = 'glm-4'
+    # llm_config['server']['remote_llm_model'] = 'glm-4'
     print('testing {}'.format(llm_config['server']))
     server = HybridLLMServer(llm_config=llm_config)
 
@@ -115,7 +115,7 @@ def test_deepseek_pass():
     secrets = load_secret()
     llm_config['server']['remote_type'] = 'deepseek'
     llm_config['server']['remote_api_key'] = secrets['deepseek']
-    llm_config['server']['remote_llm_model'] = 'deepseek-chat'
+    # llm_config['server']['remote_llm_model'] = 'deepseek-chat'
     print('testing {}'.format(llm_config['server']))
 
     server = HybridLLMServer(llm_config=llm_config)
@@ -138,7 +138,7 @@ def test_step_pass():
     secrets = load_secret()
     llm_config['server']['remote_type'] = 'step'
     llm_config['server']['remote_api_key'] = secrets['step']
-    llm_config['server']['remote_llm_model'] = 'auto'
+    # llm_config['server']['remote_llm_model'] = 'auto'
     print('testing {}'.format(llm_config['server']))
 
     server = HybridLLMServer(llm_config=llm_config)
@@ -161,7 +161,7 @@ def test_puyu_pass():
     secrets = load_secret()
     llm_config['server']['remote_type'] = 'puyu'
     llm_config['server']['remote_api_key'] = secrets['puyu']
-    llm_config['server']['remote_llm_model'] = 'internlm2-latest'
+    # llm_config['server']['remote_llm_model'] = 'internlm2-latest'
     print('testing {}'.format(llm_config['server']))
 
     server = HybridLLMServer(llm_config=llm_config)
@@ -182,7 +182,7 @@ def test_siliconcloud_pass():
 
     secrets = load_secret()
     llm_config['server']['remote_type'] = 'siliconcloud'
-    llm_config['server']['remote_llm_model'] = 'alibaba/Qwen1.5-110B-Chat'
+    # llm_config['server']['remote_llm_model'] = 'alibaba/Qwen1.5-110B-Chat'
     llm_config['server']['remote_api_key'] = secrets['siliconcloud']
     print('testing {}'.format(llm_config['server']))
     server = HybridLLMServer(llm_config=llm_config)
@@ -212,10 +212,10 @@ def test_rpm():
 
 
 if __name__ == '__main__':
-    # test_siliconcloud_pass()
-    # test_kimi_pass()
-    # test_step_pass()
-    # test_zhipu_pass()
-    # test_deepseek_pass()
-    # test_puyu_pass()
+    test_siliconcloud_pass()
+    test_kimi_pass()
+    test_step_pass()
+    test_zhipu_pass()
+    test_deepseek_pass()
+    test_puyu_pass()
     test_llm_backend_fail()

@@ -37,7 +37,9 @@ class Embedder:
         elif 'siliconcloud' in self._type:
             api_token = model_config['api_token'].strip()
             if len(api_token) < 1:
-                raise ValueError('siliconclud remote embedder api token is None')
+                api_token = os.getenv('SILICONCLOUD_TOKEN')
+                if api_token is None or len(api_token) < 1:
+                    raise ValueError('siliconclud remote embedder api token is None')
 
             if 'Bearer' not in api_token:
                 api_token = 'Bearer ' + api_token
@@ -99,7 +101,7 @@ class Embedder:
             payload = {
                 "model": "netease-youdao/bce-embedding-base_v1",
                 # Since siliconcloud API return 50400 for long input, we have to truncate it.
-                "input": text[0:512],
+                "input": text,
                 "encoding_format": "float"
             }
             headers = {
