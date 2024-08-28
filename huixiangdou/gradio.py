@@ -13,13 +13,21 @@ from typing import List
 from huixiangdou.primitive import Query
 from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline, llm_serve, start_llm_server
 import json
+from datetime import datetime
+
+def ymd():
+    now = datetime.now()
+    date_string = now.strftime("%Y-%m-%d")
+    if not os.path.exists(date_string):
+        os.makedirs(date_string)
+    return date_string
 
 def parse_args():
     """Parse args."""
     parser = argparse.ArgumentParser(description='SerialPipeline.')
     parser.add_argument('--work_dir',
                         type=str,
-                        default='/home/xlab-app-center/workdir',
+                        default='workdir',
                         help='Working directory.')
     parser.add_argument('--pipeline-count', type=int, default=1, help='Support user choosing all pipeline types.')
     parser.add_argument(
@@ -38,8 +46,6 @@ def parse_args():
     parser.add_argument('--placeholder', type=str, default='How to install HuixiangDou ?', help='Placeholder for user query.')
     parser.add_argument('--image', action='store_false', default=True, help='')
     parser.add_argument('--theme', type=str, default='soft', help='Gradio theme, default value is `soft`. Open https://www.gradio.app/guides/theming-guide for all themes.')
-    parser.add_argument('--feature-url', type=str, default='https://github.com/tpoisonooo/huixiangdou-readthedocs/raw/main/workdir.zip', help='Zipped feature directory, `https://github.com/tpoisonooo/huixiangdou-readthedocs/raw/main/wordir.zip` is an example.')
-    parser.add_argument('--feature-local', type=str, default='/home/xlab-app-center/', help='Local directory for unzipped feature. Use `/home/xlab-app-center/` for OpenXLab.')
 
     args = parser.parse_args()
     return args
@@ -95,7 +101,7 @@ async def predict(text:str, image:str):
     global paralle_assistant
 
     with open('query.txt', 'a') as f:
-        f.write(json.dumps({'data': text}))
+        f.write(json.dumps({'data': text, 'date': ymd()}, ensure_ascii=False))
         f.write('\n')
 
     if image is not None:
@@ -163,11 +169,16 @@ def download_and_unzip(main_args):
     if not os.path.exists(main_args.work_dir):
         raise Exception(f'feature dir {zip_dir} not exist.')
 
+def build_feature_store(main_args):
+    if os.path.exists('workdir'):
+        logger.warning('feature_store `workdir` already exist, skip')
+        return
+    logger.info('start build feature_store..')
+    os.system('python3 -m huixiangdou.service.feature_store --config_path {}'.format(main_args.config_path))
 
 if __name__ == '__main__':
     main_args = parse_args()
-    if main_args.feature_url is not None:
-        download_and_unzip(main_args)
+    build_feature_store(main_args)
 
     show_image = True
     radio_options = ["chat_with_repo"]
