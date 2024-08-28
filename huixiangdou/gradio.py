@@ -13,6 +13,14 @@ from typing import List
 from huixiangdou.primitive import Query
 from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline, llm_serve, start_llm_server
 import json
+from datetime import datetime
+
+def ymd():
+    now = datetime.now()
+    date_string = now.strftime("%Y-%m-%d")
+    if not os.path.exists(date_string):
+        os.makedirs(date_string)
+    return date_string
 
 def parse_args():
     """Parse args."""
@@ -21,10 +29,10 @@ def parse_args():
                         type=str,
                         default='workdir',
                         help='Working directory.')
-    parser.add_argument('--pipeline-count', type=int, default=2, help='Support user choosing all pipeline types.')
+    parser.add_argument('--pipeline-count', type=int, default=1, help='Support user choosing all pipeline types.')
     parser.add_argument(
         '--config_path',
-        default='config.ini',
+        default='config-cpu.ini',
         type=str,
         help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
@@ -36,9 +44,9 @@ def parse_args():
                         dest='standalone',  # 指定与上面参数相同的目标
                         help='Do not auto deploy required Hybrid LLM Service.')
     parser.add_argument('--placeholder', type=str, default='How to install HuixiangDou ?', help='Placeholder for user query.')
-    parser.add_argument('--image', action='store_true', default=True, help='')
-    parser.add_argument('--no-image', action='store_false', dest='image', help='Close some components for readthedocs.')
+    parser.add_argument('--image', action='store_false', default=True, help='')
     parser.add_argument('--theme', type=str, default='soft', help='Gradio theme, default value is `soft`. Open https://www.gradio.app/guides/theming-guide for all themes.')
+
     args = parser.parse_args()
     return args
 
@@ -93,7 +101,7 @@ async def predict(text:str, image:str):
     global paralle_assistant
 
     with open('query.txt', 'a') as f:
-        f.write(json.dumps({'data': text}))
+        f.write(json.dumps({'data': text, 'date': ymd()}, ensure_ascii=False))
         f.write('\n')
 
     if image is not None:
@@ -145,8 +153,33 @@ async def predict(text:str, image:str):
         
         yield sentence
 
+def download_and_unzip(main_args):
+    zip_filepath = os.path.join(main_args.feature_local, 'workdir.zip')
+    main_args.work_dir = os.path.join(main_args.feature_local, 'workdir')
+    logger.info(f'assign {main_args.work_dir} to args.work_dir')
+
+    download_cmd = f'wget -O {zip_filepath} {main_args.feature_url}'
+    os.system(download_cmd)
+
+    if not os.path.exists(zip_filepath):
+        raise Exception(f'zip filepath {zip_filepath} not exist.')
+
+    unzip_cmd = f'unzip -o {zip_filepath} -d {main_args.feature_local}'
+    os.system(unzip_cmd)
+    if not os.path.exists(main_args.work_dir):
+        raise Exception(f'feature dir {zip_dir} not exist.')
+
+def build_feature_store(main_args):
+    if os.path.exists('workdir'):
+        logger.warning('feature_store `workdir` already exist, skip')
+        return
+    logger.info('start build feature_store..')
+    os.system('python3 -m huixiangdou.service.feature_store --config_path {}'.format(main_args.config_path))
+
 if __name__ == '__main__':
     main_args = parse_args()
+    build_feature_store(main_args)
+
     show_image = True
     radio_options = ["chat_with_repo"]
 

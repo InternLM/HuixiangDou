@@ -158,15 +158,23 @@ class FeatureStore:
 
         text_lens = []
         token_lens = []
+        text_chunk_count = 0
+        image_chunk_count = 0
 
         if self.embedder is None:
             logger.info('self.embedder is None, skip `anaylze_output`')
             return
         for chunk in chunks:
+            if chunk.modal == 'image':
+                image_chunk_count += 1
+            elif chunk.modal == 'text':
+                text_chunk_count += 1
+
             content = chunk.content_or_path
             text_lens.append(len(content))
             token_lens.append(self.embedder.token_length(content))
 
+        logger.info('text_chunks {}, image_chunks {}'.format(text_chunk_count, image_chunk_count))
         logger.info('text histogram, {}'.format(histogram(text_lens)))
         logger.info('token histogram, {}'.format(
             histogram(token_lens)))

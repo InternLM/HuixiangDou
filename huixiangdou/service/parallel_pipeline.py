@@ -127,7 +127,7 @@ class Text2vecRetrieval:
         """Try get reply with text2vec & rerank model."""
 
         # retrieve from knowledge base
-        sess.parallel_chunks = await asyncio.to_thread(self.retriever.text2vec_retrieve, sess.query) 
+        sess.parallel_chunks = await asyncio.to_thread(self.retriever.text2vec_retrieve, sess.query)
         # sess.parallel_chunks = self.retriever.text2vec_retrieve(query=sess.query.text)
         return sess
 
@@ -250,7 +250,7 @@ class ParallelPipeline:
             config_path (str): The location of the configuration file.
         """
         self.llm = ChatClient(config_path=config_path)
-        self.retriever = CacheRetriever(config_path=config_path).get()
+        self.retriever = CacheRetriever(config_path=config_path).get(work_dir=work_dir)
 
         self.config_path = config_path
         self.config = None
