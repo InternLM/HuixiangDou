@@ -174,7 +174,7 @@ class FeatureStore:
             text_lens.append(len(content))
             token_lens.append(self.embedder.token_length(content))
 
-        logger.info('{} text_chunks, {} image_chunks'.format(text_chunk_count, image_chunk_count))
+        logger.info('text_chunks {}, image_chunks {}'.format(text_chunk_count, image_chunk_count))
         logger.info('text histogram, {}'.format(histogram(text_lens)))
         logger.info('token histogram, {}'.format(
             histogram(token_lens)))
