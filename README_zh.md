@@ -415,7 +415,7 @@ python3 tests/test_query_gradio.py
 }
 
 @misc{kong2024huixiangdoucr,
-      title={HuixiangDou-CR: Coreference Resolution in Group Chats},
+      title={Labeling supervised fine-tuning data with the scaling law},
       author={Huanjun Kong},
       year={2024},
       eprint={2405.02817},
