@@ -19,12 +19,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description='SerialPipeline.')
     parser.add_argument('--work_dir',
                         type=str,
-                        default='workdir',
+                        default='/home/xlab-app-center/workdir',
                         help='Working directory.')
-    parser.add_argument('--pipeline-count', type=int, default=2, help='Support user choosing all pipeline types.')
+    parser.add_argument('--pipeline-count', type=int, default=1, help='Support user choosing all pipeline types.')
     parser.add_argument(
         '--config_path',
-        default='config.ini',
+        default='config-cpu.ini',
         type=str,
         help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
@@ -36,10 +36,9 @@ def parse_args():
                         dest='standalone',  # 指定与上面参数相同的目标
                         help='Do not auto deploy required Hybrid LLM Service.')
     parser.add_argument('--placeholder', type=str, default='How to install HuixiangDou ?', help='Placeholder for user query.')
-    parser.add_argument('--image', action='store_true', default=True, help='')
-    parser.add_argument('--no-image', action='store_false', dest='image', help='Close some components for readthedocs.')
+    parser.add_argument('--image', action='store_false', default=True, help='')
     parser.add_argument('--theme', type=str, default='soft', help='Gradio theme, default value is `soft`. Open https://www.gradio.app/guides/theming-guide for all themes.')
-    parser.add_argument('--feature-url', type=str, default=None, help='Zipped feature directory, `https://github.com/tpoisonooo/huixiangdou-readthedocs/raw/main/wordir.zip` is an example.')
+    parser.add_argument('--feature-url', type=str, default='https://github.com/tpoisonooo/huixiangdou-readthedocs/raw/main/workdir.zip', help='Zipped feature directory, `https://github.com/tpoisonooo/huixiangdou-readthedocs/raw/main/wordir.zip` is an example.')
     parser.add_argument('--feature-local', type=str, default='/home/xlab-app-center/', help='Local directory for unzipped feature. Use `/home/xlab-app-center/` for OpenXLab.')
 
     args = parser.parse_args()
@@ -150,9 +149,8 @@ async def predict(text:str, image:str):
 
 def download_and_unzip(main_args):
     zip_filepath = os.path.join(main_args.feature_local, 'workdir.zip')
-    zip_dir = os.path.join(main_args.feature_local, 'workdir')
-    logger.info(f'assign {zip_dir} to args.work_dir')
-    main_args.work_dir = zip_dir
+    main_args.work_dir = os.path.join(main_args.feature_local, 'workdir')
+    logger.info(f'assign {main_args.work_dir} to args.work_dir')
 
     download_cmd = f'wget -O {zip_filepath} {main_args.feature_url}'
     os.system(download_cmd)
@@ -160,9 +158,9 @@ def download_and_unzip(main_args):
     if not os.path.exists(zip_filepath):
         raise Exception(f'zip filepath {zip_filepath} not exist.')
 
-    unzip_cmd = f'unzip -o {zip_filepath} -d {zip_dir}'
+    unzip_cmd = f'unzip -o {zip_filepath} -d {main_args.feature_local}'
     os.system(unzip_cmd)
-    if not os.path.exists(zip_dir):
+    if not os.path.exists(main_args.work_dir):
         raise Exception(f'feature dir {zip_dir} not exist.')
 
 
