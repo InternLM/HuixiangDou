@@ -119,10 +119,11 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 <td>
 
+- 文档用稠密，代码用稀疏
 - [知识图谱](./docs/zh/doc_knowledge_graph.md)
 - [联网搜索](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
-- 图文混合（仅 markdown）
+- 图文混合
 
 </td>
 

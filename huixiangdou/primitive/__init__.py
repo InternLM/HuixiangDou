@@ -14,3 +14,4 @@ from .splitter import (
     RecursiveCharacterTextSplitter,
     nested_split_markdown)
 from .rpm import RPM
+from .bm250kpi import BM25Okapi

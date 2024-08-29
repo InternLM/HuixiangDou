@@ -117,10 +117,12 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 <td>
 
+- Dense for Document
+- Sparse for Code 
 - [Knowledge Graph](./docs/en/doc_knowledge_graph.md)
 - [Internet Search](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
-- Image and text (only markdown)
+- Image and Text
 
 </td>
 

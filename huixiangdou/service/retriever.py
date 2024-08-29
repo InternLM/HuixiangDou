@@ -30,6 +30,7 @@ class Retriever:
 
         self.embedder = embedder
         self.reranker = reranker
+        self.bm25 = None
         self.faiss = None
 
         if not os.path.exists(work_dir):
@@ -46,6 +47,9 @@ class Retriever:
             self.faiss = None
         else:
             self.faiss = Faiss.load_local(dense_path)
+
+    def build_bm25(self):
+        
 
     def update_throttle(self,
                         config_path: str = 'config.ini',
@@ -82,6 +86,10 @@ class Retriever:
         logger.info(
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
+
+    def sparse_retrieve(self, query: Union[Query, str]):
+        """Retrieve relavant code by BM25"""
+
 
     def text2vec_retrieve(self, query: Union[Query, str]):
         """Retrieve chunks by text2vec model or knowledge graph. 
