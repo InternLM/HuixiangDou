@@ -48,9 +48,8 @@ class Retriever:
         else:
             self.faiss = Faiss.load_local(dense_path)
 
-    def build_bm25(self):
+    # def build_bm25(self):
         
-
     def update_throttle(self,
                         config_path: str = 'config.ini',
                         good_questions=[],
