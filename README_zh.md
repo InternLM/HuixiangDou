@@ -407,9 +407,9 @@ python3 tests/test_query_gradio.py
 
 # 📝 引用
 
-```shell
+````shell
 @misc{kong2024huixiangdou,
-      title={HuixiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
+      title={HuiXiangDou: Overcoming Group Chat Scenarios with LLM-based Technical Assistance},
       author={Huanjun Kong and Songyang Zhang and Jiaying Li and Min Xiao and Jun Xu and Kai Chen},
       year={2024},
       eprint={2401.08772},
@@ -417,12 +417,13 @@ python3 tests/test_query_gradio.py
       primaryClass={cs.CL}
 }
 
-@misc{kong2024huixiangdoucr,
-      title={Labeling supervised fine-tuning data with the scaling law},
+@misc{kong2024labelingsupervisedfinetuningdata,
+      title={Labeling supervised fine-tuning data with the scaling law}, 
       author={Huanjun Kong},
       year={2024},
       eprint={2405.02817},
       archivePrefix={arXiv},
-      primaryClass={cs.CL}
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2405.02817}, 
 }
 ```
