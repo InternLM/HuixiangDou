@@ -4,16 +4,14 @@ import json
 import os
 import pdb
 import time
-from typing import Any, Union, Tuple, List
 
 import numpy as np
 import pytoml
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
+from typing import Any, Union, Tuple, List
 
-from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk
-
-from ..primitive import FileOperation
+from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk, BM25Okapi, FileOperation
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
 

@@ -643,10 +643,7 @@ def split_python_code(filepath: str, text: str, metadata: dict = {}):
                 if data:
                     texts.append(f"{child_node.name} {data}")
     except Exception as e:
-        logger.error(e)
-        with open(filepath) as f:
-            texts.append(f.read())
-    
+        logger.error('{} {}, continue'.format(filepath, str(e)))
     chunks = []
     for text in texts:
         chunks.append(Chunk(content_or_path=text, metadata=metadata))

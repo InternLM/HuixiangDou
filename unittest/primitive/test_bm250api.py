@@ -18,7 +18,12 @@ def test_bm25_dump():
 def test_bm25_load():
     bm25 = BM25Okapi()
     bm25.load('./')
-    res = bm25.get_top_n(query='what is the weather')
+    query_text = 'what is the weather'
+    
+    res = bm25.get_top_n(query=query_text.split(' '))
+    print(res)
+
+    res = bm25.get_top_n(query=query_text)
     print(res)
 
 if __name__ == '__main__':

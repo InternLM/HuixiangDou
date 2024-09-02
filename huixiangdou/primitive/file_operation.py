@@ -217,20 +217,20 @@ class FileOperation:
                     text += soup.text
 
             elif file_type == 'code':
-                text = filepath + "\n"
                 with open(filepath, errors="ignore") as f:
                     text += f.read()
-                return text
 
         except Exception as e:
             logger.error((filepath, str(e)))
             return '', e
-        text = text.replace('\n\n', '\n')
-        text = text.replace('\n\n', '\n')
-        text = text.replace('\n\n', '\n')
-        text = text.replace('  ', ' ')
-        text = text.replace('  ', ' ')
-        text = text.replace('  ', ' ')
+        
+        if file_type != 'code':
+            text = text.replace('\n\n', '\n')
+            text = text.replace('\n\n', '\n')
+            text = text.replace('\n\n', '\n')
+            text = text.replace('  ', ' ')
+            text = text.replace('  ', ' ')
+            text = text.replace('  ', ' ')
         return text, None
 
 

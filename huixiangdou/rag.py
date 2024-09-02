@@ -82,7 +82,7 @@ def rag(process_id: int, task: list, output_dir: str):
     for item in task:
         query = item.query
 
-        for sess in assistant.generate(query=query, history=[], groupname='')
+        for sess in assistant.generate(query=query, history=[], groupname=''):
             item.rag_reply = sess.response
             item.code = int(sess.code)
             item.reason = str(sess.code)

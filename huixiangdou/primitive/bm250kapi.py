@@ -4,9 +4,10 @@ import math
 import numpy as np
 import pickle as pkl
 import os
+import jieba.analyse
 
 from loguru import logger
-from typing import List
+from typing import List, Union
 from .chunk import Chunk
 
 """
@@ -33,7 +34,7 @@ class BM25Okapi:
         self.chunks = []
 
         # option
-        self.tokenizer = None
+        self.tokenizer = jieba.analyse.extract_tags
 
     def _initialize(self, corpus):
         nd = {}  # word -> number of documents with word
@@ -64,16 +65,20 @@ class BM25Okapi:
         tokenized_corpus = self.tokenizer(corpus)
         return tokenized_corpus
 
-    def save(self, chunks:List[Chunk], filedir:str, tokenizer=None):
+    def save(self, chunks:List[Chunk], filedir:str):
         # generate idf with corpus
+        self.chunks = chunks
 
         filtered_corpus = []
         for c in chunks:
             content = c.content_or_path
-            if tokenizer:
+            if self.tokenizer is not None:
                 # input str, output list of str
-                corpus = self._tokenize_corpus(content)
+                corpus = self.tokenizer(content)
+                if content not in corpus:
+                    corpus.append(content)
             else:
+                logger.warning('No tokenizer, use naive split')
                 corpus = content.split(' ')
             filtered_corpus.append(corpus)
 
@@ -91,7 +96,7 @@ class BM25Okapi:
             'chunks': chunks
         }
         logger.info('bm250kpi dump..')
-        logger.info(data)
+        # logger.info(data)
 
         if not os.path.exists(filedir):
             os.makedirs(filedir)
@@ -135,7 +140,7 @@ class BM25Okapi:
         for word in negative_idfs:
             self.idf[word] = eps
 
-    def get_scores(self, query):
+    def get_scores(self, query: List):
         """
         The ATIRE BM25 variant uses an idf function which uses a log(idf) score. To prevent negative idf scores,
         this algorithm also adds a floor to the idf value of epsilon.
@@ -143,6 +148,8 @@ class BM25Okapi:
         :param query:
         :return:
         """
+        if type(query) is not list:
+            raise ValueError('query must be list, tokenize it byself.')
         score = np.zeros(self.corpus_size)
         doc_len = np.array(self.doc_len)
         for q in query:
@@ -164,7 +171,19 @@ class BM25Okapi:
                                                (q_freq + self.k1 * (1 - self.b + self.b * doc_len / self.avgdl)))
         return score.tolist()
 
-    def get_top_n(self, query, n=5):
-        scores = self.get_scores(query)
+    def get_top_n(self, query: Union[List,str], n=5):
+        if type(query) is str:
+            if self.tokenizer is not None:
+                queries = self.tokenizer(query)
+            else:
+                queries = query.split(' ')
+        else:
+            queries = query
+
+        scores = self.get_scores(queries)
         top_n = np.argsort(scores)[::-1][:n]
+        logger.info('{} {}'.format(scores, top_n))
+        if abs(scores[top_n[0]]) < 1e-5:
+            # not match, quit
+            return []
         return [self.chunks[i] for i in top_n]

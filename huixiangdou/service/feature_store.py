@@ -16,7 +16,9 @@ from tqdm import tqdm
 
 from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          FileName, FileOperation,
-                         RecursiveCharacterTextSplitter, nested_split_markdown)
+                         RecursiveCharacterTextSplitter, nested_split_markdown,
+                         split_python_code,
+                         BM25Okapi)
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
@@ -117,7 +119,9 @@ class FeatureStore:
         chunks = []
         
         for file in files:
-            content = fileopr.read(file.origin)
+            content, error = fileopr.read(file.origin)
+            if error is not None:
+                continue
             file_chunks = split_python_code(filepath=file.origin, text=content, metadata={'source': file.origin, 'read': file.copypath})
             chunks += file_chunks
         
@@ -402,6 +406,7 @@ if __name__ == '__main__':
 
     # walk all files in repo dir
     file_opr = FileOperation()
+
     files = file_opr.scan_dir(repo_dir=args.repo_dir)
     fs_init.initialize(files=files, work_dir=args.work_dir)
     file_opr.summarize(files)

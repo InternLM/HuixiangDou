@@ -233,7 +233,7 @@ if __name__ == '__main__':
                 ui_web_search = gr.Radio(["no", "yes"], label="Enable web search", info="Disable by default                                 ")
                 ui_web_search.change(fn=on_web_search_changed, inputs=ui_web_search, outputs=[])
             with gr.Column():
-                ui_code_search = gr.Radio(["no", "yes"], label="Enable code search", info="Enable by default                                 ")
+                ui_code_search = gr.Radio(["yes", "no"], label="Enable code search", info="Enable by default                                 ")
                 ui_code_search.change(fn=on_code_search_changed, inputs=ui_code_search, outputs=[])
 
         with gr.Row():

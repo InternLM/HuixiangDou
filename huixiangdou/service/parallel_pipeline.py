@@ -141,7 +141,7 @@ class CodeRetrieval:
         """Try get reply with text2vec & rerank model."""
 
         # retrieve from knowledge base
-        if self.retriever.bm25 is None
+        if self.retriever.bm25 is None:
             sess.parallel_chunks = []
             return sess
         
