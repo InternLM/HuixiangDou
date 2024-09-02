@@ -3,6 +3,7 @@
 import math
 import numpy as np
 import pickle as pkl
+
 from loguru import logger
 from typing import List
 from .chunk import Chunk
@@ -62,7 +63,7 @@ class BM25Okapi:
         tokenized_corpus = self.tokenizer(corpus)
         return tokenized_corpus
 
-    def save(self, chunks:List[Chunk], filepath:str, tokenizer=None):
+    def save(self, chunks:List[Chunk], filedir:str, tokenizer=None):
         # generate idf with corpus
 
         filtered_corpus = []
@@ -90,12 +91,19 @@ class BM25Okapi:
         }
         logger.info('bm250kpi dump..')
         logger.info(data)
+
+        if not os.path.exists(filedir):
+            os.makedirs(filedir)
+        
+        filepath = os.path.join(filedir, 'bm25.pkl')
         with open(filepath, 'wb') as f:
             pkl.dump(data, f)
 
-    def load(self, filepath: str, tokenizer=None):
+    def load(self, filedir: str, tokenizer=None):
         self.tokenizer = tokenizer
-        data = pickle.load(filepath)
+        filepath = os.path.join(filedir, 'bm25.pkl')
+        with open(filepath, 'rb') as f:
+            data = pkl.load(f)
         self.corpus_size = data['corpus_size']
         self.avgdl = data['avgdl']
         self.doc_freqs = data['doc_freqs']
@@ -155,8 +163,7 @@ class BM25Okapi:
                                                (q_freq + self.k1 * (1 - self.b + self.b * doc_len / self.avgdl)))
         return score.tolist()
 
-    def get_top_n(self, query, documents, n=5):
-        assert self.corpus_size == len(documents), "The documents given don't match the index corpus!"
+    def get_top_n(self, query, n=5):
         scores = self.get_scores(query)
         top_n = np.argsort(scores)[::-1][:n]
-        return [documents[i] for i in top_n]
+        return [self.chunks[i] for i in top_n]

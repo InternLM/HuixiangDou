@@ -112,9 +112,18 @@ class FeatureStore:
     def build_sparse(self, files: List[FileName], work_dir: str):
         """Use BM25 for building code feature"""
         # split by function, class and annotation, remove blank
-        # build bm25 np.array
-        # TODO
-        pass
+        # build bm25 pickle
+        fileopr = FileOperation()
+        chunks = []
+        
+        for file in files:
+            content = fileopr.read(file.origin)
+            file_chunks = split_python_code(filepath=file.origin, text=content, metadata={'source': file.origin, 'read': file.copypath})
+            chunks += file_chunks
+        
+        sparse_dir = os.path.join(work_dir, 'db_sparse')
+        bm25 = BM25Okapi()
+        bm25.save(chunks, sparse_dir)
 
     def build_dense(self, files: List[FileName], work_dir: str, markdown_as_txt: bool=False):
         """Extract the features required for the response pipeline based on the
@@ -274,6 +283,9 @@ class FeatureStore:
         # build dense retrieval refusal-to-answer and response database
         documents = list(filter(lambda x: x._type != 'code', files))
         self.build_dense(files=documents, work_dir=work_dir)
+
+        codes = list(filter(lambda x: x._type == 'code', files))
+        self.build_sparse(files=codes, work_dir=work_dir)
 
 def parse_args():
     """Parse command-line arguments."""

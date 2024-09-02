@@ -8,6 +8,7 @@ import os
 import pdb
 import json
 import re
+import ast
 from abc import ABC, abstractmethod
 from typing import (AbstractSet, Any, Callable, Collection, Dict, Iterable,
                     List, Literal, Optional, Sequence, Tuple, Type, TypedDict,
@@ -623,6 +624,34 @@ def nested_split_markdown(filepath: str,
 
     # logger.info('{} text_chunks, {} image_chunks'.format(len(text_chunks), len(image_chunks)))
     return text_chunks + image_chunks
+
+def split_python_code(filepath: str, text: str, metadata: dict = {}):
+    """Split python code to class, function and annotation."""
+    basename = os.path.basename(filepath)
+    texts = []
+    texts.append(basename)
+    try:
+        node = ast.parse(text)
+        data = ast.get_docstring(node)
+        if data:
+            texts.append(data)
+        for child_node in ast.walk(node):
+            if isinstance(
+                child_node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+            ):
+                data = ast.get_docstring(child_node)
+                if data:
+                    texts.append(f"{child_node.name} {data}")
+    except Exception as e:
+        logger.error(e)
+        with open(filepath) as f:
+            texts.append(f.read())
+    
+    chunks = []
+    for text in texts:
+        chunks.append(Chunk(content_or_path=text, metadata=metadata))
+    return chunks
+
 
 def clean_md(text: str):
     """Remove parts of the markdown document that do not contain the key

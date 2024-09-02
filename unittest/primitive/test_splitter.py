@@ -6,7 +6,7 @@ from huixiangdou.primitive import (CharacterTextSplitter,
                                    MarkdownHeaderTextSplitter,
                                    MarkdownTextRefSplitter,
                                    RecursiveCharacterTextSplitter,
-                                   nested_split_markdown)
+                                   nested_split_markdown, split_python_code)
 
 
 def test_character_text_splitter():
@@ -111,11 +111,20 @@ def test_nested_markdown_split():
             f.write('\n-----------\n')
     return chunks
 
+def test_split_python_code():
+    path = "huixiangdou/main.py"
+    with open(path) as f:
+        content = f.read()
+    
+    chunks = split_python_code(filepath=path, text=content, metadata={"test": "meta"})
+    for chunk in chunks:
+        print(chunk)
 
 if __name__ == '__main__':
-    test_character_text_splitter()
-    test_recursive_character_text_splitter()
-    test_chinese_recursive_text_splitter()
-    test_markdown_text_splitter()
-    test_markdown_header_text_splitter()
-    test_nested_markdown_split()
+    test_split_python_code()
+    # test_character_text_splitter()
+    # test_recursive_character_text_splitter()
+    # test_chinese_recursive_text_splitter()
+    # test_markdown_text_splitter()
+    # test_markdown_header_text_splitter()
+    # test_nested_markdown_split()

@@ -13,13 +13,13 @@ def test_bm25_dump():
         chunks.append(c)
 
     bm25 = BM25Okapi()
-    pdb.set_trace()
-    bm25.save(chunks, 'bm25.pkl')
+    bm25.save(chunks, './')
 
 def test_bm25_load():
     bm25 = BM25Okapi()
-    pdb.set_trace()
-    bm25.load('bm25.pkl')
+    bm25.load('./')
+    res = bm25.get_top_n(query='what is the weather')
+    print(res)
 
 if __name__ == '__main__':
     test_bm25_dump()
