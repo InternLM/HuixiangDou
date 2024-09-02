@@ -16,7 +16,9 @@ from tqdm import tqdm
 
 from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          FileName, FileOperation,
-                         RecursiveCharacterTextSplitter, nested_split_markdown)
+                         RecursiveCharacterTextSplitter, nested_split_markdown,
+                         split_python_code,
+                         BM25Okapi)
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
@@ -109,7 +111,25 @@ class FeatureStore:
             length += len(c.content_or_path)
         return chunks, length
 
-    def build_dense(self, files: list, work_dir: str, markdown_as_txt: bool=False):
+    def build_sparse(self, files: List[FileName], work_dir: str):
+        """Use BM25 for building code feature"""
+        # split by function, class and annotation, remove blank
+        # build bm25 pickle
+        fileopr = FileOperation()
+        chunks = []
+        
+        for file in files:
+            content, error = fileopr.read(file.origin)
+            if error is not None:
+                continue
+            file_chunks = split_python_code(filepath=file.origin, text=content, metadata={'source': file.origin, 'read': file.copypath})
+            chunks += file_chunks
+        
+        sparse_dir = os.path.join(work_dir, 'db_sparse')
+        bm25 = BM25Okapi()
+        bm25.save(chunks, sparse_dir)
+
+    def build_dense(self, files: List[FileName], work_dir: str, markdown_as_txt: bool=False):
         """Extract the features required for the response pipeline based on the
         document."""
         feature_dir = os.path.join(work_dir, 'db_dense')
@@ -217,6 +237,12 @@ class FeatureStore:
                                              '{}.text'.format(md5))
                 pool.apply_async(read_and_save, (file, ))
 
+            elif file._type in ['code']:
+                md5 = file_opr.md5(file.origin)
+                file.copypath = os.path.join(preproc_dir,
+                                             '{}.code'.format(md5))
+                read_and_save(file)
+
             elif file._type in ['md', 'text']:
                 # rename text files to new dir
                 md5 = file_opr.md5(file.origin)
@@ -230,7 +256,6 @@ class FeatureStore:
                 except Exception as e:
                     file.state = False
                     file.reason = str(e)
-
             else:
                 file.state = False
                 file.reason = 'skip unknown format'
@@ -260,8 +285,11 @@ class FeatureStore:
         )
         self.preprocess(files=files, work_dir=work_dir)
         # build dense retrieval refusal-to-answer and response database
-        self.build_dense(files=files, work_dir=work_dir)
+        documents = list(filter(lambda x: x._type != 'code', files))
+        self.build_dense(files=documents, work_dir=work_dir)
 
+        codes = list(filter(lambda x: x._type == 'code', files))
+        self.build_sparse(files=codes, work_dir=work_dir)
 
 def parse_args():
     """Parse command-line arguments."""
@@ -378,6 +406,7 @@ if __name__ == '__main__':
 
     # walk all files in repo dir
     file_opr = FileOperation()
+
     files = file_opr.scan_dir(repo_dir=args.repo_dir)
     fs_init.initialize(files=files, work_dir=args.work_dir)
     file_opr.summarize(files)

@@ -66,7 +66,7 @@ For bce-embedding-base_v1
 For bge-large-zh-v1.5
 
 - The chunksize range should be (423, 1240)
-- The compression rate of embedding.tokenzier is slightly lower
+- The compression rate of embedding.tokenizer is slightly lower
 - The best F1@throttle obtained on the right value is 72.23@0.34
 
 The basis for choosing splitter is:

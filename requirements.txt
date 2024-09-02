@@ -35,3 +35,4 @@ termcolor
 opencv-python-headless
 gradio>=4.41
 bcembedding
+jieba

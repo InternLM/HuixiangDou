@@ -53,6 +53,7 @@ def parse_args():
 
 language='en'
 enable_web_search=False
+enable_code_search=True
 pipeline='chat_with_repo'
 main_args = None
 paralle_assistant = None
@@ -76,6 +77,13 @@ def on_web_search_changed(value: str):
     else:
         enable_web_search = True
 
+def on_code_search_changed(value: str):
+    global enable_code_search
+    print(value)
+    if 'no' in value:
+        enable_code_search = False
+    else:
+        enable_code_search = True
 
 def format_refs(refs: List[str]):
     refs_filter = list(set(refs))
@@ -91,7 +99,6 @@ def format_refs(refs: List[str]):
         text += '* {}\r\n'.format(file_or_url)
     text += '\r\n'
     return text
-
 
 async def predict(text:str, image:str):
     global language
@@ -142,6 +149,7 @@ async def predict(text:str, image:str):
             paralle_assistant = ParallelPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history':[], 'language':language}
         args['enable_web_search'] = enable_web_search
+        args['enable_code_search'] = enable_code_search
 
         sentence = ''
         async for sess in paralle_assistant.generate(**args):
@@ -212,6 +220,7 @@ if __name__ == '__main__':
             gr.Markdown("""
             #### [HuixiangDou](https://github.com/internlm/huixiangdou) AI assistant
             """, label='Reply', header_links=True, line_breaks=True,)
+
         with gr.Row():
             if len(radio_options) > 1:
                 with gr.Column():
@@ -222,17 +231,22 @@ if __name__ == '__main__':
                 ui_language.change(fn=on_language_changed, inputs=ui_language, outputs=[])
             with gr.Column():
                 ui_web_search = gr.Radio(["no", "yes"], label="Enable web search", info="Disable by default                                 ")
-                ui_web_search.change(on_web_search_changed, inputs=ui_web_search, outputs=[])
+                ui_web_search.change(fn=on_web_search_changed, inputs=ui_web_search, outputs=[])
+            with gr.Column():
+                ui_code_search = gr.Radio(["yes", "no"], label="Enable code search", info="Enable by default                                 ")
+                ui_code_search.change(fn=on_code_search_changed, inputs=ui_code_search, outputs=[])
 
         with gr.Row():
             input_question = gr.TextArea(label='Input your question', placeholder=main_args.placeholder, show_copy_button=True, lines=9)
             input_image = gr.Image(label='[Optional] Image-text retrieval needs `config-multimodal.ini`', render=show_image)
+
         with gr.Row():
             run_button = gr.Button()
+
         with gr.Row():
             result = gr.Markdown('>Text reply or inner status callback here, depends on `pipeline type`', label='Reply', show_label=True, header_links=True, line_breaks=True, show_copy_button=True)
             # result = gr.TextArea(label='Reply', show_copy_button=True, placeholder='Text Reply or inner status callback, depends on `pipeline type`')
-            
+
         run_button.click(predict, [input_question, input_image], [result])
     demo.queue()
     demo.launch(share=False, server_name='0.0.0.0', debug=True)

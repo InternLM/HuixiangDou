@@ -4,16 +4,14 @@ import json
 import os
 import pdb
 import time
-from typing import Any, Union, Tuple, List
 
 import numpy as np
 import pytoml
 from loguru import logger
 from sklearn.metrics import precision_recall_curve
+from typing import Any, Union, Tuple, List
 
-from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk
-
-from ..primitive import FileOperation
+from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk, BM25Okapi, FileOperation
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
 
@@ -40,12 +38,21 @@ class Retriever:
         self.kg = KnowledgeGraph(config_path=config_path)
 
         # dense retrieval, load refusal-to-answer and response feature database
-        dense_path = os.path.join(work_dir, 'db_dense')
-        if not os.path.exists(dense_path):
-            logger.warning('retriever is None, skip load faiss')
+        dense_dir = os.path.join(work_dir, 'db_dense')
+        if not os.path.exists(dense_dir):
+            logger.warning('Dense retriever is None, skip load faiss')
             self.faiss = None
         else:
-            self.faiss = Faiss.load_local(dense_path)
+            self.faiss = Faiss.load_local(dense_dir)
+
+        # sparse retrieval for python code
+        sparse_dir = os.path.join(work_dir, 'db_sparse')
+        if not os.path.exists(sparse_dir):
+            logger.warning('Sparse retriever is None, skip load bm25')
+            self.bm25 = None
+        else:
+            self.bm25 = BM25Okapi()
+            self.bm25.load(sparse_dir)
 
     def update_throttle(self,
                         config_path: str = 'config.ini',

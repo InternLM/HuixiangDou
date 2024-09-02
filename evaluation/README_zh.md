@@ -66,7 +66,7 @@ print(result)
 对 bge-large-zh-v1.5
 
 - chunksize 范围应在 (423, 1240)
-- embedding.tokenzier 的压缩率略低
+- embedding.tokenizer 的压缩率略低
 - 右值取到的最佳 F1@throttle 为 72.23@0.34
 
 splitter 选择依据

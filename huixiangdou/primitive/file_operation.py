@@ -42,7 +42,7 @@ class FileOperation:
         self.ppt_suffix = '.pptx'
         self.html_suffix = ['.html', '.htm', '.shtml', '.xhtml']
         self.word_suffix = ['.docx', '.doc']
-        # self.code_suffix = ['.py', '.cpp', '.h']
+        self.code_suffix = ['.py']
         self.normal_suffix = [self.md_suffix
                               ] + self.text_suffix + self.excel_suffix + [
                                   self.pdf_suffix
@@ -111,9 +111,9 @@ class FileOperation:
             if filepath.endswith(suffix):
                 return 'html'
 
-        # for suffix in self.code_suffix:
-        #     if filepath.endswith(suffix):
-        #         return 'code'
+        for suffix in self.code_suffix:
+            if filepath.endswith(suffix):
+                return 'code'
         return None
 
     def md5(self, filepath: str):
@@ -216,15 +216,21 @@ class FileOperation:
                     soup = BeautifulSoup(f.read(), 'html.parser')
                     text += soup.text
 
+            elif file_type == 'code':
+                with open(filepath, errors="ignore") as f:
+                    text += f.read()
+
         except Exception as e:
             logger.error((filepath, str(e)))
             return '', e
-        text = text.replace('\n\n', '\n')
-        text = text.replace('\n\n', '\n')
-        text = text.replace('\n\n', '\n')
-        text = text.replace('  ', ' ')
-        text = text.replace('  ', ' ')
-        text = text.replace('  ', ' ')
+        
+        if file_type != 'code':
+            text = text.replace('\n\n', '\n')
+            text = text.replace('\n\n', '\n')
+            text = text.replace('\n\n', '\n')
+            text = text.replace('  ', ' ')
+            text = text.replace('  ', ' ')
+            text = text.replace('  ', ' ')
         return text, None
 
 

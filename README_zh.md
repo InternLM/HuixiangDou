@@ -50,6 +50,7 @@
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
+- \[2024/09\] 稀疏方法实现[代码检索](./huixiangdou/service/parallel_pipeline.py)
 - \[2024/08\] ["chat_with readthedocs"](https://huixiangdou.readthedocs.io/zh-cn/latest/) ，见[集成说明](./docs/zh/doc_add_readthedocs.md)
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
 - \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/zh/doc_knowledge_graph.md) 🎯
@@ -119,10 +120,11 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 <td>
 
+- 文档用稠密，代码用稀疏
 - [知识图谱](./docs/zh/doc_knowledge_graph.md)
 - [联网搜索](./huixiangdou/service/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
-- 图文混合（仅 markdown）
+- 图文混合
 
 </td>
 

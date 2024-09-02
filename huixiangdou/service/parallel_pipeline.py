@@ -131,6 +131,23 @@ class Text2vecRetrieval:
         # sess.parallel_chunks = self.retriever.text2vec_retrieve(query=sess.query.text)
         return sess
 
+class CodeRetrieval:
+    """CodeNode is for retrieve from codebase."""
+
+    def __init__(self, retriever: Retriever):
+        self.retriever = retriever
+
+    async def process_coroutine(self, sess: Session) -> Session:
+        """Try get reply with text2vec & rerank model."""
+
+        # retrieve from knowledge base
+        if self.retriever.bm25 is None:
+            sess.parallel_chunks = []
+            return sess
+        
+        sess.parallel_chunks = self.retriever.bm25.get_top_n(query=sess.query.text)
+        return sess
+
 class WebSearchRetrieval:
     """WebSearchNode is for web search, use `ddgs` or `serper`"""
 
@@ -264,7 +281,8 @@ class ParallelPipeline:
                  query: Union[Query, str],
                  history: List[Tuple[str]]=[], 
                  language: str='zh', 
-                 enable_web_search: bool=True):
+                 enable_web_search: bool=True,
+                 enable_code_search: bool=True):
         """Processes user queries and generates appropriate responses. It
         involves several steps including checking for valid questions,
         extracting topics, querying the feature store, searching the web, and
@@ -294,6 +312,7 @@ class ParallelPipeline:
         # build pipeline
         preproc = PreprocNode(self.config, self.llm, language)
         text2vec = Text2vecRetrieval(self.config, self.llm, self.retriever, language)
+        coderetrieval = CodeRetrieval(self.retriever)
         websearch = WebSearchRetrieval(self.config, self.config_path, self.llm, language)
         reduce = ReduceGenerate(self.config, self.llm, self.retriever, language)
         pipeline = [preproc, [text2vec, websearch], reduce]
@@ -310,11 +329,13 @@ class ParallelPipeline:
                     yield resp
                 return
 
-        # parallel run text2vec and websearch
-        
+        # parallel run text2vec, websearch and codesearch
         tasks = [text2vec.process_coroutine(copy.deepcopy(sess))]
         if enable_web_search:
             tasks.append(websearch.process_coroutine(copy.deepcopy(sess)))
+
+        if enable_code_search:
+            tasks.append(coderetrieval.process_coroutine(copy.deepcopy(sess)))
 
         task_results = await asyncio.gather(*tasks, return_exceptions=True)
         for result in task_results:
