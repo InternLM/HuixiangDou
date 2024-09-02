@@ -56,8 +56,6 @@ class Retriever:
             self.bm25 = BM25Okapi()
             self.bm25.load(sparse_dir)
 
-    # def build_bm25(self):
-        
     def update_throttle(self,
                         config_path: str = 'config.ini',
                         good_questions=[],
@@ -93,10 +91,6 @@ class Retriever:
         logger.info(
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
-
-    def sparse_retrieve(self, query: Union[Query, str]):
-        """Retrieve relavant python code by BM25"""
-        
 
     def text2vec_retrieve(self, query: Union[Query, str]):
         """Retrieve chunks by text2vec model or knowledge graph. 

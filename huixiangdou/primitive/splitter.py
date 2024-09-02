@@ -652,7 +652,6 @@ def split_python_code(filepath: str, text: str, metadata: dict = {}):
         chunks.append(Chunk(content_or_path=text, metadata=metadata))
     return chunks
 
-
 def clean_md(text: str):
     """Remove parts of the markdown document that do not contain the key
     question words, such as code blocks, URL links, etc."""
@@ -673,4 +672,3 @@ def clean_md(text: str):
     # use lower
     new_text = new_text.lower()
     return new_text
-
