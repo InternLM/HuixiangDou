@@ -67,6 +67,8 @@ class BM25Okapi:
 
     def save(self, chunks:List[Chunk], filedir:str):
         # generate idf with corpus
+        if len(chunks) < 1:
+            return
         self.chunks = chunks
 
         filtered_corpus = []
