@@ -11,6 +11,7 @@ import numpy as np
 from loguru import logger
 from .query import DistanceStrategy
 from .rpm import RPM
+from .chunk import Chunk
 
 class Embedder:
     """Wrap text2vec (multimodal) model."""
@@ -115,3 +116,28 @@ class Embedder:
             emb_list = json_obj['data'][0]['embedding']
             emb = np.array(emb_list).astype(np.float32).reshape(1, -1)
             return emb
+
+    def embed_query_batch_text(self, chunks: List[Chunk] = []) -> np.ndarray:
+        """Embed input text or image as feature, output np.ndarray with np.float32"""
+        if 'bge' in self._type:
+            import torch
+            with torch.no_grad():
+                features = []
+                for c in chunks:
+                    feature = self.client.encode(text=c.content_or_path)
+                    features.append(feature.cpu().numpy())
+                return np.concatenate(features).reshape(len(chunks), -1).astype(np.float32)
+
+        elif 'bce' in self._type:
+            texts = []
+            for c in chunks:
+                texts.append(c.content_or_path)
+            emb = self.client.encode(texts, show_progress_bar=False, normalize_embeddings=True)
+            return emb.astype(np.float32)
+
+        else:
+            features = []
+            for c in chunks:
+                feature = self.embed_query(text=c.content_or_path)
+                features.append(feature)
+            return np.concatenate(features).reshape(len(chunks), -1).astype(np.float32)

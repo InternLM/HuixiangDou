@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from .embedder import Embedder
 from .query import Query, DistanceStrategy
+from .chunk import Chunk
 
 
 # heavily modified from langchain
@@ -119,6 +120,20 @@ class Faiss():
         return ret
 
     @classmethod
+    def split_by_batchsize(self, chunks: List[Chunk] = [], batchsize:int = 4):
+        texts = [c for c in chunks if c.modal == 'text']
+        images = [c for c in chunks if c.modal == 'image']
+
+        block_text = []
+        for i in range(0, len(texts), batchsize):
+            block_text.append(texts[i:i+batchsize])
+
+        block_image = []
+        for i in range(0, len(images), batchsize):
+            block_image.append(images[i:i+batchsize])
+        return block_text, block_image
+
+    @classmethod
     def save_local(self, folder_path: str, chunks: List[Chunk],
                    embedder: Embedder) -> None:
         """Save FAISS index and store to disk.
@@ -131,32 +146,73 @@ class Faiss():
 
         faiss = dependable_faiss_import()
         index = None
+        batchsize = 1
 
-        for chunk in tqdm(chunks):
-            np_feature = None
-            try:
-                if chunk.modal == 'text':
-                    np_feature = embedder.embed_query(text=chunk.content_or_path)
-                elif chunk.modal == 'image':
+        try:
+            batchsize_str = os.getenv('HUIXIANGDOU_BATCHSIZE')
+            if batchsize_str is None:
+                logger.info('`export HUIXIANGDOU_BATCHSIZE=64` for faster feature building.')
+            else:
+                batchsize = int(batchsize_str)
+        except Exception as e:
+            logger.error(str(e))
+            batchsize = 1
+
+
+        if batchsize == 1:
+            for chunk in tqdm(chunks, 'chunks'):
+                np_feature = None
+                try:
+                    if chunk.modal == 'text':
+                        np_feature = embedder.embed_query(text=chunk.content_or_path)
+                    elif chunk.modal == 'image':
+                        np_feature = embedder.embed_query(path=chunk.content_or_path)
+                    else:
+                        raise ValueError(f'Unimplement chunk type: {chunk.modal}')
+                except Exception as e:
+                    logger.error('{}'.format(e))
+
+                if np_feature is None:
+                    logger.error('np_feature is None')
+                    continue
+
+                if index is None:
+                    dimension = np_feature.shape[-1]
+
+                    if embedder.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+                        index = faiss.IndexFlatL2(dimension)
+                    elif embedder.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+                        index = faiss.IndexFlatIP(dimension)
+                index.add(np_feature)
+        else:
+            # batching
+            block_text, block_image = self.split_by_batchsize(chunks=chunks, batchsize=batchsize)
+            for subchunks in tqdm(block_text, 'build_text'):
+                np_features = embedder.embed_query_batch_text(chunks=subchunks)
+                if index is None:
+                    dimension = np_features[0].shape[-1]
+
+                    if embedder.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+                        index = faiss.IndexFlatL2(dimension)
+                    elif embedder.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+                        index = faiss.IndexFlatIP(dimension)
+                index.add(np_features)
+
+            for subchunks in tqdm(block_image, 'build_image'):
+                for chunk in subchunks:
                     np_feature = embedder.embed_query(path=chunk.content_or_path)
-                else:
-                    raise ValueError(f'Unimplement chunk type: {chunk.modal}')
-            except Exception as e:
-                logger.error('{}'.format(e))
+                    if np_feature is None:
+                        logger.error('np_feature is None')
+                        continue
 
-            if np_feature is None:
-                logger.error('np_feature is None')
-                continue
+                    if index is None:
+                        dimension = np_feature.shape[-1]
 
-            if index is None:
-                dimension = np_feature.shape[-1]
-
-                if embedder.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-                    index = faiss.IndexFlatL2(dimension)
-                elif embedder.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-                    index = faiss.IndexFlatIP(dimension)
-
-            index.add(np_feature)
+                        if embedder.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+                            index = faiss.IndexFlatL2(dimension)
+                        elif embedder.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+                            index = faiss.IndexFlatIP(dimension)
+                    index.add(np_feature)
 
         path = Path(folder_path)
         path.mkdir(exist_ok=True, parents=True)
