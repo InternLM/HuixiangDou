@@ -1,5 +1,4 @@
 models/
-repodir/
 workdir/
 write_toml.py
 modeling_internlm2.py
@@ -58,3 +57,5 @@ workdir832/
 workdir.bak/
 workdir-20240729-kg-included/
 bm25.pkl
+repodir/
+workdir.full/

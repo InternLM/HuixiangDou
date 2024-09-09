@@ -12,7 +12,7 @@ import pytoml
 import requests
 from loguru import logger
 from openai import OpenAI
-from huixiangdou.primitive import RPM
+from huixiangdou.primitive import RPM, TPM
 import asyncio
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -190,10 +190,15 @@ class HybridLLMServer:
 
         model_path = self.server_config['local_llm_path']
 
-        _rpm = 500
+        _rpm = 1000
+        _tpm = 20000
         if 'rpm' in self.server_config:
             _rpm = self.server_config['rpm']
+        if 'tpm' in self.server_config:
+            _tpm = self.server_config['tpm']
         self.rpm = RPM(_rpm)
+        self.tpm = TPM(_tpm)
+        pdb.set_trace()
 
         if self.enable_local:
             self.inference = InferenceWrapper(model_path)
@@ -340,7 +345,6 @@ class HybridLLMServer:
         stream = client.chat.completions.create(
             model=model,
             messages=messages,
-            temperature=0.0,
             stream=True
         )
         for chunk in stream:
@@ -428,6 +432,7 @@ class HybridLLMServer:
             while life < self.retry:
                 try:
                     self.rpm.wait()
+                    self.tpm.wait(token_count=len(prompt))
                     async for value in target_fn(**args):
                         yield value                     
                     # skip retry
@@ -445,6 +450,7 @@ class HybridLLMServer:
                     randval = random.randint(1, int(pow(2, life)))
                     time.sleep(randval)
 
+            self.tpm.wait(token_count=len(output_text))
             yield output_text
 
     def chat(self, prompt: str, history=[], backend:str='local'):

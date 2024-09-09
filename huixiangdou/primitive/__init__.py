@@ -13,5 +13,5 @@ from .splitter import (
     MarkdownTextRefSplitter,
     RecursiveCharacterTextSplitter,
     nested_split_markdown, split_python_code)
-from .rpm import RPM
+from .limitter import RPM, TPM
 from .bm250kapi import BM25Okapi

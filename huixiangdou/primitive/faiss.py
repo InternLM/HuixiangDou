@@ -158,7 +158,6 @@ class Faiss():
             logger.error(str(e))
             batchsize = 1
 
-
         if batchsize == 1:
             for chunk in tqdm(chunks, 'chunks'):
                 np_feature = None

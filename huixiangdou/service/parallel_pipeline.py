@@ -315,7 +315,6 @@ class ParallelPipeline:
         coderetrieval = CodeRetrieval(self.retriever)
         websearch = WebSearchRetrieval(self.config, self.config_path, self.llm, language)
         reduce = ReduceGenerate(self.config, self.llm, self.retriever, language)
-        pipeline = [preproc, [text2vec, websearch], reduce]
 
         direct_chat_states = [
             ErrorCode.QUESTION_TOO_SHORT, ErrorCode.NOT_A_QUESTION,
