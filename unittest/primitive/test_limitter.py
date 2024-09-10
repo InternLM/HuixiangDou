@@ -1,3 +1,4 @@
+import time
 from huixiangdou.service.llm_server_hybrid import RPM, TPM
 
 def test_rpm():
