@@ -623,7 +623,7 @@ def nested_split_markdown(filepath: str,
                 )
 
     logger.info('{} text_chunks, {} image_chunks'.format(len(text_chunks), len(image_chunks)))
-    return text_chunks
+    return text_chunks + image_chunks
 
 def split_python_code(filepath: str, text: str, metadata: dict = {}):
     """Split python code to class, function and annotation."""
