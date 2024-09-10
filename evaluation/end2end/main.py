@@ -45,16 +45,15 @@ with open(output_filepath) as fin:
         if '}\n' == line:
             print(json_str)
             json_obj = json.loads(json_str)
-            finished_query.append(json_obj['query'])
+            finished_query.append(json_obj['query'].strip())
             json_str = ""
 
 pdb.set_trace()
 with open('evaluation/end2end/qa.jsonl') as fin:
     for json_str in fin:
         json_obj = json.loads(json_str)
-        query = json_obj['query']
-        query = query.strip()
-
+        query = json_obj['query'].strip()
+        
         if query in finished_query:
             continue
         
@@ -80,4 +79,3 @@ with open('evaluation/end2end/qa.jsonl') as fin:
         with open(output_filepath, 'a') as fout:
             fout.write(out_json_str)
             fout.write('\n')
-
