@@ -44,8 +44,8 @@ class Embedder:
 
             if 'Bearer' not in api_token:
                 api_token = 'Bearer ' + api_token
-            api_rpm = max(1, int(model_config['api_rpm']))
-            api_tpm = max(1, int(model_config['api_tpm']))
+            api_rpm = max(1000, int(model_config['api_rpm']))
+            api_tpm = max(40000, int(model_config['api_tpm']))
 
             self.client = {
                 'api_token': api_token,
