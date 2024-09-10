@@ -139,7 +139,7 @@ class FeatureStore:
         file_opr = FileOperation()
         chunks = []
 
-        for i, file in enumerate(files):
+        for i, file in tqdm(enumerate(files), 'split'):
             if not file.state:
                 continue
             metadata = {'source': file.origin, 'read': file.copypath}
@@ -184,7 +184,7 @@ class FeatureStore:
         if self.embedder is None:
             logger.info('self.embedder is None, skip `anaylze_output`')
             return
-        for chunk in chunks:
+        for chunk in tqdm(chunks, 'analyze distribution'):
             if chunk.modal == 'image':
                 image_chunk_count += 1
             elif chunk.modal == 'text':
@@ -220,7 +220,7 @@ class FeatureStore:
 
         pool = Pool(processes=8)
         file_opr = FileOperation()
-        for idx, file in enumerate(files):
+        for idx, file in tqdm(enumerate(files), 'preprocess'):
             if not os.path.exists(file.origin):
                 file.state = False
                 file.reason = 'skip not exist'

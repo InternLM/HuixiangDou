@@ -78,8 +78,6 @@ for i in range(60):
 
     resp_data = json_obj['data']
     if len(resp_data) > 0:
-        import pdb
-        pdb.set_trace()
         print(response.text)
         break
     else:

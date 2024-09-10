@@ -247,7 +247,6 @@ def split(_input, output_dir):
                         logger.error((json_str, 'has answer but no groupId'))
 
                 except Exception as e:
-                    # pdb.set_trace()
                     logger.error((e, json_str))
                 json_str = ''
 

@@ -622,7 +622,7 @@ def nested_split_markdown(filepath: str,
                     f'image cannot access. file: {filepath}, image path: {image_path}'
                 )
 
-    # logger.info('{} text_chunks, {} image_chunks'.format(len(text_chunks), len(image_chunks)))
+    logger.info('{} text_chunks, {} image_chunks'.format(len(text_chunks), len(image_chunks)))
     return text_chunks + image_chunks
 
 def split_python_code(filepath: str, text: str, metadata: dict = {}):

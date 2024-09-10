@@ -10,7 +10,8 @@ from typing import Any, List
 import numpy as np
 from loguru import logger
 from .query import DistanceStrategy
-from .rpm import RPM
+from .limitter import RPM, TPM
+from .chunk import Chunk
 
 class Embedder:
     """Wrap text2vec (multimodal) model."""
@@ -43,10 +44,13 @@ class Embedder:
 
             if 'Bearer' not in api_token:
                 api_token = 'Bearer ' + api_token
-            api_rpm = max(1, int(model_config['api_rpm']))
+            api_rpm = max(1000, int(model_config['api_rpm']))
+            api_tpm = max(40000, int(model_config['api_tpm']))
+
             self.client = {
                 'api_token': api_token,
-                'api_rpm': RPM(api_rpm)
+                'api_rpm': RPM(api_rpm),
+                'api_tpm': TPM(api_tpm)
             }
 
         else:
@@ -74,6 +78,15 @@ class Embedder:
         else:
             return len(text) // 2
 
+    def distance(self, text1:str, text2:str) -> float:
+        emb1 = self.embed_query(text=text1)
+        emb2 = self.embed_query(text=text2)
+
+        if self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+            distance = np.linalg.norm(emb1 - emb2)
+            return distance
+        raise ValueError('Unsupported distance strategy')
+
     def embed_query(self, text: str = None, path: str = None) -> np.ndarray:
         """Embed input text or image as feature, output np.ndarray with np.float32"""
         if 'bge' in self._type:
@@ -91,6 +104,7 @@ class Embedder:
             return emb
         else:
             self.client['api_rpm'].wait(silent=True)
+            self.client['api_tpm'].wait(silent=True, token_count=len(text))
 
             # siliconcloud bce API
             if text is None:
@@ -115,3 +129,28 @@ class Embedder:
             emb_list = json_obj['data'][0]['embedding']
             emb = np.array(emb_list).astype(np.float32).reshape(1, -1)
             return emb
+
+    def embed_query_batch_text(self, chunks: List[Chunk] = []) -> np.ndarray:
+        """Embed input text or image as feature, output np.ndarray with np.float32"""
+        if 'bge' in self._type:
+            import torch
+            with torch.no_grad():
+                features = []
+                for c in chunks:
+                    feature = self.client.encode(text=c.content_or_path)
+                    features.append(feature.cpu().numpy())
+                return np.concatenate(features).reshape(len(chunks), -1).astype(np.float32)
+
+        elif 'bce' in self._type:
+            texts = []
+            for c in chunks:
+                texts.append(c.content_or_path)
+            emb = self.client.encode(texts, show_progress_bar=False, normalize_embeddings=True)
+            return emb.astype(np.float32)
+
+        else:
+            features = []
+            for c in chunks:
+                feature = self.embed_query(text=c.content_or_path)
+                features.append(feature)
+            return np.concatenate(features).reshape(len(chunks), -1).astype(np.float32)
