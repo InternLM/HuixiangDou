@@ -9,7 +9,7 @@ import numpy as np
 
 from .chunk import Chunk
 from .embedder import Embedder
-from .rpm import RPM
+from .limitter import RPM
 
 class LLMReranker:
     _type: str

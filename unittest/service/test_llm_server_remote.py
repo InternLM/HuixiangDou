@@ -6,7 +6,7 @@ import time
 import pytoml
 from loguru import logger
 
-from huixiangdou.service.llm_server_hybrid import (RPM, HybridLLMServer,
+from huixiangdou.service.llm_server_hybrid import (HybridLLMServer,
                                                    llm_serve)
 
 PROMPT = '“huixiangdou 是什么？”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'
@@ -195,20 +195,6 @@ def test_siliconcloud_pass():
     assert score >= 5
     assert error is None
     assert len(response) > 0
-
-
-def test_rpm():
-    rpm = RPM(30)
-
-    for i in range(40):
-        rpm.wait()
-        print(i)
-
-    time.sleep(5)
-
-    for i in range(40):
-        rpm.wait()
-        print(i)
 
 
 if __name__ == '__main__':

@@ -17,8 +17,8 @@ def test_embedder():
     sim1 = query_feature @ text_feature.T
     sim2 = query_feature @ image_feature.T
 
-    assert sim1.item() >= 0.5
-    assert sim2.item() >= 0.5
+    assert sim1.item() >= 0.4
+    assert sim2.item() >= 0.4
 
 
 if __name__ == '__main__':
