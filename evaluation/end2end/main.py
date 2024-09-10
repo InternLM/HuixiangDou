@@ -48,7 +48,6 @@ with open(output_filepath) as fin:
             finished_query.append(json_obj['query'].strip())
             json_str = ""
 
-pdb.set_trace()
 with open('evaluation/end2end/qa.jsonl') as fin:
     for json_str in fin:
         json_obj = json.loads(json_str)

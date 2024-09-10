@@ -198,7 +198,6 @@ class HybridLLMServer:
             _tpm = self.server_config['tpm']
         self.rpm = RPM(_rpm)
         self.tpm = TPM(_tpm)
-        pdb.set_trace()
 
         if self.enable_local:
             self.inference = InferenceWrapper(model_path)
