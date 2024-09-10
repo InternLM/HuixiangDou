@@ -291,8 +291,9 @@ class ParallelPipeline:
         Args:
             query (Union[Query,str]): User's multimodal query.
             history (str): Chat history.
-            groupname (str): The group name in which user asked the query.
-            groupchats (List[str]): The history conversation in group before user query.
+            language (str): zh or en.
+            enable_web_search (bool): enable web search or not, default value is True.
+            enable_code_search (bool): enable code search or not, default value is True.
 
         Returns:
             Session: Sync generator, this function would yield session which contains:

@@ -52,7 +52,6 @@ with open('evaluation/end2end/qa.jsonl') as fin:
     for json_str in fin:
         json_obj = json.loads(json_str)
         query = json_obj['query'].strip()
-        
         if query in finished_query:
             continue
         

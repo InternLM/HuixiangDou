@@ -46,7 +46,7 @@ print(emb1[0, 0:100])
 # fp32
 model2 = EmbeddingModel(model_name_or_path='/data2/khj/bce-embedding-base_v1')
 emb2 = model2.encode(sentences, normalize_to_unit=True)
-print(emb2[0, 0:100])                                                                                                                              | 0/1 [00:00<?, ?it/s]
+# print(emb2[0, 0:100])                                                                                                                              | 0/1 [00:00<?, ?it/s]
 # [ 0.02495519  0.00145093 -0.00357047  0.02271552 -0.04381615  0.04257036
 #  -0.04001398  0.04999371  0.00657894  0.01279035  0.00517301 -0.01259502
 #   0.0859137  -0.02055852 -0.04963807  0.06536899 -0.05691828  0.01796977
