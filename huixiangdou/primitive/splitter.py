@@ -597,32 +597,32 @@ def nested_split_markdown(filepath: str,
         # extract images path
         dirname = os.path.dirname(filepath)
 
-        # image_paths = []
-        # for match in md_image_pattern.findall(chunk.content_or_path):
-        #     image_paths.append(match[1])
-        # for match in html_image_pattern.findall(chunk.content_or_path):
-        #     image_paths.append(match)
-        # for image_path in image_paths:
-        #     if file_opr.get_type(image_path) != 'image':
-        #         continue
+        image_paths = []
+        for match in md_image_pattern.findall(chunk.content_or_path):
+            image_paths.append(match[1])
+        for match in html_image_pattern.findall(chunk.content_or_path):
+            image_paths.append(match)
+        for image_path in image_paths:
+            if file_opr.get_type(image_path) != 'image':
+                continue
 
-        #     if image_path.startswith('http'):
-        #         continue
+            if image_path.startswith('http'):
+                continue
 
-        #     if not os.path.isabs(image_path):
-        #         image_path = os.path.join(dirname, image_path)
+            if not os.path.isabs(image_path):
+                image_path = os.path.join(dirname, image_path)
 
-        #     if os.path.exists(image_path):
-        #         c = Chunk(content_or_path=image_path,
-        #                   metadata=metadata.copy(),
-        #                   modal='image')
-        #         image_chunks.append(c)
-        #     else:
-        #         logger.error(
-        #             f'image cannot access. file: {filepath}, image path: {image_path}'
-        #         )
+            if os.path.exists(image_path):
+                c = Chunk(content_or_path=image_path,
+                          metadata=metadata.copy(),
+                          modal='image')
+                image_chunks.append(c)
+            else:
+                logger.error(
+                    f'image cannot access. file: {filepath}, image path: {image_path}'
+                )
 
-    # logger.info('{} text_chunks, {} image_chunks'.format(len(text_chunks), len(image_chunks)))
+    logger.info('{} text_chunks, {} image_chunks'.format(len(text_chunks), len(image_chunks)))
     return text_chunks
 
 def split_python_code(filepath: str, text: str, metadata: dict = {}):
