@@ -8,7 +8,7 @@ import re
 import shutil
 from multiprocessing import Pool
 from typing import Any, Dict, List, Optional
-
+import random
 import pytoml
 from loguru import logger
 from torch.cuda import empty_cache
@@ -175,6 +175,9 @@ class FeatureStore:
 
     def analyze(self, chunks: List[Chunk]):
         """Output documents length mean, median and histogram."""
+        MAX_COUNT = 10000
+        if len(chunks) > MAX_COUNT:
+            chunks = random.sample(chunks, MAX_COUNT)
 
         text_lens = []
         token_lens = []
