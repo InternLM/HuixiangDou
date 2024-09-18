@@ -11,10 +11,9 @@ from loguru import logger
 from sklearn.metrics import precision_recall_curve
 from typing import Any, Union, Tuple, List
 
-from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk, BM25Okapi, FileOperation
+from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk, BM25Okapi, FileOperation, NamedEntity2Chunk
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
-
 
 class Retriever:
     """Tokenize and extract features from the project's chunks, for use in the
@@ -53,6 +52,14 @@ class Retriever:
         else:
             self.bm25 = BM25Okapi()
             self.bm25.load(sparse_dir)
+        
+        # reverted index retrieval
+        reverted_index_dir = os.path.join(work_dir, 'db_reverted_index')
+        if not os.path.exists(reverted_index_dir):
+            logger.warning('Reverted indx retriever is None, skip')
+            self.reverted_index = None
+        else:
+            self.reverted_index = NamedEntity2Chunk(reverted_index_dir)
 
     def update_throttle(self,
                         config_path: str = 'config.ini',
@@ -89,7 +96,21 @@ class Retriever:
         logger.info(
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
-
+        
+    def inverted_index_retrieve(self, query: Union[Query, str], topk=30):
+        """Retrieve chunks by named entity."""
+        if self.reverted_index is None:
+            return []
+        
+        if type(query) is str:
+            query = Query(text=query)
+        
+        entity_ids = self.reverted_index.parse(query.text)
+        # chunk_id match counter
+        chunk_id_match = dict()
+        for entity_id in entity_ids:
+            ## TODO
+        
     def text2vec_retrieve(self, query: Union[Query, str]):
         """Retrieve chunks by text2vec model or knowledge graph. 
         
@@ -112,8 +133,11 @@ class Retriever:
                 logger.info('KG folder exists, but search failed, skip.')
 
         threshold = self.reject_throttle - graph_delta
+        t1 = time.time()
         pairs = self.faiss.similarity_search_with_query(self.embedder,
                                                         query=query, threshold=threshold)
+        t2 = time.time()
+        logger.info('Timecost for text2vec_retrieve {} seconds'.format(float(t2-t1))) # 280ms
         chunks = [pair[0] for pair in pairs]
         return chunks
 
@@ -245,7 +269,6 @@ class Retriever:
                 logger.info('KG folder exists, but search failed, skip.')
 
         threshold = self.reject_throttle - graph_delta
-
         if enable_threshold:
             pairs = self.faiss.similarity_search_with_query(self.embedder, query=query, threshold=threshold)
         else:

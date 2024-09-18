@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from __future__ import annotations
 
+import time
 import logging
 import os
 import pdb
@@ -226,8 +227,11 @@ class Faiss():
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
+        
+        t1 = time.time()
         index = faiss.read_index(str(path / f'embedding.faiss'))
         strategy = DistanceStrategy.UNKNOWN
+        t2 = time.time()
         
         # load docstore
         with open(path / f'chunks_and_strategy.pkl', 'rb') as f:
@@ -242,4 +246,6 @@ class Faiss():
             else:
                 raise ValueError('Unknown strategy type {}'.format(strategy_str))
 
+        t3 = time.time()
+        logger.info('Timecost for load dense, load faiss {} seconds, load chunk {} seconds'.format(int(t2-t1), int(t3-t2)))
         return cls(index, chunks, strategy)

@@ -18,6 +18,7 @@ readability-lxml
 redis
 requests
 scikit-learn
+sqlite3
 # See https://github.com/deanmalmgren/textract/issues/461
 # textract @ git+https://github.com/tpoisonooo/textract@master
 textract

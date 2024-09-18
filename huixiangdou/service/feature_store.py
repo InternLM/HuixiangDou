@@ -6,6 +6,7 @@ import os
 import pdb
 import re
 import shutil
+import time
 from multiprocessing import Pool
 from typing import Any, Dict, List, Optional
 import random
@@ -14,11 +15,12 @@ from loguru import logger
 from torch.cuda import empty_cache
 from tqdm import tqdm
 
+
 from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          FileName, FileOperation,
                          RecursiveCharacterTextSplitter, nested_split_markdown,
                          split_python_code,
-                         BM25Okapi)
+                         BM25Okapi, NamedEntity2Chunk)
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
@@ -110,6 +112,41 @@ class FeatureStore:
         for c in chunks:
             length += len(c.content_or_path)
         return chunks, length
+    
+    @classmethod
+    def kmp(self, base:str, target: str):
+        pass
+    
+    def build_inverted_index(self, chunks: List[Chunk], nerfile: str, work_dir: str):
+        # 倒排索引 retrieve 建库
+        index_dir = os.path.join(work_dir, 'db_reverted_index')
+        if os.path.exists(index_dir):
+            os.makedirs(index_dir)
+        entities = []
+        with open(nerfile) as f:
+            entities = json.load(f)
+            
+        time0 = time.time()
+        map_entity2chunks = dict()
+        inverted_retriever = NamedEntity2Chunk(work_dir=work_dir)
+        inverted_retriever.set_entity(entities=entities)
+        
+        # build inverted index
+        for chunk_id, chunk in enumerate(chunks):
+            if chunk.modal is not 'text':
+                continue
+            entity_ids = inverted_retriever.parse(text=chunk.content_or_path)
+            for entity_id in entity_ids:
+                if entity_id not in map_entity2chunks:
+                    map_entity2chunks[entity_id] = [chunk_id]
+                else:
+                    map_entity2chunks[entity_id].append(chunk_id)
+        time1 = time.time()
+        logger.info('Timecost for string match {}'.format(time1-time0))
+    
+        for entity_id, chunk_indexes in map_entity2chunks.items():
+            inverted_retriever.insert_relation(kid = entity_id, chunk_ids=chunk_indexes)
+        del inverted_retriever
 
     def build_sparse(self, files: List[FileName], work_dir: str):
         """Use BM25 for building code feature"""
@@ -276,7 +313,7 @@ class FeatureStore:
                     file.state = False
                     file.reason = 'read error'
 
-    def initialize(self, files: list, work_dir: str):
+    def initialize(self, files: list, work_dir: str, nerfile:str):
         """Initializes response and reject feature store.
 
         Only needs to be called once. Also calculates the optimal threshold
@@ -289,10 +326,11 @@ class FeatureStore:
         self.preprocess(files=files, work_dir=work_dir)
         # build dense retrieval refusal-to-answer and response database
         documents = list(filter(lambda x: x._type != 'code', files))
-        self.build_dense(files=documents, work_dir=work_dir)
+        chunks = self.build_dense(files=documents, work_dir=work_dir)
 
         codes = list(filter(lambda x: x._type == 'code', files))
         self.build_sparse(files=codes, work_dir=work_dir)
+        self.build_inverted_index(chunks=chunks, nerfile=nerfile, work_dir=work_dir)
 
 def parse_args():
     """Parse command-line arguments."""
@@ -411,6 +449,7 @@ if __name__ == '__main__':
     file_opr = FileOperation()
 
     files = file_opr.scan_dir(repo_dir=args.repo_dir)
+    
     fs_init.initialize(files=files, work_dir=args.work_dir)
     file_opr.summarize(files)
     del fs_init
