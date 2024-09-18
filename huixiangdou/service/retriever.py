@@ -97,9 +97,11 @@ class Retriever:
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
         
-    def inverted_index_retrieve(self, query: Union[Query, str], topk=30):
+    def inverted_index_retrieve(self, query: Union[Query, str], topk=30) -> List[Chunk]:
         """Retrieve chunks by named entity."""
         if self.reverted_index is None:
+            return []
+        if self.faiss is None:
             return []
         
         if type(query) is str:
@@ -107,11 +109,15 @@ class Retriever:
         
         entity_ids = self.reverted_index.parse(query.text)
         # chunk_id match counter
-        chunk_id_match = dict()
-        for entity_id in entity_ids:
-            ## TODO
+        chunk_id_list = self.reverted_index.get_chunk_ids(entity_ids=entity_ids)
+        chunk_id_list = chunk_id_list[0:topk]
         
-    def text2vec_retrieve(self, query: Union[Query, str]):
+        chunks = []
+        for chunk_id in chunk_id_list:
+            chunks.append(self.faiss.chunks[chunk_id])
+        return chunks
+        
+    def text2vec_retrieve(self, query: Union[Query, str]) -> List[Chunk]:
         """Retrieve chunks by text2vec model or knowledge graph. 
         
         Args:

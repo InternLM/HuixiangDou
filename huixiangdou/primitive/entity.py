@@ -44,19 +44,28 @@ class NamedEntity2Chunk:
             f.write(json_str)
         self.entities = entities
 
-    def get_chunk_ids(self, kids: Union[List, int]) -> Set:
+    def get_chunk_ids(self, entity_ids: Union[List, int]) -> Set:
         """Query by keywords ids"""
-        if type(kids) is int:
-            kids = [kids]
+        if type(entity_ids) is int:
+            entity_ids = [entity_ids]
         
-        rets = set()
-        for kid in kids:
-            self.cursor.execute('SELECT chunk_ids FROM entities WHERE kid = ?', (kid,))
+        counter = dict()
+        for eid in entity_ids:
+            self.cursor.execute('SELECT chunk_ids FROM entities WHERE kid = ?', (eid,))
             result = self.cursor.fetchone()
             if result:
-                ids = set(result[0].split(','))
-                rets.update(ids)
-        return rets
+                chunk_ids = result[0].split(',')
+                for chunk_id in chunk_ids:
+                    if chunk_id in counter:
+                        counter[chunk_id] = 1
+                    else:
+                        counter[chunk_id] += 1
+        
+        counter_list = []
+        for k,v in counter.items():
+            counter_list.append((k,v))
+        counter_list.sort(key=lambda item: item[1], reverse=True)
+        return counter_list
     
     def __del__(self):
         self.cursor.close()
