@@ -112,7 +112,7 @@ class Text2vecRetrieval:
 
 class InvertedIndexRetrieval:
     """Text2vecNode is for retrieve from knowledge base."""
-    def __init__(self, config: dict, retriever: Retriever):
+    def __init__(self, retriever: Retriever):
         self.retriever = retriever
 
     async def process_coroutine(self, sess: Session) -> Session:
@@ -324,6 +324,7 @@ class ParallelPipeline:
 
         # parallel run text2vec, websearch and codesearch
         tasks = [text2vec.process_coroutine(copy.deepcopy(sess)), inverted_index.process_coroutine(copy.deepcopy(sess))]
+        
         if enable_web_search:
             tasks.append(websearch.process_coroutine(copy.deepcopy(sess)))
 

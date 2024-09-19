@@ -28,6 +28,7 @@ class Retriever:
         self.embedder = embedder
         self.reranker = reranker
         self.faiss = None
+        self.work_dir = work_dir
 
         if not os.path.exists(work_dir):
             logger.warning('!!!warning, workdir not exist.!!!')
@@ -52,14 +53,6 @@ class Retriever:
         else:
             self.bm25 = BM25Okapi()
             self.bm25.load(sparse_dir)
-        
-        # reverted index retrieval
-        reverted_index_dir = os.path.join(work_dir, 'db_reverted_index')
-        if not os.path.exists(reverted_index_dir):
-            logger.warning('Reverted indx retriever is None, skip')
-            self.reverted_index = None
-        else:
-            self.reverted_index = NamedEntity2Chunk(reverted_index_dir)
 
     def update_throttle(self,
                         config_path: str = 'config.ini',
@@ -97,23 +90,27 @@ class Retriever:
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
         
-    def inverted_index_retrieve(self, query: Union[Query, str], topk=30) -> List[Chunk]:
+    def inverted_index_retrieve(self, query: Union[Query, str], topk=100) -> List[Chunk]:
         """Retrieve chunks by named entity."""
-        if self.reverted_index is None:
-            return []
-        if self.faiss is None:
+        # reverted index retrieval
+        
+        reverted_index_dir = os.path.join(self.work_dir, 'db_reverted_index')
+        if not os.path.exists(reverted_index_dir):
             return []
         
+        # In async executor, `reverted_indexer` must lazy build and destroy
+        reverted_indexer = NamedEntity2Chunk(reverted_index_dir)
         if type(query) is str:
             query = Query(text=query)
         
-        entity_ids = self.reverted_index.parse(query.text)
+        entity_ids = reverted_indexer.parse(query.text)
         # chunk_id match counter
-        chunk_id_list = self.reverted_index.get_chunk_ids(entity_ids=entity_ids)
-        chunk_id_list = chunk_id_list[0:topk]
+        chunk_id_score_list = reverted_indexer.get_chunk_ids(entity_ids=entity_ids)
+        chunk_id_score_list = chunk_id_score_list[0:topk]
+        del reverted_indexer
         
         chunks = []
-        for chunk_id in chunk_id_list:
+        for chunk_id, ref_count in chunk_id_score_list:
             chunks.append(self.faiss.chunks[chunk_id])
         return chunks
         
