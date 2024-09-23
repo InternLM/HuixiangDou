@@ -2,6 +2,7 @@ from huixiangdou.service import ParallelPipeline, start_llm_server
 from huixiangdou.primitive import Query
 import json
 import asyncio
+import jieba
 import pdb
 import os
 from typing import List
@@ -72,7 +73,9 @@ if __name__ == "__main__":
             distance = assistant.retriever.embedder.distance(text1=gt, text2=dt).tolist()
 
             rouge = Rouge()
-            scores = rouge.get_scores(dt, gt)
+            dt_tokenized = ' '.join(jieba.cut(dt))
+            gt_tokenized = ' '.join(jieba.cut(gt))
+            scores = rouge.get_scores(dt_tokenized, gt_tokenized)
             json_obj['distance'] = distance
             json_obj['rouge_scores'] = scores
             json_obj['dt'] = dt
