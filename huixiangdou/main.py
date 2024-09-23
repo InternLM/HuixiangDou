@@ -13,7 +13,6 @@ from termcolor import colored
 
 from .service import ErrorCode, SerialPipeline, build_reply_text, start_llm_server
 
-
 def parse_args():
     """Parse args."""
     parser = argparse.ArgumentParser(description='SerialPipeline.')
@@ -60,7 +59,6 @@ def check_env(args):
 
 
 def show(assistant, fe_config: dict):
-    
     queries = ['请问如何安装 mmpose ?', '请问明天天气如何？']
     print(colored('Running some examples..', 'yellow'))
     for query in queries:
@@ -142,7 +140,7 @@ def lark_group_recv_and_send(assistant, fe_config: dict):
         code, reply, refs = str(sess.code), sess.response, sess.references
         if code == ErrorCode.SUCCESS:
             json_obj['reply'] = build_reply_text(reply=reply,
-                                                 references=references)
+                                                 references=refs)
             error, msg_id = send_to_lark_group(
                 json_obj=json_obj,
                 app_id=lark_group_config['app_id'],
@@ -169,7 +167,7 @@ def wechat_personal_run(assistant, fe_config: dict):
         for sess in assistant.generate(query=query, history=[], groupname=''):
             pass
         code, reply, refs = str(sess.code), sess.response, sess.references
-        reply_text = build_reply_text(reply=reply, references=references)
+        reply_text = build_reply_text(reply=reply, references=refs)
 
         return web.json_response({'code': int(code), 'reply': reply_text})
 

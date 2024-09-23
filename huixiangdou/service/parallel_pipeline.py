@@ -101,34 +101,25 @@ class PreprocNode:
 
 class Text2vecRetrieval:
     """Text2vecNode is for retrieve from knowledge base."""
-
-    def __init__(self, config: dict, llm: ChatClient, retriever: Retriever,
-                 language: str):
-        self.llm = llm
+    def __init__(self, retriever: Retriever):
         self.retriever = retriever
-        llm_config = config['llm']
-        self.context_max_length = llm_config['server'][
-            'local_llm_max_text_length']
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server'][
-                'remote_llm_max_text_length']
-        if language == 'zh':
-            self.TOPIC_TEMPLATE = TOPIC_TEMPLATE_CN
-            self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CN
-        else:
-            self.TOPIC_TEMPLATE = TOPIC_TEMPLATE_EN
-            self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_EN
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
-        self.max_length = self.context_max_length - 2 * len(
-            self.GENERATE_TEMPLATE)
+
+    async def process_coroutine(self, sess: Session) -> Session:
+        """Try get reply with text2vec & rerank model."""
+        # retrieve from knowledge base
+        sess.parallel_chunks = await asyncio.to_thread(self.retriever.text2vec_retrieve, sess.query)
+        return sess
+
+class InvertedIndexRetrieval:
+    """Text2vecNode is for retrieve from knowledge base."""
+    def __init__(self, retriever: Retriever):
+        self.retriever = retriever
 
     async def process_coroutine(self, sess: Session) -> Session:
         """Try get reply with text2vec & rerank model."""
 
         # retrieve from knowledge base
-        sess.parallel_chunks = await asyncio.to_thread(self.retriever.text2vec_retrieve, sess.query)
-        # sess.parallel_chunks = self.retriever.text2vec_retrieve(query=sess.query.text)
+        sess.parallel_chunks = await asyncio.to_thread(self.retriever.inverted_index_retrieve, sess.query)
         return sess
 
 class CodeRetrieval:
@@ -312,7 +303,9 @@ class ParallelPipeline:
 
         # build pipeline
         preproc = PreprocNode(self.config, self.llm, language)
-        text2vec = Text2vecRetrieval(self.config, self.llm, self.retriever, language)
+        text2vec = Text2vecRetrieval(self.retriever)
+        inverted_index = InvertedIndexRetrieval(self.retriever)
+        
         coderetrieval = CodeRetrieval(self.retriever)
         websearch = WebSearchRetrieval(self.config, self.config_path, self.llm, language)
         reduce = ReduceGenerate(self.config, self.llm, self.retriever, language)
@@ -330,7 +323,8 @@ class ParallelPipeline:
                 return
 
         # parallel run text2vec, websearch and codesearch
-        tasks = [text2vec.process_coroutine(copy.deepcopy(sess))]
+        tasks = [text2vec.process_coroutine(copy.deepcopy(sess)), inverted_index.process_coroutine(copy.deepcopy(sess))]
+        
         if enable_web_search:
             tasks.append(websearch.process_coroutine(copy.deepcopy(sess)))
 

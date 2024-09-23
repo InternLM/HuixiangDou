@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from __future__ import annotations
 
+import time
 import logging
 import os
 import pdb
@@ -16,25 +17,13 @@ from tqdm import tqdm
 from .embedder import Embedder
 from .query import Query, DistanceStrategy
 from .chunk import Chunk
-
-
-# heavily modified from langchain
-def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
-    """Import faiss if available, otherwise raise error.
-
-    Args:
-        no_avx2: Load FAISS strictly with no AVX2 optimization
-            so that the vectorstore is portable and compatible with other devices.
-    """
-    try:
-        import faiss
-    except ImportError:
-        raise ImportError(
-            'Could not import faiss python package. '
-            'Please install it with `pip install faiss-gpu` (for CUDA supported GPU) '
-            'or `pip install faiss-cpu` (depending on Python version).')
-    return faiss
-
+try:
+    import faiss
+except ImportError:
+    raise ImportError(
+        'Could not import faiss python package. '
+        'Please install it with `pip install faiss-gpu` (for CUDA supported GPU) '
+        'or `pip install faiss-cpu` (depending on Python version).')
 
 class Faiss():
 
@@ -57,8 +46,6 @@ class Faiss():
             List of chunks most similar to the query text and L2 distance
             in float for each. High score represents more similarity.
         """
-        faiss = dependable_faiss_import()
-
         embedding = embedding.astype(np.float32)
         scores, indices = self.index.search(embedding, self.k)
         pairs = []
@@ -134,6 +121,23 @@ class Faiss():
         return block_text, block_image
 
     @classmethod
+    def build_index(self, np_feature: np.ndarray, distance_strategy: DistanceStrategy):
+            dimension = np_feature.shape[-1]
+            M = 16
+            # max neighours for each node 
+            # see https://github.com/facebookresearch/faiss/wiki/Indexing-1M-vectors
+            if distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+                # index = faiss.IndexFlatL2(dimension)
+                index = faiss.IndexHNSWFlat(dimension, M, faiss.METRIC_L2)
+            elif distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+                # index = faiss.IndexFlatIP(dimension)
+                index = faiss.IndexHNSWFlat(dimension, M, faiss.METRIC_IP)
+            else:
+                raise ValueError('Unknown distance {}'.format(distance_strategy))
+            index.hnsw.efSearch = 128
+            return index
+
+    @classmethod
     def save_local(self, folder_path: str, chunks: List[Chunk],
                    embedder: Embedder) -> None:
         """Save FAISS index and store to disk.
@@ -144,9 +148,9 @@ class Faiss():
             embedder: embedding function.
         """
 
-        faiss = dependable_faiss_import()
         index = None
         batchsize = 1
+        # max neighbours for each node
 
         try:
             batchsize_str = os.getenv('HUIXIANGDOU_BATCHSIZE')
@@ -176,25 +180,16 @@ class Faiss():
                     continue
 
                 if index is None:
-                    dimension = np_feature.shape[-1]
-
-                    if embedder.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-                        index = faiss.IndexFlatL2(dimension)
-                    elif embedder.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-                        index = faiss.IndexFlatIP(dimension)
+                    index = self.build_index(np_feature=np_feature, distance_strategy=embedder.distance_strategy)
                 index.add(np_feature)
         else:
             # batching
             block_text, block_image = self.split_by_batchsize(chunks=chunks, batchsize=batchsize)
             for subchunks in tqdm(block_text, 'build_text'):
                 np_features = embedder.embed_query_batch_text(chunks=subchunks)
+                
                 if index is None:
-                    dimension = np_features[0].shape[-1]
-
-                    if embedder.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-                        index = faiss.IndexFlatL2(dimension)
-                    elif embedder.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-                        index = faiss.IndexFlatIP(dimension)
+                    index = self.build_index(np_feature=np_features, distance_strategy=embedder.distance_strategy)
                 index.add(np_features)
 
             for subchunks in tqdm(block_image, 'build_image'):
@@ -205,12 +200,7 @@ class Faiss():
                         continue
 
                     if index is None:
-                        dimension = np_feature.shape[-1]
-
-                        if embedder.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-                            index = faiss.IndexFlatL2(dimension)
-                        elif embedder.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-                            index = faiss.IndexFlatIP(dimension)
+                        index = self.build_index(np_feature=np_feature, distance_strategy=embedder.distance_strategy)
                     index.add(np_feature)
 
         path = Path(folder_path)
@@ -237,9 +227,11 @@ class Faiss():
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
-        faiss = dependable_faiss_import()
+        
+        t1 = time.time()
         index = faiss.read_index(str(path / f'embedding.faiss'))
         strategy = DistanceStrategy.UNKNOWN
+        t2 = time.time()
         
         # load docstore
         with open(path / f'chunks_and_strategy.pkl', 'rb') as f:
@@ -254,4 +246,6 @@ class Faiss():
             else:
                 raise ValueError('Unknown strategy type {}'.format(strategy_str))
 
+        t3 = time.time()
+        logger.info('Timecost for load dense, load faiss {} seconds, load chunk {} seconds'.format(int(t2-t1), int(t3-t2)))
         return cls(index, chunks, strategy)

@@ -6,19 +6,21 @@ import os
 import pdb
 import re
 import shutil
+import time
 from multiprocessing import Pool
 from typing import Any, Dict, List, Optional
-
+import random
 import pytoml
 from loguru import logger
 from torch.cuda import empty_cache
 from tqdm import tqdm
 
+
 from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          FileName, FileOperation,
                          RecursiveCharacterTextSplitter, nested_split_markdown,
                          split_python_code,
-                         BM25Okapi)
+                         BM25Okapi, NamedEntity2Chunk)
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
@@ -110,7 +112,42 @@ class FeatureStore:
         for c in chunks:
             length += len(c.content_or_path)
         return chunks, length
-
+    
+    def build_inverted_index(self, chunks: List[Chunk], ner_file: str, work_dir: str):
+        """Build inverted index based on named entity for knowledge base."""
+        if ner_file is None:
+            return
+        # 倒排索引 retrieve 建库
+        index_dir = os.path.join(work_dir, 'db_reverted_index')
+        if not os.path.exists(index_dir):
+            os.makedirs(index_dir)
+        entities = []
+        with open(ner_file) as f:
+            entities = json.load(f)
+            
+        time0 = time.time()
+        map_entity2chunks = dict()
+        indexer = NamedEntity2Chunk(file_dir=index_dir)
+        indexer.clean()
+        indexer.set_entity(entities=entities)
+        
+        # build inverted index
+        for chunk_id, chunk in enumerate(chunks):
+            if chunk.modal != 'text':
+                continue
+            entity_ids = indexer.parse(text=chunk.content_or_path)
+            for entity_id in entity_ids:
+                if entity_id not in map_entity2chunks:
+                    map_entity2chunks[entity_id] = [chunk_id]
+                else:
+                    map_entity2chunks[entity_id].append(chunk_id)
+    
+        for entity_id, chunk_indexes in map_entity2chunks.items():
+            indexer.insert_relation(eid = entity_id, chunk_ids=chunk_indexes)
+        del indexer
+        time1 = time.time()
+        logger.info('Timecost for build_inverted_index {}s'.format(time1-time0))
+        
     def build_sparse(self, files: List[FileName], work_dir: str):
         """Use BM25 for building code feature"""
         # split by function, class and annotation, remove blank
@@ -168,13 +205,17 @@ class FeatureStore:
         else:
             filtered_chunks = chunks
         if len(chunks) < 1:
-            return
+            return chunks
 
         self.analyze(filtered_chunks)
         Faiss.save_local(folder_path=feature_dir, chunks=filtered_chunks, embedder=self.embedder)
+        return chunks
 
     def analyze(self, chunks: List[Chunk]):
         """Output documents length mean, median and histogram."""
+        MAX_COUNT = 10000
+        if len(chunks) > MAX_COUNT:
+            chunks = random.sample(chunks, MAX_COUNT)
 
         text_lens = []
         token_lens = []
@@ -273,7 +314,7 @@ class FeatureStore:
                     file.state = False
                     file.reason = 'read error'
 
-    def initialize(self, files: list, work_dir: str):
+    def initialize(self, files: list, ner_file:str, work_dir: str):
         """Initializes response and reject feature store.
 
         Only needs to be called once. Also calculates the optimal threshold
@@ -286,10 +327,11 @@ class FeatureStore:
         self.preprocess(files=files, work_dir=work_dir)
         # build dense retrieval refusal-to-answer and response database
         documents = list(filter(lambda x: x._type != 'code', files))
-        self.build_dense(files=documents, work_dir=work_dir)
+        chunks = self.build_dense(files=documents, work_dir=work_dir)
 
         codes = list(filter(lambda x: x._type == 'code', files))
         self.build_sparse(files=codes, work_dir=work_dir)
+        self.build_inverted_index(chunks=chunks, ner_file=ner_file, work_dir=work_dir)
 
 def parse_args():
     """Parse command-line arguments."""
@@ -319,6 +361,11 @@ def parse_args():
         default='resource/bad_questions.json',
         help=  # noqa E251
         'Negative examples json path. Default value is resource/bad_questions.json'  # noqa E501
+    )
+    parser.add_argument(
+        '--ner-file',
+        default=None,
+        help='The path of NER file, which is a dumped json list. HuixiangDou would build relationship between entities and chunks for retrieve.'
     )
     parser.add_argument(
         '--sample', help='Input an json file, save reject and search output.')
@@ -408,7 +455,8 @@ if __name__ == '__main__':
     file_opr = FileOperation()
 
     files = file_opr.scan_dir(repo_dir=args.repo_dir)
-    fs_init.initialize(files=files, work_dir=args.work_dir)
+    
+    fs_init.initialize(files=files, ner_file=args.ner_file, work_dir=args.work_dir)
     file_opr.summarize(files)
     del fs_init
 
