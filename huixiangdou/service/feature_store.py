@@ -114,6 +114,7 @@ class FeatureStore:
         return chunks, length
     
     def build_inverted_index(self, chunks: List[Chunk], ner_file: str, work_dir: str):
+        """Build inverted index based on named entity for knowledge base."""
         if ner_file is None:
             return
         # 倒排索引 retrieve 建库
@@ -145,7 +146,7 @@ class FeatureStore:
             indexer.insert_relation(eid = entity_id, chunk_ids=chunk_indexes)
         del indexer
         time1 = time.time()
-        logger.info('Timecost for string match {}'.format(time1-time0))
+        logger.info('Timecost for build_inverted_index {}s'.format(time1-time0))
         
     def build_sparse(self, files: List[FileName], work_dir: str):
         """Use BM25 for building code feature"""
