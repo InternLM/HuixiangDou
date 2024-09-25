@@ -5,7 +5,7 @@ English | [简体中文](README_zh.md)
 <img src="resource/logo_black.svg" width="555px"/>
 
 <div align="center">
-  <a href="resource/figures/wechat.jpg" target="_blank">
+  <a href="https://cdn.vansin.top/internlm/dou.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
   <a href="https://huixiangdou.readthedocs.io/en/latest/" target="_blank">
@@ -40,7 +40,7 @@ Advantages:
 2. No training required, with CPU-only, 2G, 10G, 20G and 80G configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
 
-Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](resource/figures/wechat.jpg) to try AI assistant inside.
+Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](https://cdn.vansin.top/internlm/dou.jpg) to try AI assistant inside.
 
 If this helps you, please give it a star ⭐
 
@@ -70,7 +70,7 @@ The Web version's API for Android also supports other devices. See [Python sampl
 - \[2024/04\] [RAG Annotation SFT Q&A Data and Examples](./docs/zh/doc_rag_annotate_sft_data.md)
 - \[2024/04\] Release [Web Front and Back End Service Source Code](./web) 👍
 - \[2024/03\] New [Personal WeChat Integration](./docs/zh/doc_add_wechat_accessibility.md) and [**Prebuilt APK**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
-- \[2024/02\] \[Experimental Feature\] [WeChat Group](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) Integration of multimodal to achieve OCR
+- \[2024/02\] \[Experimental Feature\] [WeChat Group](https://cdn.vansin.top/internlm/dou.jpg) Integration of multimodal to achieve OCR
 
 # 📖 Support Status
 
