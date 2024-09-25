@@ -6,7 +6,8 @@ import os
 import re
 from multiprocessing import Process, cpu_count
 # https://blog.csdn.net/xyisv/article/details/104482818
-
+import hashlib
+import time
 image_name = re.compile(r'[0-9a-f]{40,64}')
 chapter2 = re.compile(r'[0-9]{1}\.[0-9]{1}')
 chapter3 = re.compile(r'[0-9]{1}\.[0-9]{1}\.[0-9]{1}')
@@ -20,15 +21,17 @@ def load_stopwords():
     return sw
 
 def load_documents(n:int = 1):
-    basedir = '../repodir.full'
-    files = os.listdir(basedir)
-    docs = []
-    for file in files:
-        filepath = os.path.join(basedir, file)
-        with open(filepath) as f:
-            docs.append((file, filepath))
+    basedir = '/home/data/khj/workspace/huixiangdou/repodir.lda'
 
-    length = len(files)
+    docs = []
+    for root, _, files in os.walk(basedir):
+        for file in files:
+            if file.endswith('.jpg') or file.endswith('.png') or file.endswith('.jpeg'):
+                pdb.set_trace()
+            else:
+                docs.append((file, os.path.join(root, file)))
+
+    length = len(docs)
     step = length // n
     remainder = length % n
     
@@ -47,16 +50,27 @@ def load_newwords():
     files = os.listdir(basename)
     for filename in files:
         filepath = os.path.join(basename, filename)
-        with open('ner.json', encoding='utf8') as f:
+        with open(filepath, encoding='utf8') as f:
             words += json.load(f)
         print('load {}'.format(filepath))
     return words
 
+def hashname(input_str:str):
+    # 创建一个新的sha256 hash对象
+    hash_object = hashlib.sha256()
+    # 更新hash对象，参数是输入字符串的编码（bytes）
+    hash_object.update(input_str.encode())
+    # 获取十六进制的hash值
+    hex_dig = hash_object.hexdigest()
+    # 返回前6位
+    return hex_dig[:6]
+
 def process_data(documents: list, pid: int):
     # add newwords
+    t0 = time.time()
     new_words = load_newwords()
     for w in new_words:
-        jieba.add_word(w)
+        jieba.add_word(w, tag='n')
 
     stop_words = load_stopwords()
     print('{} start..'.format(pid))
@@ -97,10 +111,16 @@ def process_data(documents: list, pid: int):
         
         if len(new_content) < 300:
             continue
-        with open(os.path.join('preprocess', filename), 'w') as f:
+        dirname = os.path.join('preprocess', str(pid))
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        
+        outfilepath = os.path.join(dirname, hashname(new_content) + '.md')
+        
+        with open(outfilepath, 'w') as f:
             f.write(new_content)
             f.flush()
-    print('{} finish..'.format(pid))
+    print('{} finish, timecost {}'.format(pid, time.time() - t0))
 
 def _get_num_processes():
     num_processes = cpu_count() - 1  # Good habit to leave 1 core.

@@ -25,20 +25,20 @@ n_top_words = 20
 batch_size = 128
 
 def files():
-    basedir = 'preprocess'
-    files = os.listdir(basedir)
-    filepaths = []
-    for file in files:
-        filepath = os.path.join(basedir, file)
-        filepaths.append(filepath)
-    return filepaths
+    basedir = '/home/data/khj/workspace/huixiangdou/lda/preprocess'
+
+    docs = []
+    for root, _, files in os.walk(basedir):
+        for file in files:
+            if file.endswith('.jpg') or file.endswith('.png') or file.endswith('.jpeg'):
+                pdb.set_trace()
+            else:
+                docs.append((file, os.path.join(root, file)))
+    return docs
 
 def filecontents(dirname:str):
-    basedir = dirname
-    files = os.listdir(basedir)
-    filepaths = []
-    for file in files:
-        filepath = os.path.join(basedir, file)
+    filepaths = files()
+    for _, filepath in filepaths:
         with open(filepath) as f:
             content = f.read()
             if len(content) > 0:
@@ -69,7 +69,9 @@ def build_topic(dirname: str='preprocess'):
         max_df=0.95, min_df=2, max_features=n_features, stop_words="english"
     )
 
+    t0 = time()
     tf = tf_vectorizer.fit_transform(filecontents(dirname))
+    print("BoW in %0.3fs." % (time() - t0))
 
     lda = LatentDirichletAllocation(
         n_components=n_components,
@@ -79,17 +81,20 @@ def build_topic(dirname: str='preprocess'):
         random_state=0,
     )
     t0 = time()
-    datas = lda.fit_transform(tf)
-
-    print("done in %0.3fs." % (time() - t0))
+    lda.fit_transform(tf)
+    print("lda train in %0.3fs." % (time() - t0))
     # transform(raw_documents)[source]
     feature_names = tf_vectorizer.get_feature_names_out()
-    plot_top_words(lda, feature_names, n_top_words, "Topics in LDA model")
 
-    # for topic_idx, topic in enumerate(lda.components_):
-    #     top_features_ind = topic.argsort()[-n_top_words:]
-    #     top_features = feature_names[top_features_ind]
-    #     weights = topic[top_features_ind]
+    for topic_idx, topic in enumerate(lda.components_):
+        top_features_ind = topic.argsort()[-n_top_words:]
+        top_features = feature_names[top_features_ind]
+        weights = topic[top_features_ind]
+        print(top_features)
+
+    import pdb
+    pdb.set_trace()
+    pass
 
 if __name__ == '__main__':
     build_topic()
