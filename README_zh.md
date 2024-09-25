@@ -4,7 +4,7 @@
 <img src="resource/logo_black.svg" width="555px"/>
 
 <div align="center">
-  <a href="resource/figures/wechat.jpg" target="_blank">
+  <a href="https://cdn.vansin.top/internlm/dou.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
   <a href="https://huixiangdou.readthedocs.io/zh-cn/latest/" target="_blank">
@@ -40,7 +40,7 @@
 2. 无需训练适用各行业，提供 CPU-only、2G、10G、20G、80G 规格配置
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
-查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
+查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](https://cdn.vansin.top/internlm/dou.jpg)直接体验群聊助手效果。
 
 如果对你有用，麻烦 star 一下⭐
 
@@ -72,7 +72,7 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 - \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/zh/doc_rag_annotate_sft_data.md)
 - \[2024/04\] 发布 [web 前后端服务源码](./web) 👍
 - \[2024/03\] 新的[个人微信集成方法](./docs/zh/doc_add_wechat_accessibility.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
-- \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
+- \[2024/02\] \[实验功能\] [微信群](https://cdn.vansin.top/internlm/dou.jpg) 集成多模态以实现 OCR
 
 # 📖 支持情况
 
