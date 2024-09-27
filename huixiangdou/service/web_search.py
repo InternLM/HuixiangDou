@@ -88,8 +88,15 @@ class WebSearch:
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)
             self.search_config = types.SimpleNamespace(**config['web_search'])
+
         self.retry = retry
         self.language = language
+
+    def load_key():
+        try:
+            return self.search_config.serper_x_api_key
+        except Exception as e:
+            return ''
 
     def fetch_url(self, query: str, target_link: str, brief: str = ''):
         if not target_link.startswith('http'):
