@@ -10,7 +10,7 @@ import time
 import pdb
 import copy
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Union, Generator
+from typing import List, Tuple, Union, Generator, AsyncGenerator
 
 import pytoml
 from loguru import logger
@@ -170,7 +170,7 @@ class WebSearchRetrieval:
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_EN
             self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_EN
 
-    async def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process(self, sess: Session) -> AsyncGenerator[Session, None, None]:
         """Try web search."""
         
         if not self.enable:
@@ -225,7 +225,7 @@ class ReduceGenerate:
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server']['remote_llm_max_text_length']
 
-    async def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process(self, sess: Session) -> AsyncGenerator[Session, None, None]:
         question = sess.query.text 
         history = sess.history
 

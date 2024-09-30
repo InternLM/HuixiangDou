@@ -8,7 +8,7 @@ from multiprocessing import Process, cpu_count
 # https://blog.csdn.net/xyisv/article/details/104482818
 import hashlib
 import time
-image_name = re.compile(r'[0-9a-f]{40,64}')
+image_name = re.compile(r'[0-9a-f]{18,64}')
 chapter2 = re.compile(r'[0-9]{1}\.[0-9]{1}')
 chapter3 = re.compile(r'[0-9]{1}\.[0-9]{1}\.[0-9]{1}')
 
@@ -55,7 +55,7 @@ def load_newwords():
         print('load {}'.format(filepath))
     return words
 
-def hashname(input_str:str):
+def content_hash(input_str:str):
     # 创建一个新的sha256 hash对象
     hash_object = hashlib.sha256()
     # 更新hash对象，参数是输入字符串的编码（bytes）
@@ -115,7 +115,12 @@ def process_data(documents: list, pid: int):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         
-        outfilepath = os.path.join(dirname, hashname(new_content) + '.md')
+        hashname = content_hash(new_content)
+        outfilepath = os.path.join(dirname, hashname + '.md')
+        
+        with open('name_map.txt', 'a') as f:
+            f.write('{}\t {}'.format(hashname, filepath))
+            f.write('\n')
         
         with open(outfilepath, 'w') as f:
             f.write(new_content)

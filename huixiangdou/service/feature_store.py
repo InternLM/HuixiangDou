@@ -21,7 +21,7 @@ from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          BM25Okapi)
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
-from .retriever import CacheRetriever, Retriever
+from .retriever import CacheRetriever, Retriever, RetrieveProxy
 
 
 def read_and_save(file: FileName):
@@ -330,7 +330,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def test_reject(retriever: Retriever, sample: str = None):
+def test_reject(retriever: CacheRetriever, sample: str = None):
     """Simple test reject pipeline."""
     if sample is None:
         real_questions = [
@@ -369,7 +369,7 @@ def test_reject(retriever: Retriever, sample: str = None):
     empty_cache()
 
 
-def test_query(retriever: Retriever, sample: str = None):
+def test_query(retriever: CacheRetriever, sample: str = None):
     """Simple test response pipeline."""
     from texttable import Texttable
     if sample is not None:
@@ -396,6 +396,20 @@ def test_query(retriever: Retriever, sample: str = None):
     logger.info('\n' + table.draw())
     empty_cache()
 
+def cluster_dir(repo_dir: str):
+    """Check if `repo_dir` is clustered dir. If true, return all subdirs, else return []"""
+    if not os.path.exists(os.path.join(repo_dir, 'lda_models.pkl')):
+        # not clustered knowledge base
+        return []
+    
+    dirs = []
+    for name in os.listdir(repo_dir):
+        if os.path.isdir(os.path.join(args.repo_dir, name)):
+            if name.isdigit():
+                dirs.append(os.path.join(args.repo_dir, name))
+            else:
+                return []
+    return dirs
 
 if __name__ == '__main__':
     args = parse_args()
@@ -407,27 +421,31 @@ if __name__ == '__main__':
     # walk all files in repo dir
     file_opr = FileOperation()
 
-    files = file_opr.scan_dir(repo_dir=args.repo_dir)
-    fs_init.initialize(files=files, work_dir=args.work_dir)
-    file_opr.summarize(files)
+    repo_dirs = cluster_dir(args.repo_dir)
+    if len(repo_dirs) < 1:
+        files = file_opr.scan_dir(repo_dir=args.repo_dir)
+        fs_init.initialize(files=files, work_dir=args.work_dir)
+        file_opr.summarize(files)
+    else:
+        if not os.path.exists(args.work_dir):
+            os.makedirs(args.work_dir)
+        for idx, repo_dir in enumerate(repo_dirs):
+            files = file_opr.scan_dir(repo_dir=repo_dir)
+            work_dir = os.path.join(args.work_dir, idx)
+            fs_init.initialize(files=files, work_dir=work_dir)
+            file_opr.summarize(files)
     del fs_init
-
-    # update reject throttle
-    retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
-    if retriever.kg.is_available():
+    
+    if cache.need_llm_api():
         start_llm_server(args.config_path)
-
     with open(os.path.join('resource', 'good_questions.json')) as f:
         good_questions = json.load(f)
     with open(os.path.join('resource', 'bad_questions.json')) as f:
         bad_questions = json.load(f)
-    retriever.update_throttle(config_path=args.config_path,
+    cache.update_throttle(config_path=args.config_path,
                               good_questions=good_questions,
                               bad_questions=bad_questions)
 
-    cache.pop('default')
-
     # test
-    retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
-    test_reject(retriever, args.sample)
-    test_query(retriever, args.sample)
+    test_reject(cache, args.sample)
+    test_query(cache, args.sample)

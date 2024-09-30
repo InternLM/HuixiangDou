@@ -4,6 +4,7 @@ import json
 import os
 import pdb
 import time
+from abc import ABC, abstractmethod
 
 import numpy as np
 import pytoml
@@ -15,8 +16,40 @@ from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk, BM
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
 
+# Composite Pattern
+# `CacheRetriever` compose multiple concrete retriever
+class IRetriever(ABC):
+    @abstractmethod
+    def update_throttle(self,
+                        config_path: str = 'config.ini',
+                        good_questions=[],
+                        bad_questions=[]) -> None:
+        pass
+    
+    @abstractmethod
+    def text2vec_retrieve(self, query: Union[Query, str]) -> List[Chunk]:
+        pass
+    
+    @abstractmethod
+    def rerank_fuse(self, query: Union[Query, str], chunks: List[Chunk], context_max_length:int) -> Tuple[str, str, List[str]]:
+        pass
+    
+    @abstractmethod
+    def query(self,
+              query: Union[Query, str],
+              context_max_length: int = 40000,
+              tracker: QueryTracker = None) -> Tuple[str, str, List[str]]:
+        pass
 
-class Retriever:
+    @abstractmethod
+    def is_relative(self,
+                    query,
+                    k=30,
+                    enable_kg=True,
+                    enable_threshold=True) -> Tuple[bool, float]:    
+        pass
+
+class Retriever(IRetriever):
     """Tokenize and extract features from the project's chunks, for use in the
     reject pipeline and response pipeline."""
 
@@ -57,7 +90,7 @@ class Retriever:
     def update_throttle(self,
                         config_path: str = 'config.ini',
                         good_questions=[],
-                        bad_questions=[]):
+                        bad_questions=[]) -> None:
         """Update reject throttle based on positive and negative examples."""
 
         if len(good_questions) == 0 or len(bad_questions) == 0:
@@ -90,7 +123,7 @@ class Retriever:
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
 
-    def text2vec_retrieve(self, query: Union[Query, str]):
+    def text2vec_retrieve(self, query: Union[Query, str]) -> List[Chunk]:
         """Retrieve chunks by text2vec model or knowledge graph. 
         
         Args:
@@ -117,7 +150,7 @@ class Retriever:
         chunks = [pair[0] for pair in pairs]
         return chunks
 
-    def rerank_fuse(self, query: Union[Query, str], chunks: List[Chunk], context_max_length:int):
+    def rerank_fuse(self, query: Union[Query, str], chunks: List[Chunk], context_max_length:int) -> Tuple[str, str, List[str]]:
         """Rerank chunks and extract content
         
         Args:
@@ -193,7 +226,7 @@ class Retriever:
     def query(self,
               query: Union[Query, str],
               context_max_length: int = 40000,
-              tracker: QueryTracker = None):
+              tracker: QueryTracker = None) -> Tuple[str, str, List[str]]:
         """Processes a query and returns the best match from the vector store
         database. If the question is rejected, returns None.
 
@@ -224,7 +257,7 @@ class Retriever:
         return self.rerank_fuse(query=query, chunks=high_score_chunks, context_max_length=context_max_length)
 
     def is_relative(self,
-                    query,
+                    query: Union[Query, str],
                     k=30,
                     enable_kg=True,
                     enable_threshold=True) -> Tuple[bool, float]:
@@ -253,13 +286,14 @@ class Retriever:
         if len(pairs) > 0:
             return True, pairs[0][1]
         return False, -1
-
-class CacheRetriever:
+    
+class CacheRetriever(IRetriever):
 
     def __init__(self,
                  config_path: str,
                  cache_size: int = 4,
-                 rerank_topn: int = 4):
+                 rerank_topn: int = 4,
+                 work_dir_base: str = 'workdir'):
         self.cache = dict()
         self.cache_size = cache_size
         with open(config_path, encoding='utf8') as f:
@@ -270,6 +304,12 @@ class CacheRetriever:
         self.embedder = Embedder(model_config=fs_config)
         self.reranker = LLMReranker(model_config=fs_config,
                                     topn=rerank_topn)
+        
+        lda_model_path = os.path.join(work_dir_base, 'lda_models.pkl')
+        if os.path.exists(lda_model_path):
+            self.cluster = True
+        else:
+            self.cluster = False
 
     def get(self,
             fs_id: str = 'default',
@@ -317,3 +357,28 @@ class CacheRetriever:
         self.cache.pop(fs_id)
         # manually free memory
         del del_value
+
+    def update_throttle(self,
+                        config_path: str = 'config.ini',
+                        good_questions=[],
+                        bad_questions=[]) -> None:
+        pass
+    
+    def text2vec_retrieve(self, query: Union[Query, str]) -> List[Chunk]:
+        pass
+    
+    def rerank_fuse(self, query: Union[Query, str], chunks: List[Chunk], context_max_length:int) -> Tuple[str, str, List[str]]:
+        pass
+    
+    def query(self,
+              query: Union[Query, str],
+              context_max_length: int = 40000,
+              tracker: QueryTracker = None) -> Tuple[str, str, List[str]]:
+        pass
+
+    def is_relative(self,
+                    query,
+                    k=30,
+                    enable_kg=True,
+                    enable_threshold=True) -> Tuple[bool, float]:    
+        pass
