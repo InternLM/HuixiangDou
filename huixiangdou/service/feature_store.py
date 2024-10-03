@@ -4,10 +4,9 @@ import argparse
 import json
 import os
 import pdb
-import re
 import shutil
 from multiprocessing import Pool
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 import pytoml
 from loguru import logger
@@ -21,7 +20,7 @@ from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          BM25Okapi)
 from .helper import histogram
 from .llm_server_hybrid import start_llm_server
-from .retriever import CacheRetriever, Retriever, RetrieveProxy
+from .retriever import CacheRetriever
 
 
 def read_and_save(file: FileName):
@@ -54,14 +53,15 @@ class FeatureStore:
                  config_path: str = 'config.ini',
                  language: str = 'zh',
                  chunk_size=900,
-                 analyze_reject=False,
                  rejecter_naive_splitter=False,
-                 override=False) -> None:
+                 override=False,
+                 analyze_chunks=True) -> None:
         """Init with model device type and config."""
         self.config_path = config_path
         self.reject_throttle = -1
         self.language = language
         self.override = override
+        self.analyze_chunks = analyze_chunks
         with open(config_path, encoding='utf8') as f:
             config = pytoml.load(f)['feature_store']
             self.reject_throttle = config['reject_throttle']
@@ -70,16 +70,10 @@ class FeatureStore:
         self.embedder = embedder
         self.retriever = None
         self.chunk_size = chunk_size
-        self.analyze_reject = analyze_reject
 
         if rejecter_naive_splitter:
             raise ValueError(
                 'The `rejecter_naive_splitter` option deprecated, please `git checkout v20240722`'
-            )
-
-        if analyze_reject:
-            raise ValueError(
-                'The `analyze_reject` option deprecated, please `git checkout v20240722`'
             )
 
         logger.info('init dense retrieval database with chunk_size {}'.format(chunk_size))
@@ -170,7 +164,8 @@ class FeatureStore:
         if len(chunks) < 1:
             return
 
-        self.analyze(filtered_chunks)
+        if self.analyze_chunks:
+            self.analyze(filtered_chunks)
         Faiss.save_local(folder_path=feature_dir, chunks=filtered_chunks, embedder=self.embedder)
 
     def analyze(self, chunks: List[Chunk]):
@@ -280,9 +275,6 @@ class FeatureStore:
         based on provided good and bad question examples, and saves it in the
         configuration file.
         """
-        logger.info(
-            'initialize response and reject feature store, you only need call this once.'  # noqa E501
-        )
         self.preprocess(files=files, work_dir=work_dir)
         # build dense retrieval refusal-to-answer and response database
         documents = list(filter(lambda x: x._type != 'code', files))
@@ -396,9 +388,10 @@ def test_query(retriever: CacheRetriever, sample: str = None):
     logger.info('\n' + table.draw())
     empty_cache()
 
-def cluster_dir(repo_dir: str):
+def cluster_dir(repo_dir: str, work_dir: str):
     """Check if `repo_dir` is clustered dir. If true, return all subdirs, else return []"""
-    if not os.path.exists(os.path.join(repo_dir, 'lda_models.pkl')):
+    lda_model_path = os.path.join(repo_dir, 'lda_models.pkl')
+    if not os.path.exists(lda_model_path):
         # not clustered knowledge base
         return []
     
@@ -409,34 +402,41 @@ def cluster_dir(repo_dir: str):
                 dirs.append(os.path.join(args.repo_dir, name))
             else:
                 return []
+            
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    shutil.copy(lda_model_path, work_dir)
     return dirs
 
 if __name__ == '__main__':
     args = parse_args()
-    cache = CacheRetriever(config_path=args.config_path)
-    fs_init = FeatureStore(embedder=cache.embedder,
+    cache_init = CacheRetriever(config_path=args.config_path)
+    fs_init = FeatureStore(embedder=cache_init.embedder,
                            config_path=args.config_path,
                            override=args.override)
-
+    logger.info(
+        'initialize feature store, you only need call this once.'  # noqa E501
+    )
     # walk all files in repo dir
     file_opr = FileOperation()
-
-    repo_dirs = cluster_dir(args.repo_dir)
+    os.environ['TOKENIZERS_PARALLELISM'] = 'true'
+    repo_dirs = cluster_dir(args.repo_dir, args.work_dir)
     if len(repo_dirs) < 1:
         files = file_opr.scan_dir(repo_dir=args.repo_dir)
         fs_init.initialize(files=files, work_dir=args.work_dir)
         file_opr.summarize(files)
     else:
-        if not os.path.exists(args.work_dir):
-            os.makedirs(args.work_dir)
-        for idx, repo_dir in enumerate(repo_dirs):
+        fs_init.analyze_chunks = False
+        for cluster_id, repo_dir in enumerate(repo_dirs):
             files = file_opr.scan_dir(repo_dir=repo_dir)
-            work_dir = os.path.join(args.work_dir, idx)
+            work_dir = os.path.join(args.work_dir, str(cluster_id))
             fs_init.initialize(files=files, work_dir=work_dir)
             file_opr.summarize(files)
     del fs_init
+    del cache_init
     
-    if cache.need_llm_api():
+    cache = CacheRetriever(config_path=args.config_path)
+    if cache.use_llm_api():
         start_llm_server(args.config_path)
     with open(os.path.join('resource', 'good_questions.json')) as f:
         good_questions = json.load(f)

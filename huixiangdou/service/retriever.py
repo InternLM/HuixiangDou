@@ -21,6 +21,11 @@ from .kg import KnowledgeGraph
 # Composite Pattern
 # `CacheRetriever` compose multiple concrete retriever
 class IRetriever(ABC):
+    reranker = None
+    faiss = None
+    reject_throttle = -1
+    file_opr = FileOperation()
+    kg = None
 
     @abstractmethod
     def text2vec_retrieve(self, query: Query) -> List[Chunk]:
@@ -31,9 +36,7 @@ class IRetriever(ABC):
         pass
 
     @abstractmethod
-    def is_relative(self,
-                    query,
-                    k=30,
+    def is_relative(self, query: Query, k=30,
                     enable_kg=True,
                     enable_threshold=True) -> Tuple[bool, float]:    
         pass
@@ -55,14 +58,13 @@ class IRetriever(ABC):
         rerank_chunks = self.reranker.rerank(query=query.text,
                                       chunks=chunks)
 
-        file_opr = FileOperation()
         # Add file text to context, until exceed `context_max_length`
         # If `file_length` > `context_max_length` (for example file_length=300 and context_max_length=100)
         # then centered on the chunk, read a length of 200
         splits = []
         context = ''
         references = []
-        for idx, chunk in enumerate(rerank_chunks):
+        for _, chunk in enumerate(rerank_chunks):
 
             content = chunk.content_or_path
             splits.append(content)
@@ -72,7 +74,7 @@ class IRetriever(ABC):
                 # url
                 file_text = content
             else:
-                file_text, error = file_opr.read(chunk.metadata['read'])
+                file_text, error = self.file_opr.read(chunk.metadata['read'])
                 if error is not None:
                     # read file failed, skip
                     continue
@@ -110,6 +112,13 @@ class IRetriever(ABC):
         return '\n'.join(splits), context, [
             os.path.basename(r) for r in references
         ]
+        
+    def use_llm_api(self):
+        if self.kg is None:
+            return False
+        if self.kg.is_available():
+            return True
+        return False
     
     def query(self,
               query: Union[Query, str],
@@ -154,7 +163,6 @@ class IRetriever(ABC):
             raise Exception('good and bad question examples cat not be empty.')
         questions = good_questions + bad_questions
         predictions = []
-        self.reject_throttle = -1
 
         for question in questions:
             _, score = self.is_relative(query=question,
@@ -290,6 +298,7 @@ class CacheRetriever(IRetriever):
         with open(config_path, encoding='utf8') as f:
             fs_config = pytoml.load(f)['feature_store']
 
+        self.config_path = config_path
         # load text2vec and rerank model
         logger.info('loading test2vec and rerank models')
         self.embedder = Embedder(model_config=fs_config)
@@ -357,12 +366,11 @@ class CacheRetriever(IRetriever):
 
     def deduce_cluster(self, query: Query, threshold:float) -> List[Tuple[int, float]]:
         """Input query text, output cluster ids and scores. The output is sorted by score."""
-        parts = jieba.split(query.text)
+        parts = jieba.cut(query.text)
         filtered_parts = filter(lambda x: x != ' ', parts)
         content = ' '.join(filtered_parts)
         
-        text = self.tokenize(content)
-        tf = self.vectorizer.transform([text])
+        tf = self.vectorizer.transform([content])
         _, doc_score = self.lda.transform(tf)[0]
         
         # sort descend
@@ -387,10 +395,11 @@ class CacheRetriever(IRetriever):
             if type(query) is str:
                 query = Query(query)
                 
+            pdb.set_trace()
             if enable_threshold:
-                _, scores = self.deduce_cluster(text=query.text, threshold=self.reject_throttle)
+                _, scores = self.deduce_cluster(query=query, threshold=self.reject_throttle)
             else:
-                _, scores = self.deduce_cluster(text=query.text, threshold=0.0)
+                _, scores = self.deduce_cluster(query=query, threshold=0.0)
             
             if len(scores) < 1:
                 return False, 0.0
