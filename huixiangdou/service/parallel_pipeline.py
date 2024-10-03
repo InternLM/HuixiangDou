@@ -19,12 +19,11 @@ from huixiangdou.primitive import Query, Chunk
 
 from .helper import ErrorCode, is_truth
 from .llm_client import ChatClient
-from .retriever import CacheRetriever, Retriever
-from .sg_search import SourceGraphProxy
+from .retriever import CacheRetriever
 from .session import Session
 from .web_search import WebSearch
-from .prompt import (SCORING_QUESTION_TEMPLTE_CN, CR_NEED_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, GENERATE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN)
-from .prompt import (SCORING_QUESTION_TEMPLTE_EN, CR_NEED_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, GENERATE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN)
+from .prompt import (SCORING_QUESTION_TEMPLTE_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, GENERATE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN)
+from .prompt import (SCORING_QUESTION_TEMPLTE_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, GENERATE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN)
 
 class PreprocNode:
     """PreprocNode is for coreference resolution and scoring based on group
@@ -102,7 +101,7 @@ class PreprocNode:
 class Text2vecRetrieval:
     """Text2vecNode is for retrieve from knowledge base."""
 
-    def __init__(self, config: dict, llm: ChatClient, retriever: Retriever,
+    def __init__(self, config: dict, llm: ChatClient, retriever: CacheRetriever,
                  language: str):
         self.llm = llm
         self.retriever = retriever
@@ -128,13 +127,12 @@ class Text2vecRetrieval:
 
         # retrieve from knowledge base
         sess.parallel_chunks = await asyncio.to_thread(self.retriever.text2vec_retrieve, sess.query)
-        # sess.parallel_chunks = self.retriever.text2vec_retrieve(query=sess.query.text)
         return sess
 
 class CodeRetrieval:
     """CodeNode is for retrieve from codebase."""
 
-    def __init__(self, retriever: Retriever):
+    def __init__(self, retriever: CacheRetriever):
         self.retriever = retriever
 
     async def process_coroutine(self, sess: Session) -> Session:
@@ -145,7 +143,7 @@ class CodeRetrieval:
             sess.parallel_chunks = []
             return sess
         
-        sess.parallel_chunks = self.retriever.bm25.get_top_n(query=sess.query.text)
+        sess.parallel_chunks = self.retriever.bm25_retrieve(query=sess.query)
         return sess
 
 class WebSearchRetrieval:
@@ -267,7 +265,7 @@ class ParallelPipeline:
             config_path (str): The location of the configuration file.
         """
         self.llm = ChatClient(config_path=config_path)
-        self.retriever = CacheRetriever(config_path=config_path).get(work_dir=work_dir)
+        self.retriever = CacheRetriever(config_path=config_path)
 
         self.config_path = config_path
         self.config = None
