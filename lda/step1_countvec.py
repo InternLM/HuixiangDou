@@ -95,6 +95,8 @@ def build_topic(dirname: str='preprocess'):
     )
     t0 = time()
     doc_types = lda.fit_transform(tf)
+    
+    pdb.set_trace()
     print("lda train in %0.3fs." % (time() - t0))
     # transform(raw_documents)[source]
     feature_names = tf_vectorizer.get_feature_names_out()
