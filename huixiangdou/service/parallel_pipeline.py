@@ -23,8 +23,8 @@ from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
 from .session import Session
 from .web_search import WebSearch
-from .prompt import (SCORING_QUESTION_TEMPLTE_CN, CR_NEED_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, GENERATE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN)
-from .prompt import (SCORING_QUESTION_TEMPLTE_EN, CR_NEED_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, GENERATE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN)
+from .prompt import (SCORING_QUESTION_TEMPLATE_CN, CR_NEED_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, GENERATE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN)
+from .prompt import (SCORING_QUESTION_TEMPLATE_EN, CR_NEED_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, GENERATE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN)
 
 class PreprocNode:
     """PreprocNode is for coreference resolution and scoring based on group
@@ -38,10 +38,10 @@ class PreprocNode:
         self.enable_cr = config['worker']['enable_cr']
 
         if language == 'zh':
-            self.SCORING_QUESTION_TEMPLTE = SCORING_QUESTION_TEMPLTE_CN
+            self.INTENTION_TEMPLATE = INTENTION_TEMPLATE_CN
             self.CR = CR_CN
         else:
-            self.SCORING_QUESTION_TEMPLTE = SCORING_QUESTION_TEMPLTE_EN
+            self.INTENTION_TEMPLATE = INTENTION_TEMPLATE_EN
             self.CR = CR_EN
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
@@ -51,16 +51,28 @@ class PreprocNode:
             yield sess
             return
 
-        prompt = self.SCORING_QUESTION_TEMPLTE.format(sess.query.text)
-        truth, logs = is_truth(llm=self.llm,
-                               prompt=prompt,
-                               throttle=6,
-                               default=3)
-        sess.debug['PreprocNode_is_question'] = logs
-        if not truth:
-            sess.code = ErrorCode.NOT_A_QUESTION
-            yield sess
-            return
+        prompt = self.INTENTION_TEMPLATE.format(sess.query.text)
+        json_str = self.llm.generate_response(prompt=prompt, backend='remote')
+        sess.debug['PreprocNode_intention_response'] = json_str
+        
+        try:
+            json_obj = json.loads(json_str)
+            intention = json_obj['intention'].lower()
+            topic = json_obj['topic'].lower()
+            
+            for block_intention in ['问候', 'greeting']:
+                if block_intention in intention:
+                    sess.code = ErrorCode.NOT_A_QUESTION
+                        yield sess
+                        return
+        
+            for block_topic in ['身份', 'identity', 'undefine']:
+                if block_topic in topic:
+                    sess.code = ErrorCode.NOT_A_QUESTION
+                        yield sess
+                        return
+        except Exception as e:
+            logger.error(str(e))
 
         if not self.enable_cr:
             yield sess

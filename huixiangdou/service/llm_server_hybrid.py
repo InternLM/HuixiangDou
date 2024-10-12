@@ -38,7 +38,6 @@ def check_gpu_max_memory_gb():
         logger.error(str(e))
     return -1
 
-
 def build_messages(prompt, history, system: str = None):
     messages = []
     if system is not None and len(system) > 0:

@@ -277,8 +277,8 @@ def split(_input, output_dir):
 
 def is_question(query):
     llm = ChatClient('config.ini')
-    SCORING_QUESTION_TEMPLTE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'  # noqa E501
-    prompt = SCORING_QUESTION_TEMPLTE.format(query)
+    SCORING_QUESTION_TEMPLATE = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'  # noqa E501
+    prompt = SCORING_QUESTION_TEMPLATE.format(query)
     if prompt is None or len(prompt) == 0:
         return False
 
