@@ -4,7 +4,7 @@
 <img src="resource/logo_black.svg" width="555px"/>
 
 <div align="center">
-  <a href="resource/figures/wechat.jpg" target="_blank">
+  <a href="https://cdn.vansin.top/internlm/dou.jpg" target="_blank">
     <img alt="Wechat" src="https://img.shields.io/badge/wechat-robot%20inside-brightgreen?logo=wechat&logoColor=white" />
   </a>
   <a href="https://huixiangdou.readthedocs.io/zh-cn/latest/" target="_blank">
@@ -40,7 +40,7 @@
 2. 无需训练适用各行业，提供 CPU-only、2G、10G、20G、80G 规格配置
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
-查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](resource/figures/wechat.jpg)直接体验群聊助手效果。
+查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](https://cdn.vansin.top/internlm/dou.jpg)直接体验群聊助手效果。
 
 如果对你有用，麻烦 star 一下⭐
 
@@ -52,6 +52,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 Web 版给 android 的接口，也支持非 android 调用，见[python 样例代码](./tests/test_openxlab_android_api.py)。
 
+- \[2024/09\] [倒排索引](https://github.com/InternLM/HuixiangDou/pull/387)让 LLM 更偏向使用领域知识 🎯
 - \[2024/09\] 稀疏方法实现[代码检索](./huixiangdou/service/parallel_pipeline.py)
 - \[2024/08\] ["chat_with readthedocs"](https://huixiangdou.readthedocs.io/zh-cn/latest/) ，见[集成说明](./docs/zh/doc_add_readthedocs.md)
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
@@ -71,7 +72,7 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 - \[2024/04\] 实现 [RAG 标注 SFT 问答数据和样例](./docs/zh/doc_rag_annotate_sft_data.md)
 - \[2024/04\] 发布 [web 前后端服务源码](./web) 👍
 - \[2024/03\] 新的[个人微信集成方法](./docs/zh/doc_add_wechat_accessibility.md)和[**预编译 apk**](https://github.com/InternLM/HuixiangDou/releases/download/v0.1.0rc1/huixiangdou-20240508.apk) !
-- \[2024/02\] \[实验功能\] [微信群](https://github.com/InternLM/HuixiangDou/blob/main/resource/figures/wechat.jpg) 集成多模态以实现 OCR
+- \[2024/02\] \[实验功能\] [微信群](https://cdn.vansin.top/internlm/dou.jpg) 集成多模态以实现 OCR
 
 # 📖 支持情况
 
@@ -366,7 +367,11 @@ python3 tests/test_query_gradio.py
 
 # 🛠️ FAQ
 
-1. 机器人太高冷/太嘴碎怎么办？
+1. 对于通用问题（如 “番茄是什么” ），我希望 LLM 优先用领域知识（如 “普罗旺斯番茄”）怎么办？
+
+    参照 [PR](https://github.com/InternLM/HuixiangDou/pull/387)，准备实体列表，构建特征库时传入列表，`ParallelPipeline`检索会基于倒排索引增大召回
+
+2. 机器人太高冷/太嘴碎怎么办？
 
    - 把真实场景中，应该回答的问题填入`resource/good_questions.json`，应该拒绝的填入`resource/bad_questions.json`
    - 调整 `repodir` 中的文档，确保不包含场景无关内容
@@ -375,29 +380,28 @@ python3 tests/test_query_gradio.py
 
    ⚠️ 如果你足够自信，也可以直接修改 config.ini 的 `reject_throttle` 数值，一般来说 0.5 是很高的值；0.2 过低。
 
-2. 启动正常，但运行期间显存 OOM 怎么办？
+3. 启动正常，但运行期间显存 OOM 怎么办？
 
    基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization)。然后使用 docker 独立部署 Hybrid LLM Service。
 
-3. 如何接入其他 local LLM / 接入后效果不理想怎么办？
+4. 如何接入其他 local LLM / 接入后效果不理想怎么办？
 
    - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
    - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [prompt.py](./huixiangdou/service/prompt.py)
 
-4. 响应太慢/网络请求总是失败怎么办？
+5. 响应太慢/网络请求总是失败怎么办？
 
    - 参考 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) 增加指数退避重传
    - local LLM 替换为 [lmdeploy](https://github.com/internlm/lmdeploy) 等推理框架，而非原生的 huggingface/transformers
 
-5. 机器配置低，GPU 显存不足怎么办？
+6. 机器配置低，GPU 显存不足怎么办？
 
    此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
 
-6. 报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
+7. 报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
 
    - 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。检查结束后按 ctrl-c 关掉。
    - 检查 `config.ini` 中各种 TOKEN 书写正确。
-
 
 # 🍀 致谢
 

@@ -15,3 +15,4 @@ from .splitter import (
     nested_split_markdown, split_python_code)
 from .limitter import RPM, TPM
 from .bm250kapi import BM25Okapi
+from .entity import NamedEntity2Chunk

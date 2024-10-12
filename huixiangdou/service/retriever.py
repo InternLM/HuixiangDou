@@ -11,10 +11,9 @@ from loguru import logger
 from sklearn.metrics import precision_recall_curve
 from typing import Any, Union, Tuple, List
 
-from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk, BM25Okapi, FileOperation
+from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk, BM25Okapi, FileOperation, NamedEntity2Chunk
 from .helper import QueryTracker
 from .kg import KnowledgeGraph
-
 
 class Retriever:
     """Tokenize and extract features from the project's chunks, for use in the
@@ -29,6 +28,7 @@ class Retriever:
         self.embedder = embedder
         self.reranker = reranker
         self.faiss = None
+        self.work_dir = work_dir
 
         if not os.path.exists(work_dir):
             logger.warning('!!!warning, workdir not exist.!!!')
@@ -89,8 +89,32 @@ class Retriever:
         logger.info(
             f'The optimal threshold is: {optimal_threshold}, saved it to {config_path}'  # noqa E501
         )
-
-    def text2vec_retrieve(self, query: Union[Query, str]):
+        
+    def inverted_index_retrieve(self, query: Union[Query, str], topk=100) -> List[Chunk]:
+        """Retrieve chunks by named entity."""
+        # reverted index retrieval
+        
+        reverted_index_dir = os.path.join(self.work_dir, 'db_reverted_index')
+        if not os.path.exists(reverted_index_dir):
+            return []
+        
+        # In async executor, `reverted_indexer` must lazy build and destroy
+        reverted_indexer = NamedEntity2Chunk(reverted_index_dir)
+        if type(query) is str:
+            query = Query(text=query)
+        
+        entity_ids = reverted_indexer.parse(query.text)
+        # chunk_id match counter
+        chunk_id_score_list = reverted_indexer.get_chunk_ids(entity_ids=entity_ids)
+        chunk_id_score_list = chunk_id_score_list[0:topk]
+        del reverted_indexer
+        
+        chunks = []
+        for chunk_id, ref_count in chunk_id_score_list:
+            chunks.append(self.faiss.chunks[chunk_id])
+        return chunks
+        
+    def text2vec_retrieve(self, query: Union[Query, str]) -> List[Chunk]:
         """Retrieve chunks by text2vec model or knowledge graph. 
         
         Args:
@@ -112,8 +136,11 @@ class Retriever:
                 logger.info('KG folder exists, but search failed, skip.')
 
         threshold = self.reject_throttle - graph_delta
+        t1 = time.time()
         pairs = self.faiss.similarity_search_with_query(self.embedder,
                                                         query=query, threshold=threshold)
+        t2 = time.time()
+        logger.info('Timecost for text2vec_retrieve {} seconds'.format(float(t2-t1))) # 280ms
         chunks = [pair[0] for pair in pairs]
         return chunks
 
@@ -245,7 +272,6 @@ class Retriever:
                 logger.info('KG folder exists, but search failed, skip.')
 
         threshold = self.reject_throttle - graph_delta
-
         if enable_threshold:
             pairs = self.faiss.similarity_search_with_query(self.embedder, query=query, threshold=threshold)
         else:

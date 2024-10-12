@@ -1,19 +1,9 @@
 import argparse
-import os
-import time
 
-import pytoml
-import requests
-from aiohttp import web
-from loguru import logger
-from termcolor import colored
-
-from .service import ErrorCode, SerialPipeline, ParallelPipeline, start_llm_server
+from .service import SerialPipeline, ParallelPipeline, start_llm_server
 from .primitive import Query
-import asyncio
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import json
@@ -43,7 +33,6 @@ async def huixiangdou_inference(talk: Talk):
     query = Query(talk.text, talk.image)
 
     pipeline = {'step': []}
-    debug = dict()
     if type(assistant) is SerialPipeline:
         for sess in assistant.generate(query=query):
             status = {
@@ -73,7 +62,6 @@ async def huixiangdou_stream(talk: Talk):
     query = Query(talk.text, talk.image)
 
     pipeline = {'step': []}
-    debug = dict()
 
     def event_stream():
         for sess in assistant.generate(query=query):
@@ -104,7 +92,7 @@ async def huixiangdou_stream(talk: Talk):
 
 def parse_args():
     """Parse args."""
-    parser = argparse.ArgumentParser(description='SerialPipeline.')
+    parser = argparse.ArgumentParser(description='Serial or Parallel Pipeline.')
     parser.add_argument('--work_dir',
                         type=str,
                         default='workdir',
