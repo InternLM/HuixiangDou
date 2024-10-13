@@ -143,8 +143,8 @@ class Retriever:
         logger.info('Timecost for text2vec_retrieve {} seconds'.format(float(t2-t1))) # 280ms
         chunks = [pair[0] for pair in pairs]
         return chunks
-
-    def rerank_fuse(self, query: Union[Query, str], chunks: List[Chunk], context_max_length:int):
+    
+    def rerank_fuse(self, query: Union[Query, str], chunks: List[Chunk], context_max_length:int) -> Tuple[str, str, List[str], List[str]]:
         """Rerank chunks and extract content
         
         Args:
@@ -168,6 +168,7 @@ class Retriever:
         splits = []
         context = ''
         references = []
+        ref_texts = []
         for idx, chunk in enumerate(rerank_chunks):
 
             content = chunk.content_or_path
@@ -197,25 +198,28 @@ class Retriever:
                 content_index = file_text.find(content)
                 if content_index == -1:
                     # content not in file_text
-                    context += content
-                    context += '\n'
-                    context += file_text[0:add_len - len(content) - 1]
+                    delta = '{}\n{}'.format(content, file_text[0:add_len - len(content) - 1])
+                    context += delta
+                    ref_texts.append(delta)
                 else:
                     start_index = max(0,
                                       content_index - (add_len - len(content)))
-                    context += file_text[start_index:start_index + add_len]
+                    delta = file_text[start_index:start_index + add_len]
+                    context += delta
+                    ref_texts.append(delta)
                 break
 
             if source not in references:
                 context += file_text
                 context += '\n'
                 references.append(source)
+                ref_texts.append(file_text)
 
         context = context[0:context_max_length]
         logger.debug('query:{} files:{}'.format(query, references))
         return '\n'.join(splits), context, [
             os.path.basename(r) for r in references
-        ]
+        ], ref_texts
 
     def query(self,
               query: Union[Query, str],
@@ -247,9 +251,10 @@ class Retriever:
         high_score_chunks = self.text2vec_retrieve(query=query)
         if tracker is not None:
             tracker.log('retrieve', [c.metadata['source'] for c in high_score_chunks])
-        
+    
+        # compatible with old interface    
         return self.rerank_fuse(query=query, chunks=high_score_chunks, context_max_length=context_max_length)
-
+    
     def is_relative(self,
                     query,
                     k=30,

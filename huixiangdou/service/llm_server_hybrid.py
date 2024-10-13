@@ -9,7 +9,6 @@ from multiprocessing import Process, Value, set_start_method
 import torch
 import pdb
 import pytoml
-import requests
 from loguru import logger
 from openai import OpenAI
 from huixiangdou.primitive import RPM, TPM
@@ -211,7 +210,7 @@ class HybridLLMServer:
             "deepseek": "deepseek-chat",
             "zhipuai": "glm-4",
             "puyu": "internlm2-latest",
-            "siliconcloud": "alibaba/Qwen1.5-110B-Chat"
+            "siliconcloud": "Qwen/Qwen2.5-14B-Instruct"
         }
 
     async def call_kimi(self, prompt:str, history:List[Tuple], remote_api_key:str, model:str):
@@ -339,7 +338,6 @@ class HybridLLMServer:
                                   system=system)
 
         logger.debug('remote api sending: {}'.format(messages))
-
         stream = client.chat.completions.create(
             model=model,
             messages=messages,
@@ -414,7 +412,11 @@ class HybridLLMServer:
             target_fn = map_fn[backend]
 
             # build args for `target_fn`
-            args = {'prompt': prompt, 'history': history, 'model':self.backend2model[backend]}
+            default_model = self.backend2model[backend]
+            model = self.server_config['remote_llm_model']
+            if model is None or len(model) < 1:
+                model = default_model
+            args = {'prompt': prompt, 'history': history, 'model': model}
             if backend in map_base_url:
                 args['base_url'] = map_base_url[backend]
 

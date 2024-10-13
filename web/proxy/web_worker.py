@@ -206,7 +206,7 @@ class OpenXLabWorker:
         if len(topic) < 2:
             return ErrorCode.NO_TOPIC, response, []
 
-        chunk, db_context, retrieve_ref = retriever.query(
+        chunk, db_context, retrieve_ref, context_texts = retriever.query(
             topic,
             context_max_length=self.context_max_length -
             2 * len(self.GENERATE_TEMPLATE))
@@ -214,7 +214,7 @@ class OpenXLabWorker:
         if db_context is None or len(db_context) < 1:
             tracker.log('topic feature store reject')
 
-            chunk, db_context, retrieve_ref = retriever.query(
+            chunk, db_context, retrieve_ref, context_texts = retriever.query(
                 query,
                 context_max_length=self.context_max_length -
                 2 * len(self.GENERATE_TEMPLATE))

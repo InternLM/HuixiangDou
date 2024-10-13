@@ -3,12 +3,10 @@
 import argparse
 import datetime
 import json
-import os
-import re
 import time
 import pdb
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Union, Generator
+from typing import List, Union, Generator
 
 import pytoml
 from loguru import logger
@@ -21,8 +19,9 @@ from .retriever import CacheRetriever, Retriever
 from .sg_search import SourceGraphProxy
 from .session import Session
 from .web_search import WebSearch
-from .prompt import (SCORING_QUESTION_TEMPLATE_CN, CR_NEED_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, GENERATE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN)
-from .prompt import (SCORING_QUESTION_TEMPLATE_EN, CR_NEED_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, GENERATE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN)
+from .prompt import (INTENTION_TEMPLATE_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN, GENERATE_TEMPLATE_CITATION_HEAD_CN)
+from .prompt import (INTENTION_TEMPLATE_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN, GENERATE_TEMPLATE_CITATION_HEAD_EN)
+from .prompt import CitationGeneratePrompt
 
 class Node(ABC):
     """Base abstract for compute graph."""
@@ -69,14 +68,14 @@ class PreprocNode(Node):
             for block_intention in ['问候', 'greeting']:
                 if block_intention in intention:
                     sess.code = ErrorCode.NOT_A_QUESTION
-                        yield sess
-                        return
+                    yield sess
+                    return
         
             for block_topic in ['身份', 'identity', 'undefine']:
                 if block_topic in topic:
                     sess.code = ErrorCode.NOT_A_QUESTION
-                        yield sess
-                        return
+                    yield sess
+                    return
         except Exception as e:
             logger.error(str(e))
 
@@ -133,34 +132,20 @@ class Text2vecNode(Node):
         if language == 'zh':
             self.TOPIC_TEMPLATE = TOPIC_TEMPLATE_CN
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CN
+            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CITATION_HEAD_CN
         else:
             self.TOPIC_TEMPLATE = TOPIC_TEMPLATE_EN
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_EN
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
+            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CITATION_HEAD_EN
         self.max_length = self.context_max_length - 2 * len(
             self.GENERATE_TEMPLATE)
+        self.language = language
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
         """Try get reply with text2vec & rerank model."""
 
-        # get query topic
-        prompt = self.TOPIC_TEMPLATE.format(sess.query.text)
-        sess.topic = self.llm.generate_response(prompt)
-        for prefix in ['主题：', '这句话的主题是：']:
-            if sess.topic.startswith(prefix):
-                sess.topic = sess.topic[len(prefix):]
-
-        sess.debug['Text2vecNode_topic'] = sess.topic
-        if len(sess.topic) < 2:
-            # topic too short, return
-            sess.code = ErrorCode.NO_TOPIC
-            yield sess
-            return
-
         # retrieve from knowledge base
-        sess.chunk, sess.knowledge, sess.references = self.retriever.query(
-            Query(sess.topic, sess.query.image),
+        sess.chunk, sess.knowledge, sess.references, context_texts = self.retriever.query(sess.query,
             context_max_length=self.max_length)
         sess.debug['Text2vecNode_chunk'] = sess.chunk
         if sess.knowledge is None:
@@ -183,7 +168,8 @@ class Text2vecNode(Node):
             return
 
         # answer the question
-        prompt = self.GENERATE_TEMPLATE.format(sess.knowledge, sess.query.text)
+        citation = CitationGeneratePrompt(self.language)
+        prompt = citation.build(texts=context_texts, question=sess.query.text)
         # response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
         response = self.llm.generate_response(prompt=prompt,
                                               history=sess.history,
@@ -211,13 +197,14 @@ class WebSearchNode(Node):
         if language == 'zh':
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
             self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_CN
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CN
+            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CITATION_HEAD_CN
         else:
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_EN
             self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_EN
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
+            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CITATION_HEAD_EN
         self.max_length = self.context_max_length - 2 * len(
             self.GENERATE_TEMPLATE)
+        self.language = language
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
         """Try web search."""
@@ -239,21 +226,14 @@ class WebSearchNode(Node):
             yield sess
             return
 
+        texts = []
         for article_id, article in enumerate(articles):
             article.cut(0, self.max_length)
-            prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
-                sess.query.text, article.brief)
-            # truth, logs = is_truth(llm=self.llm, prompt=prompt, throttle=5, default=10, backend='puyu')
-            truth, logs = is_truth(llm=self.llm,
-                                   prompt=prompt,
-                                   throttle=5,
-                                   default=10,
-                                   backend='remote')
-            sess.debug['WebSearchNode_relavance_{}'.format(article_id)] = logs
-            if truth:
-                sess.web_knowledge += '\n'
-                sess.web_knowledge += article.content
-                sess.references.append(article.source)
+            sess.web_knowledge += '\n'
+            sess.web_knowledge += article.content
+            sess.references.append(article.source)
+            
+            texts.append(article.content)
 
         sess.web_knowledge = sess.web_knowledge[0:self.max_length].strip()
         if len(sess.web_knowledge) < 1:
@@ -261,8 +241,8 @@ class WebSearchNode(Node):
             yield sess
             return
 
-        prompt = self.GENERATE_TEMPLATE.format(sess.web_knowledge,
-                                               sess.query.text)
+        citation = CitationGeneratePrompt(self.language)
+        prompt = citation.build(texts=texts, question=sess.query.text)
         # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend="puyu")
         sess.response = self.llm.generate_response(prompt=prompt,
                                                    history=sess.history,
@@ -281,9 +261,10 @@ class SGSearchNode(Node):
         self.config_path = config_path
 
         if language == 'zh':
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CN
+            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CITATION_HEAD_CN
         else:
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
+            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CITATION_HEAD_EN
+        self.language = language
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
         """Try get reply with source graph."""
@@ -310,8 +291,8 @@ class SGSearchNode(Node):
             yield sess
             return
 
-        prompt = self.GENERATE_TEMPLATE.format(sess.sg_knowledge,
-                                               sess.query.text)
+        citation = CitationGeneratePrompt(self.language)
+        prompt = citation.build(texts=sess.sg_knowledge, question=sess.query.text)
         # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
         sess.response = self.llm.generate_response(prompt=prompt,
                                                    history=sess.history,
