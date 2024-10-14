@@ -48,13 +48,27 @@ class PreprocNode:
         prompt = self.INTENTION_TEMPLATE.format(sess.query.text)
         json_str = self.llm.generate_response(prompt=prompt, backend='remote')
         sess.debug['PreprocNode_intention_response'] = json_str
-        
+        logger.info('intention response {}'.format(json_str))
         try:
-            json_obj = json.loads(json_str)
-            intention = json_obj['intention'].lower()
-            topic = json_obj['topic'].lower()
+            if json_str.startswith('```json'):
+                json_str = json_str[len('```json'):]
+
+            if json_str.endswith('```'):
+                json_str = json_str[0:-3]
             
-            for block_intention in ['问候', 'greeting']:
+            json_obj = json.loads(json_str)
+            intention = json_obj['intention']
+            if intention is not None:
+                intention = intention.lower()
+            else:
+                intention = 'undefine'
+            topic = json_obj['topic']
+            if topic is not None:
+                topic = topic.lower()
+            else:
+                topic = 'undefine'
+            
+            for block_intention in ['问候', 'greeting', 'undefine']:
                 if block_intention in intention:
                     sess.code = ErrorCode.NOT_A_QUESTION
                     yield sess
@@ -234,6 +248,9 @@ class ReduceGenerate:
             
             citation = CitationGeneratePrompt(self.language)
             prompt = citation.build(texts=context_texts, question=question)
+            with open('citation_generate_prompt.txt', 'w') as f:
+                f.write(prompt)
+                f.flush()
             async for part in self.llm.chat_stream(prompt=prompt, history=history):
                 sess.delta = part
                 yield sess
