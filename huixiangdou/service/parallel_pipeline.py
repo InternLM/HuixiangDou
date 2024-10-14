@@ -2,29 +2,23 @@
 """Pipeline."""
 import argparse
 import asyncio
-import datetime
 import json
-import os
-import re
-import time
-import pdb
 import copy
-from abc import ABC, abstractmethod
-from typing import List, Tuple, Union, Generator
+from typing import List, Tuple, Union, Generator, AsyncGenerator
 
 import pytoml
 from loguru import logger
 
 from huixiangdou.primitive import Query, Chunk
 
-from .helper import ErrorCode, is_truth
+from .helper import ErrorCode
 from .llm_client import ChatClient
 from .retriever import CacheRetriever, Retriever
-from .sg_search import SourceGraphProxy
 from .session import Session
 from .web_search import WebSearch
-from .prompt import (SCORING_QUESTION_TEMPLTE_CN, CR_NEED_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, GENERATE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN)
-from .prompt import (SCORING_QUESTION_TEMPLTE_EN, CR_NEED_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, GENERATE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN)
+from .prompt import (INTENTION_TEMPLATE_CN, CR_CN, SCORING_RELAVANCE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN)
+from .prompt import (INTENTION_TEMPLATE_EN, CR_EN, SCORING_RELAVANCE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN)
+from .prompt import CitationGeneratePrompt
 
 class PreprocNode:
     """PreprocNode is for coreference resolution and scoring based on group
@@ -38,10 +32,10 @@ class PreprocNode:
         self.enable_cr = config['worker']['enable_cr']
 
         if language == 'zh':
-            self.SCORING_QUESTION_TEMPLTE = SCORING_QUESTION_TEMPLTE_CN
+            self.INTENTION_TEMPLATE = INTENTION_TEMPLATE_CN
             self.CR = CR_CN
         else:
-            self.SCORING_QUESTION_TEMPLTE = SCORING_QUESTION_TEMPLTE_EN
+            self.INTENTION_TEMPLATE = INTENTION_TEMPLATE_EN
             self.CR = CR_EN
 
     def process(self, sess: Session) -> Generator[Session, None, None]:
@@ -51,16 +45,42 @@ class PreprocNode:
             yield sess
             return
 
-        prompt = self.SCORING_QUESTION_TEMPLTE.format(sess.query.text)
-        truth, logs = is_truth(llm=self.llm,
-                               prompt=prompt,
-                               throttle=6,
-                               default=3)
-        sess.debug['PreprocNode_is_question'] = logs
-        if not truth:
-            sess.code = ErrorCode.NOT_A_QUESTION
-            yield sess
-            return
+        prompt = self.INTENTION_TEMPLATE.format(sess.query.text)
+        json_str = self.llm.generate_response(prompt=prompt, backend='remote')
+        sess.debug['PreprocNode_intention_response'] = json_str
+        logger.info('intention response {}'.format(json_str))
+        try:
+            if json_str.startswith('```json'):
+                json_str = json_str[len('```json'):]
+
+            if json_str.endswith('```'):
+                json_str = json_str[0:-3]
+            
+            json_obj = json.loads(json_str)
+            intention = json_obj['intention']
+            if intention is not None:
+                intention = intention.lower()
+            else:
+                intention = 'undefine'
+            topic = json_obj['topic']
+            if topic is not None:
+                topic = topic.lower()
+            else:
+                topic = 'undefine'
+            
+            for block_intention in ['问候', 'greeting', 'undefine']:
+                if block_intention in intention:
+                    sess.code = ErrorCode.NOT_A_QUESTION
+                    yield sess
+                    return
+
+            for block_topic in ['身份', 'identity', 'undefine']:
+                if block_topic in topic:
+                    sess.code = ErrorCode.NOT_A_QUESTION
+                    yield sess
+                    return
+        except Exception as e:
+            logger.error(str(e))
 
         if not self.enable_cr:
             yield sess
@@ -161,7 +181,7 @@ class WebSearchRetrieval:
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_EN
             self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_EN
 
-    async def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process(self, sess: Session) -> AsyncGenerator[Session, None]:
         """Try web search."""
         
         if not self.enable:
@@ -190,7 +210,7 @@ class WebSearchRetrieval:
             yield sess
             return
 
-        for article_id, article in enumerate(articles):
+        for _, article in enumerate(articles):
             article.cut(0, self.context_max_length)
             c = Chunk(content_or_path=article.content, metadata={'source': article.source})
             sess.parallel_chunks.append(c)
@@ -207,16 +227,13 @@ class ReduceGenerate:
     def __init__(self, config: dict, llm: ChatClient, retriever: CacheRetriever, language: str):
         self.llm = llm
         self.retriever = retriever
-        if language == 'zh':
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CN
-        else:
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_EN
         llm_config = config['llm']
         self.context_max_length = llm_config['server']['local_llm_max_text_length']
         if llm_config['enable_remote']:
             self.context_max_length = llm_config['server']['remote_llm_max_text_length']
+        self.language = language
 
-    async def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process(self, sess: Session) -> AsyncGenerator[Session, None]:
         question = sess.query.text 
         history = sess.history
 
@@ -226,9 +243,14 @@ class ReduceGenerate:
                 sess.delta = part
                 yield sess
         else:
-            _, context_str, references = self.retriever.rerank_fuse(query=sess.query, chunks=sess.parallel_chunks, context_max_length=self.context_max_length)
+            _, _, references, context_texts = self.retriever.rerank_fuse(query=sess.query, chunks=sess.parallel_chunks, context_max_length=self.context_max_length)
             sess.references = references
-            prompt = self.GENERATE_TEMPLATE.format(context_str, sess.query.text)
+            
+            citation = CitationGeneratePrompt(self.language)
+            prompt = citation.build(texts=context_texts, question=question)
+            with open('citation_generate_prompt.txt', 'w') as f:
+                f.write(prompt)
+                f.flush()
             async for part in self.llm.chat_stream(prompt=prompt, history=history):
                 sess.delta = part
                 yield sess

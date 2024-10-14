@@ -24,7 +24,7 @@ def ymd():
 
 def parse_args():
     """Parse args."""
-    parser = argparse.ArgumentParser(description='SerialPipeline.')
+    parser = argparse.ArgumentParser(description='Gradio UI for parallel/serial pipeline.')
     parser.add_argument('--work_dir',
                         type=str,
                         default='workdir',
@@ -34,7 +34,7 @@ def parse_args():
         '--config_path',
         default='config.ini',
         type=str,
-        help='SerialPipeline configuration path. Default value is config.ini')
+        help='Pipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
                         action='store_true',
                         default=True,

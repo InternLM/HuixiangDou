@@ -428,11 +428,11 @@ def test_query(retriever: Retriever, sample: str = None):
 
     table = Texttable()
     table.set_cols_valign(['t', 't', 't', 't'])
-    table.header(['Query', 'State', 'Part of Chunks', 'References'])
+    table.header(['Query', 'State', 'Chunks', 'References'])
 
     for example in real_questions:
         example = example[0:400]
-        chunks, context, refs = retriever.query(example)
+        chunks, context, refs, context_texts = retriever.query(example)
         if chunks:
             table.add_row(
                 [example, 'Accepted', chunks[0:100] + '..', ','.join(refs)])
