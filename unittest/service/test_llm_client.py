@@ -21,3 +21,6 @@ def test_auto_fix():
     assert real_backend == 'local'
     real_backend, max_len = client.auto_fix(backend='kimi')
     assert real_backend != 'local'
+
+if __name__ == '__main__':
+    test_auto_fix()

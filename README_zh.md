@@ -210,7 +210,7 @@ python3 -m huixiangdou.service.feature_store
 python3 -m huixiangdou.main --standalone
 
 +-----------------------+---------+--------------------------------+-----------------+
-|         Query         |  State  |         Part of Reply          |   References    |
+|         Query         |  State  |         Reply                  |   References    |
 +=======================+=========+================================+=================+
 | 请问如何安装 mmpose ?   | success | 要安装 mmpose，请按照以下步骤操作..| installation.md |
 --------------------------------------------------------------------------------------

@@ -327,7 +327,7 @@ def extract_json_from_str(raw: str):
 def build_reply_text(code, query: str, reply: str, refs: list, max_len:int=20):
     table = Texttable()
     table.set_cols_valign(['t', 't', 't', 't'])
-    table.header(['Query', 'State', 'Part of Reply', 'References'])
+    table.header(['Query', 'State', 'Reply', 'References'])
     table.add_row([query, str(code), reply[0:max_len] + '..', ','.join(refs)])
     return table.draw()
 

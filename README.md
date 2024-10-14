@@ -210,7 +210,7 @@ After running, test with `python3 -m huixiangdou.main --standalone`. At this tim
 python3 -m huixiangdou.main --standalone
 
 +---------------------------+---------+----------------------------+-----------------+
-|         Query             |  State  |         Part of Reply      |   References    |
+|         Query             |  State  |         Reply              |   References    |
 +===========================+=========+============================+=================+
 | How to install mmpose?    | success | To install mmpose, plea..  | installation.md |
 --------------------------------------------------------------------------------------

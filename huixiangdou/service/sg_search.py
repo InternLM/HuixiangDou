@@ -6,7 +6,7 @@ import os
 
 import pytoml
 from loguru import logger
-
+from typing import List
 from .llm_client import ChatClient
 
 
@@ -120,7 +120,7 @@ class SourceGraphProxy:
 
         return target_repo_id
 
-    def search(self, llm_client, question, groupname):
+    def search(self, llm_client, question, groupname) -> List[str]:
         """Performs a search operation in the selected repository based on the
         user's question.
 
@@ -142,7 +142,6 @@ class SourceGraphProxy:
         BINARY = self.sg_config['binary_src_path']
         if not os.path.exists(BINARY):
             raise Exception('{} not exist'.format(BINARY))
-            return ''
 
         prompt = self.KEYWORDS_TEMPLATE.format(question)
         entities = []
@@ -177,8 +176,7 @@ class SourceGraphProxy:
         if len(search_items) < 1:
             return None
 
-        search_text = json.dumps(search_items, ensure_ascii=False, indent=2)
-        return search_text
+        return search_items
 
 
 def parse_args():
