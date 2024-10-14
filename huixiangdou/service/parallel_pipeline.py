@@ -248,9 +248,6 @@ class ReduceGenerate:
             
             citation = CitationGeneratePrompt(self.language)
             prompt = citation.build(texts=context_texts, question=question)
-            with open('citation_generate_prompt.txt', 'w') as f:
-                f.write(prompt)
-                f.flush()
             async for part in self.llm.chat_stream(prompt=prompt, history=history):
                 sess.delta = part
                 yield sess
