@@ -111,7 +111,7 @@ SCORING_RELAVANCE_TEMPLATE_EN = 'Question: "{}", Background Information: "{}"\nP
 GENERATE_TEMPLATE_CN = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
 GENERATE_TEMPLATE_EN = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
-GENERATE_TEMPLATE_CITATION_HEAD_CN = '''你是一个文本专家，擅长阅读理解任务，根据检索结果回答问题。 
+GENERATE_TEMPLATE_CITATION_HEAD_CN = '''你是一个文本专家，擅长阅读理解任务，根据检索结果回答用户输入。 
 
 ## 任务
 仅使用提供的搜索结果（其中一些可能不相关）来准确、吸引人且简洁地回答给定的问题，并正确引用它们。使用无偏见和新闻业语调。对于任何事实性声明都要引用。当引用多个搜索结果时，使用[1][2][3]。在每条句子中至少引用一个文档，最多引用三个文档。如果多个文档支持该句子，则只引用支持文档的最小必要子集。
@@ -128,7 +128,7 @@ GENERATE_TEMPLATE_CITATION_HEAD_CN = '''你是一个文本专家，擅长阅读�
 - 你不会重复表达和同义反复。
 '''
 
-GENERATE_TEMPLATE_CITATION_HEAD_EN = '''You are a text expert, proficient in reading comprehension tasks, answering questions based on search results.
+GENERATE_TEMPLATE_CITATION_HEAD_EN = '''You are a text expert, proficient in reading comprehension tasks, answering user input based on search results.
 
 ## Task
 Write an accurate, engaging, and concise answer for the given question using only the provided search results (some of which might be irrelevant) and cite them properly. Use an unbiased and journalistic tone. Always cite for any factual claim. When citing several search results, use [1][2][3]. Cite at least one document and at most three documents in each sentence. If multiple documents support the sentence, only cite a minimum sufficient subset of the documents.
