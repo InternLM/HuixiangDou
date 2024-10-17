@@ -1,5 +1,5 @@
 from typing import List
-
+import re
 # PreprocNode
 SCORING_QUESTION_TEMPLATE_CN = '“{}”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'
 # modified from kimi
@@ -111,38 +111,12 @@ SCORING_RELAVANCE_TEMPLATE_EN = 'Question: "{}", Background Information: "{}"\nP
 GENERATE_TEMPLATE_CN = '材料：“{}”\n 问题：“{}” \n 请仔细阅读参考材料回答问题。'  # noqa E501
 GENERATE_TEMPLATE_EN = 'Background Information: "{}"\n Question: "{}"\n Please read the reference material carefully and answer the question.'  # noqa E501
 
-GENERATE_TEMPLATE_CITATION_HEAD_CN = '''你是一个文本专家，擅长阅读理解任务，根据检索结果回答用户输入。 
-
-## 任务
-仅使用提供的搜索结果（其中一些可能不相关）来准确、吸引人且简洁地回答给定的问题，并正确引用它们。使用无偏见和新闻业语调。对于任何事实性声明都要引用。当引用多个搜索结果时，使用[1][2][3]。在每条句子中至少引用一个文档，最多引用三个文档。如果多个文档支持该句子，则只引用支持文档的最小必要子集。
-
-## 指令遵循与提供有用的回复要求
-- 在满足安全合规要求下，注意并遵循用户问题中提到的每条指令，对于用户的问题你必须直接的给出回答。如果指令超出了你的能力范围，礼貌的告诉用户。
-- 请严格遵循指令，请说话不要啰嗦，不要不简洁明了。
--【重要！】对于数字比较问题，请先一步一步分析再回答。
-
-## 输出格式与语言风格要求
-- 使用\(...\) 或\[...\]来输出数学公式，例如：使用\[x^2\]来表示x的平方。
-- 当你介绍自己时，请记住保持幽默和简短。
-- 你不会不用简洁简短的文字输出，你不会输出无关用户指令的文字。
-- 你不会重复表达和同义反复。
+GENERATE_TEMPLATE_CITATION_HEAD_CN = '''## 任务
+请使用仅提供的搜索结果（其中一些可能不相关）写出准确、有吸引力且简洁的回答，并正确引用它们。使用不偏不倚且新闻式的语气。对于任何事实性陈述都必须引用。引用多个搜索结果时，使用[1][2][3]格式。每个句子至少引用一个文档，最多引用三个文档。如果多个文档支持同一个句子，引用最小的必要子集。
 '''
 
-GENERATE_TEMPLATE_CITATION_HEAD_EN = '''You are a text expert, proficient in reading comprehension tasks, answering user input based on search results.
-
-## Task
-Write an accurate, engaging, and concise answer for the given question using only the provided search results (some of which might be irrelevant) and cite them properly. Use an unbiased and journalistic tone. Always cite for any factual claim. When citing several search results, use [1][2][3]. Cite at least one document and at most three documents in each sentence. If multiple documents support the sentence, only cite a minimum sufficient subset of the documents.
-
-## Instructions and Providing Helpful Responses
-- While adhering to safety and compliance requirements, pay attention to and follow each instruction mentioned in the user's question. You must directly answer the user's question. If the instruction is beyond your capabilities, politely inform the user.
-- Please strictly follow the instructions and avoid verbosity and ambiguity.
-- [Important!] For numerical comparison questions, analyze step by step before answering.
-
-## Output Format and Language Style Requirements
-- Use \(...\) or \[...\] to output mathematical formulas, for example: use \[x^2\] to represent the square of x.
-- When introducing yourself, remember to be humorous and concise.
-- You will not use verbose language and will not output text unrelated to the user's instructions.
-- You will not repeat expressions and will avoid tautology.
+GENERATE_TEMPLATE_CITATION_HEAD_EN = '''## Task
+Please use only the provided search results (some of which may be irrelevant) to write accurate, engaging, and concise answers, and correctly cite them. Use an impartial and journalistic tone. For any factual statements, citations are required. When citing multiple search results, use the format [1][2][3]. Each sentence should reference at least one document, and no more than three. If multiple documents support the same sentence, cite the smallest necessary subset.
 '''
 
 # WebSearchNode
@@ -161,19 +135,29 @@ class CitationGeneratePrompt:
     def __init__(self, language: str):
         self.language = language
     
+    def remove_markdown_headers(self, texts: List[str]):
+        pure_texts = []
+        for text in texts:
+            # 移除Markdown中的标题
+            pure_text = re.sub(r'^#{1,6}\s*', '', text, flags=re.MULTILINE)
+            pure_texts.append(pure_text)
+        return pure_texts
+
     def build(self, texts: List[str], question:str):
+        pure_texts = self.remove_markdown_headers(texts)
+
         if self.language == 'zh':
             head = GENERATE_TEMPLATE_CITATION_HEAD_CN
-            question_prompt = '\n## 用户输入\n{}\n'.format(question*2)
+            question_prompt = '\n## 用户输入\n{}\n'.format(question)
             context_prompt = ''
-            for index, text in enumerate(texts):
-                context_prompt += '\n## 检索结果{}\n"""\n{}\n"""\n'.format(index+1, text)
+            for index, text in enumerate(pure_texts):
+                context_prompt += '\n## 检索结果{}\n{}\n'.format(index+1, text)
         elif self.language == 'en':
             head = GENERATE_TEMPLATE_CITATION_HEAD_EN            
-            question_prompt = '\n## user input\n{}\n'.format(question*2)
+            question_prompt = '\n## user input\n{}\n'.format(question)
             context_prompt = ''
-            for index, text in enumerate(texts):
-                context_prompt += '\n## search result{}\n"""\n{}\n"""\n'.format(index+1, text)
+            for index, text in enumerate(pure_texts):
+                context_prompt += '\n## search result{}\n{}\n'.format(index+1, text)
 
         prompt = head + context_prompt + question_prompt
         return prompt
