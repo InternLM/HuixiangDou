@@ -189,7 +189,7 @@ class FileOperation:
 
         text = ''
 
-        if not os.path.exists(filepath):
+        if not os.path.exists(filepath,encoding = 'utf-8'):
             return text, None
 
         try:
