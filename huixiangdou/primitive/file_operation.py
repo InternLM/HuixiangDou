@@ -195,7 +195,7 @@ class FileOperation:
         try:
 
             if file_type == 'md' or file_type == 'text':
-                with open(filepath) as f:
+                with open(filepath,encoding = 'utf-8') as f:
                     text = f.read()
 
             elif file_type == 'pdf':
