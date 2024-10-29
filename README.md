@@ -97,7 +97,7 @@ The Web version's API for Android also supports other devices. See [Python sampl
       <td>
 
 - [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
-- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
+- [Qwen1.5~2.5](https://github.com/QwenLM/Qwen2)
 - [puyu](https://internlm.openxlab.org.cn/)
 - [StepFun](https://platform.stepfun.com)
 - [KIMI](https://kimi.moonshot.cn)

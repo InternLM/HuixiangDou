@@ -17,9 +17,10 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
-
+from transformers import TextIteratorStreamer
 import uvicorn
 from typing import List, Tuple
+from threading import Thread
 
 def os_run(cmd: str):
     ret = os.popen(cmd)
@@ -57,6 +58,7 @@ class InferenceWrapper:
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
+        self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True)
 
         model_path_lower = model_path.lower()
 
@@ -69,14 +71,6 @@ class InferenceWrapper:
         elif 'qwen1.5' in model_path_lower:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path, device_map='auto', trust_remote_code=True).eval()
-        elif 'qwen' in model_path_lower:
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_path,
-                device_map='auto',
-                trust_remote_code=True,
-                use_cache_quantization=True,
-                use_cache_kernel=True,
-                use_flash_attn=False).eval()
         elif 'internlm2_5' in model_path_lower:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
@@ -112,17 +106,15 @@ class InferenceWrapper:
                 messages, tokenize=False, add_generation_prompt=True)
             model_inputs = self.tokenizer([text],
                                           return_tensors='pt').to('cuda')
-            generated_ids = self.model.generate(model_inputs.input_ids,
-                                                max_new_tokens=512,
-                                                top_k=1)
-            generated_ids = [
-                output_ids[len(input_ids):] for input_ids, output_ids in zip(
-                    model_inputs.input_ids, generated_ids)
-            ]
-
-            output_text = self.tokenizer.batch_decode(
-                generated_ids, skip_special_tokens=True)[0]
-            yield output_text
+            
+            generation_kwargs = dict(model_inputs, streamer=self.streamer, max_new_tokens=512)
+            thread = Thread(target=self.model.generate, kwargs=generation_kwargs)
+            thread.start()
+            
+            for new_text in self.streamer:
+                yield new_text
+                
+            thread.join()
 
         elif type(self.model).__name__ == 'InternLM2ForCausalLM':
 
