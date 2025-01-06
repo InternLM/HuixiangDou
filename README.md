@@ -1,3 +1,9 @@
+
+# 🎚️ Upgrade
+[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) is an implementation of KG-LLM Retrieval. If you prioritize improving accuracy and don't mind the cost, try new version.
+
+---
+
 English | [简体中文](README_zh.md)
 
 <div align="center">
@@ -30,7 +36,7 @@ English | [简体中文](README_zh.md)
 
 </div>
 
-HuixiangDou is a **professional knowledge assistant** based on LLM.
+HuixiangDou1 is a **professional knowledge assistant** based on LLM.
 
 Advantages:
 
@@ -50,7 +56,6 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 The Web version's API for Android also supports other devices. See [Python sample code](./tests/test_openxlab_android_api.py).
 
-- \[2024/12\] **HuixiangDou2** is coming soon
 - \[2024/09\] [Inverted indexer](https://github.com/InternLM/HuixiangDou/pull/387) makes LLM prefer knowledge base🎯
 - \[2024/09\] [Code retrieval](./huixiangdou/service/parallel_pipeline.py)
 - \[2024/08\] [chat_with_readthedocs](https://huixiangdou.readthedocs.io/en/latest/), see [how to integrate](./docs/zh/doc_add_readthedocs.md) 👍
