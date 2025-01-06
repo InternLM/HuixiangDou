@@ -1,3 +1,8 @@
+# 🎚️ 版本升级
+[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) 是一套基于图谱的检索方案，如果你关注精度提升、不在意建立知识库的成本，试试新版。
+
+---
+
 [English](README.md) | 简体中文
 
 <div align="center">
