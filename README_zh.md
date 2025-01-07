@@ -37,7 +37,7 @@
 
 </div>
 
-茴香豆是一个基于 LLM 的专业知识助手，优势：
+HuixiangDou 是一个基于 LLM 的专业知识助手，优势：
 
 1. 设计预处理、拒答、响应三阶段 pipeline：
     * `chat_in_group` 群聊场景，解答问题时不会消息泛滥。见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/zh/doc_knowledge_graph.md)和[业务数据精度测试](./evaluation)
@@ -51,7 +51,7 @@
 
 # 🔆 新功能
 
-茴香豆 Web 版已发布到 [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)，可以创建自己的知识库、更新正反例、开关网络搜索，聊天测试效果后，集成到飞书/微信群。
+Web 版已发布到 [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)，可以创建自己的知识库、更新正反例、开关网络搜索，聊天测试效果后，集成到飞书/微信群。
 
 Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) 和 [YouTube](https://www.youtube.com/watch?v=ylXrT-Tei-Y)。
 
