@@ -202,7 +202,7 @@ def build_feature_store(cache: CacheRetriever, payload: types.SimpleNamespace):
                          _type=TaskCode.FS_ADD_DOC.value)
 
     # try:
-    fs.initialize(files=files, work_dir=workdir)
+    fs.initialize(files=files, work_dir=workdir, ner_file=None)
     files_state = []
 
     success_cnt = 0
