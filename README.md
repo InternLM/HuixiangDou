@@ -1,6 +1,7 @@
 
 # 🎚️ Upgrade
-[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) is an implementation of KG-LLM Retrieval. If you prioritize improving accuracy and don't mind the cost, try new version.
+
+[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) is a validated GraphRAG solution in the plant field. If you are interested in the **effects of HuixiangDou in non-computer fields**, try the new version.
 
 ---
 
@@ -46,7 +47,10 @@ Advantages:
 2. No training required, with CPU-only, 2G, 10G, 20G and 80G configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
 
-Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and join [WeChat Group](https://cdn.vansin.top/internlm/dou.jpg) to try AI assistant inside.
+Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and current public service status:
+- [readthedocs ChatWithAI](https://huixiangdou.readthedocs.io/zh-cn/latest/) (cpu-only) is available
+- [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) is using GPU and under continuous maintenance
+- [WeChat bot](https://cdn.vansin.top/internlm/dou.jpg) has a cost associated with WeChat integration. All code has been verified to be functional for one year. Please deploy it on your own for either the [free](https://github.com/InternLM/HuixiangDou/blob/main/docs/zh/doc_add_wechat_accessibility.md) or [commercial](https://github.com/InternLM/HuixiangDou/blob/main/docs/zh/doc_add_wechat_commercial.md) version.
 
 If this helps you, please give it a star ⭐
 
