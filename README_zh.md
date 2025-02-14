@@ -1,5 +1,5 @@
 # 🎚️ 版本升级
-[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) 是一套基于图谱的检索方案，如果你关注精度提升、不在意建立知识库的成本，试试新版。
+[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) 是在植物领域验证有效的 GraphRAG 方案。如果你关注 **HuixiangDou 在非计算机领域的效果**，试试新版。
 
 ---
 
@@ -45,8 +45,11 @@ HuixiangDou 是一个基于 LLM 的专业知识助手，优势：
 2. 无需训练适用各行业，提供 CPU-only、2G、10G、20G、80G 规格配置
 3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
 
-查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)；加入[微信群](https://cdn.vansin.top/internlm/dou.jpg)直接体验群聊助手效果。
-
+查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)，当前公开服务状况：
+- [readthedocs ChatWithAI]() cpu-only 可用
+- [OpenXLab](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) 使用 GPU，持续维护
+- [微信群](https://cdn.vansin.top/internlm/dou.jpg) 有微信接入成本。所有代码已运行一年验证可用，请自行部署 [免费](https://github.com/InternLM/HuixiangDou/blob/main/docs/zh/doc_add_wechat_accessibility.md) 或 [商业](https://github.com/InternLM/HuixiangDou/blob/main/docs/zh/doc_add_wechat_commercial.md) 版
+  
 如果对你有用，麻烦 star 一下⭐
 
 # 🔆 新功能
