@@ -222,9 +222,6 @@ class Message:
             # image
             # 图片消息
             parse_type = 'image'
-
-            import pdb
-            pdb.set_trace()
             getMsgData = {'wId': bot_wxid, 'content': data['content'], 'msgId': data['msgId'], 'type': 0}
             headers = {
                 'Content-Type': 'application/json',
@@ -677,7 +674,7 @@ class WkteamManager:
                 elif msg.type == 'image':
                     self.send_image(groupId=groupId, image_url=msg.url)
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.2)
 
         async def msg_callback(request):
             """Save wechat message to redis, for revert command, use high
