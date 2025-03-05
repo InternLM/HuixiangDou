@@ -7,12 +7,6 @@
 > \[!Warning\]
 >
 > <div align="center">
-> wkteam 目前暂停注册
-> </div>
-
-> \[!Warning\]
->
-> <div align="center">
 > wkteam 曾变更过经营主体，🚨<strong>注意财产安全</strong> </br>
 > 打开 wkteam.cn 和 121.229.29.88:6327， 会发现 UI 相同但数据库不通，须仔细咨询运营方
 > </div>
