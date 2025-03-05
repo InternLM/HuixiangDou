@@ -2,7 +2,7 @@
 
 用户反馈[免费版](./doc_add_wechat_accessibility.md)不能同时支持多个群，事实上要获取群里的视频和语音也很难用 accessibility 方式完成。
 
-因此我们介绍[商业版 wkteam](https://wkteam.cn) 接入方式，支持图片、公众号解析。
+因此我们介绍[商业版 wkteam](http://121.229.29.88:6327) 接入方式，支持图片、公众号解析。
 
 > \[!Warning\]
 >
