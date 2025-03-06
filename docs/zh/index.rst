@@ -46,6 +46,7 @@ HuixiangDou 上手路线
    doc_add_wechat_group.md
    doc_add_lark_group.md
    doc_send_only_lark_group.md
+   doc_merge_wechat_group.md
 
 索引与表格
 ==================
