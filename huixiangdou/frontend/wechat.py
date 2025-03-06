@@ -6,6 +6,7 @@ import os
 import pdb
 import re
 import string
+import random
 import time
 import types
 import xml.etree.ElementTree as ET
@@ -148,7 +149,7 @@ class Message:
         self.desc = ''
         self.thumburl = ''
 
-    def parse(self, wx_msg: dict, bot_wxid: str):
+    def parse(self, wx_msg: dict, bot_wxid: str, auth:str='', wkteam_ip_port:str=''):
         # str or int
         msg_type = wx_msg['messageType']
         parse_type = 'unknown'
