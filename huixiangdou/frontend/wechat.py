@@ -5,6 +5,7 @@ import json
 import os
 import pdb
 import re
+import string
 import time
 import types
 import xml.etree.ElementTree as ET
@@ -15,6 +16,7 @@ from typing import List
 
 import pytoml
 import redis
+import asyncio
 import requests
 from aiohttp import web
 from bs4 import BeautifulSoup as BS
@@ -102,7 +104,7 @@ class Queue:
         return self.get(False)
 
 
-def is_revert_command(wx_msg):
+def is_revert_command(wx_msg: dict):
     """Is wx_msg a revert command."""
     data = wx_msg['data']
     if 'content' not in data:
@@ -140,6 +142,11 @@ class Message:
         self.status = ''
         self.sender = ''
         self.url = ''
+        self.push_content = ''
+        self.content = ''
+        self.title = ''
+        self.desc = ''
+        self.thumburl = ''
 
     def parse(self, wx_msg: dict, bot_wxid: str):
         # str or int
@@ -174,11 +181,10 @@ class Message:
 
             def search_key(xml_key: str):
                 elements = root.findall('.//{}'.format(xml_key))
-                content = ''
+                value = ''
                 if len(elements) > 0:
-                    content = elements[0].text
-                return content
-
+                    value = elements[0].text
+                return value
             to_user = search_key(xml_key='chatusr')
             if to_user != bot_wxid:
                 parse_type = 'ref_for_others'
@@ -202,26 +208,41 @@ class Message:
 
             self.url = search_key(xml_key='url')
             title = search_key(xml_key='title')
+            self.title = title
             desc = search_key(xml_key='des')
+            self.desc = desc
+            self.thumb_url = search_key(xml_key='thumburl')
+            
+            query = data['pushContent']
+            # try:
+            #     resp = requests.get(self.url)
+            #     doc = Document(resp.text)
+            #     soup = BS(doc.summary(), 'html.parser')
 
-            query = ''
-            try:
-                resp = requests.get(self.url)
-                doc = Document(resp.text)
-                soup = BS(doc.summary(), 'html.parser')
-
-                if len(soup.text) > 100:
-                    query = '{}\n{}\n{}'.format(title, desc, soup.text)
-                else:
-                    query = '{}\n{}\n{}'.format(title, desc, self.url)
-            except Exception as e:
-                logger.error(str(e))
-            logger.debug('公众号解析：{}'.format(query)[0:256])
+            #     if len(soup.text) > 100:
+            #         query = '{}\n{}\n{}'.format(title, desc, soup.text)
+            #     else:
+            #         query = '{}\n{}\n{}'.format(title, desc, self.url)
+            # except Exception as e:
+            #     logger.error(str(e))
+            # logger.debug('公众号解析：{}'.format(query)[0:256])
 
         elif msg_type in ['80002', '60002']:
             # image
             # 图片消息
             parse_type = 'image'
+            getMsgData = {'wId': bot_wxid, 'content': data['content'], 'msgId': data['msgId'], 'type': 0}
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': auth
+            }
+            resp = requests.post('http://{}/getMsgImg'.format(wkteam_ip_port), data=json.dumps(getMsgData), headers=headers)
+            json_str = resp.content.decode('utf8')
+            if resp.status_code == 200:
+                jsonobj = json.loads(json_str)
+                if jsonobj['code'] != '1000':
+                    logger.error('download {} {}'.format(data, json_str))
+                self.url = jsonobj['data']['url']
 
         elif msg_type in ['80001', '60001']:
             # text
@@ -256,6 +277,8 @@ class Message:
 
         self.group_id = data['fromGroup']
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
+        self.push_content = data['pushContent'] if 'pushContent' in data else ''
+        self.content = data['content']
         return None
 
 
@@ -354,44 +377,6 @@ class User:
         self.last_process_time = time.time()
 
 
-def bind(logdir: str, port: int):
-
-    if not os.path.exists(logdir):
-        os.makedirs(logdir)
-    logpath = os.path.join(logdir, 'wechat_message.jsonl')
-
-    async def msg_callback(request):
-        """Save wechat message to redis, for revert command, use high
-        priority."""
-        input_json = await request.json()
-        with open(logpath, 'a') as f:
-            json_str = json.dumps(input_json, indent=2, ensure_ascii=False)
-            f.write(json_str)
-            f.write('\n')
-
-        logger.debug(input_json)
-        msg_que = Queue(name='wechat')
-        revert_que = Queue(name='wechat-high-priority')
-
-        if input_json['messageType'] == '00000':
-            return web.json_response(text='done')
-
-        try:
-            json_str = json.dumps(input_json)
-            if is_revert_command(input_json):
-                revert_que.put(json_str)
-            else:
-                msg_que.put(json_str)
-
-        except Exception as e:
-            logger.error(str(e))
-
-        return web.json_response(text='done')
-
-    app = web.Application()
-    app.add_routes([web.post('/callback', msg_callback)])
-    web.run_app(app, host='0.0.0.0', port=port)
-
 
 class WkteamManager:
     """
@@ -476,6 +461,11 @@ class WkteamManager:
             return json_obj, Exception(json_str)
 
         return json_obj, None
+
+    def revert_all(self):
+        # 撤回所有群所有消息
+        for groupId in self.group_whitelist:
+            self.revert(groupId=groupId)
 
     def revert(self, groupId: str):
         """Revert all msgs in this group."""
@@ -661,6 +651,27 @@ class WkteamManager:
             self.license_path))
         return None
 
+    def send_image(self, groupId: str, image_url: str):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': self.auth
+        }
+        data = {'wId': self.wId, 'wcId': groupId, 'content': image_url}
+
+        json_obj, err = self.post(url='http://{}/sendImage2'.format(
+            self.WKTEAM_IP_PORT), data=data, headers=headers)
+        if err is not None:
+            return err
+
+        sent = json_obj['data']
+        sent['wId'] = self.wId
+        if groupId not in self.sent_msg:
+            self.sent_msg[groupId] = [sent]
+        else:
+            self.sent_msg[groupId].append(sent)
+
+        return None
+
     def send_message(self, groupId: str, text: str):
         headers = {
             'Content-Type': 'application/json',
@@ -684,14 +695,120 @@ class WkteamManager:
 
         return None
 
-    def serve(self):
-        p = Process(target=bind,
-                    args=(self.wkteam_config.dir,
-                          self.wkteam_config.callback_port))
-        # bind(self.wkteam_config.callback_port)
-        p.start()
-        self.set_callback()
-        p.join()
+    def send_url(self, groupId: str, description: str, title: str, thumb_url: str, url: str):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': self.auth
+        }
+        data = {'wId': self.wId, 'wcId': groupId, 'description': description, 'title':title, 'thumbUrl':thumb_url, 'url':url}
+
+        json_obj, err = self.post(url='http://{}/sendUrl'.format(
+            self.WKTEAM_IP_PORT),
+                                  data=data,
+                                  headers=headers)
+        if err is not None:
+            return err
+
+        sent = json_obj['data']
+        sent['wId'] = self.wId
+        if groupId not in self.sent_msg:
+            self.sent_msg[groupId] = [sent]
+        else:
+            self.sent_msg[groupId].append(sent)
+
+        return None
+
+    def bind(self, logdir: str, port: int, forward:bool=False):
+        if not os.path.exists(logdir):
+            os.makedirs(logdir)
+        logpath = os.path.join(logdir, 'wechat_message.jsonl')
+
+        async def forward_msg(input_json: dict):
+            msg = Message()
+            err = msg.parse(wx_msg=input_json, bot_wxid=self.wId, auth=self.auth, wkteam_ip_port=self.WKTEAM_IP_PORT)
+            if err is not None:
+                logger.error(str(err))
+                return
+            
+            # 不是白名单群里的消息，不处理
+            come_from_whitelist = False
+            from_group_name = ''
+            for groupId, groupname in self.group_whitelist.items():
+                if msg.group_id == groupId:
+                    come_from_whitelist = True
+                    from_group_name = groupname
+
+            if not come_from_whitelist:
+                return
+
+            if msg.sender == self.wcId:
+                # self message, skip
+                return
+            
+            for groupId, _ in self.group_whitelist.items():
+                # 本群已发过的消息，不处理
+                if groupId == msg.group_id:
+                    continue
+
+                if msg.type == 'text':
+                    username = msg.push_content.split(':')[0].strip()
+                    formatted_reply = '{}：{}'.format(username, msg.content)
+                    self.send_message(groupId=groupId, text=formatted_reply)
+                elif msg.type == 'image':
+                    self.send_image(groupId=groupId, image_url=msg.url)
+                elif msg.type == 'ref_for_others':
+                    formatted_reply = '[ref]{}'.format(msg.query)
+                    self.send_message(groupId=groupId, text=formatted_reply)
+                elif msg.type == 'link':
+                    thumbnail = msg.thumb_url if msg.thumb_url else 'https://deploee.oss-cn-shanghai.aliyuncs.com/icon.jpg'
+                    self.send_url(groupId=groupId, description=msg.desc, title=msg.title, thumb_url=thumbnail, url=msg.url)
+                await asyncio.sleep(random.uniform(0.2, 2.0))
+
+        async def msg_callback(request):
+            """Save wechat message to redis, for revert command, use high
+            priority."""
+            input_json = await request.json()
+            with open(logpath, 'a') as f:
+                json_str = json.dumps(input_json, indent=2, ensure_ascii=False)
+                f.write(json_str)
+                f.write('\n')
+
+            logger.debug(input_json)
+            msg_que = Queue(name='wechat')
+            revert_que = Queue(name='wechat-high-priority')
+
+            if input_json['messageType'] == '00000':
+                return web.json_response(text='done')
+
+            try:
+                json_str = json.dumps(input_json)
+                if is_revert_command(input_json):
+                    self.revert_all()
+                    return web.json_response(text='done')
+
+                msg_que.put(json_str)
+
+                if forward and not is_revert_command(input_json):
+                    await forward_msg(input_json)
+
+            except Exception as e:
+                logger.error(str(e))
+
+            return web.json_response(text='done')
+
+        app = web.Application()
+        app.add_routes([web.post('/callback', msg_callback)])
+        web.run_app(app, host='0.0.0.0', port=port)
+
+    def serve(self, forward:bool=False):
+        self.bind(self.wkteam_config.dir, self.wkteam_config.callback_port, forward=forward)
+        # p = Process(target=bind,
+        #             args=(self.wkteam_config.dir,
+        #                   self.wkteam_config.callback_port,
+        #                   forward=forward))
+        # p.start()
+        # self.set_callback()
+        # p.join()
 
     def fetch_groupchats(self, user: User, max_length: int = 12):
         """Before obtaining user messages, there are a maximum of `max_length`
@@ -738,7 +855,7 @@ class WkteamManager:
                 wx_msg = json.loads(wx_msg_str)
                 logger.debug(wx_msg)
                 msg = Message()
-                err = msg.parse(wx_msg=wx_msg, bot_wxid=self.wcId)
+                err = msg.parse(wx_msg=wx_msg, bot_wxid=self.wcId, auth=self.auth, wkteam_ip_port=self.WKTEAM_IP_PORT)
                 if err is not None:
                     logger.debug(str(err))
                     continue
@@ -862,6 +979,10 @@ def parse_args():
                         action='store_true',
                         default=True,
                         help='Bind port and listen WeChat message callback')
+    parser.add_argument('--forward',
+                        action='store_true',
+                        default=False,
+                        help='Forward all message to all groups')
     args = parser.parse_args()
     return args
 
@@ -877,4 +998,4 @@ if __name__ == '__main__':
         manager.set_callback()
 
     if args.serve:
-        manager.serve()
+        manager.serve(forward=args.forward)
