@@ -60,6 +60,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 Web 版给 android 的接口，也支持非 android 调用，见[python 样例代码](./tests/test_openxlab_android_api.py)。
 
+- \[2025/03\] [在多个微信群中转发消息](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [倒排索引](https://github.com/InternLM/HuixiangDou/pull/387)让 LLM 更偏向使用领域知识 🎯
 - \[2024/09\] 稀疏方法实现[代码检索](./huixiangdou/service/parallel_pipeline.py)
 - \[2024/08\] ["chat_with readthedocs"](https://huixiangdou.readthedocs.io/zh-cn/latest/) ，见[集成说明](./docs/zh/doc_add_readthedocs.md)

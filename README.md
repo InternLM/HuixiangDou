@@ -60,6 +60,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 The Web version's API for Android also supports other devices. See [Python sample code](./tests/test_openxlab_android_api.py).
 
+- \[2025/03\] [Forwarding multiple wechat group message](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [Inverted indexer](https://github.com/InternLM/HuixiangDou/pull/387) makes LLM prefer knowledge base🎯
 - \[2024/09\] [Code retrieval](./huixiangdou/service/parallel_pipeline.py)
 - \[2024/08\] [chat_with_readthedocs](https://huixiangdou.readthedocs.io/en/latest/), see [how to integrate](./docs/zh/doc_add_readthedocs.md) 👍
