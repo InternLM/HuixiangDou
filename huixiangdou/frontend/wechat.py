@@ -115,18 +115,19 @@ def is_revert_command(wx_msg: dict):
         content = content.encode('UTF-8', 'ignore').decode('UTF-8')
     messageType = wx_msg['messageType']
 
-    if '豆哥撤回' in content:
+    revert_cmd = 'xrevert'
+    if revert_cmd in content:
         return True
 
     if messageType == 5 or messageType == 9 or messageType == '80001':
-        if '撤回' in content:
+        if revert_cmd in content:
             return True
     elif messageType == 14 or messageType == '80014':
         # 对于引用消息，如果要求撤回
         if 'title' in data:
-            if '撤回' in data['title']:
+            if revert_cmd in data['title']:
                 return True
-        elif '撤回' in content:
+        elif revert_cmd in content:
             return True
     return False
 
