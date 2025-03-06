@@ -143,6 +143,9 @@ class Message:
         self.url = ''
         self.push_content = ''
         self.content = ''
+        self.title = ''
+        self.desc = ''
+        self.thumburl = ''
 
     def parse(self, wx_msg: dict, bot_wxid: str, auth:str='', wkteam_ip_port:str=''):
         # str or int
@@ -174,11 +177,10 @@ class Message:
 
             def search_key(xml_key: str):
                 elements = root.findall('.//{}'.format(xml_key))
-                content = ''
+                value = ''
                 if len(elements) > 0:
-                    content = elements[0].text
-                return content
-
+                    value = elements[0].text
+                return value
             to_user = search_key(xml_key='chatusr')
             if to_user != bot_wxid:
                 parse_type = 'ref_for_others'
@@ -202,21 +204,24 @@ class Message:
 
             self.url = search_key(xml_key='url')
             title = search_key(xml_key='title')
+            self.title = title
             desc = search_key(xml_key='des')
+            self.desc = desc
+            self.thumb_url = search_key(xml_key='thumburl')
+            
+            query = data['pushContent']
+            # try:
+            #     resp = requests.get(self.url)
+            #     doc = Document(resp.text)
+            #     soup = BS(doc.summary(), 'html.parser')
 
-            query = ''
-            try:
-                resp = requests.get(self.url)
-                doc = Document(resp.text)
-                soup = BS(doc.summary(), 'html.parser')
-
-                if len(soup.text) > 100:
-                    query = '{}\n{}\n{}'.format(title, desc, soup.text)
-                else:
-                    query = '{}\n{}\n{}'.format(title, desc, self.url)
-            except Exception as e:
-                logger.error(str(e))
-            logger.debug('公众号解析：{}'.format(query)[0:256])
+            #     if len(soup.text) > 100:
+            #         query = '{}\n{}\n{}'.format(title, desc, soup.text)
+            #     else:
+            #         query = '{}\n{}\n{}'.format(title, desc, self.url)
+            # except Exception as e:
+            #     logger.error(str(e))
+            # logger.debug('公众号解析：{}'.format(query)[0:256])
 
         elif msg_type in ['80002', '60002']:
             # image
@@ -268,7 +273,7 @@ class Message:
 
         self.group_id = data['fromGroup']
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
-        self.push_content = data['pushContent']
+        self.push_content = data['pushContent'] if 'pushContent' in data else ''
         self.content = data['content']
         return None
 
@@ -413,6 +418,11 @@ class WkteamManager:
             return json_obj, Exception(json_str)
 
         return json_obj, None
+
+    def revert_all(self):
+        # 撤回所有群所有消息
+        for groupId in self.group_whitelist:
+            self.revert(groupId=groupId)
 
     def revert(self, groupId: str):
         """Revert all msgs in this group."""
@@ -635,6 +645,29 @@ class WkteamManager:
 
         return None
 
+    def send_url(self, groupId: str, description: str, title: str, thumb_url: str, url: str):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': self.auth
+        }
+        data = {'wId': self.wId, 'wcId': groupId, 'description': description, 'title':title, 'thumbUrl':thumb_url, 'url':url}
+
+        json_obj, err = self.post(url='http://{}/sendUrl'.format(
+            self.WKTEAM_IP_PORT),
+                                  data=data,
+                                  headers=headers)
+        if err is not None:
+            return err
+
+        sent = json_obj['data']
+        sent['wId'] = self.wId
+        if groupId not in self.sent_msg:
+            self.sent_msg[groupId] = [sent]
+        else:
+            self.sent_msg[groupId].append(sent)
+
+        return None
+
     def bind(self, logdir: str, port: int, forward:bool=False):
         if not os.path.exists(logdir):
             os.makedirs(logdir)
@@ -669,12 +702,17 @@ class WkteamManager:
 
                 if msg.type == 'text':
                     username = msg.push_content.split(':')[0].strip()
-                    formatted_reply = '来自 {} \n---\n {}:{}'.format(from_group_name, username, msg.content)
+                    formatted_reply = '{}：{}'.format(username, msg.content)
                     self.send_message(groupId=groupId, text=formatted_reply)
                 elif msg.type == 'image':
                     self.send_image(groupId=groupId, image_url=msg.url)
-
-                await asyncio.sleep(0.2)
+                elif msg.type == 'ref_for_others':
+                    formatted_reply = '[ref]{}'.format(msg.query)
+                    self.send_message(groupId=groupId, text=formatted_reply)
+                elif msg.type == 'link':
+                    thumbnail = msg.thumb_url if msg.thumb_url else 'https://deploee.oss-cn-shanghai.aliyuncs.com/icon.jpg'
+                    self.send_url(groupId=groupId, description=msg.desc, title=msg.title, thumb_url=thumbnail, url=msg.url)
+                await asyncio.sleep(random.uniform(0.2, 2.0))
 
         async def msg_callback(request):
             """Save wechat message to redis, for revert command, use high
@@ -695,9 +733,10 @@ class WkteamManager:
             try:
                 json_str = json.dumps(input_json)
                 if is_revert_command(input_json):
-                    revert_que.put(json_str)
-                else:
-                    msg_que.put(json_str)
+                    self.revert_all()
+                    return web.json_response(text='done')
+
+                msg_que.put(json_str)
 
                 if forward and not is_revert_command(input_json):
                     await forward_msg(input_json)
