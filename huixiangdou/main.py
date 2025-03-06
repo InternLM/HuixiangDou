@@ -4,19 +4,18 @@
 import argparse
 import os
 import time
-from multiprocessing import Process, Value
 
 import pytoml
 import requests
 from aiohttp import web
 from loguru import logger
+from termcolor import colored
 
-from .service import ErrorCode, Worker, llm_serve, start_llm_server
-
+from .service import ErrorCode, SerialPipeline, build_reply_text, start_llm_server
 
 def parse_args():
     """Parse args."""
-    parser = argparse.ArgumentParser(description='Worker.')
+    parser = argparse.ArgumentParser(description='SerialPipeline.')
     parser.add_argument('--work_dir',
                         type=str,
                         default='workdir',
@@ -25,7 +24,7 @@ def parse_args():
         '--config_path',
         default='config.ini',
         type=str,
-        help='Worker configuration path. Default value is config.ini')
+        help='SerialPipeline configuration path. Default value is config.ini')
     parser.add_argument('--standalone',
                         action='store_true',
                         default=False,
@@ -59,35 +58,48 @@ def check_env(args):
         os.makedirs(args.work_dir)
 
 
-def build_reply_text(reply: str, references: list):
-    if len(references) < 1:
-        return reply
-
-    ret = reply
-    for ref in references:
-        ret += '\n'
-        ret += ref
-    return ret
-
-
 def show(assistant, fe_config: dict):
     queries = ['请问如何安装 mmpose ?', '请问明天天气如何？']
+    print(colored('Running some examples..', 'yellow'))
     for query in queries:
-        code, reply, references = assistant.generate(query=query,
-                                                     history=[],
-                                                     groupname='')
-        logger.warning(f'{code}, {query}, {reply}, {references}')
-        reply_text = build_reply_text(reply=reply, references=references)
-        logger.info(reply_text)
+        print(colored('[Example]' + query, 'yellow'))
 
-        if fe_config['type'] == 'lark' and code == ErrorCode.SUCCESS:
+    for query in queries:
+        for sess in assistant.generate(query=query, history=[], groupname=''):
+            pass
+
+        code, reply, refs = str(sess.code), sess.response, sess.references
+        reply_text = build_reply_text(code=code,
+                                      query=query,
+                                      reply=reply,
+                                      refs=refs)
+        logger.info('\n' + reply_text)
+
+        if fe_config['type'] == 'lark':
             # send message to lark group
-            logger.error('!!!`lark_send_only` feature will be removed on October 10, 2024. If this function still helpful for you, please let me know: https://github.com/InternLM/HuixiangDou/issues')
+            logger.error(
+                '!!!`lark_send_only` feature will be removed on October 10, 2024. If this function still helpful for you, please let me know: https://github.com/InternLM/HuixiangDou/issues'
+            )
             from .frontend import Lark
             lark = Lark(webhook=fe_config['webhook_url'])
-            logger.info(f'send {reply} and {references} to lark group.')
+            logger.info(f'send {reply} and {refs} to lark group.')
             lark.send_text(msg=reply_text)
 
+    while True:
+        user_input = input("🔆 Input your question here, type `bye` for exit:\n")
+        if 'bye' in user_input:
+            break
+
+        for sess in assistant.generate(query=user_input, history=[], groupname=''):
+            pass
+        code, reply, refs = str(sess.code), sess.response, sess.references
+
+        reply_text = build_reply_text(code=code,
+                                      query=user_input,
+                                      reply=reply,
+                                      refs=refs,
+                                      max_len=300)
+        print('\n' + reply_text)
 
 def lark_group_recv_and_send(assistant, fe_config: dict):
     from .frontend import (is_revert_command, revert_from_lark_group,
@@ -123,12 +135,12 @@ def lark_group_recv_and_send(assistant, fe_config: dict):
             sent_msg_ids = []
             continue
 
-        code, reply, references = assistant.generate(query=query,
-                                                     history=[],
-                                                     groupname='')
+        for sess in assistant.generate(query=query, history=[], groupname=''):
+            pass
+        code, reply, refs = str(sess.code), sess.response, sess.references
         if code == ErrorCode.SUCCESS:
             json_obj['reply'] = build_reply_text(reply=reply,
-                                                 references=references)
+                                                 references=refs)
             error, msg_id = send_to_lark_group(
                 json_obj=json_obj,
                 app_id=lark_group_config['app_id'],
@@ -152,10 +164,10 @@ def wechat_personal_run(assistant, fe_config: dict):
         if type(query) is dict:
             query = query['content']
 
-        code, reply, references = assistant.generate(query=query,
-                                                     history=[],
-                                                     groupname='')
-        reply_text = build_reply_text(reply=reply, references=references)
+        for sess in assistant.generate(query=query, history=[], groupname=''):
+            pass
+        code, reply, refs = str(sess.code), sess.response, sess.references
+        reply_text = build_reply_text(reply=reply, references=refs)
 
         return web.json_response({'code': int(code), 'reply': reply_text})
 
@@ -177,7 +189,7 @@ def run():
     with open(args.config_path, encoding='utf8') as f:
         fe_config = pytoml.load(f)['frontend']
     logger.info('Config loaded.')
-    assistant = Worker(work_dir=args.work_dir, config_path=args.config_path)
+    assistant = SerialPipeline(work_dir=args.work_dir, config_path=args.config_path)
 
     fe_type = fe_config['type']
     if fe_type == 'none':
@@ -186,13 +198,14 @@ def run():
         lark_group_recv_and_send(assistant, fe_config)
     elif fe_type == 'wechat_personal':
         wechat_personal_run(assistant, fe_config)
+    elif fe_type == 'wechat_wkteam':
+        from .frontend import WkteamManager
+        manager = WkteamManager(args.config_path)
+        manager.loop(assistant)
     else:
         logger.info(
             f'unsupported fe_config.type {fe_type}, please read `config.ini` description.'  # noqa E501
         )
-
-    # server_process.join()
-
 
 if __name__ == '__main__':
     run()
