@@ -263,10 +263,6 @@ class Message:
             query = query.replace('@茴香豆', '')
         self.query = query.strip()
 
-        if '————————' in query:
-            self.status = 'skip'
-            return Exception("Repo owner's message, skip")
-
         if 'fromUser' not in data:
             self.status = 'skip'
             return Exception('msg no sender id, skip')
