@@ -6,7 +6,7 @@
 - 引用类消息
 - 图片
 - 链接
-- 命令机器人撤回
+- 命令机器人撤回（在群里发送 “xrevert” 即可）
 
 <img src="https://github.com/user-attachments/assets/9d8fd881-9477-47ec-b1b9-dd2d6935882f" width="600">
 
