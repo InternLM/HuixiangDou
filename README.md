@@ -435,4 +435,14 @@ Contributors have provided [Android tools](./android) to interact with WeChat. T
       primaryClass={cs.CL},
       url={https://arxiv.org/abs/2405.02817}, 
 }
+
+@misc{kong2025huixiangdou2robustlyoptimizedgraphrag,
+      title={HuixiangDou2: A Robustly Optimized GraphRAG Approach}, 
+      author={Huanjun Kong and Zhefan Wang and Chenyang Wang and Zhe Ma and Nanqing Dong},
+      year={2025},
+      eprint={2503.06474},
+      archivePrefix={arXiv},
+      primaryClass={cs.IR},
+      url={https://arxiv.org/abs/2503.06474}, 
+}
 ```
