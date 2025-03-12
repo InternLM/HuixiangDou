@@ -174,6 +174,7 @@ class Message:
                 self.status = 'skip'
                 return Exception('atlist not contains bot')
 
+        content = data['content'] if 'content' in data else ''
         if msg_type in ['80014', '60014']:
             # ref message
             # 群、私聊引用消息
@@ -187,7 +188,12 @@ class Message:
                 if len(elements) > 0:
                     value = elements[0].text
                 return value
+            
+            displayname = search_key(xml_key='displayname')
+            displaycontent = search_key(xml_key='content')
+            content = '{}:{}'.format(displayname, displaycontent)
             to_user = search_key(xml_key='chatusr')
+            
             if to_user != bot_wxid:
                 parse_type = 'ref_for_others'
                 self.status = 'skip'
@@ -276,7 +282,7 @@ class Message:
         self.group_id = data['fromGroup']
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
         self.push_content = data['pushContent'] if 'pushContent' in data else ''
-        self.content = data['content']
+        self.content = content
         return None
 
 
@@ -754,8 +760,8 @@ class WkteamManager:
                     self.send_message(groupId=groupId, text=formatted_reply)
                 elif msg.type == 'image':
                     self.send_image(groupId=groupId, image_url=msg.url)
-                elif msg.type == 'ref_for_others':
-                    formatted_reply = '[ref]{}'.format(msg.query)
+                elif msg.type == 'ref_for_others' or msg.type == 'ref_for_bot':
+                    formatted_reply = '{}\n---\n{}'.format(msg.content, msg.query)
                     self.send_message(groupId=groupId, text=formatted_reply)
                 elif msg.type == 'link':
                     thumbnail = msg.thumb_url if msg.thumb_url else 'https://deploee.oss-cn-shanghai.aliyuncs.com/icon.jpg'
