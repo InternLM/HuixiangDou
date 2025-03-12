@@ -149,6 +149,8 @@ class Message:
         self.title = ''
         self.desc = ''
         self.thumburl = ''
+        self.md5 = ''
+        self.length = 0
 
     def parse(self, wx_msg: dict, bot_wxid: str, auth:str='', wkteam_ip_port:str=''):
         # str or int
@@ -222,18 +224,11 @@ class Message:
             self.thumb_url = search_key(xml_key='thumburl')
             
             query = data['pushContent']
-            # try:
-            #     resp = requests.get(self.url)
-            #     doc = Document(resp.text)
-            #     soup = BS(doc.summary(), 'html.parser')
 
-            #     if len(soup.text) > 100:
-            #         query = '{}\n{}\n{}'.format(title, desc, soup.text)
-            #     else:
-            #         query = '{}\n{}\n{}'.format(title, desc, self.url)
-            # except Exception as e:
-            #     logger.error(str(e))
-            # logger.debug('公众号解析：{}'.format(query)[0:256])
+        elif msg_type in ['80006']:
+            parse_type = 'emoji'
+            self.md5 = data['md5']
+            self.length = data['length']
 
         elif msg_type in ['80002', '60002']:
             # image
@@ -676,6 +671,27 @@ class WkteamManager:
 
         return None
 
+    def send_emoji(self, groupId: str, md5: str, length: int):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': self.auth
+        }
+        data = {'wId': self.wId, 'wcId': groupId, 'imageMd5': md5, 'imgSize': length}
+
+        json_obj, err = self.post(url='http://{}/sendEmoji'.format(
+            self.WKTEAM_IP_PORT), data=data, headers=headers)
+        if err is not None:
+            return err
+
+        sent = json_obj['data']
+        sent['wId'] = self.wId
+        if groupId not in self.sent_msg:
+            self.sent_msg[groupId] = [sent]
+        else:
+            self.sent_msg[groupId].append(sent)
+
+        return None
+
     def send_message(self, groupId: str, text: str):
         headers = {
             'Content-Type': 'application/json',
@@ -754,12 +770,13 @@ class WkteamManager:
                 if groupId == msg.group_id:
                     continue
 
+                logger.info(str(msg.__dict__))
                 if msg.type == 'text':
                     username = msg.push_content.split(':')[0].strip()
                     formatted_reply = '{}：{}'.format(username, msg.content)
                     self.send_message(groupId=groupId, text=formatted_reply)
-                elif msg.type == 'image':
-                    self.send_image(groupId=groupId, image_url=msg.url)
+                elif msg.type == 'image' or msg.type == 'emoji':
+                    self.send_emoji(groupId=groupId, md5=msg.md5, length=msg.length)
                 elif msg.type == 'ref_for_others' or msg.type == 'ref_for_bot':
                     formatted_reply = '{}\n---\n{}'.format(msg.content, msg.query)
                     self.send_message(groupId=groupId, text=formatted_reply)
@@ -805,11 +822,11 @@ class WkteamManager:
         web.run_app(app, host='0.0.0.0', port=port)
 
     def serve(self, forward:bool=False):
-        # self.bind(self.wkteam_config.dir, self.wkteam_config.callback_port, forward=forward)
-        p = Process(target=self.bind, args=(self.wkteam_config.dir, self.wkteam_config.callback_port, forward))
-        p.start()
-        self.set_callback()
-        p.join()
+        self.bind(self.wkteam_config.dir, self.wkteam_config.callback_port, forward=forward)
+        # p = Process(target=self.bind, args=(self.wkteam_config.dir, self.wkteam_config.callback_port, forward))
+        # p.start()
+        # self.set_callback()
+        # p.join()
 
     def fetch_groupchats(self, user: User, max_length: int = 12):
         """Before obtaining user messages, there are a maximum of `max_length`
