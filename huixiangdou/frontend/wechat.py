@@ -149,6 +149,8 @@ class Message:
         self.title = ''
         self.desc = ''
         self.thumburl = ''
+        self.md5 = ''
+        self.length = 0
 
     def parse(self, wx_msg: dict, bot_wxid: str, auth:str='', wkteam_ip_port:str=''):
         # str or int
@@ -174,6 +176,7 @@ class Message:
                 self.status = 'skip'
                 return Exception('atlist not contains bot')
 
+        content = data['content'] if 'content' in data else ''
         if msg_type in ['80014', '60014']:
             # ref message
             # 群、私聊引用消息
@@ -187,7 +190,12 @@ class Message:
                 if len(elements) > 0:
                     value = elements[0].text
                 return value
+            
+            displayname = search_key(xml_key='displayname')
+            displaycontent = search_key(xml_key='content')
+            content = '{}:{}'.format(displayname, displaycontent)
             to_user = search_key(xml_key='chatusr')
+            
             if to_user != bot_wxid:
                 parse_type = 'ref_for_others'
                 self.status = 'skip'
@@ -216,18 +224,11 @@ class Message:
             self.thumb_url = search_key(xml_key='thumburl')
             
             query = data['pushContent']
-            # try:
-            #     resp = requests.get(self.url)
-            #     doc = Document(resp.text)
-            #     soup = BS(doc.summary(), 'html.parser')
 
-            #     if len(soup.text) > 100:
-            #         query = '{}\n{}\n{}'.format(title, desc, soup.text)
-            #     else:
-            #         query = '{}\n{}\n{}'.format(title, desc, self.url)
-            # except Exception as e:
-            #     logger.error(str(e))
-            # logger.debug('公众号解析：{}'.format(query)[0:256])
+        elif msg_type in ['80006']:
+            parse_type = 'emoji'
+            self.md5 = data['md5']
+            self.length = data['length']
 
         elif msg_type in ['80002', '60002']:
             # image
@@ -276,7 +277,7 @@ class Message:
         self.group_id = data['fromGroup']
         self.global_user_id = '{}|{}'.format(self.group_id, data['fromUser'])
         self.push_content = data['pushContent'] if 'pushContent' in data else ''
-        self.content = data['content']
+        self.content = content
         return None
 
 
@@ -670,6 +671,27 @@ class WkteamManager:
 
         return None
 
+    def send_emoji(self, groupId: str, md5: str, length: int):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': self.auth
+        }
+        data = {'wId': self.wId, 'wcId': groupId, 'imageMd5': md5, 'imgSize': length}
+
+        json_obj, err = self.post(url='http://{}/sendEmoji'.format(
+            self.WKTEAM_IP_PORT), data=data, headers=headers)
+        if err is not None:
+            return err
+
+        sent = json_obj['data']
+        sent['wId'] = self.wId
+        if groupId not in self.sent_msg:
+            self.sent_msg[groupId] = [sent]
+        else:
+            self.sent_msg[groupId].append(sent)
+
+        return None
+
     def send_message(self, groupId: str, text: str):
         headers = {
             'Content-Type': 'application/json',
@@ -748,14 +770,15 @@ class WkteamManager:
                 if groupId == msg.group_id:
                     continue
 
+                logger.info(str(msg.__dict__))
                 if msg.type == 'text':
                     username = msg.push_content.split(':')[0].strip()
                     formatted_reply = '{}：{}'.format(username, msg.content)
                     self.send_message(groupId=groupId, text=formatted_reply)
-                elif msg.type == 'image':
-                    self.send_image(groupId=groupId, image_url=msg.url)
-                elif msg.type == 'ref_for_others':
-                    formatted_reply = '[ref]{}'.format(msg.query)
+                elif msg.type == 'image' or msg.type == 'emoji':
+                    self.send_emoji(groupId=groupId, md5=msg.md5, length=msg.length)
+                elif msg.type == 'ref_for_others' or msg.type == 'ref_for_bot':
+                    formatted_reply = '{}\n---\n{}'.format(msg.content, msg.query)
                     self.send_message(groupId=groupId, text=formatted_reply)
                 elif msg.type == 'link':
                     thumbnail = msg.thumb_url if msg.thumb_url else 'https://deploee.oss-cn-shanghai.aliyuncs.com/icon.jpg'
