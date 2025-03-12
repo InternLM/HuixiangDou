@@ -822,11 +822,11 @@ class WkteamManager:
         web.run_app(app, host='0.0.0.0', port=port)
 
     def serve(self, forward:bool=False):
-        self.bind(self.wkteam_config.dir, self.wkteam_config.callback_port, forward=forward)
-        # p = Process(target=self.bind, args=(self.wkteam_config.dir, self.wkteam_config.callback_port, forward))
-        # p.start()
-        # self.set_callback()
-        # p.join()
+        # self.bind(self.wkteam_config.dir, self.wkteam_config.callback_port, forward=forward)
+        p = Process(target=self.bind, args=(self.wkteam_config.dir, self.wkteam_config.callback_port, forward))
+        p.start()
+        self.set_callback()
+        p.join()
 
     def fetch_groupchats(self, user: User, max_length: int = 12):
         """Before obtaining user messages, there are a maximum of `max_length`
