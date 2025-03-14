@@ -4,6 +4,7 @@ beautifulsoup4
 duckduckgo_search
 einops
 faiss-cpu
+jieba
 loguru
 lxml_html_clean
 nest_asyncio
