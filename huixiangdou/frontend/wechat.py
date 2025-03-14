@@ -192,6 +192,8 @@ class Message:
                 return value
             
             displayname = search_key(xml_key='displayname')
+            if displayname == '茴香豆':
+                displayname = ''
             displaycontent = search_key(xml_key='content')
             content = '{}:{}'.format(displayname, displaycontent)
             to_user = search_key(xml_key='chatusr')
@@ -775,7 +777,9 @@ class WkteamManager:
                     username = msg.push_content.split(':')[0].strip()
                     formatted_reply = '{}：{}'.format(username, msg.content)
                     self.send_message(groupId=groupId, text=formatted_reply)
-                elif msg.type == 'image' or msg.type == 'emoji':
+                elif msg.type == 'image':
+                    self.send_image(groupId=groupId, image_url=msg.url)
+                elif msg.type == 'emoji':
                     self.send_emoji(groupId=groupId, md5=msg.md5, length=msg.length)
                 elif msg.type == 'ref_for_others' or msg.type == 'ref_for_bot':
                     formatted_reply = '{}\n---\n{}'.format(msg.content, msg.query)
