@@ -11,7 +11,7 @@ import pdb
 import pytoml
 from loguru import logger
 from openai import OpenAI
-from huixiangdou.primitive import RPM, TPM
+from ..primitive import RPM, TPM
 import asyncio
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware

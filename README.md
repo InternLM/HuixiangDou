@@ -228,14 +228,6 @@ python3 -m huixiangdou.main
 ..
 ```
 
-> \[!NOTE\]
->
-> <div align="center">
-> If restarting LLM every time is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>; then open a new window, and each time only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
-> </div>
-
-<br/>
-
 💡 Also run a simple Web UI with `gradio`:
 
 ```bash
@@ -387,21 +379,6 @@ Contributors have provided [Android tools](./android) to interact with WeChat. T
 2. Launch is normal, but out of memory during runtime?
 
    LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/en/quantization). Then use docker to independently deploy Hybrid LLM Service.
-
-3. How to access other local LLM / After access, the effect is not ideal?
-
-   - Open [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py), add a new LLM inference implementation.
-   - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [prompt.py](./huixiangdou/service/prompt.py).
-
-4. What if the response is too slow/request always fails?
-
-   - Refer to [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) to add exponential backoff and retransmission.
-   - Replace local LLM with an inference framework such as [lmdeploy](https://github.com/internlm/lmdeploy), instead of the native huggingface/transformers.
-
-5. What if the GPU memory is too low?
-
-   At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
-
 
 # 🍀 Acknowledgements
 

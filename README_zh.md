@@ -228,20 +228,12 @@ python3 -m huixiangdou.main
 ..
 ```
 
-> \[!NOTE\]
->
-> <div align="center">
-> 如果每次重启 LLM 太慢，先 <b>python3 -m huixiangdou.service.llm_server_hybrid</b>；然后开新窗口，每次只执行 <b>python3 -m huixiangdou.main</b> 不重启 LLM。
-> </div>
-
 <br/>
 
 💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
 
 ```bash
 python3 -m huixiangdou.gradio_ui
-# 若已单独运行 `llm_server_hybrid.py`，可以 
-# python3 -m huixiangdou.gradio_ui --no-standalone
 ```
 
 <video src="https://github.com/user-attachments/assets/9e5dbb30-1dc1-42ad-a7d4-dc7380676554" ></video>
@@ -392,24 +384,6 @@ python3 tests/test_query_gradio.py
 
    基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization)。然后使用 docker 独立部署 Hybrid LLM Service。
 
-4. 如何接入其他 local LLM / 接入后效果不理想怎么办？
-
-   - 打开 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py)，增加新的 LLM 推理实现
-   - 参照 [test_intention_prompt 和测试数据](./tests/test_intention_prompt.py)，针对新模型调整 prompt 和阈值，更新到 [prompt.py](./huixiangdou/service/prompt.py)
-
-5. 响应太慢/网络请求总是失败怎么办？
-
-   - 参考 [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) 增加指数退避重传
-   - local LLM 替换为 [lmdeploy](https://github.com/internlm/lmdeploy) 等推理框架，而非原生的 huggingface/transformers
-
-6. 机器配置低，GPU 显存不足怎么办？
-
-   此时无法运行 local LLM，只能用 remote LLM 配合 text2vec 执行 pipeline。请确保 `config.ini` 只使用 remote LLM，关闭 local LLM
-
-7. 报错 `(500, 'Internal Server Error')`，意为 standalone 模式启动的 LLM 服务没访问到。按如下方式定位
-
-   - 执行 `python3 -m huixiangdou.service.llm_server_hybrid` 确定 LLM 服务无报错，监听的端口和配置一致。检查结束后按 ctrl-c 关掉。
-   - 检查 `config.ini` 中各种 TOKEN 书写正确。
 
 # 🍀 致谢
 
