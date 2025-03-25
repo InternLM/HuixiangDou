@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """LLM server proxy."""
 import argparse
 import json
@@ -22,11 +22,13 @@ import uvicorn
 from typing import List, Tuple
 from threading import Thread
 
+@DeprecationWarning
 def os_run(cmd: str):
     ret = os.popen(cmd)
     ret = ret.read().rstrip().lstrip()
     return ret
 
+@DeprecationWarning
 def check_gpu_max_memory_gb():
     try:
         import torch
@@ -38,6 +40,7 @@ def check_gpu_max_memory_gb():
         logger.error(str(e))
     return -1
 
+@DeprecationWarning
 def build_messages(prompt, history, system: str = None):
     messages = []
     if system is not None and len(system) > 0:
@@ -48,7 +51,7 @@ def build_messages(prompt, history, system: str = None):
     messages.append({'role': 'user', 'content': prompt})
     return messages
 
-
+@DeprecationWarning
 class InferenceWrapper:
     """A class to wrapper kinds of inference framework."""
 
@@ -151,6 +154,7 @@ class InferenceWrapper:
         return content
 
 
+@DeprecationWarning
 class HybridLLMServer:
     """A class to handle server-side interactions with a hybrid language
     learning model (LLM) service.

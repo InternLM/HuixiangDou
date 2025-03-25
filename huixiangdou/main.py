@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """HuixiangDou binary."""
 import argparse
 import os

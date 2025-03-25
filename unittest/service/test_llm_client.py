@@ -1,6 +1,6 @@
 from huixiangdou.service.llm_client import ChatClient
 
-
+@DeprecationWarning
 def test_auto_fix():
     """test auto choose backend based on config."""
     remote_only_config = 'config-2G.ini'

@@ -1,5 +1,9 @@
 # SFT data scripts and training configs
 
+This document is outdated. we will open-source SFT related repo on 20250415.
+
+---
+
 > \[!NOTE\]
 >
 > <div align="center">

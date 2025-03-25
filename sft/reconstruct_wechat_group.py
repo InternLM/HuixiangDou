@@ -10,6 +10,7 @@ import requests
 from loguru import logger
 
 
+@DeprecationWarning
 class ChatClient:
     """A class to handle client-side interactions with a chat service.
 

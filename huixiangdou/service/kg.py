@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 import argparse
 import json
 import os
@@ -19,9 +19,7 @@ from tqdm import tqdm
 
 from ..primitive import FileOperation
 from .helper import build_reply_text, extract_json_from_str
-from .llm_client import ChatClient
-from .llm_server_hybrid import start_llm_server
-
+from .llm import LLM
 
 def simple_uuid():
     return str(uuid4())[0:6]
@@ -67,7 +65,7 @@ class KnowledgeGraph:
                  override: bool = False,
                  retry: int = 1):
 
-        self.llm = ChatClient(config_path=config_path)
+        self.llm = LLM(config_path=config_path)
         self.retry = retry
         self.nodes = []
         self.relations = []
@@ -150,14 +148,14 @@ class KnowledgeGraph:
                     f.write('\n')
             self.relations = []
 
-    def build_md_chunk(self, md_node: Node, abspath: str):
+    async def build_md_chunk(self, md_node: Node, abspath: str):
         """Parse markdown chunk to nodes and relations.
 
         LLM NER with retry policy.
         """
         items = []
         for _ in range(self.retry):
-            llm_raw_text = self.llm.generate_response(
+            llm_raw_text = await self.llm.chat(
                 prompt=self.prompt_template + md_node.data)
             items += extract_json_from_str(raw=llm_raw_text)
 
@@ -376,11 +374,10 @@ class KnowledgeGraph:
 
         return ret
 
-    def retrieve(self, query: str):
+    async def retrieve(self, query: str):
         if self.graph is None:
             self.load()
-        llm_raw_text = self.llm.generate_response(prompt=self.prompt_template +
-                                                  query)
+        llm_raw_text = await self.llm.chat(prompt=self.prompt_template + query)
 
         items = extract_json_from_str(raw=llm_raw_text)
         if len(items) < 1:
@@ -429,13 +426,6 @@ def parse_args():
                         default='config.ini',
                         help='Configuration path. Default value is config.ini')
     parser.add_argument(
-        '--standalone',
-        action='store_true',
-        default=True,
-        help=
-        'Building knowledge graph needs LLM for NER. This option would auto start LLM service, default value is True'
-    )
-    parser.add_argument(
         '--override',
         action='store_true',
         default=False,
@@ -480,8 +470,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    if args.standalone:
-        start_llm_server(args.config_path)
     kg = KnowledgeGraph(args.config_path,
                         override=args.override,
                         retry=args.retry)

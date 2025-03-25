@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 # copy from https://github.com/tpoisonooo/cpp-syntactic-sugar/blob/master/github-lark-notifier/main.py  # noqa E501
 """Lark proxy."""
 import json

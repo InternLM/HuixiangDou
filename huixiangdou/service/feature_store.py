@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """extract feature and search with user query."""
 import argparse
 import json

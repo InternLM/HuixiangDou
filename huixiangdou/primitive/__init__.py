@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """primitive module."""
 from .chunk import Chunk  # noqa E401
 from .embedder import Embedder  # noqa E401
