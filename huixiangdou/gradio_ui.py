@@ -11,7 +11,7 @@ import pytoml
 from loguru import logger
 from typing import List
 from huixiangdou.primitive import Query
-from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline, llm_serve, start_llm_server
+from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline
 import json
 from datetime import datetime
 
@@ -35,10 +35,6 @@ def parse_args():
         default='config.ini',
         type=str,
         help='Pipeline configuration path. Default value is config.ini')
-    parser.add_argument('--standalone',
-                        action='store_true',
-                        default=True,
-                        help='Auto deploy required Hybrid LLM Service.')
     parser.add_argument('--no-standalone',
                         action='store_false',
                         dest='standalone', 
@@ -198,11 +194,6 @@ if __name__ == '__main__':
     if main_args.pipeline_count > 1:
         radio_options.append('chat_in_group')
     
-    # start service
-    if main_args.standalone is True:
-        # hybrid llm serve
-        start_llm_server(config_path=main_args.config_path)
-
     themes = {
         'soft': gr.themes.Soft(),
         'monochrome': gr.themes.Monochrome(),

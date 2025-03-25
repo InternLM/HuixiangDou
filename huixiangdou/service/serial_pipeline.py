@@ -292,10 +292,6 @@ class SerialPipeline:
         if self.config is None:
             raise Exception('worker config can not be None')
 
-    async def direct_chat(self, query: str):
-        """"Generate reply with LLM."""
-        return await self.llm.chat(prompt=query)
-
     def notify_badcase(self):
         """Receiving revert command means the current threshold is too low, use
         higher one."""

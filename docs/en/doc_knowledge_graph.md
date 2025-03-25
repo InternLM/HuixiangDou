@@ -61,7 +61,7 @@ python3 -m huixiangdou.service.feature_store
 Test it.
 
 ```bash
-python3 -m huixiangdou.main --standalone
+python3 -m huixiangdou.main
 ```
 
 For precision report, see [evaluation](../../evaluation/README.md).

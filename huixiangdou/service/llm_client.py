@@ -130,9 +130,6 @@ class ChatClient:
             return text
         except Exception as e:
             logger.error(str(e))
-            logger.error(
-                'Do you forget `--standalone` when `python3 -m huixiangdou.main` ?'  # noqa E501
-            )
             return ''
 
     async def chat_stream(self, prompt, history=[], backend='local'):

@@ -212,13 +212,10 @@ git clone https://github.com/open-mmlab/mmpose    --depth=1 repodir/mmpose
 
 # Save the features of repodir to workdir, and update the positive and negative example thresholds into `config.ini`
 mkdir workdir
+# build knowledge base
 python3 -m huixiangdou.service.feature_store
-```
-
-After running, test with `python3 -m huixiangdou.main --standalone`. At this time, reply to mmpose related questions (related to the knowledge base), while not responding to weather questions.
-
-```bash
-python3 -m huixiangdou.main --standalone
+# retrieval
+python3 -m huixiangdou.main
 
 +---------------------------+---------+----------------------------+-----------------+
 |         Query             |  State  |         Reply              |   References    |
@@ -295,7 +292,7 @@ python3 -m pip install -r requirements-cpu.txt
 # Establish knowledge base
 python3 -m huixiangdou.service.feature_store --config_path config-cpu.ini
 # Q&A test
-python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
+python3 -m huixiangdou.main --config_path config-cpu.ini
 # gradio UI
 python3 -m huixiangdou.gradio_ui --config_path config-cpu.ini
 ```
@@ -328,7 +325,7 @@ remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
 Execute the following to get the Q&A results
 
 ```shell
-python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all services at once
+python3 -m huixiangdou.main --config-path config-2G.ini # Start all services at once
 ```
 
 ## **10G Multimodal Edition**

@@ -1,6 +1,6 @@
 import argparse
 
-from .service import SerialPipeline, ParallelPipeline, start_llm_server
+from .service import SerialPipeline, ParallelPipeline
 from .primitive import Query
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
@@ -104,10 +104,6 @@ def parse_args():
         help='Configuration path. Default value is config.ini')
     parser.add_argument('--pipeline', type=str, choices=['chat_with_repo', 'chat_in_group'], default='chat_with_repo', 
                         help='Select pipeline type for difference scenario, default value is `chat_with_repo`')
-    parser.add_argument('--standalone',
-                        action='store_true',
-                        default=True,
-                        help='Auto deploy required Hybrid LLM Service.')
     parser.add_argument('--no-standalone',
                         action='store_false',
                         dest='standalone',  # 指定与上面参数相同的目标
@@ -117,10 +113,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    # start service
-    if args.standalone is True:
-        # hybrid llm serve
-        start_llm_server(config_path=args.config_path)
     # setup chat service
     if 'chat_with_repo' in args.pipeline:
         assistant = ParallelPipeline(work_dir=args.work_dir, config_path=args.config_path)

@@ -123,8 +123,7 @@ python3 bot.py  # 确保这两句没有崩溃
 [frontend]
 type = "wechat_personal"
 
-python3 -m huixiangdou.main --standalone # 非 docker 用户
-python3 -m huixiangdou.main # docker 用户
+python3 -m huixiangdou.main
 ..
 ======== Running on http://0.0.0.0:9527 ========
 (Press CTRL+C to quit)

@@ -127,7 +127,7 @@ verification_token = "def"
 如同 README 运行测试，执行 `main`
 
 ```shell
-python3 -m huixiangdou.main  --standalone
+python3 -m huixiangdou.main
 ..
 ======== Running on http://0.0.0.0:8888 ========
 (Press CTRL+C to quit)

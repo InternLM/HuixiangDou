@@ -210,13 +210,12 @@ git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
 
 # 把 repodir 的特征保存到 workdir，把正反例阈值更新进 `config.ini`
 mkdir workdir
+
+# 建立知识库
 python3 -m huixiangdou.service.feature_store
-```
 
-结束后执行 `python3 -m huixiangdou.main --standalone`，此时回复 mmpose 相关问题（和知识库相关），同时不响应天气问题。
-
-```bash
-python3 -m huixiangdou.main --standalone
+# 回复 mmpose 相关问题（和知识库相关），同时不响应天气问题。
+python3 -m huixiangdou.main
 
 +-----------------------+---------+--------------------------------+-----------------+
 |         Query         |  State  |         Reply                  |   References    |
@@ -294,7 +293,7 @@ python3 -m pip install -r requirements-cpu.txt
 # 建立知识库
 python3 -m huixiangdou.service.feature_store  --config_path config-cpu.ini
 # 问答测试
-python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
+python3 -m huixiangdou.main --config_path config-cpu.ini
 # gradio UI
 python3 -m huixiangdou.gradio_ui --config_path config-cpu.ini
 ```
@@ -326,7 +325,7 @@ remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
 执行命令获取问答结果
 
 ```shell
-python3 -m huixiangdou.main --standalone --config-path config-2G.ini # 一次启动所有服务
+python3 -m huixiangdou.main --config-path config-2G.ini # 一次启动所有服务
 ```
 
 ## **10G 多模态版**

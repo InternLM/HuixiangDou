@@ -1,4 +1,4 @@
-from huixiangdou.service import ParallelPipeline, start_llm_server
+from huixiangdou.service import ParallelPipeline
 from huixiangdou.primitive import Query
 import json
 import asyncio
