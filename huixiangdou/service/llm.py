@@ -24,7 +24,6 @@ backend2url = {
     'xi-api': 'https://api.xi-ai.cn/v1',
     'deepseek': 'https://api.deepseek.com/v1',
     'zhipuai': 'https://open.bigmodel.cn/api/paas/v4/',
-    'puyu': 'https://puyu.openxlab.org.cn/puyu/api/v1/',
     'siliconcloud': 'https://api.siliconflow.cn/v1',
     'local': 'http://localhost:8000/v1',
     'vllm': 'http://localhost:8000/v1'
@@ -35,7 +34,6 @@ backend2model = {
     "step": "auto",
     "deepseek": "deepseek-chat",
     "zhipuai": "glm-4",
-    "puyu": "internlm2-latest",
     "siliconcloud": "Qwen/Qwen2.5-14B-Instruct"
 }
 
@@ -65,15 +63,15 @@ def limit_async_func_call(max_size: int, waitting_time: float = 0.1):
 class Backend:
 
     def __init__(self, name: str, data: Dict):
-        self.api_key = data.get('api_key', '')
-        self.max_token_size = data.get('max_token_size', 32000) - 4096
+        self.api_key = data.get('remote_type', '')
+        self.max_token_size = data.get('remote_llm_max_text_length', 32000) - 4096
         if self.max_token_size < 0:
             raise Exception(f'{self.max_token_size} < 4096')
         self.rpm = RPM(int(data.get('rpm', 500)))
         self.tpm = TPM(int(data.get('tpm', 50000)))
         self.name = name
         self.port = int(data.get('port', 23333))
-        self.model = data.get('model', '')
+        self.model = data.get('remote_type', '')
         self.base_url = data.get('base_url', '')
         if not self.base_url and name in backend2url:
             self.base_url = backend2url[name]
@@ -96,10 +94,9 @@ class LLM:
         self.sum_output_token_size = 0
         with open(self.config_path, encoding='utf8') as f:
             config = pytoml.load(f)
-            self.llm_config = config['llm']
-
-            for key, value in self.llm_config.items():
-                self.backends[key] = Backend(name=key, data=value)
+            self.llm_config = config['llm']['server']
+            name = self.llm_config['remote_type']
+            self.backends[name] = Backend(name=name, data=self.llm_config)
 
     def choose_model(self, backend: Backend, token_size: int) -> str:
         if backend.model != None and len(backend.model) > 0:

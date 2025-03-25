@@ -42,8 +42,8 @@ HuixiangDou 是一个基于 LLM 的专业知识助手，优势：
 1. 设计预处理、拒答、响应三阶段 pipeline：
     * `chat_in_group` 群聊场景，解答问题时不会消息泛滥。见 [2401.08772](https://arxiv.org/abs/2401.08772)，[2405.02817](https://arxiv.org/abs/2405.02817)，[混合检索](./docs/zh/doc_knowledge_graph.md)和[业务数据精度测试](./evaluation)
     * `chat_with_repo` 实时聊天场景，响应更快
-2. 无需训练适用各行业，提供 CPU-only、2G、10G、20G、80G 规格配置
-3. 提供一整套前后端 web、android、算法源码，工业级开源可商用
+2. 无需训练适用各行业，提供 CPU-only、2G、10G 规格配置
+3. 提供一整套前后端 web、android、算法，工业级开源可商用
 
 查看[茴香豆已运行在哪些场景](./huixiangdou-inside.md)，当前公共服务状况：
 - [readthedocs ChatWithAI](https://huixiangdou.readthedocs.io/en/latest/) cpu-only 可用
@@ -60,6 +60,7 @@ Web 版视频教程见 [BiliBili](https://www.bilibili.com/video/BV1S2421N7mn) �
 
 Web 版给 android 的接口，也支持非 android 调用，见[python 样例代码](./tests/test_openxlab_android_api.py)。
 
+- \[2025/03\] 简化运行流程，移除 `--standalone`
 - \[2025/03\] [在多个微信群中转发消息](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [倒排索引](https://github.com/InternLM/HuixiangDou/pull/387)让 LLM 更偏向使用领域知识 🎯
 - \[2024/09\] 稀疏方法实现[代码检索](./huixiangdou/service/parallel_pipeline.py)
@@ -107,11 +108,9 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
     <tr valign="top">
       <td>
 
-- [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
-- [Qwen/Qwen2](https://github.com/QwenLM/Qwen2)
-- [浦语](https://internlm.openxlab.org.cn/)
-- [StepFun](https://platform.stepfun.com)
+- [vLLM](https://github.com/vllm-project/vllm)
 - [KIMI](https://kimi.moonshot.cn)
+- [StepFun](https://platform.stepfun.com)
 - [DeepSeek](https://www.deepseek.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
@@ -168,14 +167,12 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 |                     配置示例                     | 显存需求 |                                                                                 描述                                                                                 |                             Linux 系统已验证设备                              |
 | :----------------------------------------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
 |         [config-cpu.ini](./config-cpu.ini)         |   -    | 用 [siliconcloud](https://siliconflow.cn/) API <br/>仅检索文本 | ![](https://img.shields.io/badge/x86-passed-blue?style=for-the-badge) |
-|         [config-2G.ini](./config-2G.ini)         |   2GB    | 用 openai API（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [stepfun](https://platform.stepfun.com/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|       【标准版】[config.ini](./config.ini)         |   2GB    | 用 openai API（如 [kimi](https://kimi.moonshot.cn)、[deepseek](https://platform.deepseek.com/usage) 和 [stepfun](https://platform.stepfun.com/)）<br/>仅检索文本 | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |   10GB   |                                                                    用 openai API 做 LLM，图文检索                                                                    | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|       【标准版】[config.ini](./config.ini)       |   19GB   |                                                                         本地部署 LLM，单模态                                                                         | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|   [config-advanced.ini](./config-advanced.ini)   |   80GB   |                                                                本地 LLM，指代消歧，单模态，微信群实用                                                                | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 运行标准版
 
-我们以标准版（本地运行 LLM，纯文本检索）为例，介绍 HuixiangDou 功能。其他版本仅仅是配置选项不同。
+我们以标准版（本地运行 LLM，纯文本检索）为例，介绍 HuixiangDou 功能。其他版本仅仅是配置选项不同。我们推荐 Python3.10
 
 ## 一、下载模型，安装依赖
 
@@ -196,31 +193,45 @@ pip install -r requirements.txt
 # python3.8 安装 faiss-gpu 而不是 faiss
 ```
 
-## 二、创建知识库，执行测试
+## 二、创建知识库
 
 我们将用 mmpose 的文档构建 mmpose 知识库，过滤问题。如有自己的文档，放入 `repodir` 下即可。
 
 复制下面所有命令（包含 '#' 符号）建立知识库。
 
 ```shell
-# 下载知识库，我们仅以 mmpose 的文档为例。repodir下可以放任何自己的文档
+# 下载知识库，我们仅以《朝花夕拾》两篇文章为例。repodir下可以放任何自己的文档
 cd HuixiangDou
 mkdir repodir
-git clone https://github.com/open-mmlab/mmpose --depth=1 repodir/mmpose
+cp -rf resource/data* repodir/
 
 # 把 repodir 的特征保存到 workdir，把正反例阈值更新进 `config.ini`
 mkdir workdir
 
 # 建立知识库
 python3 -m huixiangdou.service.feature_store
+```
 
-# 回复 mmpose 相关问题（和知识库相关），同时不响应天气问题。
+
+## 三、配置 LLM，运行测试
+设置 `config.ini` 中的模型和 api-key（本地 LLM 推荐 `vllm`）
+
+配置好的 `config.ini` 片段如下：
+```
+[llm.server]
+remote_type = "kimi"
+remote_api_key = "YOUR-API-KEY-HERE"
+```
+
+然后运行测试
+```
+# 回复百草园相关问题（和知识库相关），同时不响应天气问题。
 python3 -m huixiangdou.main
 
 +-----------------------+---------+--------------------------------+-----------------+
 |         Query         |  State  |         Reply                  |   References    |
 +=======================+=========+================================+=================+
-| 请问如何安装 mmpose ?   | success | 要安装 mmpose，请按照以下步骤操作..| installation.md |
+| 百草园里有什么?        | success | 要安装 mmpose，请按照以下步骤操作..| installation.md |
 --------------------------------------------------------------------------------------
 | 今天天气如何？          | unrelated| ..                            |                 |
 +-----------------------+---------+--------------------------------+-----------------+
@@ -379,10 +390,6 @@ python3 tests/test_query_gradio.py
    重新执行 `feature_store` 来更新阈值和特征库。
 
    ⚠️ 如果你足够自信，也可以直接修改 config.ini 的 `reject_throttle` 数值，一般来说 0.5 是很高的值；0.2 过低。
-
-3. 启动正常，但运行期间显存 OOM 怎么办？
-
-   基于 transformers 结构的 LLM 长文本需要更多显存，此时需要对模型做 kv cache 量化，如 [lmdeploy 量化说明](https://github.com/InternLM/lmdeploy/blob/main/docs/zh_cn/quantization)。然后使用 docker 独立部署 Hybrid LLM Service。
 
 
 # 🍀 致谢

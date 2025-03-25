@@ -29,7 +29,7 @@ def parse_args():
     return args
 
 async def show(assistant, fe_config: dict):
-    queries = ['请问如何安装 mmpose ?', '请问明天天气如何？']
+    queries = ['百草园里有什么?', '请问明天天气如何？']
     print(colored('Running some examples..', 'yellow'))
     for query in queries:
         print(colored('[Example]' + query, 'yellow'))

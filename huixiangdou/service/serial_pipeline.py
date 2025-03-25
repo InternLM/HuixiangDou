@@ -402,7 +402,7 @@ class SerialPipeline:
                 break
 
         logger.debug(sess.debug)
-        return sess
+        yield sess
         # return sess.code, sess.response, sess.references
 
 def parse_args():

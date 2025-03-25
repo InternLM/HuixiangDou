@@ -423,7 +423,7 @@ def test_query(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
         logger.add('logs/feature_store_query.log', rotation='4MB')
     else:
-        real_questions = ['mmpose installation', 'how to use std::vector ?']
+        real_questions = ['百草园里有啥？', 'how to use std::vector ?']
 
     table = Texttable()
     table.set_cols_valign(['t', 't', 't', 't'])

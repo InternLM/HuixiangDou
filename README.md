@@ -44,7 +44,7 @@ Advantages:
 1. Design three-stage pipelines of preprocess, rejection and response
     * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/en/doc_knowledge_graph.md) and [Precision Report](./evaluation/)
     * `chat_with_repo` for **real-time streaming** chat
-2. No training required, with CPU-only, 2G, 10G, 20G and 80G configuration
+2. No training required, with CPU-only, 2G, 10G   configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and current public service status:
@@ -60,6 +60,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 The Web version's API for Android also supports other devices. See [Python sample code](./tests/test_openxlab_android_api.py).
 
+- \[2025/03\] Simplify deployment and removing `--standalone`
 - \[2025/03\] [Forwarding multiple wechat group message](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [Inverted indexer](https://github.com/InternLM/HuixiangDou/pull/387) makes LLM prefer knowledge base🎯
 - \[2024/09\] [Code retrieval](./huixiangdou/service/parallel_pipeline.py)
@@ -107,11 +108,9 @@ The Web version's API for Android also supports other devices. See [Python sampl
     <tr valign="top">
       <td>
 
-- [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
-- [Qwen1.5~2.5](https://github.com/QwenLM/Qwen2)
-- [puyu](https://internlm.openxlab.org.cn/)
-- [StepFun](https://platform.stepfun.com)
+- [vLLM](https://github.com/vllm-project/vllm)
 - [KIMI](https://kimi.moonshot.cn)
+- [StepFun](https://platform.stepfun.com)
 - [DeepSeek](https://www.deepseek.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
@@ -170,10 +169,8 @@ The following are the GPU memory requirements for different features, the differ
 |              Configuration Example               | GPU mem Requirements |                                                                                   Description                                                                                   |                       Verified on Linux                        |
 | :----------------------------------------------: | :------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
 |         [config-cpu.ini](./config-cpu.ini)         |   -    | Use [siliconcloud](https://siliconflow.cn/) API <br/> for text only | ![](https://img.shields.io/badge/x86-passed-blue?style=for-the-badge) |
-|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [stepfun](https://platform.stepfun.com/) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|   \[Standard Edition\][config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [stepfun](https://platform.stepfun.com/) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |         10GB         |                                                                Use openai API for LLM, image and text retrieval                                                                 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| \[Standard Edition\] [config.ini](./config.ini)  |         19GB         |                                                                    Local deployment of LLM, single modality                                                                     | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|   [config-advanced.ini](./config-advanced.ini)   |         80GB         |                                                   local LLM, anaphora resolution, single modality, practical for WeChat group                                                   | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Running the Standard Edition
 
