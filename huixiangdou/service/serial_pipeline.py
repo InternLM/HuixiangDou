@@ -94,11 +94,7 @@ class Text2vecNode(Node):
         self.llm = llm
         self.retriever = retriever
         llm_config = config['llm']
-        self.context_max_length = llm_config['server'][
-            'local_llm_max_text_length']
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server'][
-                'remote_llm_max_text_length']
+        self.context_max_length = llm_config['server']['remote_llm_max_text_length']
         if language == 'zh':
             self.TOPIC_TEMPLATE = TOPIC_TEMPLATE_CN
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
@@ -157,11 +153,7 @@ class WebSearchNode(Node):
         self.config_path = config_path
         self.enable = config['worker']['enable_web_search']
         llm_config = config['llm']
-        self.context_max_length = llm_config['server'][
-            'local_llm_max_text_length']
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server'][
-                'remote_llm_max_text_length']
+        self.context_max_length = llm_config['server']['remote_llm_max_text_length']
         if language == 'zh':
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
             self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_CN

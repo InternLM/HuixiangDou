@@ -63,7 +63,7 @@ def limit_async_func_call(max_size: int, waitting_time: float = 0.1):
 class Backend:
 
     def __init__(self, name: str, data: Dict):
-        self.api_key = data.get('remote_type', '')
+        self.api_key = data.get('remote_api_key', '')
         self.max_token_size = data.get('remote_llm_max_text_length', 32000) - 4096
         if self.max_token_size < 0:
             raise Exception(f'{self.max_token_size} < 4096')
@@ -71,7 +71,7 @@ class Backend:
         self.tpm = TPM(int(data.get('tpm', 50000)))
         self.name = name
         self.port = int(data.get('port', 23333))
-        self.model = data.get('remote_type', '')
+        self.model = data.get('remote_llm_model', '')
         self.base_url = data.get('base_url', '')
         if not self.base_url and name in backend2url:
             self.base_url = backend2url[name]
@@ -99,11 +99,8 @@ class LLM:
             self.backends[name] = Backend(name=name, data=self.llm_config)
 
     def choose_model(self, backend: Backend, token_size: int) -> str:
-        if backend.model != None and len(backend.model) > 0:
-            return backend.model
-
-        model = ''
-        if backend.name == 'kimi':
+        model = backend.model
+        if backend.name == 'kimi' and model == 'auto':
             if token_size <= 8192 - 1024:
                 model = 'moonshot-v1-8k'
             elif token_size <= 32768 - 1024:
@@ -112,7 +109,7 @@ class LLM:
                 model = 'moonshot-v1-128k'
             else:
                 raise ValueError('Input token length exceeds 128k')
-        elif backend.name == 'step':
+        elif backend.name == 'step' and model == 'auto':
             if token_size <= 8192 - 1024:
                 model = 'step-1-8k'
             elif token_size <= 32768 - 1024:
@@ -123,7 +120,7 @@ class LLM:
                 model = 'step-1-256k'
             else:
                 raise ValueError('Input token length exceeds 256k')
-        else:
+        elif not model and backend.name in backend2model:
             model = backend2model[backend.name]
         return model
 
@@ -149,7 +146,7 @@ class LLM:
         instance = self.backends[backend]
 
         # try truncate input prompt
-        input_tokens = encode_string(content=prompt)
+        input_tokens = encode_string(content=str(prompt)+str(history))
         input_token_size = len(input_tokens)
         if input_token_size > instance.max_token_size:
             if not allow_truncate:
@@ -177,7 +174,6 @@ class LLM:
         openai_async_client = AsyncOpenAI(base_url=instance.base_url,
                                           api_key=instance.api_key,
                                           timeout=timeout)
-        # response = await openai_async_client.chat.completions.create(model=model, messages=messages, max_tokens=8192, temperature=0.7, top_p=0.7, extra_body={'repetition_penalty': 1.05})
 
         kwargs = {
             "model": model,
@@ -195,7 +191,6 @@ class LLM:
 
         content = response.choices[0].message.content
         content_token_size = len(encode_string(content=content))
-
 
         self.sum_input_token_size += input_token_size
         self.sum_output_token_size += content_token_size
@@ -225,7 +220,7 @@ class LLM:
         instance = self.backends[backend]
 
         # try truncate input prompt
-        input_tokens = encode_string(content=prompt)
+        input_tokens = encode_string(content=str(prompt)+str(history))
         input_token_size = len(input_tokens)
         if input_token_size > instance.max_token_size:
             if not allow_truncate:
@@ -254,7 +249,6 @@ class LLM:
                                               api_key=instance.api_key,
                                               timeout=timeout)
 
-            print(messages)
             stream = await openai_async_client.chat.completions.create(
                 model=model,
                 messages=messages,

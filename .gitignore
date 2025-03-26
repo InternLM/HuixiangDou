@@ -34,3 +34,4 @@ evaluation/rejection/gt_bad.txt
 evaluation/rejection/gt_good.txt
 bm25.pkl
 repodir/
+logs/work.txt

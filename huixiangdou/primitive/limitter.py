@@ -14,7 +14,7 @@ class RPM:
         total_minutes_since_midnight = dt_object.hour * 60 + dt_object.minute
         return total_minutes_since_midnight
 
-    def wait(self, silent=False):
+    async def wait(self, silent=False):
         current = time.time()
         dt_object = datetime.fromtimestamp(current)
         minute_slot = self.get_minute_slot()
@@ -49,7 +49,7 @@ class TPM:
         total_minutes_since_midnight = dt_object.hour * 60 + dt_object.minute
         return total_minutes_since_midnight
 
-    def wait(self, token_count, silent=False):
+    async def wait(self, token_count, silent=False):
         current = time.time()
         dt_object = datetime.fromtimestamp(current)
         minute_slot = self.get_minute_slot()

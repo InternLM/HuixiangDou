@@ -212,18 +212,30 @@ mkdir workdir
 python3 -m huixiangdou.service.feature_store
 ```
 
-
 ## 三、配置 LLM，运行测试
-设置 `config.ini` 中的模型和 api-key（本地 LLM 推荐 `vllm`）
+设置 `config.ini` 中的模型和 api-key。如果本地运行 LLM，我们推荐使用 `vllm`
+```text
+vllm serve /path/to/Qwen-2.5-7B-Instruct --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
+```
 
-配置好的 `config.ini` 片段如下：
+配置好的 `config.ini` 样例如下：
 ```
 [llm.server]
 remote_type = "kimi"
-remote_api_key = "YOUR-API-KEY-HERE"
+remote_api_key = "sk-dp3GriuhhLXnYo0KUuWbFUWWKOXXXXXXXXXX"
+
+# remote_type = "step"
+# remote_api_key = "5CpPyYNPhQMkIzs5SYfcdbTHXq3a72H5XXXXXXXXXXXXX"
+
+# remote_type = "deepseek"
+# remote_api_key = "sk-86db9a205aa9422XXXXXXXXXXXXXX"
+
+# remote_type = "vllm"
+# remote_api_key = "EMPTY"
+# remote_llm_model = "Qwen2.5-7B-Instruct"
 ```
 
-然后运行测试
+然后运行测试：
 ```
 # 回复百草园相关问题（和知识库相关），同时不响应天气问题。
 python3 -m huixiangdou.main
@@ -231,15 +243,13 @@ python3 -m huixiangdou.main
 +-----------------------+---------+--------------------------------+-----------------+
 |         Query         |  State  |         Reply                  |   References    |
 +=======================+=========+================================+=================+
-| 百草园里有什么?        | success | 要安装 mmpose，请按照以下步骤操作..| installation.md |
+| 百草园里有什么?        | success |  百草园里有着丰富的自然景观和生.. | installation.md |
 --------------------------------------------------------------------------------------
-| 今天天气如何？          | unrelated| ..                            |                 |
+| 今天天气如何？         | Init state| ..                           |                 |
 +-----------------------+---------+--------------------------------+-----------------+
 🔆 Input your question here, type `bye` for exit:
 ..
 ```
-
-<br/>
 
 💡 也可以启动 `gradio` 搭建一个简易的 Web UI，默认绑定 7860 端口：
 
@@ -261,14 +271,14 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
-## 三、集成到飞书、微信群
+## 四、集成到飞书、微信群
 
 - [**单向**发送到飞书群](./docs/zh/doc_send_only_lark_group.md)
 - [**双向**飞书群收发、撤回](./docs/zh/doc_add_lark_group.md)
 - [个微 android 接入](./docs/zh/doc_add_wechat_accessibility.md)
 - [个微 wkteam 接入](./docs/zh/doc_add_wechat_commercial.md)
 
-## 四、WEB 前后端部署，零编程集成飞书微信
+## 五、WEB 前后端部署，零编程集成飞书微信
 
 我们提供了完整的 typescript 前端和 python 后端服务源码：
 
@@ -303,34 +313,6 @@ python3 -m huixiangdou.gradio_ui --config_path config-cpu.ini
 
 如果装依赖太慢，[dockerhub 里](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags)提供了安装好依赖的镜像，docker 启动时替换即可。
 
-## **2G 实惠版**
-
-如果你的显存超过 1.8G，或追求性价比。此配置扔掉了本地 LLM，使用 remote LLM 代替，其他和标准版相同。
-
-以 siliconcloud 为例，把[官网申请](https://siliconflow.cn/zh-cn/siliconcloud) 的 API TOKEN 填入 `config-2G.ini`
-
-```toml
-[llm]
-enable_local = 0   # 关掉本地 LLM
-enable_remote = 1  # 只用远程
-..
-remote_type = "siliconcloud"   # 选择 siliconcloud
-remote_api_key = "YOUR-API-KEY-HERE" # 填 API key
-remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
-```
-
-> \[!NOTE\]
->
-> <div align="center">
-> 每次问答最坏情况要调用 7 次 LLM，受免费用户 RPM 限制，可修改 config.ini 中 <b>rpm</b> 参数
-> </div>
-
-执行命令获取问答结果
-
-```shell
-python3 -m huixiangdou.main --config-path config-2G.ini # 一次启动所有服务
-```
-
 ## **10G 多模态版**
 
 如果你有 10G 显存，那么可以进一步支持图文检索。仅需修改 config.ini 使用的模型。
@@ -354,15 +336,7 @@ reranker_model_path = "BAAI/bge-reranker-v2-minicpm-layerwise"
 python3 tests/test_query_gradio.py
 ```
 
-## **80G 完整版**
-
-微信体验群里的 “茴香豆” 开启了全部功能：
-
-- Serper 搜索及 SourceGraph 搜索增强
-- 群聊图片、微信公众号解析
-- 文本指代消歧
-- 混合 LLM
-- 知识库为 openmmlab 相关的 12 个 repo（1700 个文档），拒绝闲聊
+## **更多**
 
 请阅读以下话题：
 

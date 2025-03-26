@@ -12,6 +12,7 @@ from loguru import logger
 from termcolor import colored
 
 from .service import ErrorCode, SerialPipeline, build_reply_text
+from .primitive import always_get_an_event_loop
 
 def parse_args():
     """Parse args."""
@@ -158,11 +159,11 @@ async def run(args):
 
     fe_type = fe_config['type']
     if fe_type == 'none':
-        show(assistant, fe_config)
+        await show(assistant, fe_config)
     elif fe_type == 'lark_group':
-        lark_group_recv_and_send(assistant, fe_config)
+        await lark_group_recv_and_send(assistant, fe_config)
     elif fe_type == 'wechat_personal':
-        wechat_personal_run(assistant, fe_config)
+        await wechat_personal_run(assistant, fe_config)
     elif fe_type == 'wechat_wkteam':
         from .frontend import WkteamManager
         manager = WkteamManager(args.config_path)
@@ -174,4 +175,5 @@ async def run(args):
 
 if __name__ == '__main__':
     args = parse_args()
-    run()
+    loop = always_get_an_event_loop()
+    loop.run_until_complete(run(args=args))

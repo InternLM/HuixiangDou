@@ -52,7 +52,7 @@ enable_web_search=False
 enable_code_search=True
 pipeline='chat_with_repo'
 main_args = None
-paralle_assistant = None
+parallel_assistant = None
 serial_assistant = None
 
 def on_language_changed(value:str):
@@ -102,7 +102,7 @@ async def predict(text:str, image:str):
     global pipeline
     global main_args
     global serial_assistant
-    global paralle_assistant
+    global parallel_assistant
 
     with open('query.txt', 'a') as f:
         f.write(json.dumps({'data': text, 'date': ymd()}, ensure_ascii=False))
@@ -121,9 +121,8 @@ async def predict(text:str, image:str):
             serial_assistant = SerialPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history': [], 'groupname':''}
         pipeline = {'status': {}}
-        debug = dict()
         stream_chat_content = ''
-        for sess in serial_assistant.generate(**args):
+        async for sess in serial_assistant.generate(**args):
             if len(sess.delta) > 0:
                 # start chat, display
                 stream_chat_content += sess.delta
@@ -141,14 +140,14 @@ async def predict(text:str, image:str):
                 yield json_str
 
     else:
-        if paralle_assistant is None:
-            paralle_assistant = ParallelPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
+        if parallel_assistant is None:
+            parallel_assistant = ParallelPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history':[], 'language':language}
         args['enable_web_search'] = enable_web_search
         args['enable_code_search'] = enable_code_search
 
         sentence = ''
-        async for sess in paralle_assistant.generate(**args):
+        async for sess in parallel_assistant.generate(**args):
             if sentence == '' and len(sess.references) > 0:
                 sentence = format_refs(sess.references)
 
