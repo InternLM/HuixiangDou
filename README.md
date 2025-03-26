@@ -280,7 +280,7 @@ Please update the `repodir` documents, [good_questions](./resource/good_question
 
 - [**One-way** sending to Feishu group](./docs/zh/doc_send_only_lark_group.md)
 - [**Two-way** Feishu group receiving and sending, recalling](./docs/zh/doc_add_lark_group.md)
-- [Personal WeChat Android access](./docs/zh/doc_add_wechat_accessibility.md)
+- [Personal WeChat Android access](./docs/zh/doc_add_wechat_accessibility.md) and [Android tool](./android)
 - [Personal WeChat wkteam access](./docs/zh/doc_add_wechat_commercial.md)
 
 ## V. Deploy web front and backend
@@ -350,10 +350,6 @@ Please read the following topics:
 - [Group chat scenario anaphora resolution training](./sft)
 - [Use wkteam WeChat access, integrate images, public account parsing, and anaphora resolution](./docs/zh/doc_add_wechat_commercial.md)
 - [Use rag.py to annotate SFT training data](./docs/zh/doc_rag_annotate_sft_data.md)
-
-## **Android Tools**
-
-Contributors have provided [Android tools](./android) to interact with WeChat. The solution is based on system-level APIs, and in principle, it can control any UI (not limited to communication software).
 
 # 🛠️ FAQ
 
