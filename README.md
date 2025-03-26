@@ -44,7 +44,7 @@ Advantages:
 1. Design three-stage pipelines of preprocess, rejection and response
     * `chat_in_group` copes with **group chat** scenario, answer user questions without message flooding, see [2401.08772](https://arxiv.org/abs/2401.08772), [2405.02817](https://arxiv.org/abs/2405.02817), [Hybrid Retrieval](./docs/en/doc_knowledge_graph.md) and [Precision Report](./evaluation/)
     * `chat_with_repo` for **real-time streaming** chat
-2. No training required, with CPU-only, 2G, 10G, 20G and 80G configuration
+2. No training required, with CPU-only, 2G, 10G   configuration
 3. Offers a complete suite of Web, Android, and pipeline source code, industrial-grade and commercially viable
 
 Check out the [scenes in which HuixiangDou are running](./huixiangdou-inside.md) and current public service status:
@@ -60,6 +60,7 @@ Our Web version has been released to [OpenXLab](https://openxlab.org.cn/apps/det
 
 The Web version's API for Android also supports other devices. See [Python sample code](./tests/test_openxlab_android_api.py).
 
+- \[2025/03\] Simplify deployment and removing `--standalone`
 - \[2025/03\] [Forwarding multiple wechat group message](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [Inverted indexer](https://github.com/InternLM/HuixiangDou/pull/387) makes LLM prefer knowledge base🎯
 - \[2024/09\] [Code retrieval](./huixiangdou/service/parallel_pipeline.py)
@@ -107,11 +108,9 @@ The Web version's API for Android also supports other devices. See [Python sampl
     <tr valign="top">
       <td>
 
-- [InternLM2/InternLM2.5](https://github.com/InternLM/InternLM)
-- [Qwen1.5~2.5](https://github.com/QwenLM/Qwen2)
-- [puyu](https://internlm.openxlab.org.cn/)
-- [StepFun](https://platform.stepfun.com)
+- [vLLM](https://github.com/vllm-project/vllm)
 - [KIMI](https://kimi.moonshot.cn)
+- [StepFun](https://platform.stepfun.com)
 - [DeepSeek](https://www.deepseek.com)
 - [GLM (ZHIPU)](https://www.zhipuai.cn)
 - [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
@@ -170,10 +169,8 @@ The following are the GPU memory requirements for different features, the differ
 |              Configuration Example               | GPU mem Requirements |                                                                                   Description                                                                                   |                       Verified on Linux                        |
 | :----------------------------------------------: | :------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
 |         [config-cpu.ini](./config-cpu.ini)         |   -    | Use [siliconcloud](https://siliconflow.cn/) API <br/> for text only | ![](https://img.shields.io/badge/x86-passed-blue?style=for-the-badge) |
-|         [config-2G.ini](./config-2G.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [stepfun](https://platform.stepfun.com/) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
+|   \[Standard Edition\][config.ini](./config.ini)         |         2GB          | Use openai API (such as [kimi](https://kimi.moonshot.cn), [deepseek](https://platform.deepseek.com/usage) and [stepfun](https://platform.stepfun.com/) to search for text only | ![](https://img.shields.io/badge/1660ti%206G-passed-blue?style=for-the-badge) |
 | [config-multimodal.ini](./config-multimodal.ini) |         10GB         |                                                                Use openai API for LLM, image and text retrieval                                                                 | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-| \[Standard Edition\] [config.ini](./config.ini)  |         19GB         |                                                                    Local deployment of LLM, single modality                                                                     | ![](https://img.shields.io/badge/3090%2024G-passed-blue?style=for-the-badge)  |
-|   [config-advanced.ini](./config-advanced.ini)   |         80GB         |                                                   local LLM, anaphora resolution, single modality, practical for WeChat group                                                   | ![](https://img.shields.io/badge/A100%2080G-passed-blue?style=for-the-badge)  |
 
 # 🔥 Running the Standard Edition
 
@@ -198,46 +195,65 @@ pip install -r requirements.txt
 # For python3.8, install faiss-gpu instead of faiss
 ```
 
-## II. Create knowledge base and ask questions
+## II. Create knowledge base
 
 Use mmpose documents to build the mmpose knowledge base and filtering questions. If you have your own documents, just put them under `repodir`.
 
 Copy and execute all the following commands (including the '#' symbol).
 
 ```shell
-# Download the knowledge base, we only take the documents of mmpose as an example. You can put any of your own documents under `repodir`
+# Download the knowledge base, we only take the some documents as example. You can put any of your own documents under `repodir`
 cd HuixiangDou
 mkdir repodir
-git clone https://github.com/open-mmlab/mmpose    --depth=1 repodir/mmpose
+cp -rf resource/data* repodir/
 
 # Save the features of repodir to workdir, and update the positive and negative example thresholds into `config.ini`
 mkdir workdir
+# build knowledge base
 python3 -m huixiangdou.service.feature_store
 ```
 
-After running, test with `python3 -m huixiangdou.main --standalone`. At this time, reply to mmpose related questions (related to the knowledge base), while not responding to weather questions.
+## III. Setup LLM API and test
+Set the model and `api-key` in `config.ini`. If running LLM locally, we recommend using `vllm`.
 
-```bash
-python3 -m huixiangdou.main --standalone
+```text
+vllm serve /path/to/Qwen-2.5-7B-Instruct --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
+```
 
-+---------------------------+---------+----------------------------+-----------------+
-|         Query             |  State  |         Reply              |   References    |
-+===========================+=========+============================+=================+
-| How to install mmpose?    | success | To install mmpose, plea..  | installation.md |
+Here is an example of the configured `config.ini`:
+
+```ini
+[llm.server]
+remote_type = "kimi"
+remote_api_key = "sk-dp3GriuhhLXnYo0KUuWbFUWWKOXXXXXXXXXX"
+
+# remote_type = "step"
+# remote_api_key = "5CpPyYNPhQMkIzs5SYfcdbTHXq3a72H5XXXXXXXXXXXXX"
+
+# remote_type = "deepseek"
+# remote_api_key = "sk-86db9a205aa9422XXXXXXXXXXXXXX"
+
+# remote_type = "vllm"
+# remote_api_key = "EMPTY"
+# remote_llm_model = "Qwen2.5-7B-Instruct"
+```
+
+Then run the test:
+
+```text
+# Respond to questions related to the Hundred-Plant Garden (related to the knowledge base), but do not respond to weather questions.
+python3 -m huixiangdou.main
+
++-----------------------+---------+--------------------------------+-----------------+
+|         Query         |  State  |         Reply                  |   References    |
++=======================+=========+================================+=================+
+| What is in the Hundred-Plant Garden? | success | The Hundred-Plant Garden has a rich variety of natural landscapes and life... | installation.md |
 --------------------------------------------------------------------------------------
-| How is the weather today? | unrelated.. | ..                     |                 |
+| How is the weather today?         | Init state| ..                           |                 |
 +-----------------------+---------+--------------------------------+-----------------+
 🔆 Input your question here, type `bye` for exit:
 ..
 ```
-
-> \[!NOTE\]
->
-> <div align="center">
-> If restarting LLM every time is too slow, first <b>python3 -m huixiangdou.service.llm_server_hybrid</b>; then open a new window, and each time only execute <b>python3 -m huixiangdou.main</b> without restarting LLM.
-> </div>
-
-<br/>
 
 💡 Also run a simple Web UI with `gradio`:
 
@@ -260,14 +276,14 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 
 Please update the `repodir` documents, [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, financial, power, etc.).
 
-## III. Integration into Feishu, WeChat group
+## IV. Integration into Feishu, WeChat group
 
 - [**One-way** sending to Feishu group](./docs/zh/doc_send_only_lark_group.md)
 - [**Two-way** Feishu group receiving and sending, recalling](./docs/zh/doc_add_lark_group.md)
 - [Personal WeChat Android access](./docs/zh/doc_add_wechat_accessibility.md)
 - [Personal WeChat wkteam access](./docs/zh/doc_add_wechat_commercial.md)
 
-## IV. Deploy web front and back end
+## V. Deploy web front and backend
 
 We provide `typescript` front-end and `python` back-end source code:
 
@@ -295,41 +311,12 @@ python3 -m pip install -r requirements-cpu.txt
 # Establish knowledge base
 python3 -m huixiangdou.service.feature_store --config_path config-cpu.ini
 # Q&A test
-python3 -m huixiangdou.main --standalone --config_path config-cpu.ini
+python3 -m huixiangdou.main --config_path config-cpu.ini
 # gradio UI
 python3 -m huixiangdou.gradio_ui --config_path config-cpu.ini
 ```
 
 If you find the installation too slow, a pre-installed image is provided in [Docker Hub](https://hub.docker.com/repository/docker/tpoisonooo/huixiangdou/tags). Simply replace it when starting the docker.
-
-## **2G Cost-effective Edition**
-
-If your GPU mem exceeds 1.8G, or you pursue cost-effectiveness. This configuration discards the local LLM and uses remote LLM instead, which is the same as the standard edition.
-
-Take `siliconcloud` as an example, fill in the API TOKEN applied from the [official website](https://siliconflow.cn/) into `config-2G.ini`
-
-```toml
-# config-2G.ini
-[llm]
-enable_local = 0   # Turn off local LLM
-enable_remote = 1  # Only use remote
-..
-remote_type = "siliconcloud"   # Choose siliconcloud
-remote_api_key = "YOUR-API-KEY-HERE" # Your API key
-remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
-```
-
-> \[!NOTE\]
->
-> <div align="center">
-> Each Q&A scenario requires calling the LLM 7 times at worst, subject to the free user RPM limit, you can modify the <b>rpm</b> parameter in config.ini
-> </div>
-
-Execute the following to get the Q&A results
-
-```shell
-python3 -m huixiangdou.main --standalone --config-path config-2G.ini # Start all services at once
-```
 
 ## **10G Multimodal Edition**
 
@@ -354,15 +341,7 @@ Run gradio to test, see the image and text retrieval result [here](https://githu
 python3 tests/test_query_gradio.py
 ```
 
-## **80G Complete Edition**
-
-The "HuiXiangDou" in the WeChat experience group has enabled all features:
-
-- Serper search and SourceGraph search enhancement
-- Group chat images, WeChat public account parsing
-- Text coreference resolution
-- Hybrid LLM
-- Knowledge base is related to openmmlab's 12 repositories (1700 documents), refusing small talk
+## **Furthermore**
 
 Please read the following topics:
 
@@ -390,21 +369,6 @@ Contributors have provided [Android tools](./android) to interact with WeChat. T
 2. Launch is normal, but out of memory during runtime?
 
    LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/en/quantization). Then use docker to independently deploy Hybrid LLM Service.
-
-3. How to access other local LLM / After access, the effect is not ideal?
-
-   - Open [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py), add a new LLM inference implementation.
-   - Refer to [test_intention_prompt and test data](./tests/test_intention_prompt.py), adjust prompt and threshold for the new model, and update them into [prompt.py](./huixiangdou/service/prompt.py).
-
-4. What if the response is too slow/request always fails?
-
-   - Refer to [hybrid llm service](./huixiangdou/service/llm_server_hybrid.py) to add exponential backoff and retransmission.
-   - Replace local LLM with an inference framework such as [lmdeploy](https://github.com/internlm/lmdeploy), instead of the native huggingface/transformers.
-
-5. What if the GPU memory is too low?
-
-   At this time, it is impossible to run local LLM, and only remote LLM can be used in conjunction with text2vec to execute the pipeline. Please make sure that `config.ini` only uses remote LLM and turn off local LLM.
-
 
 # 🍀 Acknowledgements
 

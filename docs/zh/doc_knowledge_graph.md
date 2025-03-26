@@ -57,7 +57,7 @@ python3 -m huixiangdou.service.feature_store
 测试效果
 
 ```bash
-python3 -m huixiangdou.main --standalone
+python3 -m huixiangdou.main
 ```
 
 不同方法的精度对比表见 [evaluation](../../evaluation/README_zh.md)

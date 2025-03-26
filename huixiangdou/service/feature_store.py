@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """extract feature and search with user query."""
 import argparse
 import json
@@ -22,7 +22,6 @@ from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          split_python_code,
                          BM25Okapi, NamedEntity2Chunk)
 from .helper import histogram
-from .llm_server_hybrid import start_llm_server
 from .retriever import CacheRetriever, Retriever
 
 
@@ -424,7 +423,7 @@ def test_query(retriever: Retriever, sample: str = None):
             real_questions = json.load(f)
         logger.add('logs/feature_store_query.log', rotation='4MB')
     else:
-        real_questions = ['mmpose installation', 'how to use std::vector ?']
+        real_questions = ['百草园里有啥？', 'how to use std::vector ?']
 
     table = Texttable()
     table.set_cols_valign(['t', 't', 't', 't'])
@@ -462,8 +461,6 @@ if __name__ == '__main__':
 
     # update reject throttle
     retriever = cache.get(config_path=args.config_path, work_dir=args.work_dir)
-    if retriever.kg.is_available():
-        start_llm_server(args.config_path)
 
     with open(os.path.join('resource', 'good_questions.json')) as f:
         good_questions = json.load(f)

@@ -10,6 +10,7 @@ import requests
 from loguru import logger
 
 
+@DeprecationWarning
 class ChatClient:
     """A class to handle client-side interactions with a chat service.
 
@@ -95,9 +96,6 @@ class ChatClient:
             return text
         except Exception as e:
             logger.error(str(e))
-            logger.error(
-                'Do you forget `--standalone` when `python3 -m huixiangdou.main` ?'  # noqa E501
-            )
             return ''
 
 

@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """Search enhancement proxy."""
 import argparse
 import json
@@ -7,9 +7,9 @@ import os
 import pytoml
 from loguru import logger
 from typing import List
-from .llm_client import ChatClient
+from .llm import LLM
 
-
+@DeprecationWarning
 class SourceGraphProxy:
     """A class to serve as a proxy for interacting with the Source Graph.
 
@@ -85,7 +85,7 @@ class SourceGraphProxy:
                 str(e), jsonstr))
         return ret
 
-    def choose_repo(self, llm_client, question, groupname):
+    async def choose_repo(self, llm_client, question, groupname):
         """Interactively assists user to select a repository for search based
         on user's question.
 
@@ -109,8 +109,7 @@ class SourceGraphProxy:
             prompt += f'* {key} {introduction}\n'
             repos[key] = self.sg_config[key]
         prompt += '* none '
-        choice = llm_client.generate_response(prompt=prompt,
-                                              backend='remote').strip()
+        choice = await llm_client.chat(prompt=prompt).strip()
 
         target_repo_id = None
         for key in repos.keys():
@@ -120,7 +119,7 @@ class SourceGraphProxy:
 
         return target_repo_id
 
-    def search(self, llm_client, question, groupname) -> List[str]:
+    async def search(self, llm_client, question, groupname) -> List[str]:
         """Performs a search operation in the selected repository based on the
         user's question.
 
@@ -132,7 +131,7 @@ class SourceGraphProxy:
         Returns:
             str: Search result from source graph in JSON format.
         """
-        repo_id = self.choose_repo(llm_client, question, groupname)
+        repo_id = await self.choose_repo(llm_client, question, groupname)
         if repo_id is None:
             logger.warning('cannot choose repo_id')
             return ''
@@ -147,7 +146,7 @@ class SourceGraphProxy:
         entities = []
         entity_str = ''
         try:
-            entity_str = llm_client.generate_response(prompt=prompt)
+            entity_str = await llm_client.chat(prompt=prompt)
             separator = ','
             if '，' in entity_str:
                 separator = '，'
@@ -196,7 +195,7 @@ if __name__ == '__main__':
     logger.add('logs/sg_search.log', rotation='4MB')
     args = parse_args()
 
-    llm = ChatClient(config_path=args.config_path)
+    llm = LLM(config_path=args.config_path)
     sg = SourceGraphProxy(config_path=args.config_path)
     context = sg.search(llm,
                         question='请问triviaqa 5shot结果怎么在summarizer里输出呢',

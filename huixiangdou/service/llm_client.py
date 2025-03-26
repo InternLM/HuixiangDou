@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """LLM client."""
 import argparse
 import json
@@ -9,6 +9,7 @@ import pytoml
 import requests
 from loguru import logger
 
+@DeprecationWarning
 class ChatClient:
     """A class to handle client-side interactions with a chat service.
 
@@ -20,6 +21,7 @@ class ChatClient:
     def __init__(self, config_path: str) -> None:
         """Initialize the ChatClient with the path of the configuration
         file."""
+        logger.warning('The `class ChatClient` will be removed on 20250935, use `class LLM` instead.')
         self.config_path = config_path
         self.llm_config = None
         with open(self.config_path, encoding='utf8') as f:
@@ -128,9 +130,6 @@ class ChatClient:
             return text
         except Exception as e:
             logger.error(str(e))
-            logger.error(
-                'Do you forget `--standalone` when `python3 -m huixiangdou.main` ?'  # noqa E501
-            )
             return ''
 
     async def chat_stream(self, prompt, history=[], backend='local'):

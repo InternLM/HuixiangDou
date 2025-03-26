@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 from __future__ import annotations
 
 import time
@@ -17,6 +17,7 @@ from tqdm import tqdm
 from .embedder import Embedder
 from .query import Query, DistanceStrategy
 from .chunk import Chunk
+
 try:
     import faiss
 except ImportError:

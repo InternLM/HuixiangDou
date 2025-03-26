@@ -6,8 +6,7 @@ import time
 import pytoml
 from loguru import logger
 
-from huixiangdou.service.llm_client import ChatClient
-from huixiangdou.service.llm_server_hybrid import llm_serve, start_llm_server
+from huixiangdou.service.llm import LLM
 from huixiangdou.service.sg_search import SourceGraphProxy
 
 
@@ -49,9 +48,8 @@ def build_config_path():
 
 def test_sg():
     config_path = build_config_path()
-    start_llm_server(config_path)
 
-    llm = ChatClient(config_path=config_path)
+    llm = LLM(config_path=config_path)
     proxy = SourceGraphProxy(config_path=config_path)
     content = proxy.search(llm_client=llm,
                            question='mmpose installation',

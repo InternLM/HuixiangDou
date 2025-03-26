@@ -2,34 +2,7 @@
 
 标准版可能效果不佳，可开启以下特性来提升效果。配置模板请参照 [config-advanced.ini](../../config-advanced.ini)
 
-1. 使用更高精度 local LLM
-
-   把 config.ini 中的`llm.local` 模型调整为其他 LLM，参考 [opencompass 评测榜单](https://rank.opencompass.org.cn/leaderboard-llm)。
-   此选项效果显著。
-
-2. Hybrid LLM Service
-
-   对于支持 [openai](https://pypi.org/project/openai/) 接口的 LLM 服务，茴香豆可以发挥它的 Long Context 能力。
-   以 [kimi](https://platform.moonshot.cn/) 为例，以下是 `config.ini` 配置示例：
-
-   ```ini
-   # config.ini
-   [llm]
-   enable_local = 1
-   enable_remote = 1
-   ..
-   [llm.server]
-   ..
-   # open https://platform.moonshot.cn/
-   remote_type = "kimi"
-   remote_api_key = "YOUR-KIMI-API-KEY"
-   remote_llm_max_text_length = 128000
-   remote_llm_model = "auto"
-   ```
-
-   注意此特性会增加响应耗时和运行成本。
-
-3. repo 搜索增强
+1. repo 搜索增强
 
    此特性适合处理疑难问题，需要基础开发能力调整 prompt。
 
@@ -69,7 +42,7 @@
 
    运行 `main.py`，茴香豆将在合适的时机，启用搜索增强。
 
-4. 调参
+2. 调参
 
    针对业务场景调参往往不可避免。
 

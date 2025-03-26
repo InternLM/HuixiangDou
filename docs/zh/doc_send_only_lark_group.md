@@ -15,8 +15,7 @@ webhook_url = "${YOUR-LARK-WEBHOOK-URL}"
 运行。结束后，技术助手的答复将**单向**发送到飞书群。
 
 ```shell
-python3 -m huixiangdou.main --standalone # 非 docker 用户
-python3 -m huixiangdou.main # docker 用户
+python3 -m huixiangdou.main
 ```
 
 <img src="https://github.com/user-attachments/assets/80ea52ea-babf-4ded-8481-ded8a1ee9fd4" width="400">

@@ -1,7 +1,5 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 """Pipeline."""
 import argparse
-import datetime
 import json
 import random
 import re
@@ -11,7 +9,7 @@ import pytoml
 import requests
 from loguru import logger
 
-from huixiangdou.service import (ChatClient, ErrorCode, FeatureStore,
+from huixiangdou.service import (LLM, ErrorCode, FeatureStore,
                                  QueryTracker, WebSearch)
 
 
@@ -65,7 +63,7 @@ class OpenXLabWorker:
     much more.
 
     Attributes:
-        llm: A ChatClient instance that communicates with the language model.
+        llm: A LLM instance that communicates with the language model.
         fs: An instance of FeatureStore for loading and querying features.
         config_path: A string indicating the path of the configuration file.
         config: A dictionary holding the configuration settings.
@@ -83,7 +81,7 @@ class OpenXLabWorker:
             config_path (str): The location of the configuration file.
             language (str, optional): Specifies the language to be used. Defaults to 'zh' (Chinese).  # noqa E501
         """
-        self.llm = ChatClient(config_path=config_path)
+        self.llm = LLM(config_path=config_path)
         self.config_path = config_path
         self.config = None
         self.language = language
@@ -94,12 +92,7 @@ class OpenXLabWorker:
 
         self.context_max_length = -1
         llm_config = self.config['llm']
-        self.context_max_length = llm_config['server'][
-            'local_llm_max_text_length']
-
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server'][
-                'remote_llm_max_text_length']
+        self.context_max_length = llm_config['server']['remote_llm_max_text_length']
 
         # Switch languages according to the scenario.
         if self.language == 'zh':
@@ -137,8 +130,7 @@ class OpenXLabWorker:
         #     return True
         # return False
 
-    def single_judge(self, prompt, tracker, throttle: int, default: int,
-                     backend: str):
+    def single_judge(self, prompt, tracker, throttle: int, default: int, **kwargs):
         """Generates a score based on the prompt, and then compares it to
         threshold.
 
@@ -155,7 +147,7 @@ class OpenXLabWorker:
             return False
 
         score = default
-        relation = self.llm.generate_response(prompt=prompt, backend=backend)
+        relation = self.llm.chat(prompt=prompt)
         tracker.log('score' + prompt[0:20], [relation, throttle, default])
         filtered_relation = ''.join([c for c in relation if c.isdigit()])
         try:

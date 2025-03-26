@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 import json
 import os
 import pdb
@@ -13,6 +13,7 @@ import requests
 from loguru import logger
 from openai import OpenAI
 from texttable import Texttable
+from .llm import LLM
 
 from .config import redis_host, redis_passwd, redis_port
 
@@ -332,11 +333,10 @@ def build_reply_text(code, query: str, reply: str, refs: list, max_len:int=20):
     return table.draw()
 
 
-def is_truth(llm: Any,
+async def is_truth(llm: LLM,
              prompt: str,
              throttle: int,
-             default: int,
-             backend: str = 'local'):
+             default: int):
     """Generate a score based on the prompt, and then compares it to threshold.
 
     Args:
@@ -355,7 +355,7 @@ def is_truth(llm: Any,
 
     score = default
     logs['default'] = default
-    relation = llm.generate_response(prompt=prompt, backend=backend)
+    relation = await llm.chat(prompt=prompt)
     logs['relation'] = relation
     filtered_relation = ''.join([c for c in relation if c.isdigit()])
 

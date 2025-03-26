@@ -58,11 +58,9 @@ def run():
     config_path = build_config_path()
 
     actions = {
-        'llm_server_hybrid':
-        'python3 -m huixiangdou.service.llm_server_hybrid --config_path {}  --unittest',
         'feature_store':
         'python3 -m huixiangdou.service.feature_store --config_path {}',
-        'main': 'python3 -m huixiangdou.main --standalone --config_path {}'
+        'main': 'python3 -m huixiangdou.main --config_path {}'
     }
 
     reports = ['HuixiangDou daily smoke:']

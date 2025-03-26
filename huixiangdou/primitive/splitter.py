@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 # modified from langchain
 # 1. Use `Chunk` instead of `Document`
 # 2. Default chunksize using 832

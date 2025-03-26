@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """Pipeline."""
 import argparse
 import asyncio
@@ -12,12 +12,12 @@ from loguru import logger
 from huixiangdou.primitive import Query, Chunk
 
 from .helper import ErrorCode
-from .llm_client import ChatClient
+from .llm import LLM
 from .retriever import CacheRetriever, Retriever
 from .session import Session
 from .web_search import WebSearch
-from .prompt import (INTENTION_TEMPLATE_CN, CR_CN, SCORING_RELAVANCE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN)
-from .prompt import (INTENTION_TEMPLATE_EN, CR_EN, SCORING_RELAVANCE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN)
+from .prompt import (INTENTION_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN)
+from .prompt import (INTENTION_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN)
 from .prompt import CitationGeneratePrompt
 
 class PreprocNode:
@@ -27,26 +27,22 @@ class PreprocNode:
     See https://arxiv.org/abs/2405.02817
     """
 
-    def __init__(self, config: dict, llm: ChatClient, language: str):
+    def __init__(self, config: dict, llm: LLM, language: str):
         self.llm = llm
-        self.enable_cr = config['worker']['enable_cr']
 
         if language == 'zh':
             self.INTENTION_TEMPLATE = INTENTION_TEMPLATE_CN
-            self.CR = CR_CN
         else:
             self.INTENTION_TEMPLATE = INTENTION_TEMPLATE_EN
-            self.CR = CR_EN
 
-    def process(self, sess: Session) -> Generator[Session, None, None]:
-        # check input
-        if sess.query.text is None or len(sess.query.text) < 2:
-            sess.code = ErrorCode.QUESTION_TOO_SHORT
+    async def process(self, sess: Session) -> AsyncGenerator[Session, Session]:
+        assert isinstance(sess.history, list), "sess.history is not list"
+        if len(sess.history) > 0:
             yield sess
             return
 
         prompt = self.INTENTION_TEMPLATE.format(sess.query.text)
-        json_str = self.llm.generate_response(prompt=prompt, backend='remote')
+        json_str = await self.llm.chat(prompt=prompt)
         sess.debug['PreprocNode_intention_response'] = json_str
         logger.info('intention response {}'.format(json_str))
         try:
@@ -81,43 +77,6 @@ class PreprocNode:
                     return
         except Exception as e:
             logger.error(str(e))
-
-        if not self.enable_cr:
-            yield sess
-            return
-
-        if len(sess.groupchats) < 1:
-            logger.debug('history conversation empty, skip CR')
-            yield sess
-            return
-
-        talks = []
-
-        # rewrite user_id to ABCD..
-        name_map = dict()
-        name_int = ord('A')
-        for msg in sess.groupchats:
-            sender = msg.sender
-            if sender not in name_map:
-                name_map[sender] = chr(name_int)
-                name_int += 1
-            talks.append({'sender': name_map[sender], 'content': msg.query})
-
-        talk_str = json.dumps(talks, ensure_ascii=False)
-        prompt = self.CR.format(talk_str, sess.query.text)
-        self.cr = self.llm.generate_response(prompt=prompt, backend='remote')
-        if self.cr.startswith('“') and self.cr.endswith('”'):
-            self.cr = self.cr[1:len(self.cr) - 1]
-        if self.cr.startswith('"') and self.cr.endswith('"'):
-            self.cr = self.cr[1:len(self.cr) - 1]
-        sess.debug['cr'] = self.cr
-
-        # rewrite query
-        queries = [sess.query.text, self.cr]
-        self.query = '\n'.join(queries)
-        logger.debug('merge query and cr, query: {} cr: {}'.format(
-            self.query, self.cr))
-
 
 class Text2vecRetrieval:
     """Text2vecNode is for retrieve from knowledge base."""
@@ -162,18 +121,14 @@ class CodeRetrieval:
 class WebSearchRetrieval:
     """WebSearchNode is for web search, use `ddgs` or `serper`"""
 
-    def __init__(self, config: dict, config_path: str, llm: ChatClient,
+    def __init__(self, config: dict, config_path: str, llm: LLM,
                  language: str):
         self.llm = llm
         self.config_path = config_path
         self.enable = config['worker']['enable_web_search']
         llm_config = config['llm']
-        self.context_max_length = llm_config['server'][
-            'local_llm_max_text_length']
         self.language = language
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server'][
-                'remote_llm_max_text_length']
+        self.context_max_length = llm_config['server']['remote_llm_max_text_length']
         if language == 'zh':
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
             self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_CN
@@ -192,7 +147,7 @@ class WebSearchRetrieval:
         engine = WebSearch(config_path=self.config_path, language=self.language)
 
         prompt = self.KEYWORDS_TEMPLATE.format(sess.groupname, sess.query.text)
-        search_keywords = self.llm.generate_response(prompt)
+        search_keywords = await self.llm.chat(prompt)
         search_keywords = search_keywords.replace('"', '')
         sess.debug['WebSearchNode_keywords'] = prompt
 
@@ -224,13 +179,11 @@ class WebSearchRetrieval:
 
 
 class ReduceGenerate:
-    def __init__(self, config: dict, llm: ChatClient, retriever: CacheRetriever, language: str):
+    def __init__(self, config: dict, llm: LLM, retriever: CacheRetriever, language: str):
         self.llm = llm
         self.retriever = retriever
         llm_config = config['llm']
-        self.context_max_length = llm_config['server']['local_llm_max_text_length']
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server']['remote_llm_max_text_length']
+        self.context_max_length = llm_config['server']['remote_llm_max_text_length']
         self.language = language
 
     async def process(self, sess: Session) -> AsyncGenerator[Session, None]:
@@ -260,7 +213,7 @@ class ParallelPipeline:
     much more.
 
     Attributes:
-        llm: A ChatClient instance that communicates with the language model.
+        llm: A LLM instance that communicates with the language model.
         fs: An instance of FeatureStore for loading and querying features.
         config_path: A string indicating the path of the configuration file.
         config: A dictionary holding the configuration settings.
@@ -276,7 +229,7 @@ class ParallelPipeline:
             work_dir (str): The working directory where feature files are located.
             config_path (str): The location of the configuration file.
         """
-        self.llm = ChatClient(config_path=config_path)
+        self.llm = LLM(config_path=config_path)
         self.retriever = CacheRetriever(config_path=config_path).get(work_dir=work_dir)
 
         self.config_path = config_path
@@ -335,7 +288,7 @@ class ParallelPipeline:
         ]
 
         # if not a good question, return
-        for sess in preproc.process(sess):
+        async for sess in preproc.process(sess):
             if sess.code in direct_chat_states:
                 async for resp in reduce.process(sess):
                     yield resp

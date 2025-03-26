@@ -2,7 +2,6 @@ aiohttp
 beautifulsoup4
 duckduckgo_search
 einops
-faiss-gpu
 loguru
 lxml_html_clean
 networkx>=3.0
@@ -18,14 +17,15 @@ readability-lxml
 redis
 requests
 scikit-learn
-sqlite3
+db-sqlite3
 # See https://github.com/deanmalmgren/textract/issues/461
 # textract @ git+https://github.com/tpoisonooo/textract@master
-textract
+# textract
 texttable
 tiktoken
 torch>=2.0.0
 transformers>=4.38
+tenacity
 transformers_stream_generator
 unstructured
 sentence_transformers
@@ -37,3 +37,4 @@ opencv-python-headless
 gradio>=4.41
 bcembedding
 jieba
+faiss-gpu

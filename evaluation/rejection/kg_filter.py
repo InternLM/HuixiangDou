@@ -10,7 +10,7 @@ from loguru import logger
 from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 
-from huixiangdou.service import KnowledgeGraph, histogram, start_llm_server
+from huixiangdou.service import KnowledgeGraph, histogram
 
 
 def load_dataset():
@@ -98,7 +98,6 @@ def parse_args():
 def main():
     args = parse_args()
     if args.retrieve:
-        start_llm_server(args.config_path)
         calculate(args.config_path)
     else:
         summarize()

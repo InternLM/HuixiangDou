@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 """Pipeline."""
 import argparse
 import datetime
@@ -6,7 +5,7 @@ import json
 import time
 import pdb
 from abc import ABC, abstractmethod
-from typing import List, Union, Generator
+from typing import List, Union, AsyncGenerator, Tuple
 
 import pytoml
 from loguru import logger
@@ -14,63 +13,71 @@ from loguru import logger
 from huixiangdou.primitive import Query
 
 from .helper import ErrorCode, is_truth
-from .llm_client import ChatClient
+from .llm import LLM
 from .retriever import CacheRetriever, Retriever
-from .sg_search import SourceGraphProxy
 from .session import Session
 from .web_search import WebSearch
-from .prompt import (INTENTION_TEMPLATE_CN, CR_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN, GENERATE_TEMPLATE_CITATION_HEAD_CN)
-from .prompt import (INTENTION_TEMPLATE_EN, CR_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN, GENERATE_TEMPLATE_CITATION_HEAD_EN)
+from .prompt import (INTENTION_TEMPLATE_CN, TOPIC_TEMPLATE_CN, SCORING_RELAVANCE_TEMPLATE_CN, KEYWORDS_TEMPLATE_CN, PERPLESITY_TEMPLATE_CN, SECURITY_TEMAPLTE_CN, GENERATE_TEMPLATE_CITATION_HEAD_CN)
+from .prompt import (INTENTION_TEMPLATE_EN, TOPIC_TEMPLATE_EN, SCORING_RELAVANCE_TEMPLATE_EN, KEYWORDS_TEMPLATE_EN, PERPLESITY_TEMPLATE_EN, SECURITY_TEMAPLTE_EN, GENERATE_TEMPLATE_CITATION_HEAD_EN)
 from .prompt import CitationGeneratePrompt
 
 class Node(ABC):
     """Base abstract for compute graph."""
 
     @abstractmethod
-    def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process(self, sess: Session) -> AsyncGenerator[Session, None]:
         pass
 
-class PreprocNode(Node):
+class PreprocNode:
     """PreprocNode is for coreference resolution and scoring based on group
     chats.
 
     See https://arxiv.org/abs/2405.02817
     """
 
-    def __init__(self, config: dict, llm: ChatClient, language: str):
+    def __init__(self, config: dict, llm: LLM, language: str):
         self.llm = llm
-        self.enable_cr = config['worker']['enable_cr']
-        self.language = language
 
         if language == 'zh':
             self.INTENTION_TEMPLATE = INTENTION_TEMPLATE_CN
-            self.CR = CR_CN
         else:
             self.INTENTION_TEMPLATE = INTENTION_TEMPLATE_EN
-            self.CR = CR_EN
 
-    def process(self, sess: Session) -> Generator[Session, None, None]:
-        # check input
-        if sess.query.text is None or len(sess.query.text) < 3:
-            sess.code = ErrorCode.QUESTION_TOO_SHORT
+    async def process(self, sess: Session) -> AsyncGenerator[Session, Session]:
+        assert isinstance(sess.history, list), "sess.history is not list"
+        if len(sess.history) > 0:
             yield sess
             return
 
         prompt = self.INTENTION_TEMPLATE.format(sess.query.text)
-        json_str = self.llm.generate_response(prompt=prompt, backend='remote')
+        json_str = await self.llm.chat(prompt=prompt)
         sess.debug['PreprocNode_intention_response'] = json_str
-        
+        logger.info('intention response {}'.format(json_str))
         try:
-            json_obj = json.loads(json_str)
-            intention = json_obj['intention'].lower()
-            topic = json_obj['topic'].lower()
+            if json_str.startswith('```json'):
+                json_str = json_str[len('```json'):]
+
+            if json_str.endswith('```'):
+                json_str = json_str[0:-3]
             
-            for block_intention in ['问候', 'greeting']:
+            json_obj = json.loads(json_str)
+            intention = json_obj['intention']
+            if intention is not None:
+                intention = intention.lower()
+            else:
+                intention = 'undefine'
+            topic = json_obj['topic']
+            if topic is not None:
+                topic = topic.lower()
+            else:
+                topic = 'undefine'
+            
+            for block_intention in ['问候', 'greeting', 'undefine']:
                 if block_intention in intention:
                     sess.code = ErrorCode.NOT_A_QUESTION
                     yield sess
                     return
-        
+
             for block_topic in ['身份', 'identity', 'undefine']:
                 if block_topic in topic:
                     sess.code = ErrorCode.NOT_A_QUESTION
@@ -79,56 +86,15 @@ class PreprocNode(Node):
         except Exception as e:
             logger.error(str(e))
 
-        if not self.enable_cr:
-            return
-
-        if len(sess.groupchats) < 1:
-            logger.debug('history conversation empty, skip CR')
-            yield sess
-            return
-
-        talks = []
-
-        # rewrite user_id to ABCD..
-        name_map = dict()
-        name_int = ord('A')
-        for msg in sess.groupchats:
-            sender = msg.sender
-            if sender not in name_map:
-                name_map[sender] = chr(name_int)
-                name_int += 1
-            talks.append({'sender': name_map[sender], 'content': msg.query})
-
-        talk_str = json.dumps(talks, ensure_ascii=False)
-
-        prompt = self.CR.format(talk_str, sess.query.text)
-        self.cr = self.llm.generate_response(prompt=prompt, backend='remote')
-        if self.cr.startswith('“') and self.cr.endswith('”'):
-            self.cr = self.cr[1:len(self.cr) - 1]
-        if self.cr.startswith('"') and self.cr.endswith('"'):
-            self.cr = self.cr[1:len(self.cr) - 1]
-        sess.debug['cr'] = self.cr
-
-        # rewrite query
-        queries = [sess.query.text, self.cr]
-        self.query = '\n'.join(queries)
-        logger.debug('merge query and cr, query: {} cr: {}'.format(
-            self.query, self.cr))
-
-
 class Text2vecNode(Node):
     """Text2vecNode is for retrieve from knowledge base."""
 
-    def __init__(self, config: dict, llm: ChatClient, retriever: Retriever,
+    def __init__(self, config: dict, llm: LLM, retriever: Retriever,
                  language: str):
         self.llm = llm
         self.retriever = retriever
         llm_config = config['llm']
-        self.context_max_length = llm_config['server'][
-            'local_llm_max_text_length']
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server'][
-                'remote_llm_max_text_length']
+        self.context_max_length = llm_config['server']['remote_llm_max_text_length']
         if language == 'zh':
             self.TOPIC_TEMPLATE = TOPIC_TEMPLATE_CN
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
@@ -141,7 +107,7 @@ class Text2vecNode(Node):
             self.GENERATE_TEMPLATE)
         self.language = language
 
-    def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process(self, sess: Session) -> AsyncGenerator[Session, None]:
         """Try get reply with text2vec & rerank model."""
 
         # retrieve from knowledge base
@@ -158,7 +124,7 @@ class Text2vecNode(Node):
         # get relavance between query and knowledge base
         prompt = self.SCORING_RELAVANCE_TEMPLATE.format(
             sess.query.text, sess.chunk)
-        truth, logs = is_truth(llm=self.llm,
+        truth, logs = await is_truth(llm=self.llm,
                                prompt=prompt,
                                throttle=5,
                                default=10)
@@ -170,10 +136,8 @@ class Text2vecNode(Node):
         # answer the question
         citation = CitationGeneratePrompt(self.language)
         prompt = citation.build(texts=context_texts, question=sess.query.text)
-        # response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
-        response = self.llm.generate_response(prompt=prompt,
-                                              history=sess.history,
-                                              backend='remote')
+        response = await self.llm.chat(prompt=prompt,
+                                              history=sess.history)
 
         sess.code = ErrorCode.SUCCESS
         sess.response = response
@@ -183,17 +147,13 @@ class Text2vecNode(Node):
 class WebSearchNode(Node):
     """WebSearchNode is for web search, use `ddgs` or `serper`"""
 
-    def __init__(self, config: dict, config_path: str, llm: ChatClient,
+    def __init__(self, config: dict, config_path: str, llm: LLM,
                  language: str):
         self.llm = llm
         self.config_path = config_path
         self.enable = config['worker']['enable_web_search']
         llm_config = config['llm']
-        self.context_max_length = llm_config['server'][
-            'local_llm_max_text_length']
-        if llm_config['enable_remote']:
-            self.context_max_length = llm_config['server'][
-                'remote_llm_max_text_length']
+        self.context_max_length = llm_config['server']['remote_llm_max_text_length']
         if language == 'zh':
             self.SCORING_RELAVANCE_TEMPLATE = SCORING_RELAVANCE_TEMPLATE_CN
             self.KEYWORDS_TEMPLATE = KEYWORDS_TEMPLATE_CN
@@ -206,7 +166,7 @@ class WebSearchNode(Node):
             self.GENERATE_TEMPLATE)
         self.language = language
 
-    def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process(self, sess: Session) -> AsyncGenerator[Session, None]:
         """Try web search."""
         
         if not self.enable:
@@ -217,7 +177,7 @@ class WebSearchNode(Node):
         engine = WebSearch(config_path=self.config_path)
 
         prompt = self.KEYWORDS_TEMPLATE.format(sess.groupname, sess.query.text)
-        search_keywords = self.llm.generate_response(prompt)
+        search_keywords = await self.llm.chat(prompt)
         sess.debug['WebSearchNode_keywords'] = prompt
         articles, error = engine.get(query=search_keywords, max_article=2)
 
@@ -243,71 +203,14 @@ class WebSearchNode(Node):
 
         citation = CitationGeneratePrompt(self.language)
         prompt = citation.build(texts=texts, question=sess.query.text)
-        # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend="puyu")
-        sess.response = self.llm.generate_response(prompt=prompt,
-                                                   history=sess.history,
-                                                   backend='remote')
-        sess.code = ErrorCode.SUCCESS
-        yield sess
-
-class SGSearchNode(Node):
-    """SGSearchNode is for retrieve from source graph."""
-
-    def __init__(self, config: dict, config_path: str, llm: ChatClient,
-                 language: str):
-        self.llm = llm
-        self.language = language
-        self.enable = config['worker']['enable_sg_search']
-        self.config_path = config_path
-
-        if language == 'zh':
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CITATION_HEAD_CN
-        else:
-            self.GENERATE_TEMPLATE = GENERATE_TEMPLATE_CITATION_HEAD_EN
-        self.language = language
-
-    def process(self, sess: Session) -> Generator[Session, None, None]:
-        """Try get reply with source graph."""
-
-        if not self.enable:
-            logger.debug('disable sg_search')
-            yield sess
-            return
-
-        # if exit for other status (SECURITY or SEARCH_FAIL), still quit `sg_search`
-        if sess.code != ErrorCode.BAD_ANSWER and sess.code != ErrorCode.NO_SEARCH_RESULT and sess.code != ErrorCode.WEB_SEARCH_FAIL:
-            yield sess
-            return
-
-        sg = SourceGraphProxy(config_path=self.config_path,
-                              language=self.language)
-        sess.sg_knowledge = sg.search(llm_client=self.llm,
-                                      question=sess.query.text,
-                                      groupname=sess.groupname)
-
-        sess.debug['SGSearchNode_knowledge'] = sess.sg_knowledge
-        if sess.sg_knowledge is None or len(sess.sg_knowledge) < 1:
-            sess.code = ErrorCode.SG_SEARCH_FAIL
-            yield sess
-            return
-
-        citation = CitationGeneratePrompt(self.language)
-        prompt = citation.build(texts=sess.sg_knowledge, question=sess.query.text)
-        # sess.response = self.llm.generate_response(prompt=prompt, history=sess.history, backend='puyu')
-        sess.response = self.llm.generate_response(prompt=prompt,
-                                                   history=sess.history,
-                                                   backend='remote')
-        if sess.response is None or len(sess.response) < 1:
-            sess.code = ErrorCode.LLM_NOT_RESPONSE_SG
-            yield sess
-            return
+        sess.response = await self.llm.chat(prompt=prompt, history=sess.history)
         sess.code = ErrorCode.SUCCESS
         yield sess
 
 class SecurityNode(Node):
     """SecurityNode is for result check."""
 
-    def __init__(self, llm: ChatClient, language: str):
+    def __init__(self, llm: LLM, language: str):
         self.llm = llm
         if language == 'zh':
             self.PERPLESITY_TEMPLATE = PERPLESITY_TEMPLATE_CN
@@ -316,7 +219,7 @@ class SecurityNode(Node):
             self.PERPLESITY_TEMPLATE = PERPLESITY_TEMPLATE_EN
             self.SECURITY_TEMAPLTE = SECURITY_TEMAPLTE_EN
 
-    def process(self, sess: Session) -> Generator[Session, None, None]:
+    async def process(self, sess: Session) -> AsyncGenerator[Session, None]:
         """Check result with security."""
         if len(sess.response) < 1:
             sess.code = ErrorCode.BAD_ANSWER
@@ -324,7 +227,7 @@ class SecurityNode(Node):
             return
         prompt = self.PERPLESITY_TEMPLATE.format(sess.query.text,
                                                  sess.response)
-        truth, logs = is_truth(llm=self.llm,
+        truth, logs = await is_truth(llm=self.llm,
                                prompt=prompt,
                                throttle=9,
                                default=0)
@@ -335,7 +238,7 @@ class SecurityNode(Node):
             return
 
         prompt = self.SECURITY_TEMAPLTE.format(sess.response)
-        truth, logs = is_truth(llm=self.llm,
+        truth, logs = await is_truth(llm=self.llm,
                                prompt=prompt,
                                throttle=8,
                                default=0)
@@ -352,7 +255,7 @@ class SerialPipeline:
     much more.
 
     Attributes:
-        llm: A ChatClient instance that communicates with the language model.
+        llm: A LLM instance that communicates with the language model.
         fs: An instance of FeatureStore for loading and querying features.
         config_path: A string indicating the path of the configuration file.
         config: A dictionary holding the configuration settings.
@@ -370,7 +273,7 @@ class SerialPipeline:
             config_path (str): The location of the configuration file.
             language (str, optional): Specifies the language to be used. Defaults to 'zh' (Chinese).  # noqa E501
         """
-        self.llm = ChatClient(config_path=config_path)
+        self.llm = LLM(config_path=config_path)
         self.retriever = CacheRetriever(config_path=config_path).get()
 
         self.config_path = config_path
@@ -380,10 +283,6 @@ class SerialPipeline:
             self.config = pytoml.load(f)
         if self.config is None:
             raise Exception('worker config can not be None')
-
-    def direct_chat(self, query: str):
-        """"Generate reply with LLM."""
-        return self.llm.generate_response(prompt=query, backend='remote')
 
     def notify_badcase(self):
         """Receiving revert command means the current threshold is too low, use
@@ -430,9 +329,9 @@ class SerialPipeline:
                 return True
         return False
 
-    def generate(self,
+    async def generate(self,
                  query: Union[Query, str],
-                 history: List[str] = [],
+                 history: List[Tuple[str, str]] = [],
                  groupname: str = '',
                  groupchats: List[str] = []):
         """Processes user queries and generates appropriate responses. It
@@ -469,10 +368,8 @@ class SerialPipeline:
                                 self.language)
         websearch = WebSearchNode(self.config, self.config_path, self.llm,
                                   self.language)
-        sgsearch = SGSearchNode(self.config, self.config_path, self.llm,
-                                self.language)
         check = SecurityNode(self.llm, self.language)
-        pipeline = [preproc, text2vec, websearch, sgsearch]
+        pipeline = [preproc, text2vec, websearch]
 
         # run
         exit_states = [
@@ -481,7 +378,7 @@ class SerialPipeline:
         ]
         for node in pipeline:
 
-            for sess in node.process(sess):
+            async for sess in node.process(sess):
                 yield sess
 
             # unrelated to knowledge base or bad input, exit
@@ -489,7 +386,7 @@ class SerialPipeline:
                 break
 
             if sess.code == ErrorCode.SUCCESS:
-                for sess in check.process(sess):
+                async for sess in check.process(sess):
                     yield sess
 
             # check success, return
@@ -497,7 +394,7 @@ class SerialPipeline:
                 break
 
         logger.debug(sess.debug)
-        return sess
+        yield sess
         # return sess.code, sess.response, sess.references
 
 def parse_args():
@@ -509,7 +406,6 @@ def parse_args():
         default='config.ini',
         help='SerialPipeline configuration path. Default value is config.ini')
     return parser.parse_args()
-
 
 if __name__ == '__main__':
     args = parse_args()

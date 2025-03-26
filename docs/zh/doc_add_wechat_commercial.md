@@ -96,7 +96,6 @@ cat wkteam/license.json
 
 - LLM 只使用 kimi
 - 群列表为茴香豆用户群。`wkteam/wechat_message.jsonl` 记录了所有消息、可以得知群号
-- 开启指代消歧
 
 ```bash
 python3 -m huixiangdou.main
@@ -106,18 +105,3 @@ python3 -m huixiangdou.main
 
 - 下载群里的图片。如果使用 kimi，会尝试 OCR
 - 尝试解析群里的公众号消息，失败则只使用小标题
-
-## 四、【可选】指代消歧
-
-根据 [2405.02817](../../sft/)，我们基于真实数据微调了 Qwen 系列模型。
-从 [HuggingFace](https://huggingface.co/tpoisonooo/HuixiangDou-CR-LoRA-Qwen-14B) 下载 LoRA 权重，合并权重并部署成 openai API
-
-```bash
-# 用 axolotl 合并 weight
-python3 -m axolotl.cli.merge_lora examples/qwen/qwen2-lora-14B.yaml
-
-# 用 vLLM 部署
-python -m vllm.entrypoints.openai.api_server --served-model-name coref-res --model /path/to/qwen14b-lora-merged/ --port 9999 --max-model-len 4096 --gpu-memory-utilization 0.8
-```
-
-把端口号配置进 `config.ini` ，重新运行算法 pipeline 即可。

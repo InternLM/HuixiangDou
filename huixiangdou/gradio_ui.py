@@ -11,7 +11,7 @@ import pytoml
 from loguru import logger
 from typing import List
 from huixiangdou.primitive import Query
-from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline, llm_serve, start_llm_server
+from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline
 import json
 from datetime import datetime
 
@@ -35,10 +35,6 @@ def parse_args():
         default='config.ini',
         type=str,
         help='Pipeline configuration path. Default value is config.ini')
-    parser.add_argument('--standalone',
-                        action='store_true',
-                        default=True,
-                        help='Auto deploy required Hybrid LLM Service.')
     parser.add_argument('--no-standalone',
                         action='store_false',
                         dest='standalone', 
@@ -56,7 +52,7 @@ enable_web_search=False
 enable_code_search=True
 pipeline='chat_with_repo'
 main_args = None
-paralle_assistant = None
+parallel_assistant = None
 serial_assistant = None
 
 def on_language_changed(value:str):
@@ -106,7 +102,7 @@ async def predict(text:str, image:str):
     global pipeline
     global main_args
     global serial_assistant
-    global paralle_assistant
+    global parallel_assistant
 
     with open('query.txt', 'a') as f:
         f.write(json.dumps({'data': text, 'date': ymd()}, ensure_ascii=False))
@@ -125,9 +121,8 @@ async def predict(text:str, image:str):
             serial_assistant = SerialPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history': [], 'groupname':''}
         pipeline = {'status': {}}
-        debug = dict()
         stream_chat_content = ''
-        for sess in serial_assistant.generate(**args):
+        async for sess in serial_assistant.generate(**args):
             if len(sess.delta) > 0:
                 # start chat, display
                 stream_chat_content += sess.delta
@@ -145,14 +140,14 @@ async def predict(text:str, image:str):
                 yield json_str
 
     else:
-        if paralle_assistant is None:
-            paralle_assistant = ParallelPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
+        if parallel_assistant is None:
+            parallel_assistant = ParallelPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history':[], 'language':language}
         args['enable_web_search'] = enable_web_search
         args['enable_code_search'] = enable_code_search
 
         sentence = ''
-        async for sess in paralle_assistant.generate(**args):
+        async for sess in parallel_assistant.generate(**args):
             if sentence == '' and len(sess.references) > 0:
                 sentence = format_refs(sess.references)
 
@@ -198,11 +193,6 @@ if __name__ == '__main__':
     if main_args.pipeline_count > 1:
         radio_options.append('chat_in_group')
     
-    # start service
-    if main_args.standalone is True:
-        # hybrid llm serve
-        start_llm_server(config_path=main_args.config_path)
-
     themes = {
         'soft': gr.themes.Soft(),
         'monochrome': gr.themes.Monochrome(),

@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """IM proxy."""
 from .lark import Lark  # noqa E401
 from .lark_group import is_revert_command  # noqa E401

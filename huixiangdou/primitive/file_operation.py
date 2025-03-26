@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 import hashlib
 import os
 import shutil
@@ -6,7 +6,6 @@ import shutil
 import fitz
 import pandas as pd
 import requests
-import textract
 from bs4 import BeautifulSoup
 from loguru import logger
 
@@ -207,6 +206,7 @@ class FileOperation:
             elif file_type == 'word' or file_type == 'ppt':
                 # https://stackoverflow.com/questions/36001482/read-doc-file-with-python
                 # https://textract.readthedocs.io/en/latest/installation.html
+                import textract
                 text = textract.process(filepath).decode('utf8')
                 if file_type == 'ppt':
                     text = text.replace('\n', ' ')

@@ -1,4 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+
 """primitive module."""
 from .chunk import Chunk  # noqa E401
 from .embedder import Embedder  # noqa E401
@@ -16,3 +16,4 @@ from .splitter import (
 from .limitter import RPM, TPM
 from .bm250kapi import BM25Okapi
 from .entity import NamedEntity2Chunk
+from .utils import always_get_an_event_loop

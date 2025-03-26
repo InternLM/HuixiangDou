@@ -1,4 +1,4 @@
-from huixiangdou.service import ParallelPipeline, start_llm_server
+from huixiangdou.service import ParallelPipeline
 from huixiangdou.primitive import Query
 import json
 import asyncio
@@ -40,7 +40,6 @@ if __name__ == "__main__":
     dts = []
     
     # hybrid llm serve
-    print('evaluate ParallelPipeline precision, first `python3 -m huixiangdou.service.llm_server_hybrid`, then prepare your qa pair in `qa.json`.')
     output_filepath = 'out.jsonl'
 
     finished_query = []
