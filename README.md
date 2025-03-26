@@ -276,14 +276,16 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 
 Please update the `repodir` documents, [good_questions](./resource/good_questions.json) and [bad_questions](./resource/bad_questions.json), and try your own domain knowledge (medical, financial, power, etc.).
 
-## IV. Integration into Feishu, WeChat group
+## IV. Integration
+
+### To Feishu, WeChat group
 
 - [**One-way** sending to Feishu group](./docs/zh/doc_send_only_lark_group.md)
 - [**Two-way** Feishu group receiving and sending, recalling](./docs/zh/doc_add_lark_group.md)
 - [Personal WeChat Android access](./docs/zh/doc_add_wechat_accessibility.md) and [Android tool](./android)
 - [Personal WeChat wkteam access](./docs/zh/doc_add_wechat_commercial.md)
 
-## V. Deploy web front and backend
+### To web front and backend
 
 We provide `typescript` front-end and `python` back-end source code:
 
