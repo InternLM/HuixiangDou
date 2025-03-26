@@ -271,14 +271,16 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 
 请调整 `repodir` 文档、[good_questions](./resource/good_questions.json) 和 [bad_questions](./resource/bad_questions.json)，尝试自己的领域知识（医疗，金融，电力等）。
 
-## 四、集成到飞书、微信群
+## 四、集成
+
+### 到飞书、微信群
 
 - [**单向**发送到飞书群](./docs/zh/doc_send_only_lark_group.md)
 - [**双向**飞书群收发、撤回](./docs/zh/doc_add_lark_group.md)
-- [个微 android 接入](./docs/zh/doc_add_wechat_accessibility.md)
-- [个微 wkteam 接入](./docs/zh/doc_add_wechat_commercial.md)
+- [**免费**个微 android 接入](./docs/zh/doc_add_wechat_accessibility.md) 和 [基于系统 API 的 android 工具](./android) 控制手机 UI（不只是微信）
+- [**商业**个微 wkteam 接入](./docs/zh/doc_add_wechat_commercial.md)
 
-## 五、WEB 前后端部署，零编程集成飞书微信
+### WEB 前后端部署，零编程集成飞书微信
 
 我们提供了完整的 typescript 前端和 python 后端服务源码：
 
@@ -345,10 +347,6 @@ python3 tests/test_query_gradio.py
 - [群聊场景指代消歧训练](./sft)
 - [使用 wkteam 微信接入，整合图片、公众号解析和指代消歧](./docs/zh/doc_add_wechat_commercial.md)
 - [使用 rag.py 标注 SFT 训练数据](./docs/zh/doc_rag_annotate_sft_data.md)
-
-## **移动端**
-
-贡献者提供了[android工具](./android) 完成微信接入。方案基于系统层 API，原理上可以控制任何 UI（不限于通讯软件）。
 
 # 🛠️ FAQ
 
