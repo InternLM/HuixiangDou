@@ -967,8 +967,7 @@ class WkteamManager:
                         if user.group_id in self.group_whitelist:
                             logger.warning(r'send {} to {}'.format(
                                 formatted_reply, user.group_id))
-                            print(formatted_reply)
-                            # self.send_message(groupId=user.group_id, text=formatted_reply)
+                            self.send_message(groupId=user.group_id, text=formatted_reply)
                         else:
                             logger.warning(r'prepare respond {} to {}'.format(
                                 formatted_reply, user.group_id))
