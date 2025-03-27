@@ -195,7 +195,7 @@ pip install -r requirements.txt
 
 ## 二、创建知识库
 
-我们将用 mmpose 的文档构建 mmpose 知识库，过滤问题。如有自己的文档，放入 `repodir` 下即可。
+我们将用《朝花夕拾》的文章构建知识库。如有自己的文档，放入 `repodir` 下即可。
 
 复制下面所有命令（包含 '#' 符号）建立知识库。
 
@@ -205,10 +205,8 @@ cd HuixiangDou
 mkdir repodir
 cp -rf resource/data* repodir/
 
-# 把 repodir 的特征保存到 workdir，把正反例阈值更新进 `config.ini`
+# 建立知识库，repodir 的特征会保存到 workdir，拒答阈值也会自动更新进 `config.ini`
 mkdir workdir
-
-# 建立知识库
 python3 -m huixiangdou.service.feature_store
 ```
 
