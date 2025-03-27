@@ -296,7 +296,7 @@ Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdo
 
 ### To readthedocs.io
 
-[Try right-bottom button on the page](https://huixiangdou.readthedocs.io/zh-cn/latest/) and [document](./zh/doc_add_readthedocs.md).
+[Try right-bottom button on the page](https://huixiangdou.readthedocs.io/zh-cn/latest/) and [document](./docs/zh/doc_add_readthedocs.md).
 
 # 🍴 Other Configurations
 
