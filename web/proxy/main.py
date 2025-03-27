@@ -20,7 +20,16 @@ from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,
                                  redis_host, redis_passwd, redis_port)
 
 from .web_worker import OpenXLabWorker
+import asyncio
 
+def always_get_an_event_loop() -> asyncio.AbstractEventLoop:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        logger.info("Creating a new event loop in a sub-thread.")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop
 
 def callback_task_state(feature_store_id: str,
                         code: int,
@@ -104,7 +113,7 @@ def format_history(history):
     return ret
 
 
-def chat_with_featue_store(cache: CacheRetriever,
+async def chat_with_featue_store(cache: CacheRetriever,
                            payload: types.SimpleNamespace):
     # "payload": {
     #     "feature_store_id": "STRING",
@@ -146,10 +155,12 @@ def chat_with_featue_store(cache: CacheRetriever,
     query_log = '{} {}\n'.format(fs_id, payload.content)
     with open('query.log', 'a') as f:
         f.write(query_log)
-    error, response, references = worker.generate(query=payload.content,
+
+    error, response, references = await worker.generate(query=payload.content,
                                                   history=history,
                                                   retriever=retriever,
                                                   groupname='')
+
     if error != ErrorCode.SUCCESS:
         chat_state(code=error.value,
                    state=error.describe(),
@@ -361,7 +372,8 @@ def process():
         elif msg.type == TaskCode.FS_UPDATE_PIPELINE.value:
             update_pipeline(msg.payload)
         elif msg.type == TaskCode.CHAT.value:
-            chat_with_featue_store(fs_cache, msg.payload)
+            loop = always_get_an_event_loop()
+            loop.run_until_complete(chat_with_featue_store(fs_cache, msg.payload))
         else:
             logger.warning(f'unknown type {msg}')
 

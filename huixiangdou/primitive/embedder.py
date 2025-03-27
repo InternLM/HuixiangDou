@@ -12,6 +12,7 @@ from loguru import logger
 from .query import DistanceStrategy
 from .limitter import RPM, TPM
 from .chunk import Chunk
+from .utils import always_get_an_event_loop
 
 class Embedder:
     """Wrap text2vec (multimodal) model."""
@@ -95,7 +96,7 @@ class Embedder:
                 feature = self.client.encode(text=text, image=path)
                 return feature.cpu().numpy().astype(np.float32)
         elif 'bce' in self._type:
-            if text is None:
+            if not text:
                 raise ValueError('This model only support text')
             emb = self.client.encode([text], show_progress_bar=False, normalize_embeddings=True)
             emb = emb.astype(np.float32)
@@ -103,11 +104,11 @@ class Embedder:
             #     assert abs(norm - 1) < 0.001
             return emb
         else:
-            self.client['api_rpm'].wait(silent=True)
-            self.client['api_tpm'].wait(silent=True, token_count=len(text))
+            self.client['api_rpm'].wait_sync(silent=True)
+            self.client['api_tpm'].wait_sync(silent=True, token_count=len(text))
 
             # siliconcloud bce API
-            if text is None:
+            if not text:
                 raise ValueError('This api only support text')
             
             url = "https://api.siliconflow.cn/v1/embeddings"

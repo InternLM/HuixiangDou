@@ -10,7 +10,7 @@ lxml_html_clean
 nest_asyncio
 networkx>=3.0
 numpy<2.0.0
-openai>=1.0.0
+openai>=1.55.3
 openpyxl
 pandas
 pydantic>=1.10.13
@@ -22,7 +22,7 @@ redis
 requests
 scikit-learn
 # See https://github.com/deanmalmgren/textract/issues/461
-textract @ git+https://github.com/tpoisonooo/textract@master
+# textract @ git+https://github.com/tpoisonooo/textract@master
 # textract
 texttable
 tiktoken

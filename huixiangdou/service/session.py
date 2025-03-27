@@ -48,7 +48,10 @@ class Session:
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        with open(self.log_path, 'a') as f:
-            json_str = json.dumps(self.debug, indent=2, ensure_ascii=False)
-            f.write(json_str)
-            f.write('\n')
+        try:
+            with open(self.log_path, 'a') as f:
+                json_str = json.dumps(self.debug, indent=2, ensure_ascii=False)
+                f.write(json_str)
+                f.write('\n')
+        except Exception as e:
+            pass

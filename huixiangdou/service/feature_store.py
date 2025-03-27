@@ -12,7 +12,6 @@ from typing import Any, Dict, List, Optional
 import random
 import pytoml
 from loguru import logger
-from torch.cuda import empty_cache
 from tqdm import tqdm
 
 
@@ -23,6 +22,13 @@ from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          BM25Okapi, NamedEntity2Chunk)
 from .helper import histogram
 from .retriever import CacheRetriever, Retriever
+
+def empty_cache():
+    try:
+        from torch.cuda import empty_cache as cuda_empty_cache
+        cuda_empty_cache()
+    except Exception as e:
+        logger.error(e)
 
 
 def read_and_save(file: FileName):

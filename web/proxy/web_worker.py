@@ -130,7 +130,7 @@ class OpenXLabWorker:
         #     return True
         # return False
 
-    def single_judge(self, prompt, tracker, throttle: int, default: int, **kwargs):
+    async def single_judge(self, prompt, tracker, throttle: int, default: int, **kwargs):
         """Generates a score based on the prompt, and then compares it to
         threshold.
 
@@ -147,7 +147,7 @@ class OpenXLabWorker:
             return False
 
         score = default
-        relation = self.llm.chat(prompt=prompt)
+        relation = await self.llm.chat(prompt=prompt)
         tracker.log('score' + prompt[0:20], [relation, throttle, default])
         filtered_relation = ''.join([c for c in relation if c.isdigit()])
         try:
@@ -159,7 +159,7 @@ class OpenXLabWorker:
             return True
         return False
 
-    def generate(self, query, history, retriever, groupname):
+    async def generate(self, query, history, retriever, groupname):
         """Processes user queries and generates appropriate responses. It
         involves several steps including checking for valid questions,
         extracting topics, querying the feature store, searching the web, and
@@ -179,20 +179,16 @@ class OpenXLabWorker:
         tracker = QueryTracker(self.config['worker']['save_path'])
         tracker.log('input', [query, history, groupname])
 
-        if not self.single_judge(
+        if not await self.single_judge(
                 prompt=self.SCORING_QUESTION_TEMPLATE.format(query),
                 tracker=tracker,
                 throttle=6,
-                default=2,
-                backend='remote'):
+                default=2):
             # not a question, give LLM response
-            response = self.llm.generate_response(prompt=query,
-                                                  history=history,
-                                                  backend='remote')
+            response = await self.llm.chat(prompt=query, history=history)
             return ErrorCode.NOT_A_QUESTION, response, []
 
-        topic = self.llm.generate_response(self.TOPIC_TEMPLATE.format(query),
-                                           backend='remote')
+        topic = await self.llm.chat(self.TOPIC_TEMPLATE.format(query))
         tracker.log('topic', topic)
 
         if len(topic) < 2:
@@ -225,9 +221,7 @@ class OpenXLabWorker:
             context=db_context,
             history_pair=history,
             template=self.GENERATE_TEMPLATE)
-        response = self.llm.generate_response(prompt=prompt,
-                                              history=history,
-                                              backend='remote')
+        response = await self.llm.chat(prompt=prompt, history=history)
         tracker.log('feature store doc', [chunk, response])
         if response is not None and len(response) < 1:
             # llm error
@@ -235,11 +229,10 @@ class OpenXLabWorker:
 
         if response is not None and len(response) > 0:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
-            if not self.single_judge(prompt=prompt,
+            if not await self.single_judge(prompt=prompt,
                                      tracker=tracker,
                                      throttle=9,
-                                     default=0,
-                                     backend='remote'):
+                                     default=0):
                 # get answer, check security and return
                 if not self.security_content(tracker, response):
                     return ErrorCode.SECURITY, '检测到敏感内容，无法显示', retrieve_ref
@@ -266,13 +259,12 @@ class OpenXLabWorker:
                             0, self.context_max_length -
                             2 * len(self.SCORING_RELAVANCE_TEMPLATE))
 
-                    if self.single_judge(
+                    if await self.single_judge(
                             self.SCORING_RELAVANCE_TEMPLATE.format(
                                 query, str(article)),
                             tracker=tracker,
                             throttle=5,
-                            default=10,
-                            backend='remote'):
+                            default=10):
                         web_context += '\n'
                         web_context += str(article)
                         use_ref.append(article.source)
@@ -286,9 +278,7 @@ class OpenXLabWorker:
                     context=web_context,
                     history_pair=history,
                     template=self.GENERATE_TEMPLATE)
-                response = self.llm.generate_response(prompt=prompt,
-                                                      history=history,
-                                                      backend='remote')
+                response = self.llm.chat(prompt=prompt, history=history)
             else:
                 reborn_code = ErrorCode.NO_SEARCH_RESULT
 
@@ -298,11 +288,10 @@ class OpenXLabWorker:
 
         if response is not None and len(response) > 0:
             prompt = self.PERPLESITY_TEMPLATE.format(query, response)
-            if self.single_judge(prompt=prompt,
+            if await self.single_judge(prompt=prompt,
                                  tracker=tracker,
                                  throttle=9,
-                                 default=0,
-                                 backend='remote'):
+                                 default=0):
                 reborn_code = ErrorCode.BAD_ANSWER
 
         # if response is not None and len(response) >= 800:
