@@ -294,6 +294,10 @@ We provide `typescript` front-end and `python` back-end source code:
 
 Same as [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web), please read the [web deployment document](./web/README.md).
 
+### To readthedocs.io
+
+[Try right-bottom button on the page](https://huixiangdou.readthedocs.io/zh-cn/latest/) and [document](./zh/doc_add_readthedocs.md).
+
 # 🍴 Other Configurations
 
 ## **CPU-only Edition**
