@@ -197,7 +197,7 @@ pip install -r requirements.txt
 
 ## II. Create knowledge base
 
-Use mmpose documents to build the mmpose knowledge base and filtering questions. If you have your own documents, just put them under `repodir`.
+We use some novels to build knowledge base and filtering questions. If you have your own documents, just put them under `repodir`.
 
 Copy and execute all the following commands (including the '#' symbol).
 
@@ -207,9 +207,8 @@ cd HuixiangDou
 mkdir repodir
 cp -rf resource/data* repodir/
 
-# Save the features of repodir to workdir, and update the positive and negative example thresholds into `config.ini`
+# Build knowledge base, this will save the features of repodir to workdir, and update the positive and negative example thresholds into `config.ini`
 mkdir workdir
-# build knowledge base
 python3 -m huixiangdou.service.feature_store
 ```
 
