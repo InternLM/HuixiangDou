@@ -288,6 +288,10 @@ curl -X POST http://127.0.0.1:23333/huixiangdou_inference  -H "Content-Type: app
 
 效果同 [OpenXlab APP](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web) ，请阅读 [web 部署文档](./web/README.md)。
 
+### 到 readthedocs.io
+
+[点这个页面的右下角按钮](https://huixiangdou.readthedocs.io/zh-cn/latest/) and [部署文档](./docs/zh/doc_add_readthedocs.md)
+
 # 🍴 其他配置
 
 ## **纯 CPU 版**
