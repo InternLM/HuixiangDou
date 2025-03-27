@@ -17,7 +17,6 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
-from transformers import TextIteratorStreamer
 import uvicorn
 from typing import List, Tuple
 from threading import Thread
@@ -58,6 +57,7 @@ class InferenceWrapper:
     def __init__(self, model_path: str):
         """Init model handler."""
         from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import TextIteratorStreamer
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path,
                                                        trust_remote_code=True)
@@ -236,7 +236,7 @@ class HybridLLMServer:
 
         logger.debug('remote api sending: {}'.format(messages))
         if model == 'auto':
-            prompt_len = len(prompt)
+            prompt_len = len(str(messages))
             if prompt_len <= int(8192 * 1.5) - 1024:
                 model = 'moonshot-v1-8k'
             elif prompt_len <= int(32768 * 1.5) - 1024:

@@ -11,7 +11,7 @@ from aiohttp import web
 from loguru import logger
 from termcolor import colored
 
-from .service import ErrorCode, SerialPipeline, build_reply_text
+from .service import ErrorCode, SerialPipeline, ParallelPipeline, build_reply_text
 from .primitive import always_get_an_event_loop
 
 def parse_args():
@@ -167,7 +167,7 @@ async def run(args):
     elif fe_type == 'wechat_wkteam':
         from .frontend import WkteamManager
         manager = WkteamManager(args.config_path)
-        manager.loop(assistant)
+        await manager.loop(assistant)
     else:
         logger.info(
             f'unsupported fe_config.type {fe_type}, please read `config.ini` description.'  # noqa E501

@@ -10,6 +10,7 @@ import numpy as np
 from .chunk import Chunk
 from .embedder import Embedder
 from .limitter import RPM
+from .utils import always_get_an_event_loop
 
 class LLMReranker:
     _type: str
@@ -141,8 +142,8 @@ class LLMReranker:
             scores_list = self.bce_client.compute_score(pairs)
             scores = np.array(scores_list)
         else:
-            self.client['api_rpm'].wait(silent=True)
-            
+            self.client['api_rpm'].wait_sync(silent=True)
+
             url = "https://api.siliconflow.cn/v1/rerank"
             payload = {
                 "model": "netease-youdao/bce-reranker-base_v1",
@@ -157,12 +158,17 @@ class LLMReranker:
                 "content-type": "application/json",
                 "authorization": self.client['api_token']
             }
-            response = requests.post(url, json=payload, headers=headers)
-            json_obj = json.loads(response.text)
-            results = json_obj['results']
-            indexes_list = [round(item['index']) for item in results]
-            indexes = np.array(indexes_list).astype(np.int32)
-            return indexes[0:self.topn]
+
+            try:
+                response = requests.post(url, json=payload, headers=headers)
+                json_obj = json.loads(response.text)
+                results = json_obj['results']
+                indexes_list = [round(item['index']) for item in results]
+                indexes = np.array(indexes_list).astype(np.int32)
+                return indexes[0:self.topn]
+            except Exception as e:
+                logger.error(f'reranker API fail {e}, use default order')
+                return [i for i in range(self.topn)]
 
         # get descending order
         return scores.argsort()[::-1][0:self.topn]

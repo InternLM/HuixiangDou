@@ -60,7 +60,7 @@ def summarize():
             for line in f:
                 json_obj = json.loads(line)
                 gts.append(json_obj['gt'])
-                if json_obj['result'] is None:
+                if not json_obj['result']:
                     dts.append(False)
                     # max_ref_cnts.append(0)
                 elif len(json_obj['result']) <= throttle:

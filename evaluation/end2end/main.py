@@ -30,7 +30,7 @@ async def run(query_text: str):
     async for sess in assistant.generate(query=query, enable_web_search=False):
         if len(sess.delta) > 0:
             sentence += sess.delta
-            if refs is None:
+            if not refs:
                 refs = sess.references
     return sentence, refs
 

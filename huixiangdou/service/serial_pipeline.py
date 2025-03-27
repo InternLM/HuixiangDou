@@ -114,7 +114,7 @@ class Text2vecNode(Node):
         sess.chunk, sess.knowledge, sess.references, context_texts = self.retriever.query(sess.query,
             context_max_length=self.max_length)
         sess.debug['Text2vecNode_chunk'] = sess.chunk
-        if sess.knowledge is None:
+        if not sess.knowledge:
             sess.code = ErrorCode.UNRELATED
             yield sess
             return

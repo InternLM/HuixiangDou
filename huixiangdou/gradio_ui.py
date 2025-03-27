@@ -117,7 +117,7 @@ async def predict(text:str, image:str):
 
     query = Query(text, image_path)
     if 'chat_in_group' in pipeline:
-        if serial_assistant is None:
+        if not serial_assistant:
             serial_assistant = SerialPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history': [], 'groupname':''}
         pipeline = {'status': {}}
@@ -140,7 +140,7 @@ async def predict(text:str, image:str):
                 yield json_str
 
     else:
-        if parallel_assistant is None:
+        if not parallel_assistant:
             parallel_assistant = ParallelPipeline(work_dir=main_args.work_dir, config_path=main_args.config_path)
         args = {'query':query, 'history':[], 'language':language}
         args['enable_web_search'] = enable_web_search

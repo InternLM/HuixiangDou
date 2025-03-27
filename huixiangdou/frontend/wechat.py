@@ -34,7 +34,7 @@ def redis_host():
 
 def redis_port():
     port = os.getenv('REDIS_PORT')
-    if port is None:
+    if not port:
         logger.debug('REDIS_PORT not set, try 6379')
         port = 6379
     return port
@@ -161,6 +161,9 @@ class Message:
             return Exception('data not in wx_msg')
 
         data = wx_msg['data']
+        if not data:
+            return Exception('data is None')
+
         if 'self' in data:
             if data['self']:
                 return Exception('self msg, return')
@@ -247,6 +250,10 @@ class Message:
                 jsonobj = json.loads(json_str)
                 if jsonobj['code'] != '1000':
                     logger.error('download {} {}'.format(data, json_str))
+
+                jsondata = jsonobj['data']
+                if not jsondata:
+                    return Exception('download image failed, skip')
                 self.url = jsonobj['data']['url']
 
         elif msg_type in ['80001', '60001']:
@@ -853,24 +860,14 @@ class WkteamManager:
                 conversations.append(msg)
         return conversations
 
-    def loop(self, worker):
+    async def loop(self, worker):
         """Fetch all messages from redis, split it by groupId; concat by
         timestamp."""
         from huixiangdou.service.helper import ErrorCode, kimi_ocr
-
-        revert_que = Queue(name='wechat-high-priority')
         que = Queue(name='wechat')
 
         while True:
-            time.sleep(1)
-            # react to revert msg first
-            for wx_msg_str in revert_que.get_all():
-                wx_msg = json.loads(wx_msg_str)
-                data = wx_msg['data']
-                if 'fromGroup' in data:
-                    self.revert(groupId=data['fromGroup'])
-                    # “群友学习法”。命令撤回将提升阈值，提升量越来越小。
-                    worker.notify_badcase()
+            time.sleep(0.01)
 
             # parse wx_msg, add it to group
             for wx_msg_str in que.get_all():
@@ -909,11 +906,6 @@ class WkteamManager:
                 if len(user.history) < 1:
                     continue
 
-                # debug
-                # if '20158567857@chatroom' not in user.group_id:
-                #     logger.debug('user.group_id {}'.format(user.group_id))
-                #     continue
-
                 now = time.time()
                 # if a user not send new message in 18 seconds, process and mark it
                 if now - user.last_msg_time >= 18 and user.last_process_time < user.last_msg_time:
@@ -945,7 +937,7 @@ class WkteamManager:
                         tuple_history = convert_history_to_tuple(
                             user.history[0:-1])
 
-                        for sess in worker.generate(
+                        async for sess in worker.generate(
                             query=query,
                             history=tuple_history,
                             groupname=groupname,
@@ -975,8 +967,8 @@ class WkteamManager:
                         if user.group_id in self.group_whitelist:
                             logger.warning(r'send {} to {}'.format(
                                 formatted_reply, user.group_id))
-                            self.send_message(groupId=user.group_id,
-                                              text=formatted_reply)
+                            print(formatted_reply)
+                            # self.send_message(groupId=user.group_id, text=formatted_reply)
                         else:
                             logger.warning(r'prepare respond {} to {}'.format(
                                 formatted_reply, user.group_id))
