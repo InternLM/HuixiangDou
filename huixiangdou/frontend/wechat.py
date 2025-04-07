@@ -312,8 +312,11 @@ def convert_talk_to_dict(talk: Talk):
 
 
 def convert_history_to_tuple(history: List[Talk]):
-    return [(item.query, item.reply, item.refs, item.now) for item in history]
-
+    history = []
+    for item in history:
+        history.append({"role": "user", "content": item.query})
+        history.append({"role": "assistant", "content": item.reply})
+    return history
 
 class User:
 
@@ -724,6 +727,29 @@ class WkteamManager:
 
         return None
 
+    def send_user_message(self, userId: str, text: str):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': self.auth
+        }
+        data = {'wId': self.wId, 'wcId': userId, 'content': text}
+
+        json_obj, err = self.post(url='http://{}/sendText'.format(
+            self.WKTEAM_IP_PORT),
+                                  data=data,
+                                  headers=headers)
+        if err is not None:
+            return err
+
+        sent = json_obj['data']
+        sent['wId'] = self.wId
+        if groupId not in self.sent_msg:
+            self.sent_msg[groupId] = [sent]
+        else:
+            self.sent_msg[groupId].append(sent)
+
+        return None
+
     def send_url(self, groupId: str, description: str, title: str, thumb_url: str, url: str):
         headers = {
             'Content-Type': 'application/json',
@@ -860,14 +886,14 @@ class WkteamManager:
                 conversations.append(msg)
         return conversations
 
-    async def loop(self, worker):
+    async def loop(self, assistant):
         """Fetch all messages from redis, split it by groupId; concat by
         timestamp."""
         from huixiangdou.service.helper import ErrorCode, kimi_ocr
         que = Queue(name='wechat')
 
         while True:
-            time.sleep(0.01)
+            time.sleep(1)
 
             # parse wx_msg, add it to group
             for wx_msg_str in que.get_all():
@@ -907,8 +933,8 @@ class WkteamManager:
                     continue
 
                 now = time.time()
-                # if a user not send new message in 18 seconds, process and mark it
-                if now - user.last_msg_time >= 18 and user.last_process_time < user.last_msg_time:
+                # if a user not send new message in 12 seconds, process and mark it
+                if now - user.last_msg_time >= 12 and user.last_process_time < user.last_msg_time:
                     if user.last_msg_type in ['link', 'image']:
                         # if user image or link contains question, do not process
                         continue
@@ -937,7 +963,7 @@ class WkteamManager:
                         tuple_history = convert_history_to_tuple(
                             user.history[0:-1])
 
-                        async for sess in worker.generate(
+                        async for sess in assistant.generate(
                             query=query,
                             history=tuple_history,
                             groupname=groupname,

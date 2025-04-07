@@ -11,6 +11,7 @@ from .chunk import Chunk
 from .embedder import Embedder
 from .limitter import RPM
 from .utils import always_get_an_event_loop
+from loguru import logger
 
 class LLMReranker:
     _type: str
@@ -168,7 +169,7 @@ class LLMReranker:
                 return indexes[0:self.topn]
             except Exception as e:
                 logger.error(f'reranker API fail {e}, use default order')
-                return [i for i in range(self.topn)]
+                return [i for i in range(min(len(texts), self.topn))]
 
         # get descending order
         return scores.argsort()[::-1][0:self.topn]

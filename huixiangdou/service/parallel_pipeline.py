@@ -64,7 +64,7 @@ class PreprocNode:
             else:
                 topic = 'undefine'
             
-            for block_intention in ['问候', 'greeting', 'undefine']:
+            for block_intention in ['问候', 'greeting', 'undefine', '表达个人感受']:
                 if block_intention in intention:
                     sess.code = ErrorCode.NOT_A_QUESTION
                     yield sess
