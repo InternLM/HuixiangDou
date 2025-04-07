@@ -100,23 +100,24 @@ class LLM:
 
     def choose_model(self, backend: Backend, token_size: int) -> str:
         model = backend.model
+        response_reserve_length = 2048
         if backend.name == 'kimi' and model == 'auto':
-            if token_size <= 8192 - 1024:
+            if token_size <= 8192 - response_reserve_length:
                 model = 'moonshot-v1-8k'
-            elif token_size <= 32768 - 1024:
+            elif token_size <= 32768 - response_reserve_length:
                 model = 'moonshot-v1-32k'
-            elif token_size <= 128000 - 1024:
+            elif token_size <= 128000 - response_reserve_length:
                 model = 'moonshot-v1-128k'
             else:
                 raise ValueError('Input token length exceeds 128k')
         elif backend.name == 'step' and model == 'auto':
-            if token_size <= 8192 - 1024:
+            if token_size <= 8192 - response_reserve_length:
                 model = 'step-1-8k'
-            elif token_size <= 32768 - 1024:
+            elif token_size <= 32768 - response_reserve_length:
                 model = 'step-1-32k'
-            elif token_size <= 128000 - 1024:
+            elif token_size <= 128000 - response_reserve_length:
                 model = 'step-1-128k'
-            elif token_size <= 256000 - 1024:
+            elif token_size <= 256000 - response_reserve_length:
                 model = 'step-1-256k'
             else:
                 raise ValueError('Input token length exceeds 256k')
@@ -134,7 +135,7 @@ class LLM:
     async def chat(self,
                    prompt: str,
                    backend: str = 'default',
-                   system_prompt=None,
+                   system_prompt='你是茴香豆，简称豆哥。是一个微信群机器人，用于回答群友的疑问。',
                    history=[],
                    allow_truncate=False,
                    max_tokens=1024,
@@ -184,8 +185,11 @@ class LLM:
         if max_tokens:
             kwargs['max_tokens'] = max_tokens
 
-        response = await openai_async_client.chat.completions.create(**kwargs)
-        if response.choices is None:
+        try:
+            response = await openai_async_client.chat.completions.create(**kwargs)
+        except Exception as e:
+            import pdb
+            pdb.set_trace()
             pass
         logger.info(response.choices[0].message.content)
 
