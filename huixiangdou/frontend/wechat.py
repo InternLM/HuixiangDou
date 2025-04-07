@@ -743,10 +743,10 @@ class WkteamManager:
 
         sent = json_obj['data']
         sent['wId'] = self.wId
-        if groupId not in self.sent_msg:
-            self.sent_msg[groupId] = [sent]
+        if userId not in self.sent_msg:
+            self.sent_msg[userId] = [sent]
         else:
-            self.sent_msg[groupId].append(sent)
+            self.sent_msg[userId].append(sent)
 
         return None
 
