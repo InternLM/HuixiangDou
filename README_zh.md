@@ -1,5 +1,5 @@
 # 🎚️ 版本升级
-[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) 是在植物领域验证有效的 GraphRAG 方案。如果你关注 **HuixiangDou 在非计算机领域的效果**，试试新版。
+[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) 是在植物领域验证有效的 GraphRAG 方案。如果你关注 **从事非计算机领域**，试试新版。
 
 ---
 
@@ -108,24 +108,27 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
     <tr valign="top">
       <td>
 
-- [vLLM](https://github.com/vllm-project/vllm)
+- [DeepSeek](https://www.deepseek.com)
+- [InternLM](https://internlm.intern-ai.org.cn)
+- [GLM](https://www.zhipuai.cn)
 - [KIMI](https://kimi.moonshot.cn)
 - [StepFun](https://platform.stepfun.com)
-- [DeepSeek](https://www.deepseek.com)
-- [GLM (ZHIPU)](https://www.zhipuai.cn)
-- [SiliconCloud](https://siliconflow.cn/zh-cn/siliconcloud)
+- [vLLM](https://github.com/vllm-project/vllm)
+- [Silicon🏷️](https://cloud.siliconflow.cn/s/tpoisonooo)
+- [PPIO🏷️](https://ppinfra.com/user/register?invited_by=7GF8QS) 
 - [Xi-Api](https://api.xi-ai.cn)
+
 
 </td>
 <td>
 
-- pdf
-- word
 - excel
-- ppt
 - html
 - markdown
+- pdf
+- ppt
 - txt
+- word
 
 </td>
 
@@ -145,7 +148,7 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 - 飞书
 - [OpenXLab Web](https://openxlab.org.cn/apps/detail/tpoisonooo/huixiangdou-web)
 - [Gradio Demo](./huixiangdou/gradio_ui.py)
-- [HTTP Server](./huixiangdou/server.py)
+- [HTTP Server](./huixiangdou/api_server.py)
 - [Read the Docs](./docs/zh/doc_add_readthedocs.md)
 
 </td>
@@ -221,16 +224,27 @@ vllm serve /path/to/Qwen-2.5-7B-Instruct --enable-prefix-caching --served-model-
 [llm.server]
 remote_type = "kimi"
 remote_api_key = "sk-dp3GriuhhLXnYo0KUuWbFUWWKOXXXXXXXXXX"
+remote_llm_model = "auto"
 
 # remote_type = "step"
 # remote_api_key = "5CpPyYNPhQMkIzs5SYfcdbTHXq3a72H5XXXXXXXXXXXXX"
+# remote_llm_model = "auto"
 
 # remote_type = "deepseek"
 # remote_api_key = "sk-86db9a205aa9422XXXXXXXXXXXXXX"
+# remote_llm_model = "deepseek-chat"
 
 # remote_type = "vllm"
 # remote_api_key = "EMPTY"
 # remote_llm_model = "Qwen2.5-7B-Instruct"
+
+# remote_type = "siliconcloud"
+# remote_api_key = "sk-xxxxxxxxxxxxx"
+# remote_llm_model = "alibaba/Qwen1.5-110B-Chat"
+
+# remote_type = "ppio"
+# remote_api_key = "sk-xxxxxxxxxxxxx"
+# remote_llm_model = "thudm/glm-4-9b-chat"
 ```
 
 然后运行测试：
@@ -259,7 +273,7 @@ python3 -m huixiangdou.gradio_ui
 
 或者启动服务端，监听 23333 端口。默认使用 `chat_with_repo` pipeline：
 ```bash
-python3 -m huixiangdou.server
+python3 -m huixiangdou.api_server
 
 # cURL 测试状态回调接口
 curl -X POST http://127.0.0.1:23333/huixiangdou_stream  -H "Content-Type: application/json" -d '{"text": "how to install mmpose","image": ""}'

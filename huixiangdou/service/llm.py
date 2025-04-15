@@ -26,7 +26,9 @@ backend2url = {
     'zhipuai': 'https://open.bigmodel.cn/api/paas/v4/',
     'siliconcloud': 'https://api.siliconflow.cn/v1',
     'local': 'http://localhost:8000/v1',
-    'vllm': 'http://localhost:8000/v1'
+    'vllm': 'http://localhost:8000/v1',
+    'ppio': 'https://api.ppinfra.com/v3/openai',
+    'internlm': 'https://chat.intern-ai.org.cn/api/v1'
 }
 
 backend2model = {
@@ -34,9 +36,9 @@ backend2model = {
     "step": "auto",
     "deepseek": "deepseek-chat",
     "zhipuai": "glm-4",
-    "siliconcloud": "Qwen/Qwen2.5-14B-Instruct"
+    "siliconcloud": "Qwen/Qwen2.5-14B-Instruct",
+    "ppio": "thudm/glm-4-9b-chat"
 }
-
 
 def limit_async_func_call(max_size: int, waitting_time: float = 0.1):
     """Add restriction of maximum async calling times for a async func"""
@@ -64,6 +66,7 @@ class Backend:
 
     def __init__(self, name: str, data: Dict):
         self.api_key = data.get('remote_api_key', '')
+        self._type = data.get('remote_type', '')
         self.max_token_size = data.get('remote_llm_max_text_length', 32000) - 4096
         if self.max_token_size < 0:
             raise Exception(f'{self.max_token_size} < 4096')
@@ -139,7 +142,8 @@ class LLM:
                    history=[],
                    allow_truncate=False,
                    max_tokens=1024,
-                   timeout=600) -> str:
+                   timeout=600,
+                   tools=[]) -> str:
         # choose backend
         # if user not specify model, use first one
         if backend == 'default':
@@ -180,7 +184,8 @@ class LLM:
             "model": model,
             "messages": messages,
             "temperature": 0.7,
-            "top_p": 0.7
+            "top_p": 0.7,
+            "tools": tools
         }
         if max_tokens:
             kwargs['max_tokens'] = max_tokens
@@ -201,7 +206,7 @@ class LLM:
 
         await instance.tpm.wait(token_count=content_token_size)
         await instance.rpm.wait()
-        return content
+        return content.strip()
 
     @retry(
         stop=stop_after_attempt(3),
