@@ -225,7 +225,6 @@ Here is an example of the configured `config.ini`:
 
 ```ini
 [llm.server]
-[llm.server]
 remote_type = "kimi"
 remote_api_key = "sk-dp3GriuhhLXnYo0KUuWbFUWWKOXXXXXXXXXX"
 remote_llm_model = "auto"
