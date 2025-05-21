@@ -10,7 +10,7 @@ from loguru import logger
 from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 
-from huixiangdou.service import KnowledgeGraph
+from huixiangdou.services import KnowledgeGraph
 from huixiangdou.services import histogram
 
 

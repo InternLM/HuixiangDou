@@ -6,8 +6,8 @@ import time
 import pytoml
 from loguru import logger
 
-from huixiangdou.service.llm import LLM
-from huixiangdou.service.sg_search import SourceGraphProxy
+from huixiangdou.services.llm import LLM
+from huixiangdou.services.sg_search import SourceGraphProxy
 
 
 def load_secret():

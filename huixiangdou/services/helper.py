@@ -13,9 +13,9 @@ import requests
 from loguru import logger
 from openai import OpenAI
 from texttable import Texttable
-from ..service.llm import LLM
+from .llm import LLM
 
-from ..service.config import redis_host, redis_passwd, redis_port
+from .config import redis_host, redis_passwd, redis_port
 
 
 class TaskCode(Enum):

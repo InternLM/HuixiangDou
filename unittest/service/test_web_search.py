@@ -6,7 +6,7 @@ import time
 import pytoml
 from loguru import logger
 
-from huixiangdou.service.web_search import WebSearch, check_str_useful
+from huixiangdou.services.web_search import WebSearch, check_str_useful
 
 
 def load_secret():

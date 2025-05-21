@@ -12,7 +12,7 @@ from loguru import logger
 from typing import List
 from huixiangdou.primitive import Query
 from huixiangdou.services import ErrorCode
-from huixiangdou.service import SerialPipeline, ParallelPipeline
+from huixiangdou.services import SerialPipeline, ParallelPipeline
 import json
 from datetime import datetime
 

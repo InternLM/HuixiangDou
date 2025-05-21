@@ -1,5 +1,5 @@
 import time
-from huixiangdou.service.llm_server_hybrid import RPM, TPM
+from huixiangdou.services.llm_server_hybrid import RPM, TPM
 
 def test_rpm():
     rpm = RPM(30)

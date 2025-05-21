@@ -12,7 +12,7 @@ from loguru import logger
 from termcolor import colored
 
 from .services import ErrorCode, build_reply_text
-from .service import SerialPipeline, ParallelPipeline
+from .services import SerialPipeline, ParallelPipeline
 from .primitive import always_get_an_event_loop
 
 def parse_args():

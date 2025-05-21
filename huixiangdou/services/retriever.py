@@ -13,7 +13,7 @@ from typing import Any, Union, Tuple, List
 
 from huixiangdou.primitive import Embedder, Faiss, LLMReranker, Query, Chunk, BM25Okapi, FileOperation, NamedEntity2Chunk
 from .helper import QueryTracker
-from ..service.kg import KnowledgeGraph
+from .kg import KnowledgeGraph
 
 class Retriever:
     """Tokenize and extract features from the project's chunks, for use in the
