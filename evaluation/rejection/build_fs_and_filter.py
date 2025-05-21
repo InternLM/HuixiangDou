@@ -10,7 +10,7 @@ from loguru import logger
 from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 
-from huixiangdou.service import CacheRetriever, FeatureStore
+from huixiangdou.services import CacheRetriever, FeatureStore
 from huixiangdou.primitive import FileOperation
 save_hardcase = False
 

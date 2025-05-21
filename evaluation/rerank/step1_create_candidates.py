@@ -12,8 +12,8 @@ from sklearn.metrics import (f1_score, precision_recall_curve, precision_score,
                              recall_score)
 from tqdm import tqdm
 
-from huixiangdou.service import (CacheRetriever, FeatureStore, FileOperation,
-                                 Retriever)
+from huixiangdou.services import FeatureStore, CacheRetriever, Retriever
+from huixiangdou.services import FileOperation
 
 
 class NoDaemonProcess(multiprocessing.Process):

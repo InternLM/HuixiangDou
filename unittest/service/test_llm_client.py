@@ -1,4 +1,4 @@
-from huixiangdou.service.llm_client import ChatClient
+from huixiangdou.services.llm_client import ChatClient
 
 @DeprecationWarning
 def test_auto_fix():

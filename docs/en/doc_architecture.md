@@ -30,7 +30,7 @@ The module contains only 3 parts:
 .
 ├── frontend # Frontends like Lark, WeChat, etc., are part of the algorithm
 ├── main.py # main provides an example program
-├── service # service is the implementation of the algorithm
+├── services # services is the implementation of the algorithm
 ```
 
 **service** In our [paper](https://arxiv.org/abs/2401.08772), we introduced HuixiangDou as a pipeline structure; in implementation, it may include functions, a local LLM, or an RPC. All these foundational capabilities are regarded as services.
@@ -45,7 +45,7 @@ This is where the main body of the HuixiangDou pipeline is.
 
 ```bash
 .
-├── feature_store.py # Manages the creation and query of text features. In the future, "creation" and "query" will be separated
+├── store.py # Manages the creation and query of text features. In the future, "creation" and "query" will be separated
 ├── helper.py # Contains some helper tools
 ├── llm_client.py # LLM might be an RPC, so a client is needed
 ├── llm_server_hybrid.py # There might be more than one LLM, hence the name hybrid
@@ -54,7 +54,7 @@ This is where the main body of the HuixiangDou pipeline is.
 └── worker.py # The main logic as mentioned in the paper, calling the components above
 ```
 
-**1. feature_store.py** In the era of facial recognition, the storage and retrieval of facial features are called a feature store, which is the origin of the name.
+**1. store.py** In the era of facial recognition, the storage and retrieval of facial features are called a feature store, which is the origin of the name.
 
 1. When extracting features, the text will be partitionally split (the construction technique affects accuracy), the text2vec model extracts features, and saves them locally;
 2. During retrieval, in addition to directly using text2vec matching, a re-rank model will adjust the order

@@ -889,7 +889,7 @@ class WkteamManager:
     async def loop(self, assistant):
         """Fetch all messages from redis, split it by groupId; concat by
         timestamp."""
-        from huixiangdou.service.helper import ErrorCode, kimi_ocr
+        from huixiangdou.services import ErrorCode, kimi_ocr
         que = Queue(name='wechat')
 
         while True:

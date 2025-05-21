@@ -11,7 +11,8 @@ from aiohttp import web
 from loguru import logger
 from termcolor import colored
 
-from .service import ErrorCode, SerialPipeline, ParallelPipeline, build_reply_text
+from .services import ErrorCode, build_reply_text
+from .services import SerialPipeline, ParallelPipeline
 from .primitive import always_get_an_event_loop
 
 def parse_args():

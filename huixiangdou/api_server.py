@@ -1,6 +1,6 @@
 import argparse
 
-from .service import SerialPipeline, ParallelPipeline
+from .services import SerialPipeline, ParallelPipeline
 from .primitive import Query
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse

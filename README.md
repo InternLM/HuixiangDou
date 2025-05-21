@@ -63,7 +63,7 @@ The Web version's API for Android also supports other devices. See [Python sampl
 - \[2025/03\] Simplify deployment and removing `--standalone`
 - \[2025/03\] [Forwarding multiple wechat group message](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [Inverted indexer](https://github.com/InternLM/HuixiangDou/pull/387) makes LLM prefer knowledge base🎯
-- \[2024/09\] [Code retrieval](./huixiangdou/service/parallel_pipeline.py)
+- \[2024/09\] [Code retrieval](./huixiangdou/services/parallel_pipeline.py)
 - \[2024/08\] [chat_with_readthedocs](https://huixiangdou.readthedocs.io/en/latest/), see [how to integrate](./docs/zh/doc_add_readthedocs.md) 👍
 - \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
 - \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/en/doc_knowledge_graph.md) improve 1.7% F1 score 🎯
@@ -136,7 +136,7 @@ The Web version's API for Android also supports other devices. See [Python sampl
 - Dense for Document
 - Sparse for Code 
 - [Knowledge Graph](./docs/en/doc_knowledge_graph.md)
-- [Internet Search](./huixiangdou/service/web_search.py)
+- [Internet Search](./huixiangdou/services/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - Image and Text
 
@@ -211,14 +211,14 @@ cp -rf resource/data* repodir/
 
 # Build knowledge base, this will save the features of repodir to workdir, and update the positive and negative example thresholds into `config.ini`
 mkdir workdir
-python3 -m huixiangdou.service.feature_store
+python3 -m huixiangdou.services.store
 ```
 
 ## III. Setup LLM API and test
 Set the model and `api-key` in `config.ini`. If running LLM locally, we recommend using `vllm`.
 
 ```text
-vllm serve /path/to/Qwen-2.5-7B-Instruct --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
+vllm serve /path/to/Qwen-2.5-7B-Instruct --served-model-name vllm --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
 ```
 
 Here is an example of the configured `config.ini`:
@@ -327,7 +327,7 @@ apt update
 apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 python3 -m pip install -r requirements-cpu.txt
 # Establish knowledge base
-python3 -m huixiangdou.service.feature_store --config_path config-cpu.ini
+python3 -m huixiangdou.services.store --config_path config-cpu.ini
 # Q&A test
 python3 -m huixiangdou.main --config_path config-cpu.ini
 # gradio UI

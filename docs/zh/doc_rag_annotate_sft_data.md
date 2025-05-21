@@ -15,7 +15,7 @@ RAG 标注训练数据是否有用，请参考论文：
 
 基于 [config-alignment-example.json](../../config-alignment-example.ini) 做几处修改：
 
-1. 设置 bce 模型路径，执行 `python3 -m huixiangdou.service.feature_store --config_path config-alignment-example.ini`，用自己的知识库提取特征
+1. 设置 bce 模型路径，执行 `python3 -m huixiangdou.services.store --config_path config-alignment-example.ini`，用自己的知识库提取特征
 2. 配置 config 中网络搜索 key
 3. 配置 sourcegraph key。可能需要私有化部署一套 sourcegraph
 4. 选择使用的 remote LLM 并配置 RPM，一般标注用 GPT。xi-api 是国内的一个代理

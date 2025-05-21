@@ -11,7 +11,8 @@ import pytoml
 from loguru import logger
 from typing import List
 from huixiangdou.primitive import Query
-from huixiangdou.service import ErrorCode, SerialPipeline, ParallelPipeline
+from huixiangdou.services import ErrorCode
+from huixiangdou.services import SerialPipeline, ParallelPipeline
 import json
 from datetime import datetime
 
@@ -178,7 +179,7 @@ def build_feature_store(main_args):
         logger.warning('feature_store `workdir` already exist, skip')
         return
     logger.info('start build feature_store..')
-    os.system('python3 -m huixiangdou.service.feature_store --config_path {}'.format(main_args.config_path))
+    os.system('python3 -m huixiangdou.services.store --config_path {}'.format(main_args.config_path))
 
 if __name__ == '__main__':
     main_args = parse_args()

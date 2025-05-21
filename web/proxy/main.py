@@ -14,9 +14,9 @@ import redis
 from loguru import logger
 
 from huixiangdou.primitive import FileName, FileOperation
-from huixiangdou.service import (CacheRetriever, ErrorCode, FeatureStore,
-                                 Queue, Retriever, TaskCode,
-                                 feature_store_base_dir, parse_json_str,
+from huixiangdou.services import (CacheRetriever, ErrorCode, FeatureStore,
+                                  Queue, Retriever, parse_json_str)
+from huixiangdou.services import (TaskCode, feature_store_base_dir,
                                  redis_host, redis_passwd, redis_port)
 
 from .web_worker import OpenXLabWorker

@@ -63,7 +63,7 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 - \[2025/03\] 简化运行流程，移除 `--standalone`
 - \[2025/03\] [在多个微信群中转发消息](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [倒排索引](https://github.com/InternLM/HuixiangDou/pull/387)让 LLM 更偏向使用领域知识 🎯
-- \[2024/09\] 稀疏方法实现[代码检索](./huixiangdou/service/parallel_pipeline.py)
+- \[2024/09\] 稀疏方法实现[代码检索](./huixiangdou/services/parallel_pipeline.py)
 - \[2024/08\] ["chat_with readthedocs"](https://huixiangdou.readthedocs.io/zh-cn/latest/) ，见[集成说明](./docs/zh/doc_add_readthedocs.md)
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
 - \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/zh/doc_knowledge_graph.md) 🎯
@@ -136,7 +136,7 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 
 - 文档用稠密，代码用稀疏
 - [知识图谱](./docs/zh/doc_knowledge_graph.md)
-- [联网搜索](./huixiangdou/service/web_search.py)
+- [联网搜索](./huixiangdou/services/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - 图文混合
 
@@ -210,13 +210,13 @@ cp -rf resource/data* repodir/
 
 # 建立知识库，repodir 的特征会保存到 workdir，拒答阈值也会自动更新进 `config.ini`
 mkdir workdir
-python3 -m huixiangdou.service.feature_store
+python3 -m huixiangdou.services.store
 ```
 
 ## 三、配置 LLM，运行测试
 设置 `config.ini` 中的模型和 api-key。如果本地运行 LLM，我们推荐使用 `vllm`
 ```text
-vllm serve /path/to/Qwen-2.5-7B-Instruct --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
+vllm serve /path/to/Qwen-2.5-7B-Instruct --served-model-name vllm --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
 ```
 
 配置好的 `config.ini` 样例如下：
@@ -322,7 +322,7 @@ apt update
 apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 python3 -m pip install -r requirements-cpu.txt
 # 建立知识库
-python3 -m huixiangdou.service.feature_store  --config_path config-cpu.ini
+python3 -m huixiangdou.services.store --config_path config-cpu.ini
 # 问答测试
 python3 -m huixiangdou.main --config_path config-cpu.ini
 # gradio UI
