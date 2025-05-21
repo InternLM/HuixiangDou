@@ -48,10 +48,10 @@ python3 -m huixiangdou.service.kg --dump-neo4j --neo4j-uri ${URI} --neo4j-user $
 
 ## 三、建立稠密检索特征库
 
-这步就是 README 里的 `feature_store`，因为要算混合检索下的最佳阈值，不要跳过。
+这步就是 README 里的 `store`，因为要算混合检索下的最佳阈值，不要跳过。
 
 ```bash
-python3 -m huixiangdou.service.feature_store
+python3 -m huixiangdou.services.store
 ```
 
 测试效果

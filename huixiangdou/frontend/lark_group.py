@@ -9,7 +9,7 @@ from lark_oapi.adapter.flask import *  # noqa E403
 from lark_oapi.api.im.v1 import *  # noqa E403
 from loguru import logger
 
-from huixiangdou.service.helper import Queue
+from huixiangdou.services import Queue
 
 app = Flask(__name__)
 handler = None

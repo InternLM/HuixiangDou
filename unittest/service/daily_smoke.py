@@ -59,7 +59,7 @@ def run():
 
     actions = {
         'feature_store':
-        'python3 -m huixiangdou.service.feature_store --config_path {}',
+        'python3 -m huixiangdou.services.store --config_path {}',
         'main': 'python3 -m huixiangdou.main --config_path {}'
     }
 

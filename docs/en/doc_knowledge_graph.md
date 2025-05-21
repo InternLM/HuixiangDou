@@ -52,10 +52,10 @@ python3 -m huixiangdou.service.kg --help
 
 ## 3. Build Dense Retrieval Feature Library
 
-This step is the `feature_store` in the README. Since you need to calculate the optimal threshold under hybrid retrieval, do not skip it.
+This step is the `store` in the README. Since you need to calculate the optimal threshold under hybrid retrieval, do not skip it.
 
 ```bash
-python3 -m huixiangdou.service.feature_store
+python3 -m huixiangdou.services.store
 ```
 
 Test it.

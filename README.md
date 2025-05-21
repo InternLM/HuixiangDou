@@ -211,7 +211,7 @@ cp -rf resource/data* repodir/
 
 # Build knowledge base, this will save the features of repodir to workdir, and update the positive and negative example thresholds into `config.ini`
 mkdir workdir
-python3 -m huixiangdou.service.feature_store
+python3 -m huixiangdou.services.store
 ```
 
 ## III. Setup LLM API and test
@@ -327,7 +327,7 @@ apt update
 apt install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
 python3 -m pip install -r requirements-cpu.txt
 # Establish knowledge base
-python3 -m huixiangdou.service.feature_store --config_path config-cpu.ini
+python3 -m huixiangdou.services.store --config_path config-cpu.ini
 # Q&A test
 python3 -m huixiangdou.main --config_path config-cpu.ini
 # gradio UI

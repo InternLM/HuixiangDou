@@ -1,4 +1,3 @@
-
 """extract feature and search with user query."""
 import argparse
 import json
@@ -460,7 +459,7 @@ if __name__ == '__main__':
     file_opr = FileOperation()
 
     files = file_opr.scan_dir(repo_dir=args.repo_dir)
-    
+
     fs_init.initialize(files=files, ner_file=args.ner_file, work_dir=args.work_dir)
     file_opr.summarize(files)
     del fs_init

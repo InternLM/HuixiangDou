@@ -9,8 +9,8 @@ import pytoml
 import requests
 from loguru import logger
 
-from huixiangdou.service import (LLM, ErrorCode, FeatureStore,
-                                 QueryTracker, WebSearch)
+from huixiangdou.services import ErrorCode, FeatureStore
+from huixiangdou.service import (LLM, QueryTracker, WebSearch)
 
 
 def openxlab_security(query: str, retry=1):

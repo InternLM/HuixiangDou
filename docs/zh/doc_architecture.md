@@ -30,22 +30,22 @@ module 内只有 3 个部分：
 .
 ├── frontend       # 飞书、微信这些，都是茴香豆算法的前端
 ├── main.py        #  main 提供示例程序
-├── service        # service 就是算法实现
+├── services       # services 就是算法实现
 ```
 
-**service** 我们在[论文](https://arxiv.org/abs/2401.08772)里介绍豆哥是套 pipeline。在实现里，可能包含函数、本地 LLM 或者 RPC。把这些基础能力都视做 service。
+**services** 我们在[论文](https://arxiv.org/abs/2401.08772)里介绍豆哥是套 pipeline。在实现里，可能包含函数、本地 LLM 或者 RPC。把这些基础能力都视做 service。
 
 **frontend** 既然豆哥是套算法 pipeline，那么微信、飞书、web 这些，都是它的前端。这个目录放调用前端的工具类和函数，目前里面是飞书的 API 用法
 
 **main.py** 现在有算法、有前端，需要个入口函数实现业务逻辑。你在 `config.ini` 配置了飞书，就应该发给飞书 qaq
 
-## 第三层：service
+## 第三层：services
 
 这里是 HuixiangDou 算法主体。
 
 ```bash
 .
-├── feature_store.py # 管理文本特征的建立和查询，未来会把 “建立” 和 “查询” 分开
+├── store.py # 管理文本特征的建立和查询，未来会把 “建立” 和 “查询” 分开
 ├── helper.py        # 放一些辅助工具
 ├── llm_client.py    # LLM 可能是个 RPC，所以需要个 client
 ├── llm_server_hybrid.py  # LLM 可能不止一个，所以是 hybrid
@@ -54,7 +54,7 @@ module 内只有 3 个部分：
 └── worker.py        # 论文所说的主逻辑，调用上面的组件
 ```
 
-**1. feature_store.py** 人脸识别时代，面部特征的存储和检索叫 feature_store，这是名字来源。
+**1. store.py** 人脸识别时代，面部特征的存储和检索叫 feature_store，这是名字来源。
 
     - 提取特征时，会花式分割文本（构造技巧会影响精度）、text2vec 模型提取特征、保存到本地；
     - 检索时，除了直接用 text2vec 匹配，还会 rerank 模型调整顺序
