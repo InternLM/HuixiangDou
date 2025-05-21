@@ -331,7 +331,7 @@ The basic version may not perform well. You can enable these features to enhance
    # /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/__init__.py
    ```
 
-  add soft link
+   add soft link
 
    ```Bash
    # cd your_python_path/site-packages/faiss
