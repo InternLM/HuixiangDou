@@ -22,9 +22,9 @@ class Chunk():
     modal: str = 'text'
 
     def __post_init__(self):
-        if self.modal not in ['text', 'image', 'audio']:
+        if self.modal not in ['text', 'image', 'audio', 'qa']:
             raise ValueError(
-                f'Invalid modal: {self.modal}. Allowed values are: `text`, `image`, `audio`'
+                f'Invalid modal: {self.modal}. Allowed values are: `text`, `image`, `audio`, `qa`'
             )
 
     def __str__(self) -> str:

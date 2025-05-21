@@ -193,8 +193,7 @@ class LLM:
         try:
             response = await openai_async_client.chat.completions.create(**kwargs)
         except Exception as e:
-            import pdb
-            pdb.set_trace()
+            logger.error(str(e) + ' input len {}'.format(len(str(messages))))
             pass
         logger.info(response.choices[0].message.content)
 

@@ -169,7 +169,7 @@ class Retriever:
         context = ''
         references = []
         ref_texts = []
-        for idx, chunk in enumerate(rerank_chunks):
+        for chunk in rerank_chunks:
 
             content = chunk.content_or_path
             splits.append(content)
@@ -178,12 +178,14 @@ class Retriever:
             if '://' in source:
                 # url
                 file_text = content
-            else:
+            elif chunk.modal == 'text':
                 file_text, error = file_opr.read(chunk.metadata['read'])
                 if error is not None:
                     # read file failed, skip
                     continue
-
+            elif chunk.modal == 'qa':
+                file_text = chunk.metadata['qa']
+     
             logger.info('target {} content length {}'.format(
                 source, len(file_text)))
             if len(file_text) + len(context) > context_max_length:

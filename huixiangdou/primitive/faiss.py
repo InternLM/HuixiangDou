@@ -167,7 +167,7 @@ class Faiss():
             for chunk in tqdm(chunks, 'chunks'):
                 np_feature = None
                 try:
-                    if chunk.modal == 'text':
+                    if chunk.modal == 'text' or chunk.modal == 'qa':
                         np_feature = embedder.embed_query(text=chunk.content_or_path)
                     elif chunk.modal == 'image':
                         np_feature = embedder.embed_query(path=chunk.content_or_path)
