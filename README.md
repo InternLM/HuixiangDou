@@ -216,7 +216,7 @@ python3 -m huixiangdou.services.store
 # You can also build knowledge base from QA pairs (CSV or JSON format)
 # CSV: First column is key (question), second column is value (answer)
 # JSON: {"question1": "answer1", "question2": "answer2", ...}
-# python3 -m huixiangdou.services.store --qa-pair /path/to/qa_pairs.csv
+# python3 -m huixiangdou.services.store --qa-pair resource/data/qa_pair.csv
 ```
 
 ## III. Setup LLM API and test

@@ -203,8 +203,9 @@ class FeatureStore:
                             key, value = row[0], row[1]
                             # Create a chunk with key as content and value in metadata
                             chunk = Chunk(
+                                modal='qa',
                                 content_or_path=key,
-                                metadata={'source': qa_pair_file, 'value': value}
+                                metadata={'read': qa_pair_file, 'source': qa_pair_file, 'qa': f'{key}: {value}'}
                             )
                             chunks.append(chunk)
             
@@ -218,8 +219,9 @@ class FeatureStore:
                         # Format: {"key1": "value1", "key2": "value2", ...}
                         for key, value in qa_data.items():
                             chunk = Chunk(
+                                modal='qa',
                                 content_or_path=key,
-                                metadata={'source': qa_pair_file, 'value': value}
+                                metadata={'read': qa_pair_file, 'source': qa_pair_file, 'qa': f'{key}: {value}'}
                             )
                             chunks.append(chunk)
                     elif isinstance(qa_data, list):
@@ -227,8 +229,9 @@ class FeatureStore:
                         for item in qa_data:
                             if isinstance(item, dict) and 'key' in item and 'value' in item:
                                 chunk = Chunk(
-                                    content_or_path=item['key'],
-                                    metadata={'source': qa_pair_file, 'value': item['value']}
+                                    modal='qa',
+                                    content_or_path=key,
+                                    metadata={'read': qa_pair_file, 'source': qa_pair_file, 'qa': f'{key}: {value}'}
                                 )
                                 chunks.append(chunk)
             
@@ -281,7 +284,7 @@ class FeatureStore:
                     texts=[text], metadatas=[metadata])
 
         if not self.embedder.support_image:
-            filtered_chunks = list(filter(lambda x: x.modal=='text', chunks))
+            filtered_chunks = list(filter(lambda x: x.modal=='text' or x.modal=='qa', chunks))
         else:
             filtered_chunks = chunks
         if len(chunks) < 1:

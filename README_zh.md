@@ -215,7 +215,7 @@ python3 -m huixiangdou.services.store
 # 你也可以从问答对（QA pairs）构建知识库（支持 CSV 或 JSON 格式）
 # CSV 格式：第一列为问题（key），第二列为答案（value）
 # JSON 格式：{"问题1": "答案1", "问题2": "答案2", ...}
-# python3 -m huixiangdou.services.store --qa-pair /path/to/qa_pairs.csv
+# python3 -m huixiangdou.services.store --qa-pair resource/data/qa_pair.csv
 ```
 
 ## 三、配置 LLM，运行测试
