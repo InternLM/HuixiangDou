@@ -384,6 +384,24 @@ Please read the following topics:
 
    LLM long text based on transformers structure requires more memory. At this time, kv cache quantization needs to be done on the model, such as [lmdeploy quantization description](https://github.com/InternLM/lmdeploy/blob/main/docs/en/quantization). Then use docker to independently deploy Hybrid LLM Service.
 
+7. `No module named 'faiss.swigfaiss_avx2'` 
+
+   locate installed `faiss` package
+   
+   ```python
+   import faiss
+   print(faiss.__file__)
+   # /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/__init__.py
+   ```
+
+   add soft link
+
+   ```Bash
+   # cd your_python_path/site-packages/faiss
+   cd /root/.conda/envs/InternLM2_Huixiangdou/lib/python3.10/site-packages/faiss/
+   ln -s swigfaiss.py swigfaiss_avx2.py
+   ```
+
 # 🍀 Acknowledgements
 
 - [KIMI](https://kimi.moonshot.cn/): Long text LLM, supports direct file upload
