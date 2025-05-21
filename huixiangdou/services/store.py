@@ -6,8 +6,10 @@ import pdb
 import re
 import shutil
 import time
+import csv
+from dataclasses import dataclass
 from multiprocessing import Pool
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import random
 import pytoml
 from loguru import logger
@@ -21,6 +23,15 @@ from ..primitive import (ChineseRecursiveTextSplitter, Chunk, Embedder, Faiss,
                          BM25Okapi, NamedEntity2Chunk)
 from .helper import histogram
 from .retriever import CacheRetriever, Retriever
+
+
+@dataclass
+class InitializeConfig:
+    """Configuration for initializing the feature store."""
+    files: List[FileName]
+    work_dir: str
+    ner_file: Optional[str] = None
+    qa_pair_file: Optional[str] = None
 
 def empty_cache():
     try:
@@ -170,7 +181,65 @@ class FeatureStore:
         bm25 = BM25Okapi()
         bm25.save(chunks, sparse_dir)
 
-    def build_dense(self, files: List[FileName], work_dir: str, markdown_as_txt: bool=False):
+    def process_qa_pairs(self, qa_pair_file: str) -> List[Chunk]:
+        """Process QA pairs from CSV or JSON file.
+        
+        Args:
+            qa_pair_file: Path to the CSV or JSON file containing QA pairs.
+            
+        Returns:
+            List of Chunk objects where key is the content and value is stored in metadata.
+        """
+        chunks = []
+        file_ext = os.path.splitext(qa_pair_file)[1].lower()
+        
+        try:
+            if file_ext == '.csv':
+                # Process CSV file - first column is key, second column is value
+                with open(qa_pair_file, 'r', encoding='utf-8') as f:
+                    csv_reader = csv.reader(f)
+                    for row in csv_reader:
+                        if len(row) >= 2:
+                            key, value = row[0], row[1]
+                            # Create a chunk with key as content and value in metadata
+                            chunk = Chunk(
+                                content_or_path=key,
+                                metadata={'source': qa_pair_file, 'value': value}
+                            )
+                            chunks.append(chunk)
+            
+            elif file_ext == '.json':
+                # Process JSON file
+                with open(qa_pair_file, 'r', encoding='utf-8') as f:
+                    qa_data = json.load(f)
+                    
+                    # Handle different JSON formats
+                    if isinstance(qa_data, dict):
+                        # Format: {"key1": "value1", "key2": "value2", ...}
+                        for key, value in qa_data.items():
+                            chunk = Chunk(
+                                content_or_path=key,
+                                metadata={'source': qa_pair_file, 'value': value}
+                            )
+                            chunks.append(chunk)
+                    elif isinstance(qa_data, list):
+                        # Format: [{"key": "key1", "value": "value1"}, ...]
+                        for item in qa_data:
+                            if isinstance(item, dict) and 'key' in item and 'value' in item:
+                                chunk = Chunk(
+                                    content_or_path=item['key'],
+                                    metadata={'source': qa_pair_file, 'value': item['value']}
+                                )
+                                chunks.append(chunk)
+            
+            logger.info(f"Processed {len(chunks)} QA pairs from {qa_pair_file}")
+            return chunks
+            
+        except Exception as e:
+            logger.error(f"Error processing QA pairs from {qa_pair_file}: {str(e)}")
+            return []
+
+    def build_dense(self, files: List[FileName], work_dir: str, markdown_as_txt: bool=False, qa_pair_file: str = None):
         """Extract the features required for the response pipeline based on the
         document."""
         feature_dir = os.path.join(work_dir, 'db_dense')
@@ -179,7 +248,14 @@ class FeatureStore:
 
         file_opr = FileOperation()
         chunks = []
-
+        
+        # Process QA pairs if provided
+        if qa_pair_file is not None:
+            qa_chunks = self.process_qa_pairs(qa_pair_file)
+            chunks.extend(qa_chunks)
+            logger.info(f"Added {len(qa_chunks)} chunks from QA pairs")
+        
+        # Process regular files
         for i, file in tqdm(enumerate(files), 'split'):
             if not file.state:
                 continue
@@ -318,24 +394,27 @@ class FeatureStore:
                     file.state = False
                     file.reason = 'read error'
 
-    def initialize(self, files: list, ner_file:str, work_dir: str):
+    def initialize(self, config: InitializeConfig):
         """Initializes response and reject feature store.
 
         Only needs to be called once. Also calculates the optimal threshold
         based on provided good and bad question examples, and saves it in the
         configuration file.
+        
+        Args:
+            config: Configuration object containing initialization parameters
         """
         logger.info(
             'initialize response and reject feature store, you only need call this once.'  # noqa E501
         )
-        self.preprocess(files=files, work_dir=work_dir)
+        self.preprocess(files=config.files, work_dir=config.work_dir)
         # build dense retrieval refusal-to-answer and response database
-        documents = list(filter(lambda x: x._type != 'code', files))
-        chunks = self.build_dense(files=documents, work_dir=work_dir)
+        documents = list(filter(lambda x: x._type != 'code', config.files))
+        chunks = self.build_dense(files=documents, work_dir=config.work_dir, qa_pair_file=config.qa_pair_file)
 
-        codes = list(filter(lambda x: x._type == 'code', files))
-        self.build_sparse(files=codes, work_dir=work_dir)
-        self.build_inverted_index(chunks=chunks, ner_file=ner_file, work_dir=work_dir)
+        codes = list(filter(lambda x: x._type == 'code', config.files))
+        self.build_sparse(files=codes, work_dir=config.work_dir)
+        self.build_inverted_index(chunks=chunks, ner_file=config.ner_file, work_dir=config.work_dir)
 
 def parse_args():
     """Parse command-line arguments."""
@@ -370,6 +449,11 @@ def parse_args():
         '--ner-file',
         default=None,
         help='The path of NER file, which is a dumped json list. HuixiangDou would build relationship between entities and chunks for retrieve.'
+    )
+    parser.add_argument(
+        '--qa-pair',
+        default=None,
+        help='Path to a CSV or JSON file containing QA pairs. For CSV, the first column is the key and the second column is the value. For JSON, the format should be {"key":"value"} or a list of {"key":"key1", "value":"value1"}.'
     )
     parser.add_argument(
         '--sample', help='Input an json file, save reject and search output.')
@@ -459,8 +543,16 @@ if __name__ == '__main__':
     file_opr = FileOperation()
 
     files = file_opr.scan_dir(repo_dir=args.repo_dir)
+    
+    # Create configuration object
+    init_config = InitializeConfig(
+        files=files,
+        work_dir=args.work_dir,
+        ner_file=args.ner_file,
+        qa_pair_file=args.qa_pair
+    )
 
-    fs_init.initialize(files=files, ner_file=args.ner_file, work_dir=args.work_dir)
+    fs_init.initialize(config=init_config)
     file_opr.summarize(files)
     del fs_init
 
