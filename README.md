@@ -63,7 +63,7 @@ The Web version's API for Android also supports other devices. See [Python sampl
 - \[2025/03\] Simplify deployment and removing `--standalone`
 - \[2025/03\] [Forwarding multiple wechat group message](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [Inverted indexer](https://github.com/InternLM/HuixiangDou/pull/387) makes LLM prefer knowledge base🎯
-- \[2024/09\] [Code retrieval](./huixiangdou/service/parallel_pipeline.py)
+- \[2024/09\] [Code retrieval](./huixiangdou/services/parallel_pipeline.py)
 - \[2024/08\] [chat_with_readthedocs](https://huixiangdou.readthedocs.io/en/latest/), see [how to integrate](./docs/zh/doc_add_readthedocs.md) 👍
 - \[2024/07\] Image and text retrieval & Removal of `langchain` 👍
 - \[2024/07\] [Hybrid Knowledge Graph and Dense Retrieval](./docs/en/doc_knowledge_graph.md) improve 1.7% F1 score 🎯
@@ -136,7 +136,7 @@ The Web version's API for Android also supports other devices. See [Python sampl
 - Dense for Document
 - Sparse for Code 
 - [Knowledge Graph](./docs/en/doc_knowledge_graph.md)
-- [Internet Search](./huixiangdou/service/web_search.py)
+- [Internet Search](./huixiangdou/services/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - Image and Text
 

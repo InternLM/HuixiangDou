@@ -63,7 +63,7 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 - \[2025/03\] 简化运行流程，移除 `--standalone`
 - \[2025/03\] [在多个微信群中转发消息](./docs/zh/doc_merge_wechat_group.md)
 - \[2024/09\] [倒排索引](https://github.com/InternLM/HuixiangDou/pull/387)让 LLM 更偏向使用领域知识 🎯
-- \[2024/09\] 稀疏方法实现[代码检索](./huixiangdou/service/parallel_pipeline.py)
+- \[2024/09\] 稀疏方法实现[代码检索](./huixiangdou/services/parallel_pipeline.py)
 - \[2024/08\] ["chat_with readthedocs"](https://huixiangdou.readthedocs.io/zh-cn/latest/) ，见[集成说明](./docs/zh/doc_add_readthedocs.md)
 - \[2024/07\] 图文检索 & 移除 `langchain` 👍
 - \[2024/07\] [混合知识图谱和稠密检索，F1 提升 1.7%](./docs/zh/doc_knowledge_graph.md) 🎯
@@ -136,7 +136,7 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 
 - 文档用稠密，代码用稀疏
 - [知识图谱](./docs/zh/doc_knowledge_graph.md)
-- [联网搜索](./huixiangdou/service/web_search.py)
+- [联网搜索](./huixiangdou/services/web_search.py)
 - [SourceGraph](https://sourcegraph.com)
 - 图文混合
 
