@@ -218,7 +218,7 @@ python3 -m huixiangdou.services.store
 Set the model and `api-key` in `config.ini`. If running LLM locally, we recommend using `vllm`.
 
 ```text
-vllm serve /path/to/Qwen-2.5-7B-Instruct --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
+vllm serve /path/to/Qwen-2.5-7B-Instruct --served-model-name vllm --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
 ```
 
 Here is an example of the configured `config.ini`:

@@ -216,7 +216,7 @@ python3 -m huixiangdou.services.store
 ## 三、配置 LLM，运行测试
 设置 `config.ini` 中的模型和 api-key。如果本地运行 LLM，我们推荐使用 `vllm`
 ```text
-vllm serve /path/to/Qwen-2.5-7B-Instruct --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
+vllm serve /path/to/Qwen-2.5-7B-Instruct --served-model-name vllm --enable-prefix-caching --served-model-name Qwen-2.5-7B-Instruct
 ```
 
 配置好的 `config.ini` 样例如下：
