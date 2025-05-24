@@ -1,7 +1,7 @@
 
 # 🎚️ Upgrade
 
-[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) is a validated GraphRAG solution in the plant field. If you are interested in **non-computer fields**, try the new version.
+[HuixiangDou2 (ACL2025)](https://github.com/tpoisonooo/HuixiangDou2) is a validated GraphRAG solution in the plant field. If you are interested in **non-computer fields**, try the new version.
 
 ---
 
