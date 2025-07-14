@@ -32,7 +32,7 @@ backend2url = {
 }
 
 backend2model = {
-    "kimi": "kimi-k2-0711-preview",
+    "kimi": "auto",
     "step": "auto",
     "deepseek": "deepseek-chat",
     "zhipuai": "glm-4",
@@ -150,7 +150,6 @@ class LLM:
         if backend == 'default':
             backend = list(self.backends.keys())[0]
         instance = self.backends[backend]
-
         # try truncate input prompt
         input_tokens = encode_string(content=str(prompt)+str(history))
         input_token_size = len(input_tokens)
