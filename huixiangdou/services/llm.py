@@ -104,15 +104,16 @@ class LLM:
     def choose_model(self, backend: Backend, token_size: int) -> str:
         model = backend.model
         response_reserve_length = 2048
-        if backend.name == 'kimi' and model == 'auto':
-            if token_size <= 8192 - response_reserve_length:
-                model = 'moonshot-v1-8k'
-            elif token_size <= 32768 - response_reserve_length:
-                model = 'moonshot-v1-32k'
-            elif token_size <= 128000 - response_reserve_length:
-                model = 'moonshot-v1-128k'
-            else:
-                raise ValueError('Input token length exceeds 128k')
+        if backend.name == 'kimi':
+            if model == 'auto':
+                if token_size <= 8192 - response_reserve_length:
+                    model = 'moonshot-v1-8k'
+                elif token_size <= 32768 - response_reserve_length:
+                    model = 'moonshot-v1-32k'
+                elif token_size <= 128000 - response_reserve_length:
+                    model = 'moonshot-v1-128k'
+                else:
+                    raise ValueError('Input token length exceeds 128k')
         elif backend.name == 'step' and model == 'auto':
             if token_size <= 8192 - response_reserve_length:
                 model = 'step-1-8k'
@@ -149,7 +150,6 @@ class LLM:
         if backend == 'default':
             backend = list(self.backends.keys())[0]
         instance = self.backends[backend]
-
         # try truncate input prompt
         input_tokens = encode_string(content=str(prompt)+str(history))
         input_token_size = len(input_tokens)

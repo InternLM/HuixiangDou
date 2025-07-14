@@ -9,6 +9,12 @@ client = OpenAI(
 
 prompt = '“huixiangdou 是什么？”\n请仔细阅读以上内容，判断句子是否是个有主题的疑问句，结果用 0～10 表示。直接提供得分不要解释。\n判断标准：有主语谓语宾语并且是疑问句得 10 分；缺少主谓宾扣分；陈述句直接得 0 分；不是疑问句直接得 0 分。直接提供得分不要解释。'
 
+def list_model():
+    model_list = client.models.list()
+    model_data = model_list.data
+    
+    for i, model in enumerate(model_data):
+        print(f"model[{i}]:", model.id)
 
 def generate():
     """Test generate."""
@@ -30,10 +36,10 @@ def generate():
     # print('input_length {}'.format(len(whole_input)))
 
     try:
-        completion = client.chat.completions.create(model='moonshot-v1-8k',
+        completion = client.chat.completions.create(model='kimi-k2-0711-preview',
                                                     messages=messages,
                                                     temperature=0.1,
-                                                    n=10)
+                                                    n=5)
     except Exception as e:
         return prompt, str(e)
 
@@ -45,4 +51,5 @@ def generate():
 
 
 if __name__ == '__main__':
+    list_model()
     print(generate())
