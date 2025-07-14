@@ -1,5 +1,5 @@
 # 🎚️ 版本升级
-[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2) 是在植物领域验证有效的 GraphRAG 方案。如果你关注 **从事非计算机领域**，试试新版。
+[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2)(ACL25) 是在植物领域验证有效的 GraphRAG 方案，已经为[**Cell MP封面论文**](https://www.cell.com/molecular-plant/issue?pii=S1674-2052(24)X0008-8)做出了贡献。如果你关注**非计算机领域**，试试新版。
 
 ---
 
@@ -111,7 +111,7 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 - [DeepSeek](https://www.deepseek.com)
 - [InternLM](https://internlm.intern-ai.org.cn)
 - [GLM](https://www.zhipuai.cn)
-- [KIMI](https://kimi.moonshot.cn)
+- [KIMI](https://kimi.moonshot.cn)-k2
 - [StepFun](https://platform.stepfun.com)
 - [vLLM](https://github.com/vllm-project/vllm)
 - [Silicon🏷️](https://cloud.siliconflow.cn/s/tpoisonooo)
