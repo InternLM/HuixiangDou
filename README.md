@@ -1,7 +1,7 @@
 
 # 🎚️ Upgrade
 
-[HuixiangDou2]((https://github.com/tpoisonooo/HuixiangDou2))(ACL25) is a GraphRAG solution whose effectiveness has been demonstrated in the plant-science domain and that contributed to the [**cover paper in Cell**]((https://www.cell.com/molecular-plant/issue?pii=S1674-2052(24)X0008-8)) Molecular Plant. If you work outside computer science, give the new release a try.
+[HuixiangDou2](https://github.com/tpoisonooo/HuixiangDou2)(ACL25) is a GraphRAG solution whose effectiveness has been demonstrated in the plant-science domain and that contributed to the [**cover paper in Cell**](https://www.cell.com/molecular-plant/issue?pii=S1674-2052(24)X0008-8) Molecular Plant. If you work outside computer science, give the new release a try.
 
 ---
 
