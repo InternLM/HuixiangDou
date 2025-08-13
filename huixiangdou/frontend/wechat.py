@@ -56,6 +56,7 @@ class Queue:
                                 charset='utf-8',
                                 decode_responses=True)
         self.key = '%s:%s' % (namespace, name)
+        print(self.qsize())
 
     def qsize(self):
         """Return the approximate size of the queue."""
@@ -151,6 +152,7 @@ class Message:
         self.thumburl = ''
         self.md5 = ''
         self.length = 0
+        self.new_msg_id = ''
 
     def parse(self, wx_msg: dict, bot_wxid: str, auth:str='', wkteam_ip_port:str=''):
         # str or int
@@ -279,6 +281,8 @@ class Message:
 
         self.sender = data['fromUser']
         self.data = data
+        if 'newMsgId' in data:
+            self.new_msg_id = data['newMsgId']
         self.type = parse_type
         if 'fromGroup' not in data:
             return Exception('GroupID not found in message')
@@ -404,6 +408,7 @@ class WkteamManager:
         self.qrCodeUrl = ''
         self.wkteam_config = dict()
         self.users = dict()
+        self.preprocessed = set()
         self.messages = []
 
         # {group_id: group_name}
@@ -780,10 +785,16 @@ class WkteamManager:
 
         async def forward_msg(input_json: dict):
             msg = Message()
+            print(input_json)
             err = msg.parse(wx_msg=input_json, bot_wxid=self.wId, auth=self.auth, wkteam_ip_port=self.WKTEAM_IP_PORT)
             if err is not None:
                 logger.error(str(err))
                 return
+
+            if msg.new_msg_id in self.preprocessed:
+                print(f'{msg.new_msg_id} repeated, skip')
+                return
+            self.preprocessed.add(msg.new_msg_id)
             
             # 不是白名单群里的消息，不处理
             come_from_whitelist = False
@@ -826,14 +837,20 @@ class WkteamManager:
             """Save wechat message to redis, for revert command, use high
             priority."""
             input_json = await request.json()
+
+
             with open(logpath, 'a') as f:
                 json_str = json.dumps(input_json, indent=2, ensure_ascii=False)
                 f.write(json_str)
                 f.write('\n')
 
             logger.debug(input_json)
-            msg_que = Queue(name='wechat')
-            revert_que = Queue(name='wechat-high-priority')
+            try:
+                msg_que = Queue(name='wechat')
+            except Exception as e:
+                msg_que = None
+                print('redis unavailable')
+                pass
 
             if input_json['messageType'] == '00000':
                 return web.json_response(text='done')
@@ -844,7 +861,8 @@ class WkteamManager:
                     self.revert_all()
                     return web.json_response(text='done')
 
-                msg_que.put(json_str)
+                if msg_que:
+                    msg_que.put(json_str)
 
                 if forward and not is_revert_command(input_json):
                     await forward_msg(input_json)
@@ -859,7 +877,9 @@ class WkteamManager:
         web.run_app(app, host='0.0.0.0', port=port)
 
     def serve(self, forward:bool=False):
-        # self.bind(self.wkteam_config.dir, self.wkteam_config.callback_port, forward=forward)
+        ## self.bind(self.wkteam_config.dir, self.wkteam_config.callback_port, forward=forward)
+
+        ## TODO
         p = Process(target=self.bind, args=(self.wkteam_config.dir, self.wkteam_config.callback_port, forward))
         p.start()
         self.set_callback()
@@ -893,10 +913,12 @@ class WkteamManager:
         que = Queue(name='wechat')
 
         while True:
-            time.sleep(1)
-
+            # time.sleep(1)
             # parse wx_msg, add it to group
             for wx_msg_str in que.get_all():
+                # print(wx_msg_str)
+                # time.sleep(0.01)
+                # continue
                 wx_msg = json.loads(wx_msg_str)
                 logger.debug(wx_msg)
                 msg = Message()
