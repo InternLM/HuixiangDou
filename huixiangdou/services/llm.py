@@ -28,7 +28,8 @@ backend2url = {
     'local': 'http://localhost:8000/v1',
     'vllm': 'http://localhost:8000/v1',
     'ppio': 'https://api.ppinfra.com/v3/openai',
-    'internlm': 'https://chat.intern-ai.org.cn/api/v1'
+    'internlm': 'https://chat.intern-ai.org.cn/api/v1',
+    'minimax': 'https://api.minimax.io/v1'
 }
 
 backend2model = {
@@ -37,7 +38,8 @@ backend2model = {
     "deepseek": "deepseek-chat",
     "zhipuai": "glm-4",
     "siliconcloud": "Qwen/Qwen2.5-14B-Instruct",
-    "ppio": "thudm/glm-4-9b-chat"
+    "ppio": "thudm/glm-4-9b-chat",
+    "minimax": "MiniMax-M1"
 }
 
 def limit_async_func_call(max_size: int, waitting_time: float = 0.1):
@@ -125,6 +127,13 @@ class LLM:
                 model = 'step-1-256k'
             else:
                 raise ValueError('Input token length exceeds 256k')
+        elif backend.name == 'minimax' and model == 'auto':
+            if token_size <= 204000 - response_reserve_length:
+                model = 'MiniMax-M1'
+            elif token_size <= 1000000 - response_reserve_length:
+                model = 'MiniMax-M1'
+            else:
+                raise ValueError('Input token length exceeds 1M')
         elif not model and backend.name in backend2model:
             model = backend2model[backend.name]
         return model

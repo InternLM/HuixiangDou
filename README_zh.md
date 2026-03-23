@@ -115,9 +115,9 @@ Web 版给 android 的接口，也支持非 android 调用，见[python 样例�
 - [StepFun](https://platform.stepfun.com)
 - [vLLM](https://github.com/vllm-project/vllm)
 - [Silicon🏷️](https://cloud.siliconflow.cn/s/tpoisonooo)
-- [PPIO🏷️](https://ppinfra.com/user/register?invited_by=7GF8QS) 
+- [PPIO🏷️](https://ppinfra.com/user/register?invited_by=7GF8QS)
 - [Xi-Api](https://api.xi-ai.cn)
-
+- [MiniMax](https://platform.minimaxi.com)
 
 </td>
 <td>
@@ -250,6 +250,10 @@ remote_llm_model = "auto"
 # remote_type = "ppio"
 # remote_api_key = "sk-xxxxxxxxxxxxx"
 # remote_llm_model = "thudm/glm-4-9b-chat"
+
+# remote_type = "minimax"
+# remote_api_key = "sk-xxxxxxxxxxxxx"
+# remote_llm_model = "MiniMax-M1"
 ```
 
 然后运行测试：

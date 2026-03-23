@@ -115,8 +115,9 @@ The Web version's API for Android also supports other devices. See [Python sampl
 - [StepFun](https://platform.stepfun.com)
 - [vLLM](https://github.com/vllm-project/vllm)
 - [Silicon🏷️](https://cloud.siliconflow.cn/s/tpoisonooo)
-- [PPIO🏷️](https://ppinfra.com/user/register?invited_by=7GF8QS) 
+- [PPIO🏷️](https://ppinfra.com/user/register?invited_by=7GF8QS)
 - [Xi-Api](https://api.xi-ai.cn)
+- [MiniMax](https://platform.minimaxi.com)
 
 </td>
 <td>
@@ -253,6 +254,10 @@ remote_llm_model = "auto"
 # remote_type = "ppio"
 # remote_api_key = "sk-xxxxxxxxxxxxx"
 # remote_llm_model = "thudm/glm-4-9b-chat"
+
+# remote_type = "minimax"
+# remote_api_key = "sk-xxxxxxxxxxxxx"
+# remote_llm_model = "MiniMax-M1"
 ```
 
 Then run the test:
